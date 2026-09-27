@@ -1,5 +1,12 @@
-import { Component, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+
+interface WeatherForecast {
+  date: string;
+  temperatureC: number;
+  summary: string;
+}
 
 @Component({
   imports: [RouterOutlet],
@@ -8,5 +15,15 @@ import { RouterOutlet } from '@angular/router';
   templateUrl: './app.html',
 })
 export class App {
-  protected readonly title = signal('Frontend');
+  private readonly http = inject(HttpClient);
+
+  protected readonly forecasts = signal<WeatherForecast[]>([]);
+  protected readonly error = signal<string | null>(null);
+
+  constructor() {
+    this.http.get<WeatherForecast[]>('http://localhost:5285/weatherforecast').subscribe({
+      next: (data) => this.forecasts.set(data),
+      error: () => this.error.set('Could not reach the API.'),
+    });
+  }
 }
