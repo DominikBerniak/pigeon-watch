@@ -4,10 +4,14 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'PigeonWatch/Frontend/**'
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
       - main
+    paths:
+      - 'PigeonWatch/Frontend/**'
 
 jobs:
   build_and_deploy_job:
