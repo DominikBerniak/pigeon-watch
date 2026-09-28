@@ -1,0 +1,105 @@
+---
+project: pigeon-watch
+planned_at: 2026-09-27
+status: awaiting-execution
+target_platform: azure-app-service-f1
+regions:
+  compute-and-data: swedencentral
+  frontend: eastus2
+---
+
+# First Deployment Plan — PigeonWatch → Azure
+
+## Context
+
+`context/foundation/infrastructure.md` (bias-checked research) and `context/foundation/tech-stack.md` (stack hand-off) lock in **Azure App Service, Free (F1) tier, Linux**, plus Azure SQL (free tier), Blob Storage for photos, and Azure Static Web Apps for the Angular frontend, deployed via GitHub Actions auto-deploy-on-merge. Both projects are currently at raw CLI-scaffold state — no auth, no business logic, no CI workflow yet — so this is a genuine first deployment, not a redeploy. Scope for this pass: **API and frontend together**.
+
+Two corrections found during research, both non-blocking for the platform choice itself:
+
+1. **Runtime version**: both docs say ".NET 8", but `PigeonWatch/Api/PigeonWatchApi.csproj` actually targets **`net10.0`**. Verified via web research: Azure App Service Linux has native, non-container support for `DOTNETCORE|10.0` (Active LTS through Nov 2028, per [Azure's runtime support docs](https://github.com/Azure/app-service-linux-docs/blob/master/Runtime_Support/dot_net_core.md)). No container workaround needed — every `az` command below uses the moniker `DOTNETCORE:10.0`.
+2. **Region, resolved through live testing, not docs alone**. The plan went through three region decisions before landing on real, working ones:
+   - Originally `polandcentral` (co-location preference), ruled out because Static Web Apps doesn't support it at all, and Azure SQL's free-tier offer has a reported regional-rollout billing bug there.
+   - Consolidated to a single `westeurope` region — but creating the App Service Plan there failed live with `RequestDisallowedByAzure: The selected region is currently not accepting new customers`. Per Microsoft's own troubleshooting doc, West Europe is currently the one region this new-tenant restriction applies to.
+   - Tried `germanywestcentral`, `eastus2`, and `northeurope` next — all three returned `Operation cannot be completed without additional quota` (Current Limit: 0 F1 VMs) for this subscription. Free Trial/new subscriptions get a **per-region** quota of 0 for App Service compute in many regions, separate from the West Europe block.
+   - **`swedencentral` actually worked** — live-tested by creating and then deleting a real F1 App Service Plan and a real free-tier SQL database there; both succeeded (`"tier": "LinuxFree"`, `"useFreeLimit": true`, no billing-bug symptoms).
+   - Azure Static Web Apps' supported region list is a fixed platform constraint (confirmed via `az provider show --namespace Microsoft.Web --query "resourceTypes[?resourceType=='staticSites'].locations"`): Central US, East US 2, West US 2, West Europe, East Asia — `swedencentral` is not among them, and West Europe is still blocked for new resources. **`eastus2`** was live-tested and worked cleanly for a Static Web App (Free tier).
+
+   **Final regions**: App Service (F1), Azure SQL (free tier), and Blob Storage all go in **`swedencentral`**; Static Web Apps goes in **`eastus2`**. Static Web Apps' actual content is served through Azure's global CDN regardless of which of its 5 supported regions you pick, so this split shouldn't meaningfully affect latency for end users. The resource group itself (`pigeon-watch-rg`) was created with `--location westeurope` before this was discovered — that's harmless, since a resource group's own location is just metadata for the group object and doesn't constrain where its resources physically live (confirmed: the plan and DB tests both landed correctly in `swedencentral` inside this group).
+
+**Execution note**: `az` CLI is installed and authenticated on this machine (confirmed via `az account show`), so commands below are run directly rather than relayed — this file tracks what's actually been executed, not just planned. The `Microsoft.Sql` resource provider needed a one-time `az provider register --namespace Microsoft.Sql` before any SQL resource would create (standard, unrelated to the region issues above).
+
+## Phase 0 — Prerequisites (manual, human-only)
+
+- [x] Confirm an Azure subscription exists and note the subscription ID/tenant
+- [x] Install Azure CLI locally (`winget install Microsoft.AzureCLI` or [learn.microsoft.com/cli/azure/install-azure-cli](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli))
+- [x] Install the Static Web Apps CLI (`npm install -g @azure/static-web-apps-cli`)
+- [x] `az login` and `az account set --subscription <id>` — confirmed via `az account show` (`id` matches subscription)
+- [x] Run `az webapp list-runtimes --os linux` to confirm the exact `DOTNETCORE:10.0` moniker is live in your subscription before Phase 1 — confirmed: `DOTNETCORE|10.0`, Active LTS through 2028-11-14
+- [x] Confirm GitHub repo admin access (to add Actions secrets) — repo is under the user's own personal account
+
+## Phase 1 — Resource Group & App Service Plan (region: `swedencentral`)
+
+- [x] `az group create --name pigeon-watch-rg --location westeurope` (location tag harmless — see region note above)
+- [x] `az appservice plan create --name pigeon-watch-plan --resource-group pigeon-watch-rg --sku F1 --is-linux --location swedencentral` — live-verified `"tier": "LinuxFree"`, `"provisioningState": "Succeeded"`
+- [x] `az webapp create --resource-group pigeon-watch-rg --plan pigeon-watch-plan --name pigeonwatch-api --runtime "DOTNETCORE:10.0"` — API name; frontend (Phase 5) will be `pigeonwatch`
+- [x] Verify: `az webapp show --name pigeonwatch-api --resource-group pigeon-watch-rg --query state` → `Running`; `curl https://pigeonwatch-api.azurewebsites.net` → `HTTP 200` (default placeholder page, API not deployed yet)
+
+## Phase 2 — Data & Storage (region: `swedencentral`, same resource group)
+
+- [x] `az sql server create` — server `pigeonwatch-sql` (`pigeonwatch-sql.database.windows.net`), admin login `pgwatchadmin`. Also required a one-time `az provider register --namespace Microsoft.Sql` on this subscription (same class of issue as the DOTNETCORE runtime check, unrelated to region). **Admin password**: generated locally and used directly in the `az sql server create` call; not recorded anywhere retrievable (including by the assisting agent, which is blocked from re-reading generated-credential files by design). If you need it again, reset it: `az sql server update --name pigeonwatch-sql --resource-group pigeon-watch-rg --admin-password <new-password>`.
+- [x] `az sql db create --resource-group pigeon-watch-rg --server pigeonwatch-sql --name pigeonwatch-db --edition GeneralPurpose --compute-model Serverless --family Gen5 --capacity 2 --use-free-limit --free-limit-exhaustion-behavior AutoPause` — live-verified `"status": "Online"`, `"useFreeLimit": true`
+- [x] Firewall rule allowing Azure services: `az sql server firewall-rule create --resource-group pigeon-watch-rg --server pigeonwatch-sql --name AllowAzureServices --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0`
+- [x] `az storage account create --name pigeonwatchstorage --resource-group pigeon-watch-rg --location swedencentral --sku Standard_LRS --kind StorageV2` — required a one-time `az provider register --namespace Microsoft.Storage` first (surfaced confusingly as `SubscriptionNotFound` until registered — same pattern as Microsoft.Sql)
+- [x] `az storage container create --account-name pigeonwatchstorage --name sighting-photos --auth-mode login`
+- [x] Verify: `az sql db show` → `"status": "Online"`; `az storage account show` → `"provisioningState": "Succeeded"`. **Still open**: confirm $0 vCore-second billing after ~24h of usage data accumulates (too early to check right after creation)
+
+## Phase 3 — App Configuration (secretless, via Managed Identity)
+
+Deviated from the original password/connection-string plan: instead of embedding a SQL admin password and a storage account key as app settings, the API authenticates to both SQL and Blob Storage using its own Azure-managed identity. No secrets exist in app settings at all.
+
+- [x] Enabled a system-assigned managed identity on `pigeonwatch-api`: `az webapp identity assign --name pigeonwatch-api --resource-group pigeon-watch-rg` — `principalId: 0bfd400a-67f1-44ce-adfd-70950b491178` (objectId; its `appId` is a different GUID, `b3e5d008-...` — both correctly resolve to the same `ManagedIdentity`-type service principal)
+- [x] Granted Blob Storage access via RBAC (run by the user — role/permission grants are blocked from agent execution by design): `az role assignment create --assignee-object-id 0bfd400a-67f1-44ce-adfd-70950b491178 --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor" --scope <storage-account-resource-id>` — verified via `az role assignment list --assignee 0bfd400a-...`
+- [x] Set an Azure AD admin on the SQL server (run by the user, same reason): `az sql server ad-admin create --resource-group pigeon-watch-rg --server-name pigeonwatch-sql --display-name "berniak.dominik@gmail.com" --object-id <user-object-id>` — verified via `az sql server ad-admin list`
+- [x] Granted the managed identity DB access (run by the user via `sqlcmd -G` interactive AAD auth, using a temporary firewall rule for the client IP, deleted afterward): `CREATE USER [pigeonwatch-api] FROM EXTERNAL PROVIDER; ALTER ROLE db_datareader ADD MEMBER [pigeonwatch-api]; ALTER ROLE db_datawriter ADD MEMBER [pigeonwatch-api];`
+- [x] `az webapp config appsettings set --name pigeonwatch-api --resource-group pigeon-watch-rg --settings ConnectionStrings__Default="Server=tcp:pigeonwatch-sql.database.windows.net,1433;Database=pigeonwatch-db;Authentication=Active Directory Managed Identity;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;" BlobStorage__ServiceUri="https://pigeonwatchstorage.blob.core.windows.net/" BlobStorage__ContainerName="sighting-photos"` — verified via `az webapp config appsettings list`
+- [ ] Build task (not yet, since `Api/` has no data layer today): when EF Core/SQL client code is added, it must use Azure AD token auth (e.g. `Microsoft.Data.SqlClient` reads `Authentication=Active Directory Managed Identity` natively), and Blob access must use `DefaultAzureCredential`/`ManagedIdentityCredential` with `BlobServiceClient`, not a connection-string-with-key constructor
+
+## Phase 4 — CI/CD: API (GitHub Actions → App Service)
+
+Went the manual OIDC route (`az webapp deployment github-actions add` only scaffolds the publish-profile method, not OIDC, so it doesn't match the plan's stated preference).
+
+- [x] Generated the deploy credential manually: `az ad app create` (app `pigeon-watch-api-github-oidc`, `appId: d5757dbf-4a84-4d27-99e0-edd83841cdb9`) → `az ad sp create` (SP objectId `15ee1b05-135a-4b90-b21a-3b154f3f55da`) → `az ad app federated-credential create` (subject `repo:DominikBerniak/pigeon-watch:ref:refs/heads/main`, issuer `https://token.actions.githubusercontent.com`, audience `api://AzureADTokenExchange`)
+- [ ] Role assignment scoping the SP to `pigeonwatch-api` only (`Website Contributor` on the webapp resource, not the resource group) — **run by the user** (role/permission grants blocked from agent execution by design, same as Phase 3): `az role assignment create --assignee-object-id 15ee1b05-135a-4b90-b21a-3b154f3f55da --assignee-principal-type ServicePrincipal --role "Website Contributor" --scope /subscriptions/5ca7ba0a-5578-438b-90ba-9c5bdb9001d4/resourceGroups/pigeon-watch-rg/providers/Microsoft.Web/sites/pigeonwatch-api`
+- [ ] Add `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` / `AZURE_SUBSCRIPTION_ID` secrets to the GitHub repo — **run by the user** (repo secret writes blocked from agent execution by design): `gh secret set AZURE_CLIENT_ID --repo DominikBerniak/pigeon-watch --body "d5757dbf-4a84-4d27-99e0-edd83841cdb9"`, `gh secret set AZURE_TENANT_ID --repo DominikBerniak/pigeon-watch --body "011c88fc-91c3-4f5d-b556-30f989a9525f"`, `gh secret set AZURE_SUBSCRIPTION_ID --repo DominikBerniak/pigeon-watch --body "5ca7ba0a-5578-438b-90ba-9c5bdb9001d4"`
+- [x] Added `.github/workflows/deploy-api.yml` using `azure/login@v2` (OIDC, `permissions: id-token: write`) + `azure/webapps-deploy@v3`, triggered on push to `main` with path filter `PigeonWatch/Api/**`, steps: checkout → `actions/setup-dotnet@v4` (net10.0) → `dotnet publish` → `azure/login` → `azure/webapps-deploy`
+- [ ] Verify: push a trivial change to `main`, watch the Action run green, confirm `https://pigeonwatch-api.azurewebsites.net/swagger` loads the live Swagger UI — blocked on the two steps above (role assignment + secrets) being done first
+
+## Phase 5 — Frontend: Azure Static Web Apps (region: `eastus2`)
+
+- [ ] `az staticwebapp create --name pigeonwatch --resource-group pigeon-watch-rg --location eastus2 --source <repo-url> --branch main --app-location "PigeonWatch/Frontend" --output-location "dist/frontend/browser" --login-with-github` (adjust `--output-location` to Angular 22's actual `ng build` output path — verify with a local build first, since Angular has changed its default `dist/` layout across major versions; a throwaway test app confirmed `eastus2` works cleanly, Free tier, but was deleted, so this is the real, persistent creation)
+- [ ] This command auto-generates `.github/workflows/azure-static-web-apps-<random>.yml` with its own deploy token secret — review it, but don't hand-edit unless the default trigger/paths need narrowing (e.g. restrict to `PigeonWatch/Frontend/**`)
+- [ ] Set the Angular app's API base URL (environment file or build-time config) to `https://pigeonwatch-api.azurewebsites.net`
+- [ ] Add a CORS policy on the API (`az webapp cors add --name pigeonwatch-api --resource-group pigeon-watch-rg --allowed-origins https://pigeonwatch.azurestaticapps.net`) — nothing configured today, and the browser will hard-fail without it
+- [ ] Verify: push to `main`, watch the SWA Action run green, load `https://pigeonwatch.azurestaticapps.net`, confirm the frontend calls the API with no CORS errors in the browser console
+
+## Phase 6 — Smoke Test & Documentation
+
+- [ ] Confirm cold-start behavior manually once (`curl` after >20 min idle) so the known F1 cold-start risk is observed firsthand, not just theoretical
+- [ ] `az webapp log tail --name pigeonwatch-api --resource-group pigeon-watch-rg` during the smoke test to confirm log streaming works
+- [ ] Update this file's frontmatter `status` to `deployed` and fill in actual resource names, resource group, and URLs
+- [ ] Correct `tech_stack.runtime` in `tech-stack.md` and `infrastructure.md` frontmatter from `dotnet8-linux-container-or-native` to reflect the actual `net10.0` native runtime
+- [ ] Add a note to `infrastructure.md`'s risk register (or a new entry) recording the actual region story: `polandcentral` → ruled out (no SWA support, SQL free-tier billing bug); `westeurope` → ruled out (blocked for new-customer resource creation, confirmed live); `germanywestcentral`/`eastus2`/`northeurope` → ruled out for App Service specifically (0 F1 quota on this subscription, confirmed live); final: App Service/SQL/Storage in `swedencentral`, Static Web Apps in `eastus2` (only region in its fixed 5-region list that wasn't blocked or better-suited elsewhere)
+
+## Notes carried from infrastructure.md (accepted risks, not action items)
+
+- Shared 60 CPU-min/day quota, no Always-On, no custom domain/SSL on F1 — accepted for MVP per the recorded decision
+- No deployment slots on F1 — PR review is the only gate before production; every merge to `main` deploys straight to prod
+- Rollback is git-revert-based only (no slot swap); any EF Core migration in a reverted deploy needs a manual migration-down step (moot until a data layer exists)
+
+## Verification (end-to-end)
+
+1. `az webapp show ... --query state` → `Running` after Phase 1
+2. SQL DB and Storage account both provisioned in `swedencentral`, free-tier billing confirmed at $0 after Phase 2
+3. API GitHub Actions run is green after Phase 4, and `/swagger` responds on the live App Service URL
+4. SWA GitHub Actions run is green after Phase 5, frontend loads and successfully calls the API with no CORS errors
+5. `az webapp log tail` shows request logs during the Phase 6 smoke test

@@ -9,3 +9,6 @@ obj/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local deployment secrets (never commit)
+context/deployment/*.local.md
