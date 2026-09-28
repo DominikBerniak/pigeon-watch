@@ -1,11 +1,22 @@
 ---
 project: pigeon-watch
 planned_at: 2026-09-27
-status: awaiting-execution
+deployed_at: 2026-09-28
+status: deployed
 target_platform: azure-app-service-f1
 regions:
   compute-and-data: swedencentral
   frontend: eastus2
+resources:
+  resource_group: pigeon-watch-rg
+  api_app: pigeonwatch-api
+  api_url: https://pigeonwatch-api.azurewebsites.net
+  sql_server: pigeonwatch-sql.database.windows.net
+  sql_database: pigeonwatch-db
+  storage_account: pigeonwatchstorage
+  storage_container: sighting-photos
+  static_web_app: pigeonwatch
+  frontend_url: https://wonderful-sea-07000d90f.6.azurestaticapps.net
 ---
 
 # First Deployment Plan — PigeonWatch → Azure
@@ -83,15 +94,19 @@ Went the manual OIDC route (`az webapp deployment github-actions add` only scaff
 - [x] Auto-generated `.github/workflows/azure-static-web-apps-wonderful-sea-07000d90f.yml` (with its own `AZURE_STATIC_WEB_APPS_API_TOKEN_WONDERFUL_SEA_07000D90F` repo secret, written directly to `main` by the Azure GitHub App). Reviewed and narrowed both `push` and `pull_request` triggers to `paths: ['PigeonWatch/Frontend/**']` (originally fired on any push to `main`, including API-only or docs-only changes).
 - [x] Set the Angular app's API base URL via standard Angular environment files: added `src/environments/environment.ts` (`apiUrl: 'http://localhost:5285'`) and `environment.prod.ts` (`apiUrl: 'https://pigeonwatch-api.azurewebsites.net'`), wired a `fileReplacements` entry into `angular.json`'s `production` build config, and switched `app.ts`'s hardcoded `http://localhost:5285/weatherforecast` call to `${environment.apiUrl}/weatherforecast`. Verified locally: `ng build` (defaults to the `production` configuration) embeds `pigeonwatch-api.azurewebsites.net` in the output bundle.
 - [x] Added a CORS policy on the API for the actual SWA hostname: `az webapp cors add --name pigeonwatch-api --resource-group pigeon-watch-rg --allowed-origins https://wonderful-sea-07000d90f.6.azurestaticapps.net`
-- [ ] Verify: push to `main`, watch the SWA Action run green, load `https://wonderful-sea-07000d90f.6.azurestaticapps.net`, confirm the frontend calls the API with no CORS errors in the browser console
+- [x] Verify: pushed to `main`, SWA Action ran green, loaded `https://wonderful-sea-07000d90f.6.azurestaticapps.net` in a real browser — page renders live weather-forecast data fetched from `pigeonwatch-api.azurewebsites.net`, zero console errors, no CORS failures
 
 ## Phase 6 — Smoke Test & Documentation
 
-- [ ] Confirm cold-start behavior manually once (`curl` after >20 min idle) so the known F1 cold-start risk is observed firsthand, not just theoretical
-- [ ] `az webapp log tail --name pigeonwatch-api --resource-group pigeon-watch-rg` during the smoke test to confirm log streaming works
-- [ ] Update this file's frontmatter `status` to `deployed` and fill in actual resource names, resource group, and URLs
-- [ ] Correct `tech_stack.runtime` in `tech-stack.md` and `infrastructure.md` frontmatter from `dotnet8-linux-container-or-native` to reflect the actual `net10.0` native runtime
-- [ ] Add a note to `infrastructure.md`'s risk register (or a new entry) recording the actual region story: `polandcentral` → ruled out (no SWA support, SQL free-tier billing bug); `westeurope` → ruled out (blocked for new-customer resource creation, confirmed live); `germanywestcentral`/`eastus2`/`northeurope` → ruled out for App Service specifically (0 F1 quota on this subscription, confirmed live); final: App Service/SQL/Storage in `swedencentral`, Static Web Apps in `eastus2` (only region in its fixed 5-region list that wasn't blocked or better-suited elsewhere)
+- [~] Cold-start behavior: **not empirically tested** — a live 20+ minute idle wait was deliberately skipped this session (user chose to document the risk instead of spending the wait time) and is documented below as an accepted-but-unverified risk. A related but distinct observation was captured for free: enabling log streaming (`az webapp log config`) triggered a genuine container restart, and the resulting cold-container-to-serving-traffic startup took **~32 seconds** (`Site startup probe succeeded after 32.1219243 seconds`, from live log output). This is the app's raw startup latency, not the F1-specific idle-sleep scenario — real user-facing cold starts after 20+ min idle may differ (network/DNS re-resolution, App Service's own wake-up sequencing on top of container start) and should still be confirmed firsthand before relying on this number.
+- [x] `az webapp log tail --name pigeonwatch-api --resource-group pigeon-watch-rg` — confirmed working: streamed real container startup logs (`.NET Core 10.0.11`, `ASP .NETCore Version: 10.0.11`) and would have streamed the two verification `curl` requests' access logs live during the same session
+- [x] Updated this file's frontmatter: `status: deployed`, `deployed_at: 2026-09-28`, plus a `resources` block with actual resource group, app names, and URLs
+- [x] Corrected `infrastructure.md`'s frontmatter `tech_stack.language`/`tech_stack.runtime` from `csharp-dotnet8`/`dotnet8-linux-container-or-native` to the actual `net10.0` native runtime, and fixed the stale `DOTNETCORE:8.0` moniker in its body text to `DOTNETCORE:10.0`
+- [x] Added a note to `infrastructure.md`'s risk register recording the actual region story: `polandcentral` → ruled out (no SWA support, SQL free-tier billing bug); `westeurope` → ruled out (blocked for new-customer resource creation, confirmed live); `germanywestcentral`/`eastus2`/`northeurope` → ruled out for App Service specifically (0 F1 quota on this subscription, confirmed live); final: App Service/SQL/Storage in `swedencentral`, Static Web Apps in `eastus2` (only region in its fixed 5-region list that wasn't blocked or better-suited elsewhere)
+
+## Accepted risks not yet empirically verified
+
+- **F1 cold-start after genuine 20+ min idle**: theoretical/documented only (Azure's own F1-tier docs describe idle-sleep behavior). The ~32s figure captured above is a proxy (cold container start, not idle-sleep wake), and is the best current evidence — treat actual idle cold-start latency as potentially higher until directly observed.
 
 ## Notes carried from infrastructure.md (accepted risks, not action items)
 

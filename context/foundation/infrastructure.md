@@ -5,9 +5,9 @@ recommended_platform: azure-app-service-f1
 runner_up: fly-io
 context_type: mvp
 tech_stack:
-  language: csharp-dotnet8
+  language: csharp-net10
   framework: aspnet-core-webapi-plus-angular
-  runtime: dotnet8-linux-container-or-native
+  runtime: dotnet10-linux-native
 ---
 
 ## Recommendation
@@ -93,11 +93,12 @@ The team deployed on Azure App Service F1 because it was free and already the as
 | App Service's built-in MCP (structured agent tooling for the running app) is unavailable on F1 | Research finding | H | L | Use the general-purpose Azure MCP Server (GA) for resource/log management instead; re-evaluate if/when upgrading to B1 |
 | No deployment slots means every merge deploys straight to production with no blue/green safety net | Devil's advocate | M | M | Keep PR review as the actual gate; add a smoke-test step in CI before the deploy step completes |
 | Future realtime messaging (PRD Secondary persona) would hit F1's 5-concurrent-WebSocket ceiling | Devil's advocate | L | M | Not an MVP concern; revisit platform/tier choice specifically if/when live messaging is scoped in |
+| Region choice for F1 compute isn't a free pick — most regions returned live quota/policy failures on this subscription (`westeurope` blocked for new-customer resource creation; `germanywestcentral`/`eastus2`/`northeurope` gave `0 F1 VMs` quota; `polandcentral` has no Static Web Apps support and a reported SQL free-tier billing bug) | Deploy-plan execution | H | M | Confirmed live: `swedencentral` works for App Service F1 + Azure SQL free tier + Storage. Static Web Apps' 5-region list doesn't include `swedencentral`, so frontend lives separately in `eastus2` — accepted as harmless since SWA content is CDN-served regardless of origin region. Any future re-deploy or second environment should start from `swedencentral`/`eastus2` directly rather than re-discovering this by trial and error |
 
 ## Getting Started
 
 1. Confirm the Azure subscription and resource group to deploy into (`az account show`, `az group create --name pigeon-watch-rg --location <region>` if none exists).
-2. Create the Free-tier App Service plan and web app for the ASP.NET Core API: `az appservice plan create --name pigeon-watch-plan --resource-group pigeon-watch-rg --sku F1 --is-linux`, then `az webapp create --resource-group pigeon-watch-rg --plan pigeon-watch-plan --name <api-app-name> --runtime "DOTNETCORE:8.0"`.
+2. Create the Free-tier App Service plan and web app for the ASP.NET Core API: `az appservice plan create --name pigeon-watch-plan --resource-group pigeon-watch-rg --sku F1 --is-linux`, then `az webapp create --resource-group pigeon-watch-rg --plan pigeon-watch-plan --name <api-app-name> --runtime "DOTNETCORE:10.0"`.
 3. Provision the Azure SQL free-tier database (`az sql server create` + `az sql db create --edition GeneralPurpose --compute-model Serverless --family Gen5 ... --use-free-limit`) and an Azure Storage account with a Blob container for sighting photos (`az storage account create`, `az storage container create`).
 4. Wire the connection string and Blob Storage credentials as App Service application settings (`az webapp config appsettings set`), never committed to source.
 5. Add the `azure/webapps-deploy@v3` GitHub Actions workflow (publish profile or OIDC federated credential as the GitHub secret) so merges to `main` auto-deploy the API; deploy the Angular build separately to Azure Static Web Apps (`swa deploy` or its own GitHub Actions workflow) rather than serving it from the same App Service instance.
