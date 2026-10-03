@@ -56,6 +56,9 @@ jobs:
       - name: Restore .NET tools
         run: dotnet tool restore
 
+      - name: Restore
+        run: dotnet restore PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -r linux-x64
+
       - name: Build migration bundle
         run: >-
           dotnet ef migrations bundle
