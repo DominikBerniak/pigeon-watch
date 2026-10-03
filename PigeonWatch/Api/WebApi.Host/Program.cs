@@ -1,13 +1,12 @@
+using PigeonWatch.DependencyInjection;
 
-namespace PigeonWatchApi
+namespace PigeonWatch.WebApi.Host
 {
     public class Program
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            // Add services to the container.
+            WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
@@ -20,6 +19,8 @@ namespace PigeonWatchApi
                 });
             });
 
+            builder.Services.AddPigeonWatch(builder.Configuration);
+
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("Frontend", policy =>
@@ -30,9 +31,8 @@ namespace PigeonWatchApi
                 });
             });
 
-            var app = builder.Build();
+            WebApplication app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -46,7 +46,6 @@ namespace PigeonWatchApi
             app.UseCors("Frontend");
 
             app.UseAuthorization();
-
 
             app.MapControllers();
 

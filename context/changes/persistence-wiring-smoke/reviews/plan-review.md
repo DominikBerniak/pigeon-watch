@@ -2,10 +2,10 @@
 # Plan Review: Persistence Wiring Smoke Test
 
 - **Plan**: context/changes/persistence-wiring-smoke/plan.md
-- **Mode**: Deep
+- **Mode**: Deep (direct verification, no sub-agent)
 - **Date**: 2026-10-03
 - **Verdict**: REVISE → SOUND after triage
-- **Findings**: 0 critical, 3 warnings, 3 observations
+- **Findings**: 0 critical, 6 warnings, 1 observation
 
 ## Verdicts
 
@@ -13,80 +13,96 @@
 |-----------|---------|
 | End-State Alignment | PASS |
 | Lean Execution | PASS |
-| Architectural Fitness | PASS |
+| Architectural Fitness | WARNING |
 | Blind Spots | WARNING |
 | Plan Completeness | WARNING |
 
 ## Grounding
-13/13 paths ✓, 5/5 symbols ✓ (AddControllers/MapControllers, ConnectionStrings__Default, port 5285, deploy-plan.md line refs), brief↔plan ✓, Progress↔Phase ✓ (5/5 phases, 28/28 criteria)
+8/8 paths ✓, 6/6 symbols ✓ (UserSecretsId, EnableRetryOnFailure, dotnet-ef 10.0.12, appId d5757dbf…, AllowAzureServices, SP name), brief↔plan ✓, Progress↔Phase 6/6 ✓
 
 ## Findings
 
-### F1 — "Stop LocalDB" can't produce the 503 path
+### F1 — Public repository can't take the internal DbContext
 
 - **Severity**: ⚠️ WARNING
 - **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
-- **Dimension**: Blind Spots
-- **Location**: Phase 1 Manual Verification (1.7), Testing Strategy step 2
-- **Detail**: LocalDB auto-starts its instance on the next client connection, so stopping it yields 200, not 503. `EnableRetryOnFailure` also delays any transient-failure 503 by its retry budget.
-- **Fix**: Exercise the failure path with a non-transient broken connection string override and note the retry-budget delay for real outages.
-- **Decision**: FIXED
+- **Dimension**: Architectural Fitness
+- **Location**: Phase 1 §3 — Data layer
+- **Detail**: The plan made the entity and context `internal` but the repository implementation public. A public class whose public constructor takes an internal type does not compile (CS0051), and MS DI only activates through public constructors.
+- **Fix**: Make SmokeCheckRepository `internal sealed` with a public constructor; only ISmokeCheckRepository public.
+- **Decision**: FIXED (fixed differently) — DbContext and repository are public; entities stay internal and the context's `DbSet` properties are `internal` (a public `DbSet` of an internal entity does not compile). Fallback: configure entities in `OnModelCreating` if EF does not pick up the internal `DbSet` properties. Brief decision row updated.
 
-### F2 — Tool manifest location breaks repo-root `dotnet ef` commands
-
-- **Severity**: ⚠️ WARNING
-- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
-- **Dimension**: Plan Completeness
-- **Location**: Phase 1 §1, criteria 1.2/1.3/3.3, Phase 3 migrate job
-- **Detail**: Tool manifests are found by searching upward from the current directory. Criteria and CI run from the repo root, so `PigeonWatch/Api/.config/dotnet-tools.json` would not be found.
-- **Fix**: Place the manifest at repo-root `.config/dotnet-tools.json`.
-- **Decision**: FIXED
-
-### F3 — "SQL Server Contributor" grants far more than firewall rules
+### F2 — "Any database failure" can't be named from BusinessLogic
 
 - **Severity**: ⚠️ WARNING
 - **Impact**: 🔎 MEDIUM — real tradeoff; pause to reason through it
-- **Dimension**: Blind Spots
-- **Location**: Phase 2 §2 — Firewall-management role
-- **Detail**: The intent is firewall-rule CRUD only, but SQL Server Contributor can delete or rescale `pigeonwatch-db` and change server settings, on a principal that runs on every merge to `main`.
-- **Fix A ⭐ Recommended**: Custom role with only `Microsoft.Sql/servers/read` and `firewallRules/{read,write,delete}` at server scope
-  - Strength: Matches the stated intent and the project's least-privilege pattern.
-  - Tradeoff: Extra `az role definition create` step for Dominik.
-  - Confidence: HIGH — firewall CRUD needs only these actions.
-  - Blind spot: Whether Dominik can create custom role definitions on the subscription.
-- **Fix B**: Keep SQL Server Contributor and record the accepted risk
-  - Strength: Built-in role, no custom definition.
-  - Tradeoff: A compromised workflow could delete the database.
-  - Confidence: HIGH.
-  - Blind spot: None significant.
+- **Dimension**: Architectural Fitness
+- **Location**: Phase 1 §4 — BusinessLogic layer
+- **Detail**: With `EnableRetryOnFailure`, failures surface as EF Core or SqlClient exception types, which BusinessLogic is forbidden to reference by the Phase 2 layer rule.
+- **Fix A ⭐ Recommended**: Service catches `Exception` when `!ct.IsCancellationRequested`, as in the draft controller.
+  - Strength: No new types; architecture rule intact; matches draft code.
+  - Tradeoff: A programming bug also surfaces as 503.
+  - Confidence: HIGH — the pattern exists in the draft HealthController.
+  - Blind spot: None significant for a probe endpoint.
+- **Fix B**: Repository translates DB exceptions into a `DataUnavailableException` in BusinessObjects.
+  - Strength: Precise "database failure" semantics.
+  - Tradeoff: Extra type and translation code for a throwaway probe.
+  - Confidence: MED — translation boundary must cover open, strategy and SaveChanges.
+  - Blind spot: Which exceptions count as "database" stays a judgement call.
 - **Decision**: FIXED (Fix A)
 
-### F4 — No workflow concurrency guard
+### F3 — Return-type arch rule is bypassed by IActionResult
 
-- **Severity**: 💡 OBSERVATION
+- **Severity**: ⚠️ WARNING
 - **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
 - **Dimension**: Blind Spots
-- **Location**: Phase 3 §1–2
-- **Detail**: Two merges close together can interleave migrate and deploy, so older code can be deployed after a newer migration.
-- **Fix**: Add `concurrency: { group: deploy-api, cancel-in-progress: false }`.
+- **Location**: Phase 2 §1 — Architecture test project
+- **Detail**: The reflection rule only inspected declared return types, so `Task<IActionResult>` returning `Ok(businessObject)` would pass.
+- **Fix**: Require a generic `ActionResult<T>` with `T` in `WebApi.Models`; extend manual check 2.4.
+- **Decision**: FIXED (fixed differently) — controller actions must be `async` and return exactly `Task<ActionResult<TApiModel>>` with `TApiModel` in `WebApi.Models`; added to the Phase 1 WebApi contract and the Phase 2 rule; manual check 2.4 covers the `Task<IActionResult>` + `Ok(bo)` case.
+
+### F4 — Migrate job may fetch the SQL token after the OIDC assertion expires
+
+- **Severity**: ⚠️ WARNING
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Blind Spots
+- **Location**: Phase 4 §2 — Migrate job step order
+- **Detail**: The slow self-contained bundle build sat between `azure/login` and the first `database.windows.net` token request, which needs a still-valid GitHub OIDC assertion (AADSTS700024 risk), only observable post-merge.
+- **Fix**: Build the bundle before `azure/login`, then firewall rule, run with retry, delete rule under `if: always()`.
 - **Decision**: FIXED
 
-### F5 — CI command details left to the implementer
+### F5 — Live sqlcmd checks need a client firewall rule the plan omits
+
+- **Severity**: ⚠️ WARNING
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Blind Spots
+- **Location**: Phase 5 — criteria 5.3, 5.4, 5.5
+- **Detail**: Local `sqlcmd -G` against the live server is blocked by the firewall (only `AllowAzureServices`); adding a rule conflicts with 5.3 unless ordered.
+- **Fix**: Dominik adds a temporary client-IP rule for 5.4/5.5, deletes it, and 5.3 is checked last.
+- **Decision**: FIXED
+
+### F6 — Secret-grep criterion contradicts the new migrate job
+
+- **Severity**: ⚠️ WARNING
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Plan Completeness
+- **Location**: Phase 4 — criterion 4.2
+- **Detail**: The migrate job adds a second `azure/login` with the same three secrets, so a correct workflow would fail "only the three existing references".
+- **Fix**: Expect only the three `secrets.AZURE_*` names, one set per job that logs in.
+- **Decision**: FIXED
+
+### F7 — Phase 3 doc entry has no success criterion
 
 - **Severity**: 💡 OBSERVATION
 - **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
 - **Dimension**: Plan Completeness
-- **Location**: Phase 3 §1–2
-- **Detail**: The plan doesn't say how the bundle receives its connection string (Production config has none), and "generous retry settings" for curl doesn't cover refused connections during a cold start.
-- **Fix**: Pin `./efbundle --connection "$SQL_CONN"` in a bounded retry loop and `curl -f --retry 10 --retry-delay 15 --retry-connrefused --max-time 120`.
+- **Location**: Phase 3 §3 — Record the grants
+- **Detail**: The `deploy-plan.md` entry for the grants was a required change with no criterion checking it.
+- **Fix**: Add a manual criterion and Progress item 3.5.
 - **Decision**: FIXED
 
-### F6 — Small text inconsistencies
+## Triage Summary
 
-- **Severity**: 💡 OBSERVATION
-- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
-- **Dimension**: Plan Completeness
-- **Location**: Phase 4 §1 Contract; criterion 3.1
-- **Detail**: "Phase 1 to 3 commits" leaves out Phase 0; the 3.1 assertion rejects the list form `needs: [migrate]`.
-- **Fix**: Say "Phase 0 to 3" and accept both forms in 3.1.
-- **Decision**: FIXED
+- Fixed: F1 (differently), F2 (Fix A), F3 (differently), F4, F5, F6, F7 (7)
+- Skipped / Accepted / Dismissed: none
+- Verdict after fixes: SOUND
