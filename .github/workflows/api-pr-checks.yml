@@ -1,4 +1,4 @@
-name: API PR checks
+name: PR checks
 
 on:
   pull_request:
@@ -14,6 +14,7 @@ concurrency:
 
 env:
   DOTNET_VERSION: '10.0.x'
+  NODE_VERSION: '22'
 
 jobs:
   architecture-tests:
@@ -30,3 +31,26 @@ jobs:
 
       - name: Architecture tests
         run: dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj --no-build
+
+  frontend-build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: PigeonWatch/Frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: PigeonWatch/Frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Unit tests
+        run: npm test -- --watch=false

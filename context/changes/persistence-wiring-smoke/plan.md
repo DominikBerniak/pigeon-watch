@@ -373,6 +373,14 @@ Extend `deploy-api.yml` so the architecture tests run first, schema changes are 
 
 **Note on change 2 (added during implementation)**: the `migrate` job gains a `Pre-fetch SQL access token` step (`az account get-access-token --resource https://database.windows.net/`) right after `azure/login`, so the SQL token is cached while the GitHub OIDC assertion is still valid; the bundle retries that wait on the firewall rule then reuse the cached token instead of asking for a new one after the assertion may have expired.
 
+#### 5. Frontend build and unit tests in the PR gate (added during rework, after PR #1 opened)
+
+**File**: `.github/workflows/api-pr-checks.yml`, `PigeonWatch/Frontend/angular.json`, `PigeonWatch/Frontend/package.json`, `PigeonWatch/Frontend/package-lock.json`, `PigeonWatch/Frontend/src/app/app.spec.ts`, `PigeonWatch/Frontend/CLAUDE.md`
+
+**Intent**: Removing the Static Web Apps PR preview (`ef41d70`) left PRs with no frontend check, so the PR gate builds the Angular app and runs its unit tests.
+
+**Contract**: `api-pr-checks.yml` (workflow renamed `PR checks`) gains a second job `frontend-build-and-test`: checkout, `actions/setup-node@v4` (Node `22`, npm cache keyed on `PigeonWatch/Frontend/package-lock.json`), then in `PigeonWatch/Frontend` `npm ci`, `npm run build` and `npm test -- --watch=false`. No path filter, same trigger and concurrency as `architecture-tests`. The frontend gets a minimal unit-test setup: a `test` target using `@angular/build:unit-test` (Vitest runner, jsdom), devDependencies `vitest` `^5` (`^4` trips an npm 10 arborist peer-set crash) and `jsdom`, and one smoke spec `app.spec.ts` asserting the `PigeonWatch` heading renders. The component schematics keep `skipTests`. Dominik marks `frontend-build-and-test` as a required status check on `main` by hand.
+
 ### Success Criteria:
 
 #### Automated Verification:
@@ -382,11 +390,13 @@ Extend `deploy-api.yml` so the architecture tests run first, schema changes are 
 - Migration bundle builds locally the same way CI builds it: `dotnet ef migrations bundle --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj --self-contained -r linux-x64 --output <scratch>/efbundle`
 - The deploy host publishes locally the same way CI publishes it: `dotnet publish PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -c Release -o <scratch>/publish`
 - PR gate workflow is valid YAML, triggers on pull requests to `main` and has the `architecture-tests` job: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'main' in d[True]['pull_request']['branches'] and 'architecture-tests' in d['jobs']"`
+- Frontend builds and its unit tests pass the way the PR gate runs them, and the gate has the `frontend-build-and-test` job: `npm ci --prefix PigeonWatch/Frontend && npm run build --prefix PigeonWatch/Frontend && npm test --prefix PigeonWatch/Frontend -- --watch=false && python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'frontend-build-and-test' in d['jobs']"`
 
 #### Manual Verification:
 
 - Workflow diff reviewed by Dominik, including that the firewall rule name is unique per run and is deleted under `if: always()`
 - `architecture-tests` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge
+- `frontend-build-and-test` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from Dominik that the manual testing was successful before proceeding to the next phase. Phase blocks use plain bullets — the corresponding `- [ ]` checkboxes for these items live in the `## Progress` section at the bottom of the plan.
 
@@ -553,11 +563,13 @@ The first migration creates the throwaway `SMOKE_CHECK` table and the `EF_MIGRAT
 - [x] 4.4 The deploy host publishes locally the same way CI publishes it: `dotnet publish PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -c Release -o <scratch>/publish` — b612afe
 
 - [x] 4.6 PR gate workflow is valid YAML, triggers on pull requests to `main` and has the `architecture-tests` job: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'main' in d[True]['pull_request']['branches'] and 'architecture-tests' in d['jobs']"` — b612afe
+- [x] 4.8 Frontend builds and its unit tests pass the way the PR gate runs them, and the gate has the `frontend-build-and-test` job: `npm ci --prefix PigeonWatch/Frontend && npm run build --prefix PigeonWatch/Frontend && npm test --prefix PigeonWatch/Frontend -- --watch=false && python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'frontend-build-and-test' in d['jobs']"`
 
 #### Manual
 
 - [x] 4.5 Workflow diff reviewed by Dominik, including that the firewall rule name is unique per run and is deleted under `if: always()` — b612afe
 - [ ] 4.7 `architecture-tests` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge
+- [ ] 4.9 `frontend-build-and-test` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge
 
 ### Phase 5: Live verification and close-out
 
