@@ -1,18 +1,5 @@
 <main>
   <h1>PigeonWatch</h1>
-  <p>API connectivity check — weather forecast from the backend:</p>
-
-  @if (error()) {
-    <p class="error">{{ error() }}</p>
-  } @else if (forecasts().length === 0) {
-    <p>Loading...</p>
-  } @else {
-    <ul>
-      @for (forecast of forecasts(); track forecast.date) {
-        <li>{{ forecast.date }} — {{ forecast.temperatureC }}°C, {{ forecast.summary }}</li>
-      }
-    </ul>
-  }
 </main>
 
 <router-outlet />

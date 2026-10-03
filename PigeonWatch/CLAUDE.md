@@ -12,7 +12,7 @@ This directory holds the actual PigeonWatch product code (backend + frontend). T
 
 PigeonWatch is a map-based coordination app for a city pigeon/bird rescue community: users report distressed-bird sightings (location, description, photo, criticality), track a status lifecycle (spotted → contacted → taken to vet → healed/returned), see confirmed flock locations as a separate map layer, and message each other about a sighting. Full requirements: `@context/foundation/prd.md`. Stack rationale: `@context/foundation/tech-stack.md`.
 
-Both projects are currently at their default CLI-scaffold state (no business logic, no auth, no tests yet) — this is the starting point for implementation, not a partially-built feature.
+Both projects are currently minimal bases with the CLI sample code removed (no business logic, no auth, no tests yet): the API has no endpoints, and the frontend is a placeholder shell showing the app name and a router outlet. This is the starting point for implementation, not a partially-built feature.
 
 ## Layout
 

@@ -8,7 +8,7 @@ Scope: `PigeonWatch/Frontend/` only — the Angular app. See `@PigeonWatch/CLAUD
 
 Angular 22 app (standalone components, SCSS, routing enabled, no SSR). Consumes the `Api/` project over HTTP — there is no shared build or repo-root package manifest between them.
 
-Currently at default `ng new` scaffold state — no real components/services yet, and no test scaffolding (`--skip-tests` was used at generation time, so `ng test` will fail until a test setup is added).
+Currently a minimal shell — the root `App` component renders the PigeonWatch heading and a router outlet, with no real components/services yet, and no test scaffolding (`--skip-tests` was used at generation time, so `ng test` will fail until a test setup is added).
 
 ## Commands
 

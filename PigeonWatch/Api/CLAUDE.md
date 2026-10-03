@@ -8,8 +8,7 @@ Scope: `PigeonWatch/Api/` only — the ASP.NET Core Web API. See `@PigeonWatch/C
 
 ASP.NET Core Web API (.NET 10). Owns auth and the status-workflow/urgency-ranking business logic for sightings (spotted → contacted → taken to vet → healed/returned). Project: `PigeonWatchApi.csproj`, solution: `PigeonWatchApi.slnx`.
 
-Currently at default `dotnet new webapi` scaffold state — no auth, no business logic, no test project yet. `Controllers/WeatherForecastController.cs` and `WeatherForecast.cs` are still the CLI template sample and should be removed once real endpoints exist.
-
+Currently at default `dotnet new webapi` scaffold state — no auth, no business logic, no test project yet.
 ## Commands
 
 ```
