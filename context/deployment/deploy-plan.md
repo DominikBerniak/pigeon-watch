@@ -135,6 +135,7 @@ The `migrate` job in `deploy-api.yml` applies EF Core migrations as `pigeon-watc
 
 ## Accepted risks not yet empirically verified
 
+- **First `/health/db` call after Azure SQL auto-pause can return 503** (observed 2026-10-03, change `persistence-wiring-smoke` Phase 5 check 5.6): with `pigeonwatch-db` in `Paused` state the first probe returned 503 and an immediate second call returned 200. `EnableRetryOnFailure` (default 6 retries) plus the 30 s connect timeout did not cover the resume, or the F1 front end timed out while app and database woke together; the cause is not visible because `DatabaseHealthService` swallows the exception without logging it. Follow-up: log the swallowed exception and tune the retry budget / `Connect Timeout` before a user-facing slice depends on the first request after idle.
 - **F1 cold-start after genuine 20+ min idle**: theoretical/documented only (Azure's own F1-tier docs describe idle-sleep behavior). The ~32s figure captured above is a proxy (cold container start, not idle-sleep wake), and is the best current evidence — treat actual idle cold-start latency as potentially higher until directly observed.
 
 ## Notes carried from infrastructure.md (accepted risks, not action items)

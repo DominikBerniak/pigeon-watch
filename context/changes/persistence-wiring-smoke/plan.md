@@ -573,7 +573,7 @@ The first migration creates the throwaway `SMOKE_CHECK` table and the `EF_MIGRAT
 - [x] 4.6 PR gate workflow is valid YAML, triggers on pull requests to `main` and has the `architecture-tests` job: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'main' in d[True]['pull_request']['branches'] and 'architecture-tests' in d['jobs']"` — b612afe
 - [x] 4.8 Frontend builds and its unit tests pass the way the PR gate runs them, and the gate has the `frontend-build-and-test` job: `npm ci --prefix PigeonWatch/Frontend && npm run build --prefix PigeonWatch/Frontend && npm test --prefix PigeonWatch/Frontend -- --watch=false && python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'frontend-build-and-test' in d['jobs']"` — f79819e
 - [x] 4.10 Migration bundle builds from a clean clone the way CI builds it: in a fresh `git clone` of the branch, `dotnet tool restore && dotnet restore PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -r linux-x64 && dotnet ef migrations bundle --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj --configuration Release --self-contained -r linux-x64 --output efbundle` — 83c96c5
-- [x] 4.11 Deploy is clean, the startup command is pinned and no workflow action targets Node 20: `python -c "import yaml,glob; d=yaml.safe_load(open('.github/workflows/deploy-api.yml')); w=[st['with'] for st in d['jobs']['build-and-deploy']['steps'] if 'webapps-deploy' in st.get('uses','')][0]; assert w['clean'] is True and 'type' not in w; u=[l for f in glob.glob('.github/workflows/*.yml') for l in open(f) if 'uses:' in l]; assert not [l for l in u if any(o in l for o in ('checkout@v3','checkout@v4','setup-dotnet@v4','setup-node@v4','login@v2'))]" && az webapp config show --name pigeonwatch-api --resource-group pigeon-watch-rg --query appCommandLine -o tsv` prints `dotnet PigeonWatch.WebApi.Host.dll`
+- [x] 4.11 Deploy is clean, the startup command is pinned and no workflow action targets Node 20: `python -c "import yaml,glob; d=yaml.safe_load(open('.github/workflows/deploy-api.yml')); w=[st['with'] for st in d['jobs']['build-and-deploy']['steps'] if 'webapps-deploy' in st.get('uses','')][0]; assert w['clean'] is True and 'type' not in w; u=[l for f in glob.glob('.github/workflows/*.yml') for l in open(f) if 'uses:' in l]; assert not [l for l in u if any(o in l for o in ('checkout@v3','checkout@v4','setup-dotnet@v4','setup-node@v4','login@v2'))]" && az webapp config show --name pigeonwatch-api --resource-group pigeon-watch-rg --query appCommandLine -o tsv` prints `dotnet PigeonWatch.WebApi.Host.dll` — 7a0719c
 
 #### Manual
 
@@ -585,13 +585,13 @@ The first migration creates the throwaway `SMOKE_CHECK` table and the `EF_MIGRAT
 
 #### Automated
 
-- [ ] 5.1 Latest `deploy-api.yml` run on `main` concluded successfully: `gh run list --workflow deploy-api.yml --branch main --limit 1 --json conclusion --jq '.[0].conclusion'` prints `success`
-- [ ] 5.2 Live probe returns 200: `curl -f https://pigeonwatch-api.azurewebsites.net/health/db`
-- [ ] 5.3 Only the baseline firewall rule remains: `az sql server firewall-rule list --resource-group pigeon-watch-rg --server pigeonwatch-sql --query "[].name" -o tsv` prints only `AllowAzureServices` (checked after the temporary client-IP rule for 5.4 and 5.5 is deleted)
-- [ ] 5.4 Migration history applied in the live database: `sqlcmd -S pigeonwatch-sql.database.windows.net -d pigeonwatch-db -G -Q "SELECT MIGRATION_ID FROM EF_MIGRATIONS_HISTORY"` lists one row
+- [x] 5.1 Latest `deploy-api.yml` run on `main` concluded successfully: `gh run list --workflow deploy-api.yml --branch main --limit 1 --json conclusion --jq '.[0].conclusion'` prints `success`
+- [x] 5.2 Live probe returns 200: `curl -f https://pigeonwatch-api.azurewebsites.net/health/db`
+- [x] 5.3 Only the baseline firewall rule remains: `az sql server firewall-rule list --resource-group pigeon-watch-rg --server pigeonwatch-sql --query "[].name" -o tsv` prints only `AllowAzureServices` (checked after the temporary client-IP rule for 5.4 and 5.5 is deleted)
+- [x] 5.4 Migration history applied in the live database: `sqlcmd -S pigeonwatch-sql.database.windows.net -d pigeonwatch-db -G -Q "SELECT MIGRATION_ID FROM EF_MIGRATIONS_HISTORY"` lists one row
 
 #### Manual
 
-- [ ] 5.5 `SELECT COUNT(*) FROM SMOKE_CHECK` in the live database returns 0 after several probe calls
-- [ ] 5.6 Calling `/health/db` after the database has been idle long enough to auto-pause eventually returns 200 rather than 503
-- [ ] 5.7 `deploy-plan.md` reads accurately: Phase 3 data-layer item ticked, layered-layout and runbook note present
+- [x] 5.5 `SELECT COUNT(*) FROM SMOKE_CHECK` in the live database returns 0 after several probe calls
+- [x] 5.6 Calling `/health/db` after the database has been idle long enough to auto-pause eventually returns 200 rather than 503
+- [x] 5.7 `deploy-plan.md` reads accurately: Phase 3 data-layer item ticked, layered-layout and runbook note present
