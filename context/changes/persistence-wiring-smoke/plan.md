@@ -371,6 +371,10 @@ Extend `deploy-api.yml` so the architecture tests run first, schema changes are 
 
 **Contract**: Triggers on `pull_request` targeting `main` with no path filter, because a path-filtered workflow that is a required status check leaves PRs that skip it waiting forever. `permissions: contents: read`, no Azure login and no secrets. One job `architecture-tests`: checkout, setup-dotnet (same `DOTNET_VERSION`), `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`, then `dotnet test` of the architecture test project with `--no-build`. Concurrency per PR number with `cancel-in-progress: true`. Dominik marks `architecture-tests` as a required status check on `main`'s branch protection by hand (a repository setting, reserved for Dominik).
 
+**Note on change 2 (fix after the first live run on `main`, run 37146605080)**: the first merge-triggered run failed in `Build migration bundle` with `NETSDK1004` (`Data/obj/project.assets.json` not found): `dotnet ef migrations bundle` reads project metadata before it builds, and a fresh runner has nothing restored. The `migrate` job gains a `Restore` step (`dotnet restore PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -r linux-x64`) between `dotnet tool restore` and the bundle build. The local bundle criterion passed only because this machine already had restored assets, so the bundle build is now also verified from a clean clone. Landed in a follow-up PR from `fix/persistence-wiring-smoke-bundle-restore`, since `main` is protected.
+
+**Note on the Static Web Apps workflow (Phase 5 adaptation, `ef41d70`)**: PR #1 also removed the `pull_request` trigger and `close_pull_request_job` from `azure-static-web-apps-wonderful-sea-07000d90f.yml`, so PRs no longer create SWA preview environments; production deploy on push to `main` is unchanged. Change 5 below replaces the lost frontend PR check.
+
 **Note on change 2 (added during implementation)**: the `migrate` job gains a `Pre-fetch SQL access token` step (`az account get-access-token --resource https://database.windows.net/`) right after `azure/login`, so the SQL token is cached while the GitHub OIDC assertion is still valid; the bundle retries that wait on the firewall rule then reuse the cached token instead of asking for a new one after the assertion may have expired.
 
 #### 5. Frontend build and unit tests in the PR gate (added during rework, after PR #1 opened)
@@ -391,6 +395,7 @@ Extend `deploy-api.yml` so the architecture tests run first, schema changes are 
 - The deploy host publishes locally the same way CI publishes it: `dotnet publish PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -c Release -o <scratch>/publish`
 - PR gate workflow is valid YAML, triggers on pull requests to `main` and has the `architecture-tests` job: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'main' in d[True]['pull_request']['branches'] and 'architecture-tests' in d['jobs']"`
 - Frontend builds and its unit tests pass the way the PR gate runs them, and the gate has the `frontend-build-and-test` job: `npm ci --prefix PigeonWatch/Frontend && npm run build --prefix PigeonWatch/Frontend && npm test --prefix PigeonWatch/Frontend -- --watch=false && python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'frontend-build-and-test' in d['jobs']"`
+- Migration bundle builds from a clean clone the way CI builds it: in a fresh `git clone` of the branch, `dotnet tool restore && dotnet restore PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -r linux-x64 && dotnet ef migrations bundle --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj --configuration Release --self-contained -r linux-x64 --output efbundle`
 
 #### Manual Verification:
 
@@ -563,13 +568,14 @@ The first migration creates the throwaway `SMOKE_CHECK` table and the `EF_MIGRAT
 - [x] 4.4 The deploy host publishes locally the same way CI publishes it: `dotnet publish PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -c Release -o <scratch>/publish` — b612afe
 
 - [x] 4.6 PR gate workflow is valid YAML, triggers on pull requests to `main` and has the `architecture-tests` job: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'main' in d[True]['pull_request']['branches'] and 'architecture-tests' in d['jobs']"` — b612afe
-- [x] 4.8 Frontend builds and its unit tests pass the way the PR gate runs them, and the gate has the `frontend-build-and-test` job: `npm ci --prefix PigeonWatch/Frontend && npm run build --prefix PigeonWatch/Frontend && npm test --prefix PigeonWatch/Frontend -- --watch=false && python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'frontend-build-and-test' in d['jobs']"`
+- [x] 4.8 Frontend builds and its unit tests pass the way the PR gate runs them, and the gate has the `frontend-build-and-test` job: `npm ci --prefix PigeonWatch/Frontend && npm run build --prefix PigeonWatch/Frontend && npm test --prefix PigeonWatch/Frontend -- --watch=false && python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'frontend-build-and-test' in d['jobs']"` — f79819e
+- [x] 4.10 Migration bundle builds from a clean clone the way CI builds it: in a fresh `git clone` of the branch, `dotnet tool restore && dotnet restore PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -r linux-x64 && dotnet ef migrations bundle --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj --configuration Release --self-contained -r linux-x64 --output efbundle`
 
 #### Manual
 
 - [x] 4.5 Workflow diff reviewed by Dominik, including that the firewall rule name is unique per run and is deleted under `if: always()` — b612afe
-- [ ] 4.7 `architecture-tests` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge
-- [ ] 4.9 `frontend-build-and-test` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge
+- [x] 4.7 `architecture-tests` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge
+- [x] 4.9 `frontend-build-and-test` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge
 
 ### Phase 5: Live verification and close-out
 
