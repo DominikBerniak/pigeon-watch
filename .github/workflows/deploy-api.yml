@@ -26,9 +26,9 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -47,9 +47,9 @@ jobs:
       FIREWALL_RULE_NAME: gh-runner-${{ github.run_id }}-${{ github.run_attempt }}
       SQL_CONN: Server=tcp:pigeonwatch-sql.database.windows.net,1433;Database=pigeonwatch-db;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False;
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -70,7 +70,7 @@ jobs:
           --output efbundle
 
       - name: Azure login (OIDC)
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -116,9 +116,9 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -129,7 +129,7 @@ jobs:
         run: dotnet publish PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -c Release -o ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
       - name: Azure login (OIDC)
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -140,6 +140,7 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          clean: true
 
       - name: Probe database health
         run: curl -f --retry 10 --retry-delay 15 --retry-connrefused --max-time 120 https://pigeonwatch-api.azurewebsites.net/health/db
