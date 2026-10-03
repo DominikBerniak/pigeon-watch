@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="ArchitectureTests/PigeonWatch.ArchitectureTests.csproj" />
   <Project Path="BusinessLogic/PigeonWatch.BusinessLogic.csproj" />
   <Project Path="BusinessObjects/PigeonWatch.BusinessObjects.csproj" />
   <Project Path="Data/PigeonWatch.Data.csproj" />

@@ -12,8 +12,8 @@ using PigeonWatch.Data;
 namespace PigeonWatch.Data.Migrations
 {
     [DbContext(typeof(PigeonWatchDbContext))]
-    [Migration("20261003171433_AddSmokeChecks")]
-    partial class AddSmokeChecks
+    [Migration("20261003175108_AddSmokeCheck")]
+    partial class AddSmokeCheck
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -53,9 +53,9 @@ namespace PigeonWatch.Data.Migrations
                         .HasColumnName("UPDATE_USER");
 
                     b.HasKey("Id")
-                        .HasName("PK_SMOKE_CHECKS");
+                        .HasName("PK_SMOKE_CHECK");
 
-                    b.ToTable("SMOKE_CHECKS", (string)null);
+                    b.ToTable("SMOKE_CHECK", (string)null);
                 });
 #pragma warning restore 612, 618
         }

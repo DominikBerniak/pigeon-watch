@@ -6,13 +6,13 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PigeonWatch.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddSmokeChecks : Migration
+    public partial class AddSmokeCheck : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "SMOKE_CHECKS",
+                name: "SMOKE_CHECK",
                 columns: table => new
                 {
                     ID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -23,7 +23,7 @@ namespace PigeonWatch.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SMOKE_CHECKS", x => x.ID);
+                    table.PrimaryKey("PK_SMOKE_CHECK", x => x.ID);
                 });
         }
 
@@ -31,7 +31,7 @@ namespace PigeonWatch.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "SMOKE_CHECKS");
+                name: "SMOKE_CHECK");
         }
     }
 }

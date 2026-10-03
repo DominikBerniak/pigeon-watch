@@ -50,9 +50,9 @@ namespace PigeonWatch.Data.Migrations
                         .HasColumnName("UPDATE_USER");
 
                     b.HasKey("Id")
-                        .HasName("PK_SMOKE_CHECKS");
+                        .HasName("PK_SMOKE_CHECK");
 
-                    b.ToTable("SMOKE_CHECKS", (string)null);
+                    b.ToTable("SMOKE_CHECK", (string)null);
                 });
 #pragma warning restore 612, 618
         }

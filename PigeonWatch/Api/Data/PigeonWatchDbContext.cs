@@ -17,7 +17,7 @@ public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options
     {
         modelBuilder.Entity<SmokeCheckEntity>(entity =>
         {
-            entity.ToTable("SmokeChecks");
+            entity.ToTable("SmokeCheck");
             entity.HasKey(e => e.Id);
         });
     }

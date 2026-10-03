@@ -12,11 +12,20 @@ This directory holds the actual PigeonWatch product code (backend + frontend). T
 
 PigeonWatch is a map-based coordination app for a city pigeon/bird rescue community: users report distressed-bird sightings (location, description, photo, criticality), track a status lifecycle (spotted → contacted → taken to vet → healed/returned), see confirmed flock locations as a separate map layer, and message each other about a sighting. Full requirements: `@context/foundation/prd.md`. Stack rationale: `@context/foundation/tech-stack.md`.
 
-Both projects are currently minimal bases with the CLI sample code removed (no business logic, no auth, no tests yet): the API has no endpoints, and the frontend is a placeholder shell showing the app name and a router outlet. This is the starting point for implementation, not a partially-built feature.
+Both projects are currently minimal bases with the CLI sample code removed (no business logic, no auth): the API exposes only the `GET /health/db` persistence smoke probe and has architecture tests guarding its layering, and the frontend is a placeholder shell showing the app name and a router outlet. This is the starting point for implementation, not a partially-built feature.
 
 ## Layout
 
-- `Api/` — ASP.NET Core Web API (.NET 10). See `@PigeonWatch/Api/CLAUDE.md` for commands and specifics.
+- `Api/` — ASP.NET Core Web API (.NET 10), solution `Api/PigeonWatchApi.slnx` with six layered projects plus architecture tests:
+  - `WebApi.Host/` — the deployed host and EF startup project (`Program.cs`, appsettings); calls only `AddPigeonWatch`.
+  - `WebApi/` — controllers, API models, view model creators, mappers.
+  - `DependencyInjection/` — the only place services are registered.
+  - `BusinessLogic/` — services and providers.
+  - `Data/` — DbContext, internal EF entities, repositories, entity-to-BO mappers, migrations.
+  - `BusinessObjects/` — plain domain and result types.
+  - `ArchitectureTests/` — tests that enforce the layer and coding rules.
+
+  The layer rules, reference direction, coding rules and commands live in `@PigeonWatch/Api/CLAUDE.md`; read it before changing anything under `Api/`.
 - `Frontend/` — Angular 22 app. See `@PigeonWatch/Frontend/CLAUDE.md` for commands and specifics.
 
 There is no bundled .NET+Angular starter — the two are separate projects that talk over HTTP; the frontend consumes the API, they don't share a build or a repo-root package manifest.

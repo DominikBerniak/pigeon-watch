@@ -33,7 +33,7 @@ The API is split into `PigeonWatch.WebApi.Host`, `PigeonWatch.WebApi`, `PigeonWa
 
 ## Scope
 
-**In scope:** the six-project split with central DI and build-time coding rules with moved draft data layer, API models and view model creators, EF Core wiring, `SMOKE_CHECKS` table and regenerated initial migration, `/health/db` probe split across layers, architecture tests and guardrail docs, CI test and migrate jobs with temporary firewall rule, post-deploy probe, manual Azure grants, deployment docs and rollback runbook note.
+**In scope:** the six-project split with central DI and build-time coding rules with moved draft data layer, API models and view model creators, EF Core wiring, `SMOKE_CHECK` table and regenerated initial migration, `/health/db` probe split across layers, architecture tests and guardrail docs, CI test and migrate jobs with temporary firewall rule, post-deploy probe, manual Azure grants, deployment docs and rollback runbook note.
 
 **Out of scope:** domain schema, auth, rate limiting on the probe, committed-row smoke endpoint, migrate-on-startup, a dedicated migrator identity, Blob Storage wiring, unit and integration test projects, generic repository abstractions, request-model mappers, new frontend features, automated migration-down.
 
@@ -46,7 +46,7 @@ Phase 0 is done. Phase 1 creates the six projects and the central DI registratio
 | Phase | What it delivers | Key risk |
 | --- | --- | --- |
 | 0. Scaffold cleanup (done) | Weather sample removed; Angular placeholder shell; stock docs updated | Deployed frontend calls the removed endpoint until its own deploy finishes. |
-| 1. Layered API and data layer | Six projects, central DI, build-time coding rules, EF Core in Data, `SMOKE_CHECKS`, regenerated migration, `/health/db` across layers, LocalDB proof | Internal entities and the EF tools; MVC discovering controllers from the WebApi library; moving a file the agent cannot read. |
+| 1. Layered API and data layer | Six projects, central DI, build-time coding rules, EF Core in Data, `SMOKE_CHECK`, regenerated migration, `/health/db` across layers, LocalDB proof | Internal entities and the EF tools; MVC discovering controllers from the WebApi library; moving a file the agent cannot read. |
 | 2. Architecture tests and guardrails | Test project asserting layer rules, guardrail docs | Rules too loose to catch real drift, or so strict they block valid code. |
 | 3. Azure access grants (manual) | SQL user and firewall role for the CI service principal | Grants Dominik runs by hand; a temporary client firewall rule must be removed afterwards. |
 | 4. CI test and migrate jobs | `test` and `migrate` jobs before deploy, retargeted paths, post-deploy probe | Firewall rule propagation delay; leaking a rule if cleanup fails. |
