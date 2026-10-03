@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>PigeonWatch.DependencyInjection</RootNamespace>
+    <AssemblyName>PigeonWatch.DependencyInjection</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WebApi\PigeonWatch.WebApi.csproj" />
+    <ProjectReference Include="..\BusinessLogic\PigeonWatch.BusinessLogic.csproj" />
+    <ProjectReference Include="..\Data\PigeonWatch.Data.csproj" />
+    <ProjectReference Include="..\BusinessObjects\PigeonWatch.BusinessObjects.csproj" />
+  </ItemGroup>
+
+</Project>

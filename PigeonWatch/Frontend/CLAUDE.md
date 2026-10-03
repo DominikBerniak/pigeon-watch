@@ -8,7 +8,7 @@ Scope: `PigeonWatch/Frontend/` only — the Angular app. See `@PigeonWatch/CLAUD
 
 Angular 22 app (standalone components, SCSS, routing enabled, no SSR). Consumes the `Api/` project over HTTP — there is no shared build or repo-root package manifest between them.
 
-Currently at default `ng new` scaffold state — no real components/services yet, and no test scaffolding (`--skip-tests` was used at generation time, so `ng test` will fail until a test setup is added).
+Currently a minimal shell — the root `App` component renders the PigeonWatch heading and a router outlet, with no real components/services yet. Unit tests run on Vitest with jsdom through the `@angular/build:unit-test` builder (`test` target in `angular.json`); `src/app/app.spec.ts` is the only spec. The schematics still default to `skipTests`, so add a `*.spec.ts` by hand when a component or service needs one. The `frontend-build-and-test` job in `.github/workflows/api-pr-checks.yml` runs the production build and the tests on every PR to `main`.
 
 ## Commands
 
@@ -16,7 +16,7 @@ Currently at default `ng new` scaffold state — no real components/services yet
 npm start          # ng serve, dev server
 npm run build      # ng build
 npm run watch      # ng build --watch --configuration development
-npm test           # ng test — will fail, no test setup yet
+npm test           # ng test (Vitest, watch mode); CI uses: npm test -- --watch=false
 ```
 
 Use `npx ng generate ...` for new components/services — the Angular CLI isn't installed globally as `ng`.

@@ -1,3 +1,9 @@
 <Solution>
-  <Project Path="PigeonWatchApi.csproj" />
+  <Project Path="ArchitectureTests/PigeonWatch.ArchitectureTests.csproj" />
+  <Project Path="BusinessLogic/PigeonWatch.BusinessLogic.csproj" />
+  <Project Path="BusinessObjects/PigeonWatch.BusinessObjects.csproj" />
+  <Project Path="Data/PigeonWatch.Data.csproj" />
+  <Project Path="DependencyInjection/PigeonWatch.DependencyInjection.csproj" />
+  <Project Path="WebApi/PigeonWatch.WebApi.csproj" />
+  <Project Path="WebApi.Host/PigeonWatch.WebApi.Host.csproj" />
 </Solution>
