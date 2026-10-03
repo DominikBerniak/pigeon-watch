@@ -363,6 +363,16 @@ Extend `deploy-api.yml` so the architecture tests run first, schema changes are 
 
 **Contract**: `build-and-deploy` declares `needs: migrate` and restores and publishes `PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj`; the package path stays `PigeonWatch/Api/publish`. After `azure/webapps-deploy`, a step runs `curl -f --retry 10 --retry-delay 15 --retry-connrefused --max-time 120 https://pigeonwatch-api.azurewebsites.net/health/db`, because the F1 container takes about 32 seconds to start and the serverless database may be resuming. The existing triggers (`push` to `main` on `PigeonWatch/Api/**`, plus `workflow_dispatch`) stay as they are. The workflow gains a top-level `concurrency: { group: deploy-api, cancel-in-progress: false }` so two merges in quick succession run test-migrate-deploy one after the other instead of interleaving.
 
+#### 4. PR merge gate (added during implementation)
+
+**File**: `.github/workflows/api-pr-checks.yml`
+
+**Intent**: Catch a broken build or layer rule on the pull request, before it can merge into `main`, instead of only in the post-merge deploy run.
+
+**Contract**: Triggers on `pull_request` targeting `main` with no path filter, because a path-filtered workflow that is a required status check leaves PRs that skip it waiting forever. `permissions: contents: read`, no Azure login and no secrets. One job `architecture-tests`: checkout, setup-dotnet (same `DOTNET_VERSION`), `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`, then `dotnet test` of the architecture test project with `--no-build`. Concurrency per PR number with `cancel-in-progress: true`. Dominik marks `architecture-tests` as a required status check on `main`'s branch protection by hand (a repository setting, reserved for Dominik).
+
+**Note on change 2 (added during implementation)**: the `migrate` job gains a `Pre-fetch SQL access token` step (`az account get-access-token --resource https://database.windows.net/`) right after `azure/login`, so the SQL token is cached while the GitHub OIDC assertion is still valid; the bundle retries that wait on the firewall rule then reuse the cached token instead of asking for a new one after the assertion may have expired.
+
 ### Success Criteria:
 
 #### Automated Verification:
@@ -371,10 +381,12 @@ Extend `deploy-api.yml` so the architecture tests run first, schema changes are 
 - No secret value appears in the workflow file: `git grep -n -i "password\|secret" .github/workflows/deploy-api.yml` lists only `secrets.AZURE_CLIENT_ID`, `secrets.AZURE_TENANT_ID` and `secrets.AZURE_SUBSCRIPTION_ID` references (one set in each job that logs in)
 - Migration bundle builds locally the same way CI builds it: `dotnet ef migrations bundle --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj --self-contained -r linux-x64 --output <scratch>/efbundle`
 - The deploy host publishes locally the same way CI publishes it: `dotnet publish PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -c Release -o <scratch>/publish`
+- PR gate workflow is valid YAML, triggers on pull requests to `main` and has the `architecture-tests` job: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'main' in d[True]['pull_request']['branches'] and 'architecture-tests' in d['jobs']"`
 
 #### Manual Verification:
 
 - Workflow diff reviewed by Dominik, including that the firewall rule name is unique per run and is deleted under `if: always()`
+- `architecture-tests` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from Dominik that the manual testing was successful before proceeding to the next phase. Phase blocks use plain bullets — the corresponding `- [ ]` checkboxes for these items live in the `## Progress` section at the bottom of the plan.
 
@@ -522,27 +534,30 @@ The first migration creates the throwaway `SMOKE_CHECK` table and the `EF_MIGRAT
 
 #### Automated
 
-- [x] 3.1 SQL user and roles exist: `sqlcmd -S pigeonwatch-sql.database.windows.net -d pigeonwatch-db -G -Q "SELECT dp.name, r.name FROM sys.database_role_members m JOIN sys.database_principals r ON m.role_principal_id = r.principal_id JOIN sys.database_principals dp ON m.member_principal_id = dp.principal_id WHERE dp.name = 'pigeon-watch-api-github-oidc'"`
-- [x] 3.2 Firewall role assignment exists at server scope: `az role assignment list --assignee d5757dbf-4a84-4d27-99e0-edd83841cdb9 --scope <pigeonwatch-sql resource id>`
+- [x] 3.1 SQL user and roles exist: `sqlcmd -S pigeonwatch-sql.database.windows.net -d pigeonwatch-db -G -Q "SELECT dp.name, r.name FROM sys.database_role_members m JOIN sys.database_principals r ON m.role_principal_id = r.principal_id JOIN sys.database_principals dp ON m.member_principal_id = dp.principal_id WHERE dp.name = 'pigeon-watch-api-github-oidc'"` — 9ec7e6f
+- [x] 3.2 Firewall role assignment exists at server scope: `az role assignment list --assignee d5757dbf-4a84-4d27-99e0-edd83841cdb9 --scope <pigeonwatch-sql resource id>` — 9ec7e6f
 
 #### Manual
 
-- [x] 3.3 The temporary client-IP firewall rule used for the `sqlcmd` session has been deleted
-- [x] 3.4 The managed identity's roles on the database are unchanged (still reader and writer only)
-- [x] 3.5 `deploy-plan.md` records the CI SQL user, its three roles and the scoped firewall role with the verification commands used
+- [x] 3.3 The temporary client-IP firewall rule used for the `sqlcmd` session has been deleted — 9ec7e6f
+- [x] 3.4 The managed identity's roles on the database are unchanged (still reader and writer only) — 9ec7e6f
+- [x] 3.5 `deploy-plan.md` records the CI SQL user, its three roles and the scoped firewall role with the verification commands used — 9ec7e6f
 
 ### Phase 4: CI test and migrate jobs
 
 #### Automated
 
-- [ ] 4.1 Workflow file is valid YAML with the job chain `test` -> `migrate` -> `build-and-deploy`: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/deploy-api.yml')); j=d['jobs']; n=lambda k: (lambda v: v if isinstance(v, list) else [v])(j[k]['needs']); assert 'migrate' in n('build-and-deploy') and 'test' in n('migrate')"`
-- [ ] 4.2 No secret value appears in the workflow file: `git grep -n -i "password\|secret" .github/workflows/deploy-api.yml` lists only `secrets.AZURE_CLIENT_ID`, `secrets.AZURE_TENANT_ID` and `secrets.AZURE_SUBSCRIPTION_ID` references (one set in each job that logs in)
-- [ ] 4.3 Migration bundle builds locally the same way CI builds it: `dotnet ef migrations bundle --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj --self-contained -r linux-x64 --output <scratch>/efbundle`
-- [ ] 4.4 The deploy host publishes locally the same way CI publishes it: `dotnet publish PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -c Release -o <scratch>/publish`
+- [x] 4.1 Workflow file is valid YAML with the job chain `test` -> `migrate` -> `build-and-deploy`: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/deploy-api.yml')); j=d['jobs']; n=lambda k: (lambda v: v if isinstance(v, list) else [v])(j[k]['needs']); assert 'migrate' in n('build-and-deploy') and 'test' in n('migrate')"`
+- [x] 4.2 No secret value appears in the workflow file: `git grep -n -i "password\|secret" .github/workflows/deploy-api.yml` lists only `secrets.AZURE_CLIENT_ID`, `secrets.AZURE_TENANT_ID` and `secrets.AZURE_SUBSCRIPTION_ID` references (one set in each job that logs in)
+- [x] 4.3 Migration bundle builds locally the same way CI builds it: `dotnet ef migrations bundle --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj --self-contained -r linux-x64 --output <scratch>/efbundle`
+- [x] 4.4 The deploy host publishes locally the same way CI publishes it: `dotnet publish PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -c Release -o <scratch>/publish`
+
+- [x] 4.6 PR gate workflow is valid YAML, triggers on pull requests to `main` and has the `architecture-tests` job: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'main' in d[True]['pull_request']['branches'] and 'architecture-tests' in d['jobs']"`
 
 #### Manual
 
-- [ ] 4.5 Workflow diff reviewed by Dominik, including that the firewall rule name is unique per run and is deleted under `if: always()`
+- [x] 4.5 Workflow diff reviewed by Dominik, including that the firewall rule name is unique per run and is deleted under `if: always()`
+- [ ] 4.7 `architecture-tests` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge
 
 ### Phase 5: Live verification and close-out
 

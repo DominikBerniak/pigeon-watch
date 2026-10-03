@@ -9,8 +9,11 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  id-token: write
   contents: read
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
 
 env:
   AZURE_WEBAPP_NAME: pigeonwatch-api
@@ -18,8 +21,97 @@ env:
   DOTNET_VERSION: '10.0.x'
 
 jobs:
-  build-and-deploy:
+  test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Architecture tests
+        run: dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj
+
+  migrate:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      AZURE_RESOURCE_GROUP: pigeon-watch-rg
+      AZURE_SQL_SERVER: pigeonwatch-sql
+      FIREWALL_RULE_NAME: gh-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      SQL_CONN: Server=tcp:pigeonwatch-sql.database.windows.net,1433;Database=pigeonwatch-db;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False;
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Build migration bundle
+        run: >-
+          dotnet ef migrations bundle
+          --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj
+          --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj
+          --configuration Release
+          --self-contained
+          -r linux-x64
+          --output efbundle
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Pre-fetch SQL access token
+        run: az account get-access-token --resource https://database.windows.net/ --output none
+
+      - name: Allow runner through SQL firewall
+        run: |
+          RUNNER_IP=$(curl -fsS https://api.ipify.org)
+          az sql server firewall-rule create \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --server "$AZURE_SQL_SERVER" \
+            --name "$FIREWALL_RULE_NAME" \
+            --start-ip-address "$RUNNER_IP" \
+            --end-ip-address "$RUNNER_IP"
+
+      - name: Apply migrations
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if ./efbundle --connection "$SQL_CONN"; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 5 ]; then
+              sleep 30
+            fi
+          done
+          exit 1
+
+      - name: Remove SQL firewall rule
+        if: always()
+        run: |
+          az sql server firewall-rule delete \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --server "$AZURE_SQL_SERVER" \
+            --name "$FIREWALL_RULE_NAME" || true
+
+  build-and-deploy:
+    needs: migrate
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -28,10 +120,10 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore
-        run: dotnet restore PigeonWatch/Api/PigeonWatchApi.csproj
+        run: dotnet restore PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj
 
       - name: Publish
-        run: dotnet publish PigeonWatch/Api/PigeonWatchApi.csproj -c Release -o ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        run: dotnet publish PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -c Release -o ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
       - name: Azure login (OIDC)
         uses: azure/login@v2
@@ -45,3 +137,6 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
+      - name: Probe database health
+        run: curl -f --retry 10 --retry-delay 15 --retry-connrefused --max-time 120 https://pigeonwatch-api.azurewebsites.net/health/db
