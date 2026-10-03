@@ -509,27 +509,27 @@ The first migration creates the throwaway `SMOKE_CHECK` table and the `EF_MIGRAT
 
 #### Automated
 
-- [x] 2.1 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`
-- [x] 2.2 Solution still builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
-- [x] 2.3 Test project dependency audit is clean: `dotnet list PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj package --vulnerable --include-transitive`
+- [x] 2.1 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — 8186b77
+- [x] 2.2 Solution still builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 8186b77
+- [x] 2.3 Test project dependency audit is clean: `dotnet list PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj package --vulnerable --include-transitive` — 8186b77
 
 #### Manual
 
-- [x] 2.4 A deliberate violation (a controller action returning a business object, an action declared as `Task<IActionResult>` that returns `Ok(businessObject)`, `WebApi` using a `PigeonWatch.Data` type, a new static helper class, or a service without an interface or registration) makes the architecture tests fail, and removing it makes them pass again
-- [x] 2.5 Both `CLAUDE.md` files describe the layout and the layer rules accurately
+- [x] 2.4 A deliberate violation (a controller action returning a business object, an action declared as `Task<IActionResult>` that returns `Ok(businessObject)`, `WebApi` using a `PigeonWatch.Data` type, a new static helper class, or a service without an interface or registration) makes the architecture tests fail, and removing it makes them pass again — 8186b77
+- [x] 2.5 Both `CLAUDE.md` files describe the layout and the layer rules accurately — 8186b77
 
 ### Phase 3: Azure access grants (manual)
 
 #### Automated
 
-- [ ] 3.1 SQL user and roles exist: `sqlcmd -S pigeonwatch-sql.database.windows.net -d pigeonwatch-db -G -Q "SELECT dp.name, r.name FROM sys.database_role_members m JOIN sys.database_principals r ON m.role_principal_id = r.principal_id JOIN sys.database_principals dp ON m.member_principal_id = dp.principal_id WHERE dp.name = 'pigeon-watch-api-github-oidc'"`
-- [ ] 3.2 Firewall role assignment exists at server scope: `az role assignment list --assignee d5757dbf-4a84-4d27-99e0-edd83841cdb9 --scope <pigeonwatch-sql resource id>`
+- [x] 3.1 SQL user and roles exist: `sqlcmd -S pigeonwatch-sql.database.windows.net -d pigeonwatch-db -G -Q "SELECT dp.name, r.name FROM sys.database_role_members m JOIN sys.database_principals r ON m.role_principal_id = r.principal_id JOIN sys.database_principals dp ON m.member_principal_id = dp.principal_id WHERE dp.name = 'pigeon-watch-api-github-oidc'"`
+- [x] 3.2 Firewall role assignment exists at server scope: `az role assignment list --assignee d5757dbf-4a84-4d27-99e0-edd83841cdb9 --scope <pigeonwatch-sql resource id>`
 
 #### Manual
 
-- [ ] 3.3 The temporary client-IP firewall rule used for the `sqlcmd` session has been deleted
-- [ ] 3.4 The managed identity's roles on the database are unchanged (still reader and writer only)
-- [ ] 3.5 `deploy-plan.md` records the CI SQL user, its three roles and the scoped firewall role with the verification commands used
+- [x] 3.3 The temporary client-IP firewall rule used for the `sqlcmd` session has been deleted
+- [x] 3.4 The managed identity's roles on the database are unchanged (still reader and writer only)
+- [x] 3.5 `deploy-plan.md` records the CI SQL user, its three roles and the scoped firewall role with the verification commands used
 
 ### Phase 4: CI test and migrate jobs
 
