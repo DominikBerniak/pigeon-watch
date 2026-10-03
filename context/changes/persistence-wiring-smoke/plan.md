@@ -547,16 +547,16 @@ The first migration creates the throwaway `SMOKE_CHECK` table and the `EF_MIGRAT
 
 #### Automated
 
-- [x] 4.1 Workflow file is valid YAML with the job chain `test` -> `migrate` -> `build-and-deploy`: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/deploy-api.yml')); j=d['jobs']; n=lambda k: (lambda v: v if isinstance(v, list) else [v])(j[k]['needs']); assert 'migrate' in n('build-and-deploy') and 'test' in n('migrate')"`
-- [x] 4.2 No secret value appears in the workflow file: `git grep -n -i "password\|secret" .github/workflows/deploy-api.yml` lists only `secrets.AZURE_CLIENT_ID`, `secrets.AZURE_TENANT_ID` and `secrets.AZURE_SUBSCRIPTION_ID` references (one set in each job that logs in)
-- [x] 4.3 Migration bundle builds locally the same way CI builds it: `dotnet ef migrations bundle --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj --self-contained -r linux-x64 --output <scratch>/efbundle`
-- [x] 4.4 The deploy host publishes locally the same way CI publishes it: `dotnet publish PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -c Release -o <scratch>/publish`
+- [x] 4.1 Workflow file is valid YAML with the job chain `test` -> `migrate` -> `build-and-deploy`: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/deploy-api.yml')); j=d['jobs']; n=lambda k: (lambda v: v if isinstance(v, list) else [v])(j[k]['needs']); assert 'migrate' in n('build-and-deploy') and 'test' in n('migrate')"` — b612afe
+- [x] 4.2 No secret value appears in the workflow file: `git grep -n -i "password\|secret" .github/workflows/deploy-api.yml` lists only `secrets.AZURE_CLIENT_ID`, `secrets.AZURE_TENANT_ID` and `secrets.AZURE_SUBSCRIPTION_ID` references (one set in each job that logs in) — b612afe
+- [x] 4.3 Migration bundle builds locally the same way CI builds it: `dotnet ef migrations bundle --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj --self-contained -r linux-x64 --output <scratch>/efbundle` — b612afe
+- [x] 4.4 The deploy host publishes locally the same way CI publishes it: `dotnet publish PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -c Release -o <scratch>/publish` — b612afe
 
-- [x] 4.6 PR gate workflow is valid YAML, triggers on pull requests to `main` and has the `architecture-tests` job: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'main' in d[True]['pull_request']['branches'] and 'architecture-tests' in d['jobs']"`
+- [x] 4.6 PR gate workflow is valid YAML, triggers on pull requests to `main` and has the `architecture-tests` job: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'main' in d[True]['pull_request']['branches'] and 'architecture-tests' in d['jobs']"` — b612afe
 
 #### Manual
 
-- [x] 4.5 Workflow diff reviewed by Dominik, including that the firewall rule name is unique per run and is deleted under `if: always()`
+- [x] 4.5 Workflow diff reviewed by Dominik, including that the firewall rule name is unique per run and is deleted under `if: always()` — b612afe
 - [ ] 4.7 `architecture-tests` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge
 
 ### Phase 5: Live verification and close-out
