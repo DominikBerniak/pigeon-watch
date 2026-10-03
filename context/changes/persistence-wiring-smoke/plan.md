@@ -585,13 +585,13 @@ The first migration creates the throwaway `SMOKE_CHECK` table and the `EF_MIGRAT
 
 #### Automated
 
-- [x] 5.1 Latest `deploy-api.yml` run on `main` concluded successfully: `gh run list --workflow deploy-api.yml --branch main --limit 1 --json conclusion --jq '.[0].conclusion'` prints `success`
-- [x] 5.2 Live probe returns 200: `curl -f https://pigeonwatch-api.azurewebsites.net/health/db`
-- [x] 5.3 Only the baseline firewall rule remains: `az sql server firewall-rule list --resource-group pigeon-watch-rg --server pigeonwatch-sql --query "[].name" -o tsv` prints only `AllowAzureServices` (checked after the temporary client-IP rule for 5.4 and 5.5 is deleted)
-- [x] 5.4 Migration history applied in the live database: `sqlcmd -S pigeonwatch-sql.database.windows.net -d pigeonwatch-db -G -Q "SELECT MIGRATION_ID FROM EF_MIGRATIONS_HISTORY"` lists one row
+- [x] 5.1 Latest `deploy-api.yml` run on `main` concluded successfully: `gh run list --workflow deploy-api.yml --branch main --limit 1 --json conclusion --jq '.[0].conclusion'` prints `success` — 7c417ae
+- [x] 5.2 Live probe returns 200: `curl -f https://pigeonwatch-api.azurewebsites.net/health/db` — 7c417ae
+- [x] 5.3 Only the baseline firewall rule remains: `az sql server firewall-rule list --resource-group pigeon-watch-rg --server pigeonwatch-sql --query "[].name" -o tsv` prints only `AllowAzureServices` (checked after the temporary client-IP rule for 5.4 and 5.5 is deleted) — 7c417ae
+- [x] 5.4 Migration history applied in the live database: `sqlcmd -S pigeonwatch-sql.database.windows.net -d pigeonwatch-db -G -Q "SELECT MIGRATION_ID FROM EF_MIGRATIONS_HISTORY"` lists one row — 7c417ae
 
 #### Manual
 
-- [x] 5.5 `SELECT COUNT(*) FROM SMOKE_CHECK` in the live database returns 0 after several probe calls
-- [x] 5.6 Calling `/health/db` after the database has been idle long enough to auto-pause eventually returns 200 rather than 503
-- [x] 5.7 `deploy-plan.md` reads accurately: Phase 3 data-layer item ticked, layered-layout and runbook note present
+- [x] 5.5 `SELECT COUNT(*) FROM SMOKE_CHECK` in the live database returns 0 after several probe calls — 7c417ae
+- [x] 5.6 Calling `/health/db` after the database has been idle long enough to auto-pause eventually returns 200 rather than 503 — 7c417ae
+- [x] 5.7 `deploy-plan.md` reads accurately: Phase 3 data-layer item ticked, layered-layout and runbook note present — 7c417ae
