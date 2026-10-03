@@ -491,19 +491,19 @@ The first migration creates the throwaway `SMOKE_CHECKS` table and the `EF_MIGRA
 
 #### Automated
 
-- [x] 1.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
-- [x] 1.2 Old flat project is gone: `test ! -e PigeonWatch/Api/PigeonWatchApi.csproj`
-- [x] 1.3 Tools restore and EF model matches migrations: `dotnet tool restore && dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj`
-- [x] 1.4 Migration applies to a fresh LocalDB database: `dotnet ef database drop --force --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj && dotnet ef database update --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj`
-- [x] 1.5 Local probe returns 200 from the running API: `curl -f http://localhost:5285/health/db`
-- [x] 1.6 Local probe leaves no rows behind: `sqlcmd -S "(localdb)\MSSQLLocalDB" -d PigeonWatch -Q "SELECT COUNT(*) FROM SMOKE_CHECKS"` returns 0
-- [x] 1.7 Dependency audit is clean: `dotnet list PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj package --vulnerable --include-transitive`
+- [x] 1.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 4448c4f
+- [x] 1.2 Old flat project is gone: `test ! -e PigeonWatch/Api/PigeonWatchApi.csproj` — 4448c4f
+- [x] 1.3 Tools restore and EF model matches migrations: `dotnet tool restore && dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj` — 4448c4f
+- [x] 1.4 Migration applies to a fresh LocalDB database: `dotnet ef database drop --force --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj && dotnet ef database update --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj` — 4448c4f
+- [x] 1.5 Local probe returns 200 from the running API: `curl -f http://localhost:5285/health/db` — 4448c4f
+- [x] 1.6 Local probe leaves no rows behind: `sqlcmd -S "(localdb)\MSSQLLocalDB" -d PigeonWatch -Q "SELECT COUNT(*) FROM SMOKE_CHECKS"` returns 0 — 4448c4f
+- [x] 1.7 Dependency audit is clean: `dotnet list PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj package --vulnerable --include-transitive` — 4448c4f
 
 #### Manual
 
-- [x] 1.8 Running the API with `ConnectionStrings__Default` overridden to `Server=(localdb)\NoSuchInstance;Database=PigeonWatch;Trusted_Connection=True` and calling `/health/db` returns 503 with no stack trace or connection string in the body (LocalDB auto-starts on connect, so stopping it does not exercise this path; real transient outages return 503 only after the `EnableRetryOnFailure` budget runs out)
-- [x] 1.9 The project layout and references match the layer rules in this plan, the response of `/health/db` is the API model (not a business object or entity), the database name in the local connection string is the intended one and no secret is committed
-- [x] 1.10 Adding a `var` local or a `_`-prefixed private field to any non-migration file makes `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` fail, and removing it makes the build pass again
+- [x] 1.8 Running the API with `ConnectionStrings__Default` overridden to `Server=(localdb)\NoSuchInstance;Database=PigeonWatch;Trusted_Connection=True` and calling `/health/db` returns 503 with no stack trace or connection string in the body (LocalDB auto-starts on connect, so stopping it does not exercise this path; real transient outages return 503 only after the `EnableRetryOnFailure` budget runs out) — 4448c4f
+- [x] 1.9 The project layout and references match the layer rules in this plan, the response of `/health/db` is the API model (not a business object or entity), the database name in the local connection string is the intended one and no secret is committed — 4448c4f
+- [x] 1.10 Adding a `var` local or a `_`-prefixed private field to any non-migration file makes `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` fail, and removing it makes the build pass again — 4448c4f
 
 ### Phase 2: Architecture tests and guardrails
 
