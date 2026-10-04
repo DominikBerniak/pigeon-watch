@@ -14,10 +14,9 @@ public class AccountService(IAccountRepository accountRepository) : IAccountServ
         };
 
         List<AccountError> displayNameErrors = ValidateDisplayName(trimmed.DisplayName);
+
         if (displayNameErrors.Count > 0)
-        {
             return AccountCreationResult.Failure(displayNameErrors);
-        }
 
         return await accountRepository.CreateAsync(trimmed, cancellationToken);
     }

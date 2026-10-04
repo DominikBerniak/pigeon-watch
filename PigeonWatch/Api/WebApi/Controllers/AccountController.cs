@@ -25,9 +25,7 @@ public class AccountController(
         if (!result.Succeeded || result.Account is null)
         {
             foreach (AccountError error in result.Errors)
-            {
                 ModelState.AddModelError(error.Code, error.Description);
-            }
 
             return ValidationProblem(ModelState);
         }

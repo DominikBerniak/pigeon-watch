@@ -65,15 +65,12 @@ public class ControllerActionTests
     private static bool ReturnsTaskOfActionResultOfApiModel(Type returnType)
     {
         if (!returnType.IsGenericType || returnType.GetGenericTypeDefinition() != typeof(Task<>))
-        {
             return false;
-        }
 
         Type actionResult = returnType.GetGenericArguments()[0];
+
         if (!actionResult.IsGenericType || actionResult.GetGenericTypeDefinition() != typeof(ActionResult<>))
-        {
             return false;
-        }
 
         Type model = actionResult.GetGenericArguments()[0];
 
@@ -83,9 +80,7 @@ public class ControllerActionTests
     private static IEnumerable<Type> ForbiddenWireTypes(Type type, HashSet<Type> visited)
     {
         if (!visited.Add(type))
-        {
             yield break;
-        }
 
         if (type.Assembly == PigeonWatchAssemblies.BusinessObjects || type.Assembly == PigeonWatchAssemblies.Data)
         {
@@ -94,36 +89,27 @@ public class ControllerActionTests
         }
 
         List<Type> nested = [];
+
         if (type.IsArray)
-        {
             nested.Add(type.GetElementType()!);
-        }
 
         if (type.IsGenericType)
-        {
             nested.AddRange(type.GetGenericArguments());
-        }
 
         if (type.Assembly == PigeonWatchAssemblies.WebApi)
-        {
             nested.AddRange(type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(property => property.PropertyType));
-        }
 
         foreach (Type candidate in nested)
         {
             foreach (Type forbidden in ForbiddenWireTypes(candidate, visited))
-            {
                 yield return forbidden;
-            }
         }
     }
 
     private static string FormatType(Type type)
     {
         if (!type.IsGenericType)
-        {
             return type.FullName ?? type.Name;
-        }
 
         int arityMarker = type.Name.IndexOf('`');
         string name = arityMarker < 0 ? type.Name : type.Name[..arityMarker];

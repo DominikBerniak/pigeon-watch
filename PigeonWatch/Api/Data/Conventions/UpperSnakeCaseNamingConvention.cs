@@ -13,19 +13,17 @@ internal class UpperSnakeCaseNamingConvention : IModelFinalizingConvention
         foreach (IConventionEntityType entityType in modelBuilder.Metadata.GetEntityTypes())
         {
             string? tableName = entityType.GetTableName();
+
             if (tableName is not null)
-            {
                 entityType.SetTableName(ToUpperSnakeCase(tableName));
-            }
 
             foreach (IConventionProperty property in entityType.GetProperties())
             {
                 StoreObjectIdentifier? table = StoreObjectIdentifier.Create(entityType, StoreObjectType.Table);
                 string? columnName = table is null ? property.GetColumnName() : property.GetColumnName(table.Value);
+
                 if (columnName is not null)
-                {
                     property.SetColumnName(ToUpperSnakeCase(columnName));
-                }
             }
         }
 
@@ -34,28 +32,25 @@ internal class UpperSnakeCaseNamingConvention : IModelFinalizingConvention
             foreach (IConventionKey key in entityType.GetKeys())
             {
                 string? keyName = key.GetName();
+
                 if (keyName is not null)
-                {
                     key.SetName(ToUpperSnakeCase(keyName));
-                }
             }
 
             foreach (IConventionForeignKey foreignKey in entityType.GetForeignKeys())
             {
                 string? constraintName = foreignKey.GetConstraintName();
+
                 if (constraintName is not null)
-                {
                     foreignKey.SetConstraintName(ToUpperSnakeCase(constraintName));
-                }
             }
 
             foreach (IConventionIndex index in entityType.GetIndexes())
             {
                 string? indexName = index.GetDatabaseName();
+
                 if (indexName is not null)
-                {
                     index.SetDatabaseName(ToUpperSnakeCase(indexName));
-                }
             }
         }
     }
@@ -71,9 +66,7 @@ internal class UpperSnakeCaseNamingConvention : IModelFinalizingConvention
             if (!char.IsLetterOrDigit(current))
             {
                 if (builder.Length > 0 && builder[^1] != '_')
-                {
                     builder.Append('_');
-                }
 
                 continue;
             }
@@ -84,9 +77,7 @@ internal class UpperSnakeCaseNamingConvention : IModelFinalizingConvention
                 bool nextIsLower = i + 1 < name.Length && char.IsLower(name[i + 1]);
 
                 if (char.IsLower(previous) || char.IsDigit(previous) || (char.IsUpper(previous) && nextIsLower))
-                {
                     builder.Append('_');
-                }
             }
 
             builder.Append(char.ToUpperInvariant(current));

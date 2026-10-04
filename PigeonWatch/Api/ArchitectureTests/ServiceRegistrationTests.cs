@@ -49,6 +49,7 @@ public class ServiceRegistrationTests
         foreach (Type type in RoleTypes())
         {
             Type? matchingInterface = FindMatchingInterface(type);
+
             if (matchingInterface is null)
             {
                 offenders.Add($"{type.FullName} has no matching interface to register");
@@ -61,9 +62,7 @@ public class ServiceRegistrationTests
                 && descriptor.ImplementationType == type);
 
             if (!registered)
-            {
                 offenders.Add($"{matchingInterface.FullName} -> {type.FullName} is not registered by AddPigeonWatch");
-            }
         }
 
         Assert.True(
@@ -96,9 +95,7 @@ public class ServiceRegistrationTests
         for (int i = 0; i <= lastStart; i++)
         {
             if (char.IsUpper(typeName[i]))
-            {
                 names.Add("I" + typeName[i..]);
-            }
         }
 
         return names;

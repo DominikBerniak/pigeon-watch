@@ -39,9 +39,7 @@ namespace PigeonWatch.WebApi.Host
                 app.UseSwaggerUI();
             }
             else
-            {
                 app.UseHttpsRedirection();
-            }
 
             app.UseCors("Frontend");
 

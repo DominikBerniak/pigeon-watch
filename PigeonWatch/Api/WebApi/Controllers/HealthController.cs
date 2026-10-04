@@ -20,9 +20,7 @@ public class HealthController(
         DatabaseHealthModel model = databaseHealthViewModelCreator.Create(result);
 
         if (!result.IsHealthy)
-        {
             return StatusCode(StatusCodes.Status503ServiceUnavailable, model);
-        }
 
         return Ok(model);
     }

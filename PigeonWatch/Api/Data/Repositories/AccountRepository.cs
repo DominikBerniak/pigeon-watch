@@ -20,9 +20,7 @@ public class AccountRepository(UserManager<ApplicationUser> userManager) : IAcco
         IdentityResult result = await userManager.CreateAsync(user, account.Password);
 
         if (result.Succeeded)
-        {
             return AccountCreationResult.Success(new RegisteredAccount(user.Email, user.DisplayName));
-        }
 
         return AccountCreationResult.Failure(ToAccountErrors(result.Errors));
     }
@@ -46,9 +44,7 @@ public class AccountRepository(UserManager<ApplicationUser> userManager) : IAcco
             bool alreadyAdded = accountErrors.Any(accountError => accountError.Code == code);
 
             if (!collapsesIntoExistingEmailError && !alreadyAdded)
-            {
                 accountErrors.Add(new AccountError(code, error.Description));
-            }
         }
 
         return accountErrors;

@@ -26,10 +26,9 @@ public class PigeonWatchUserStore(
     public async Task<IdentityResult> CreateAsync(ApplicationUser user, CancellationToken cancellationToken = default)
     {
         string normalizedDisplayName = NormalizeDisplayName(user);
+
         if (await IsDisplayNameTakenAsync(normalizedDisplayName, user.Id, cancellationToken))
-        {
             return IdentityResult.Failed(DuplicateDisplayName(user));
-        }
 
         UserAccountEntity entity = new();
         userAccountMapper.CopyToEntity(user, entity);
@@ -43,6 +42,7 @@ public class PigeonWatchUserStore(
         catch (DbUpdateException exception) when (DuplicateIndexError(exception, user) is IdentityError duplicate)
         {
             db.Entry(entity).State = EntityState.Detached;
+
             return IdentityResult.Failed(duplicate);
         }
 
@@ -54,16 +54,14 @@ public class PigeonWatchUserStore(
     public async Task<IdentityResult> UpdateAsync(ApplicationUser user, CancellationToken cancellationToken = default)
     {
         UserAccountEntity? entity = await db.UserAccounts.FindAsync([user.Id], cancellationToken);
+
         if (entity is null)
-        {
             return IdentityResult.Failed(errorDescriber.ConcurrencyFailure());
-        }
 
         string normalizedDisplayName = NormalizeDisplayName(user);
+
         if (await IsDisplayNameTakenAsync(normalizedDisplayName, user.Id, cancellationToken))
-        {
             return IdentityResult.Failed(DuplicateDisplayName(user));
-        }
 
         string concurrencyStamp = Guid.NewGuid().ToString();
         db.Entry(entity).Property(e => e.ConcurrencyStamp).OriginalValue = user.ConcurrencyStamp;
@@ -78,11 +76,13 @@ public class PigeonWatchUserStore(
         catch (DbUpdateConcurrencyException)
         {
             db.Entry(entity).State = EntityState.Detached;
+
             return IdentityResult.Failed(errorDescriber.ConcurrencyFailure());
         }
         catch (DbUpdateException exception) when (DuplicateIndexError(exception, user) is IdentityError duplicate)
         {
             db.Entry(entity).State = EntityState.Detached;
+
             return IdentityResult.Failed(duplicate);
         }
 
@@ -94,10 +94,9 @@ public class PigeonWatchUserStore(
     public async Task<IdentityResult> DeleteAsync(ApplicationUser user, CancellationToken cancellationToken = default)
     {
         UserAccountEntity? entity = await db.UserAccounts.FindAsync([user.Id], cancellationToken);
+
         if (entity is null)
-        {
             return IdentityResult.Failed(errorDescriber.ConcurrencyFailure());
-        }
 
         db.Entry(entity).Property(e => e.ConcurrencyStamp).OriginalValue = user.ConcurrencyStamp;
         db.UserAccounts.Remove(entity);
@@ -109,6 +108,7 @@ public class PigeonWatchUserStore(
         catch (DbUpdateConcurrencyException)
         {
             db.Entry(entity).State = EntityState.Detached;
+
             return IdentityResult.Failed(errorDescriber.ConcurrencyFailure());
         }
 
@@ -118,9 +118,7 @@ public class PigeonWatchUserStore(
     public async Task<ApplicationUser?> FindByIdAsync(string userId, CancellationToken cancellationToken = default)
     {
         if (!Guid.TryParse(userId, out Guid id))
-        {
             return null;
-        }
 
         UserAccountEntity? entity = await db.UserAccounts
             .AsNoTracking()
@@ -156,6 +154,7 @@ public class PigeonWatchUserStore(
     public Task SetUserNameAsync(ApplicationUser user, string? userName, CancellationToken cancellationToken = default)
     {
         user.UserName = userName ?? string.Empty;
+
         return Task.CompletedTask;
     }
 
@@ -165,12 +164,14 @@ public class PigeonWatchUserStore(
     public Task SetNormalizedUserNameAsync(ApplicationUser user, string? normalizedName, CancellationToken cancellationToken = default)
     {
         user.NormalizedUserName = normalizedName ?? string.Empty;
+
         return Task.CompletedTask;
     }
 
     public Task SetPasswordHashAsync(ApplicationUser user, string? passwordHash, CancellationToken cancellationToken = default)
     {
         user.PasswordHash = passwordHash ?? string.Empty;
+
         return Task.CompletedTask;
     }
 
@@ -183,6 +184,7 @@ public class PigeonWatchUserStore(
     public Task SetEmailAsync(ApplicationUser user, string? email, CancellationToken cancellationToken = default)
     {
         user.Email = email ?? string.Empty;
+
         return Task.CompletedTask;
     }
 
@@ -201,12 +203,14 @@ public class PigeonWatchUserStore(
     public Task SetNormalizedEmailAsync(ApplicationUser user, string? normalizedEmail, CancellationToken cancellationToken = default)
     {
         user.NormalizedEmail = normalizedEmail ?? string.Empty;
+
         return Task.CompletedTask;
     }
 
     public Task SetSecurityStampAsync(ApplicationUser user, string stamp, CancellationToken cancellationToken = default)
     {
         user.SecurityStamp = stamp;
+
         return Task.CompletedTask;
     }
 
@@ -219,18 +223,21 @@ public class PigeonWatchUserStore(
     public Task SetLockoutEndDateAsync(ApplicationUser user, DateTimeOffset? lockoutEnd, CancellationToken cancellationToken = default)
     {
         user.LockoutEnd = lockoutEnd;
+
         return Task.CompletedTask;
     }
 
     public Task<int> IncrementAccessFailedCountAsync(ApplicationUser user, CancellationToken cancellationToken = default)
     {
         user.AccessFailedCount++;
+
         return Task.FromResult(user.AccessFailedCount);
     }
 
     public Task ResetAccessFailedCountAsync(ApplicationUser user, CancellationToken cancellationToken = default)
     {
         user.AccessFailedCount = 0;
+
         return Task.CompletedTask;
     }
 
@@ -243,6 +250,7 @@ public class PigeonWatchUserStore(
     public Task SetLockoutEnabledAsync(ApplicationUser user, bool enabled, CancellationToken cancellationToken = default)
     {
         user.LockoutEnabled = enabled;
+
         return Task.CompletedTask;
     }
 
@@ -260,26 +268,18 @@ public class PigeonWatchUserStore(
     private IdentityError? DuplicateIndexError(DbUpdateException exception, ApplicationUser user)
     {
         if (exception.InnerException is not SqlException { Number: duplicateKeyRow or uniqueConstraintViolation } sqlException)
-        {
             return null;
-        }
 
         string message = sqlException.Message;
 
         if (message.Contains(displayNameIndexName, StringComparison.Ordinal))
-        {
             return DuplicateDisplayName(user);
-        }
 
         if (message.Contains(emailIndexName, StringComparison.Ordinal))
-        {
             return errorDescriber.DuplicateEmail(user.Email);
-        }
 
         if (message.Contains(userNameIndexName, StringComparison.Ordinal))
-        {
             return errorDescriber.DuplicateUserName(user.UserName);
-        }
 
         return null;
     }

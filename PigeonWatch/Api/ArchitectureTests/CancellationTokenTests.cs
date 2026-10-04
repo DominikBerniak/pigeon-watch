@@ -18,9 +18,7 @@ public class CancellationTokenTests
             foreach (MethodInfo method in type.GetMethods(declaredMethods))
             {
                 if (PigeonWatchAssemblies.IsCompilerGenerated(method) || !IsAwaitableReturn(method.ReturnType))
-                {
                     continue;
-                }
 
                 checkedMethods++;
                 bool isControllerAction = ControllerActionTests.IsControllerAction(method);
@@ -28,17 +26,11 @@ public class CancellationTokenTests
                     .FirstOrDefault(parameter => parameter.ParameterType == typeof(CancellationToken));
 
                 if (cancellationToken is null)
-                {
                     offenders.Add($"{Describe(method)} has no CancellationToken parameter");
-                }
                 else if (isControllerAction && cancellationToken.HasDefaultValue)
-                {
                     offenders.Add($"{Describe(method)} is a controller action; its CancellationToken must not have a default value");
-                }
                 else if (!isControllerAction && !cancellationToken.HasDefaultValue)
-                {
                     offenders.Add($"{Describe(method)} must declare CancellationToken cancellationToken = default");
-                }
             }
         }
 
@@ -52,14 +44,10 @@ public class CancellationTokenTests
     private static bool IsAwaitableReturn(Type returnType)
     {
         if (returnType == typeof(Task) || returnType == typeof(ValueTask))
-        {
             return true;
-        }
 
         if (!returnType.IsGenericType)
-        {
             return false;
-        }
 
         Type definition = returnType.GetGenericTypeDefinition();
 

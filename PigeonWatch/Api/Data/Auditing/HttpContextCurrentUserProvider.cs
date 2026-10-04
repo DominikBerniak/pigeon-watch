@@ -12,9 +12,7 @@ public class HttpContextCurrentUserProvider(IHttpContextAccessor httpContextAcce
         ClaimsPrincipal? user = httpContextAccessor.HttpContext?.User;
 
         if (user?.Identity?.IsAuthenticated != true)
-        {
             return SystemUserName;
-        }
 
         string? userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
 

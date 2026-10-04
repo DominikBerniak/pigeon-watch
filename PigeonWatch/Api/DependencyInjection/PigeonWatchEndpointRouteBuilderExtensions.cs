@@ -33,6 +33,7 @@ public static class PigeonWatchEndpointRouteBuilderExtensions
                     endpointBuilder.RequestDelegate = context =>
                     {
                         context.Response.StatusCode = StatusCodes.Status404NotFound;
+
                         return Task.CompletedTask;
                     };
 

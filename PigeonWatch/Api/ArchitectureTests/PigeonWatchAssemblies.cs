@@ -35,9 +35,7 @@ public class PigeonWatchAssemblies
         for (Type? current = type; current is not null; current = current.DeclaringType)
         {
             if (current.Name.Contains('<') || current.IsDefined(typeof(CompilerGeneratedAttribute), false))
-            {
                 return true;
-            }
         }
 
         return false;

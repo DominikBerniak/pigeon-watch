@@ -23,6 +23,25 @@ These rules apply to every UI change. They are being introduced by the `register
 - **Component stylesheets** use `var(--pw-*)` and `pw-*` classes only: no color/length literals, no `style="…"` in templates, no `::ng-deep`, no `!important`, no `.mat-*` / `.mdc-*` selectors, and no redefining a `pw-*` class. `src/styles/style-token-coverage.spec.ts` enforces this.
 - **Reusable app components** live in `src/app/shared/ui/` (exported from `index.ts`): `app-page-card`, `app-alert`, `app-field-errors` and `app-submit-button`. They're standalone and OnPush with signal inputs, carry no literal text or resource keys of their own (callers pass translated text or project content), and expose variations as inputs. Check `shared/ui` before writing markup in a feature. When a pattern shows up in a second feature, promote it to `shared/ui` in the same change instead of copying it.
 
+## TypeScript coding rules
+
+The same layout rules as the API (`@PigeonWatch/Api/CLAUDE.md`), applied to `.ts` files. Angular template control flow (`@if`, `@for`) always needs its braces and is out of scope.
+
+- Every `if` and `return` statement is preceded by a blank line, unless it is the first statement of its enclosing block or body (function, method, constructor, accessor, arrow-function block, `if`/`else` or loop body).
+- An `if`, `else`, `for` or `while` body that is a single statement on one line has no braces. A body with more than one statement, or a single statement wrapped over several lines, keeps its braces. Prettier keeps such a body on the header line when it fits (`if (!token) return null;`).
+
+  ```ts
+  const saved = readStoredCulture();
+
+  if (!saved) return defaultCulture;
+
+  const culture = saved.toLowerCase();
+
+  return supportedCultures.includes(culture) ? culture : defaultCulture;
+  ```
+
+Neither rule is checked by tooling: there is no ESLint, and Prettier preserves blank lines and braces as written.
+
 ## Commands
 
 ```

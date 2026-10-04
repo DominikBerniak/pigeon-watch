@@ -13,11 +13,13 @@ public class DatabaseHealthService(
         try
         {
             SmokeCheckResult smokeCheck = await smokeCheckRepository.InsertReadBackAndRollBackAsync(cancellationToken);
+
             return DatabaseHealthResult.Healthy(smokeCheck);
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning(exception, "Database health check failed");
+
             return DatabaseHealthResult.Unhealthy();
         }
     }

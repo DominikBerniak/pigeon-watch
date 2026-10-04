@@ -39,9 +39,7 @@ public class StaticClassTests
     private static bool IsServiceCollectionExtensionClass(Type type)
     {
         if (type.Assembly != PigeonWatchAssemblies.DependencyInjection)
-        {
             return false;
-        }
 
         MemberInfo[] members = type.GetMembers(declaredMembers)
             .Where(member => !IsCompilerGeneratedMember(member))

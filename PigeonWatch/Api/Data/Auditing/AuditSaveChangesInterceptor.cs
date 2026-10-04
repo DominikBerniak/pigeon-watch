@@ -27,9 +27,7 @@ public class AuditSaveChangesInterceptor(ICurrentUserProvider currentUserProvide
     private void ApplyAuditValues(DbContext? context)
     {
         if (context is null)
-        {
             return;
-        }
 
         string userName = currentUserProvider.GetCurrentUserName();
         DateTime now = timeProvider.GetUtcNow().UtcDateTime;
