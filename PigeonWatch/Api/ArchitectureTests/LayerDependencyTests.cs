@@ -7,6 +7,8 @@ public class LayerDependencyTests
 {
     private const string entityFrameworkCore = "Microsoft.EntityFrameworkCore";
     private const string aspNetCore = "Microsoft.AspNetCore";
+    private const string sqlClient = "Microsoft.Data.SqlClient";
+    private const string adoNetCommon = "System.Data.Common";
 
     public static TheoryData<string, string[]> ForbiddenDependencies => new()
     {
@@ -19,7 +21,9 @@ public class LayerDependencyTests
                 PigeonWatchAssemblies.DependencyInjectionName,
                 PigeonWatchAssemblies.WebApiHostName,
                 entityFrameworkCore,
-                aspNetCore
+                aspNetCore,
+                sqlClient,
+                adoNetCommon
             ]
         },
         {
@@ -38,7 +42,9 @@ public class LayerDependencyTests
                 PigeonWatchAssemblies.DependencyInjectionName,
                 PigeonWatchAssemblies.WebApiHostName,
                 entityFrameworkCore,
-                aspNetCore
+                aspNetCore,
+                sqlClient,
+                adoNetCommon
             ]
         },
         {
@@ -46,7 +52,9 @@ public class LayerDependencyTests
             [
                 PigeonWatchAssemblies.DataName,
                 PigeonWatchAssemblies.DependencyInjectionName,
-                entityFrameworkCore
+                entityFrameworkCore,
+                sqlClient,
+                adoNetCommon
             ]
         },
         {
@@ -54,7 +62,9 @@ public class LayerDependencyTests
             [
                 PigeonWatchAssemblies.DataName,
                 PigeonWatchAssemblies.BusinessLogicName,
-                entityFrameworkCore
+                entityFrameworkCore,
+                sqlClient,
+                adoNetCommon
             ]
         }
     };

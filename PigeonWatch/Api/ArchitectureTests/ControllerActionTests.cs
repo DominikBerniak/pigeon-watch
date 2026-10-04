@@ -27,6 +27,25 @@ public class ControllerActionTests
             + PigeonWatchAssemblies.Describe(offenders));
     }
 
+    [Fact]
+    public void Api_models_expose_no_business_object_or_data_types()
+    {
+        List<Type> models = PigeonWatchAssemblies.WebApi.GetTypes()
+            .Where(type => type.Namespace == modelsNamespace && !PigeonWatchAssemblies.IsCompilerGenerated(type))
+            .ToList();
+
+        List<string> offenders = models
+            .SelectMany(model => ForbiddenWireTypes(model, [])
+                .Select(forbidden => $"{model.FullName} exposes {FormatType(forbidden)}"))
+            .ToList();
+
+        Assert.NotEmpty(models);
+        Assert.True(
+            offenders.Count == 0,
+            $"API models in {modelsNamespace} must not expose {PigeonWatchAssemblies.BusinessObjectsName} or {PigeonWatchAssemblies.DataName} types. Offenders:{Environment.NewLine}"
+            + PigeonWatchAssemblies.Describe(offenders));
+    }
+
     public static bool IsControllerAction(MethodInfo method) =>
         method.IsPublic
         && !method.IsStatic
@@ -59,6 +78,44 @@ public class ControllerActionTests
         Type model = actionResult.GetGenericArguments()[0];
 
         return model.Namespace == modelsNamespace && model.Assembly == PigeonWatchAssemblies.WebApi;
+    }
+
+    private static IEnumerable<Type> ForbiddenWireTypes(Type type, HashSet<Type> visited)
+    {
+        if (!visited.Add(type))
+        {
+            yield break;
+        }
+
+        if (type.Assembly == PigeonWatchAssemblies.BusinessObjects || type.Assembly == PigeonWatchAssemblies.Data)
+        {
+            yield return type;
+            yield break;
+        }
+
+        List<Type> nested = [];
+        if (type.IsArray)
+        {
+            nested.Add(type.GetElementType()!);
+        }
+
+        if (type.IsGenericType)
+        {
+            nested.AddRange(type.GetGenericArguments());
+        }
+
+        if (type.Assembly == PigeonWatchAssemblies.WebApi)
+        {
+            nested.AddRange(type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(property => property.PropertyType));
+        }
+
+        foreach (Type candidate in nested)
+        {
+            foreach (Type forbidden in ForbiddenWireTypes(candidate, visited))
+            {
+                yield return forbidden;
+            }
+        }
     }
 
     private static string FormatType(Type type)

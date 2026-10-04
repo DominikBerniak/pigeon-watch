@@ -32,6 +32,16 @@ jobs:
       - name: Architecture tests
         run: dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj --no-build
 
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Migrations match the model
+        run: >-
+          dotnet ef migrations has-pending-model-changes
+          --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj
+          --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj
+          --no-build
+
   frontend-build-and-test:
     runs-on: ubuntu-latest
     defaults:

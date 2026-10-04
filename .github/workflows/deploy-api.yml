@@ -38,6 +38,7 @@ jobs:
   migrate:
     needs: test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       id-token: write
       contents: read
@@ -70,7 +71,7 @@ jobs:
           --output efbundle
 
       - name: Azure login (OIDC)
-        uses: azure/login@v3
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -80,6 +81,7 @@ jobs:
         run: az account get-access-token --resource https://database.windows.net/ --output none
 
       - name: Allow runner through SQL firewall
+        id: allow-firewall
         run: |
           RUNNER_IP=$(curl -fsS https://api.ipify.org)
           az sql server firewall-rule create \
@@ -102,12 +104,12 @@ jobs:
           exit 1
 
       - name: Remove SQL firewall rule
-        if: always()
+        if: always() && steps.allow-firewall.outcome == 'success'
         run: |
           az sql server firewall-rule delete \
             --resource-group "$AZURE_RESOURCE_GROUP" \
             --server "$AZURE_SQL_SERVER" \
-            --name "$FIREWALL_RULE_NAME" || true
+            --name "$FIREWALL_RULE_NAME"
 
   build-and-deploy:
     needs: migrate
@@ -129,18 +131,18 @@ jobs:
         run: dotnet publish PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -c Release -o ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
       - name: Azure login (OIDC)
-        uses: azure/login@v3
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3.0.8
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
           clean: true
 
       - name: Probe database health
-        run: curl -f --retry 10 --retry-delay 15 --retry-connrefused --max-time 120 https://pigeonwatch-api.azurewebsites.net/health/db
+        run: curl -f --retry 10 --retry-delay 15 --retry-connrefused --max-time 120 --retry-max-time 600 https://pigeonwatch-api.azurewebsites.net/health/db

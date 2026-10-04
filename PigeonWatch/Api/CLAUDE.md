@@ -8,7 +8,7 @@ Scope: `PigeonWatch/Api/` only — the ASP.NET Core Web API. See `@PigeonWatch/C
 
 ASP.NET Core Web API (.NET 10). Owns auth and the status-workflow/urgency-ranking business logic for sightings (spotted → contacted → taken to vet → healed/returned). Solution: `PigeonWatchApi.slnx` with six layered projects plus the `ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` test project.
 
-Data layer: EF Core (SQL Server) via `Data/PigeonWatchDbContext.cs`, migrations in `Data/Migrations/`. `GET /health/db` is a transactional smoke probe (insert, read back, roll back). The `SMOKE_CHECKS` table and the `SmokeCheckResult`/`DatabaseHealthResult` types are throwaway and will be removed once real tables exist. No auth and no business logic yet; the only tests are the architecture tests.
+Data layer: EF Core (SQL Server) via `Data/PigeonWatchDbContext.cs`, migrations in `Data/Migrations/`. `GET /health/db` is a transactional smoke probe (insert, read back, roll back). The `SMOKE_CHECK` table and the `SmokeCheckResult`/`DatabaseHealthResult` types are throwaway and will be removed once real tables exist. No auth and no business logic yet; the only tests are the architecture tests.
 
 ## Architecture
 
@@ -42,6 +42,8 @@ The architecture tests in `ArchitectureTests/` enforce the layer dependencies, t
 ```
 dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj
 ```
+
+Known limits of the architecture tests: only classes deriving from `ControllerBase` count as controllers, so do not write POCO or `[Controller]`-attributed controllers. The interface-name rule accepts `I` plus any PascalCase suffix of the type name (so `SystemCurrentUserProvider : ICurrentUserProvider` passes), which means a bare `IService` or `IRepository` would also pass; always name the interface after the full role.
 
 ## Coding rules
 
