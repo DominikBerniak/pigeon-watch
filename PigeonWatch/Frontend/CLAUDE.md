@@ -23,6 +23,13 @@ These rules apply to every UI change. They are being introduced by the `register
 - **Component stylesheets** use `var(--pw-*)` and `pw-*` classes only: no color/length literals, no `style="…"` in templates, no `::ng-deep`, no `!important`, no `.mat-*` / `.mdc-*` selectors, and no redefining a `pw-*` class. `src/styles/style-token-coverage.spec.ts` enforces this.
 - **Reusable app components** live in `src/app/shared/ui/` (exported from `index.ts`): `app-page-card`, `app-alert`, `app-field-errors` and `app-submit-button`. They're standalone and OnPush with signal inputs, carry no literal text or resource keys of their own (callers pass translated text or project content), and expose variations as inputs. Check `shared/ui` before writing markup in a feature. When a pattern shows up in a second feature, promote it to `shared/ui` in the same change instead of copying it.
 
+## UI text and resources
+
+- **Every UI text is a key in `PigeonWatch/Api/BusinessObjects/Resources/UiLabels.resx`.** Templates and components contain no literal UI text: labels, buttons, messages, hints, validation and warm-up lines all come from that file. Need a new text? Add a key to the resx in the same change, not a string in the SPA.
+- **Key format**: lowercase dot paths, `<area>.<group>.<name>` with camelCase segments (`common.appName`, `auth.login.title`, `auth.errors.invalidCredentials`, `warmup.messages.1`). Values use positional placeholders only (`{0}`, `{1}`); no ICU or plural syntax.
+- **A new culture** is added as `UiLabels.<culture>.resx` next to the neutral English file (for example `UiLabels.pl.resx`). Missing keys fall back to English per key, and the API serves `en` for any culture without a resx.
+- The API serves the map at `GET {apiUrl}/resources/{culture}`. These rules are introduced by the `register-and-login` change; the snapshot generator, `ResourceService` and `t` pipe arrive in its Phase 3.
+
 ## TypeScript coding rules
 
 The same layout rules as the API (`@PigeonWatch/Api/CLAUDE.md`), applied to `.ts` files. Angular template control flow (`@if`, `@for`) always needs its braces and is out of scope.

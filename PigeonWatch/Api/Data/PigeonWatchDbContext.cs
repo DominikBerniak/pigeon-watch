@@ -6,8 +6,6 @@ namespace PigeonWatch.Data;
 
 public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options) : DbContext(options)
 {
-    internal DbSet<SmokeCheckEntity> SmokeChecks => Set<SmokeCheckEntity>();
-
     internal DbSet<UserAccountEntity> UserAccounts => Set<UserAccountEntity>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -17,12 +15,6 @@ public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<SmokeCheckEntity>(entity =>
-        {
-            entity.ToTable("SmokeCheck");
-            entity.HasKey(e => e.Id);
-        });
-
         modelBuilder.Entity<UserAccountEntity>(entity =>
         {
             entity.ToTable("UserAccount");

@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PigeonWatch.BusinessLogic.Services;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.WebApi.Mappers;
 using PigeonWatch.WebApi.Models;
+using PigeonWatch.WebApi.RateLimiting;
 using PigeonWatch.WebApi.ViewModelCreators;
 
 namespace PigeonWatch.WebApi.Controllers;
@@ -17,6 +19,7 @@ public class AccountController(
 {
     [HttpPost("register")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicyNames.Auth)]
     public async Task<ActionResult<RegisteredAccountModel>> Register(RegisterRequestModel request, CancellationToken cancellationToken)
     {
         NewAccount account = registerRequestMapper.Map(request);

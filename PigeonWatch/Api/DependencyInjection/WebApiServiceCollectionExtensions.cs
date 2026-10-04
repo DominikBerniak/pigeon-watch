@@ -8,9 +8,11 @@ public static class WebApiServiceCollectionExtensions
 {
     public static IServiceCollection AddWebApi(this IServiceCollection services)
     {
-        services.AddScoped<IDatabaseHealthViewModelCreator, DatabaseHealthViewModelCreator>();
         services.AddScoped<IRegisterRequestMapper, RegisterRequestMapper>();
         services.AddScoped<IRegisteredAccountViewModelCreator, RegisteredAccountViewModelCreator>();
+        services.AddScoped<IClientConfigurationViewModelCreator, ClientConfigurationViewModelCreator>();
+        services.AddScoped<IGeneralConfigurationViewModelCreator, GeneralConfigurationViewModelCreator>();
+        services.AddScoped<IUiResourcesViewModelCreator, UiResourcesViewModelCreator>();
 
         return services;
     }

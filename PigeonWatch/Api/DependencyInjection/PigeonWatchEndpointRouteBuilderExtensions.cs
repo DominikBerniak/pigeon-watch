@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Primitives;
 using PigeonWatch.Data.Identity;
+using PigeonWatch.WebApi.RateLimiting;
 
 namespace PigeonWatch.DependencyInjection;
 
@@ -15,6 +16,7 @@ public static class PigeonWatchEndpointRouteBuilderExtensions
 
         endpoints
             .MapGroup("auth")
+            .RequireRateLimiting(RateLimitPolicyNames.Auth)
             .MapIdentityApi<ApplicationUser>()
             .Finally(endpointBuilder =>
             {

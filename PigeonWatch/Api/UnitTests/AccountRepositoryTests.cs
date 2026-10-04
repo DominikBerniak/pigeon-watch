@@ -46,11 +46,29 @@ public class AccountRepositoryTests
     }
 
     [Fact]
-    public async Task Duplicate_user_name_and_duplicate_email_collapse_to_a_single_duplicate_email()
+    public async Task Duplicate_user_name_and_duplicate_email_collapse_to_a_single_generic_registration_failure()
     {
         AccountCreationResult result = await CreateWithErrors(AccountErrorCodes.DuplicateUserName, AccountErrorCodes.DuplicateEmail);
 
-        Assert.Equal([AccountErrorCodes.DuplicateEmail], result.Errors.Select(error => error.Code));
+        Assert.Equal(
+            [new AccountError(AccountErrorCodes.RegistrationFailed, "The account could not be created.")],
+            result.Errors);
+    }
+
+    [Fact]
+    public async Task Registration_failure_never_reveals_that_the_email_is_registered()
+    {
+        userManager.CreateAsync(Arg.Any<ApplicationUser>(), Arg.Any<string>()).Returns(IdentityResult.Failed(
+            new IdentityErrorDescriber().DuplicateUserName("user@example.com"),
+            new IdentityErrorDescriber().DuplicateEmail("user@example.com")));
+
+        AccountCreationResult result = await new AccountRepository(userManager).CreateAsync(
+            new NewAccount("user@example.com", "Secret1!", "Pidgey"),
+            TestContext.Current.CancellationToken);
+
+        Assert.DoesNotContain(result.Errors, error => error.Code.Contains("Duplicate", StringComparison.Ordinal));
+        Assert.DoesNotContain(result.Errors, error => error.Description.Contains("user@example.com", StringComparison.Ordinal));
+        Assert.DoesNotContain(result.Errors, error => error.Description.Contains("taken", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -62,13 +80,40 @@ public class AccountRepositoryTests
     }
 
     [Theory]
-    [InlineData(AccountErrorCodes.DuplicateUserName, AccountErrorCodes.DuplicateEmail)]
+    [InlineData(AccountErrorCodes.DuplicateUserName, AccountErrorCodes.RegistrationFailed)]
+    [InlineData(AccountErrorCodes.DuplicateEmail, AccountErrorCodes.RegistrationFailed)]
     [InlineData(AccountErrorCodes.InvalidUserName, AccountErrorCodes.InvalidEmail)]
-    public async Task User_name_errors_alone_are_renamed_to_email_errors(string identityCode, string expectedCode)
+    public async Task Email_and_user_name_errors_keep_the_display_name_error_beside_them(string identityCode, string expectedCode)
     {
         AccountCreationResult result = await CreateWithErrors(identityCode, AccountErrorCodes.DuplicateDisplayName);
 
         Assert.Equal([expectedCode, AccountErrorCodes.DuplicateDisplayName], result.Errors.Select(error => error.Code));
+    }
+
+    [Fact]
+    public async Task Current_user_is_null_for_an_unknown_id()
+    {
+        Guid unknownId = Guid.NewGuid();
+        userManager.FindByIdAsync(unknownId.ToString()).Returns((ApplicationUser?)null);
+
+        CurrentUser? currentUser = await new AccountRepository(userManager).GetCurrentUserAsync(
+            unknownId,
+            TestContext.Current.CancellationToken);
+
+        Assert.Null(currentUser);
+    }
+
+    [Fact]
+    public async Task Current_user_carries_the_id_email_and_display_name()
+    {
+        ApplicationUser user = new() { Id = Guid.NewGuid(), Email = "user@example.com", DisplayName = "Pidgey" };
+        userManager.FindByIdAsync(user.Id.ToString()).Returns(user);
+
+        CurrentUser? currentUser = await new AccountRepository(userManager).GetCurrentUserAsync(
+            user.Id,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(new CurrentUser(user.Id, "user@example.com", "Pidgey"), currentUser);
     }
 
     private Task<AccountCreationResult> CreateWithErrors(params string[] codes)

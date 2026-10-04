@@ -144,5 +144,5 @@ jobs:
           package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
           clean: true
 
-      - name: Probe database health
-        run: curl -f --retry 10 --retry-delay 15 --retry-connrefused --max-time 120 --retry-max-time 600 https://pigeonwatch-api.azurewebsites.net/health/db
+      - name: Probe API
+        run: curl -f --retry 10 --retry-delay 15 --retry-connrefused --max-time 120 --retry-max-time 600 https://pigeonwatch-api.azurewebsites.net/configuration/client

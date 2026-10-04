@@ -6,6 +6,8 @@ namespace PigeonWatch.Data.Repositories;
 
 public class AccountRepository(UserManager<ApplicationUser> userManager) : IAccountRepository
 {
+    private const string registrationFailedDescription = "The account could not be created.";
+
     public async Task<AccountCreationResult> CreateAsync(NewAccount account, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -25,6 +27,15 @@ public class AccountRepository(UserManager<ApplicationUser> userManager) : IAcco
         return AccountCreationResult.Failure(ToAccountErrors(result.Errors));
     }
 
+    public async Task<CurrentUser?> GetCurrentUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        ApplicationUser? user = await userManager.FindByIdAsync(userId.ToString());
+
+        return user is null ? null : new CurrentUser(user.Id, user.Email, user.DisplayName);
+    }
+
     private static List<AccountError> ToAccountErrors(IEnumerable<IdentityError> identityErrors)
     {
         List<IdentityError> errors = identityErrors.ToList();
@@ -35,16 +46,17 @@ public class AccountRepository(UserManager<ApplicationUser> userManager) : IAcco
         {
             string code = error.Code switch
             {
-                AccountErrorCodes.DuplicateUserName => AccountErrorCodes.DuplicateEmail,
+                AccountErrorCodes.DuplicateEmail or AccountErrorCodes.DuplicateUserName => AccountErrorCodes.RegistrationFailed,
                 AccountErrorCodes.InvalidUserName => AccountErrorCodes.InvalidEmail,
                 _ => error.Code
             };
+            string description = code == AccountErrorCodes.RegistrationFailed ? registrationFailedDescription : error.Description;
 
             bool collapsesIntoExistingEmailError = code != error.Code && codes.Contains(code);
             bool alreadyAdded = accountErrors.Any(accountError => accountError.Code == code);
 
             if (!collapsesIntoExistingEmailError && !alreadyAdded)
-                accountErrors.Add(new AccountError(code, error.Description));
+                accountErrors.Add(new AccountError(code, description));
         }
 
         return accountErrors;

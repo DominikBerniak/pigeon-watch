@@ -3,7 +3,7 @@ using PigeonWatch.WebApi.Models;
 
 namespace PigeonWatch.WebApi.ViewModelCreators;
 
-public interface IDatabaseHealthViewModelCreator
+public interface IUiResourcesViewModelCreator
 {
-    DatabaseHealthModel Create(DatabaseHealthResult result);
+    UiResourcesModel Create(UiLabelSet labelSet);
 }

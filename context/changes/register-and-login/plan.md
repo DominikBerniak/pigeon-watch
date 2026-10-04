@@ -82,6 +82,7 @@ Deliver FR-001: a user can register with email, password and a public display na
 - No PrimeNG: v22 (the only line supporting Angular 22) ships under the PrimeUI License (license key, yearly eligibility renewal, compiled-only package, license notice when the key lapses), not MIT.
 - No `ng add @angular/material`: its schematic injects Google Fonts (Roboto, Material Symbols) `<link>`s that the Phase 3 CSP blocks. Material is installed with npm and themed by hand, with a system font stack and no icon font. S-01 needs no icons; a later slice that does self-hosts the font.
 - No CSS framework (Tailwind, Bootstrap), no Storybook and no dark theme. The tokens make a dark theme a tokens-and-theme-file change later.
+- No full protection against account enumeration (revised 2026-10-04, user decision). Registration never says an email is taken (`RegistrationFailed`, Phase 2 item 7), but without email confirmation (D4) a registration that fails for no visible reason can still hint that an account exists. The rate limiter and lockout bound that probing. Login keeps the `LockedOut` detail and its specific message, and there is no dummy-hash fix for the timing difference between known and unknown emails.
 - No pluralisation or ICU message formatting; only positional `{0}` placeholders. No Angular `@angular/localize` (compile-time, one build per language) and no Transloco.
 
 ## Implementation Approach
@@ -161,7 +162,7 @@ Users can register (`POST /account/register`), log in (`POST /auth/login`) and r
 - `NewAccount(string Email, string Password, string DisplayName)`.
 - `AccountCreationResult` has `Succeeded` and `IReadOnlyList<AccountError> Errors`. `AccountError(string Code, string Description)` uses Identity's error codes (`DuplicateEmail`, `InvalidEmail`, `PasswordTooShort`, `PasswordRequiresUpper`, …) plus `DisplayNameLength`, `DisplayNameInvalidCharacter` and `DuplicateDisplayName`.
 - `IAccountService.RegisterAsync(NewAccount, CancellationToken = default)` trims email and display name. If the display name is shorter than 3 or longer than 30 characters after trimming, or contains `@`, it returns a failed result without calling the repository.
-- `IAccountRepository.CreateAsync(NewAccount, CancellationToken = default)` uses `UserManager<ApplicationUser>.CreateAsync(user, password)` with `UserName = Email`, and maps `IdentityResult` errors to `AccountError`s. Since the user name is the email, `DuplicateUserName` and `InvalidUserName` are dropped when `DuplicateEmail` / `InvalidEmail` are also present, and are otherwise renamed to them, so the SPA only ever sees email codes.
+- `IAccountRepository.CreateAsync(NewAccount, CancellationToken = default)` uses `UserManager<ApplicationUser>.CreateAsync(user, password)` with `UserName = Email`, and maps `IdentityResult` errors to `AccountError`s. Since the user name is the email, `DuplicateUserName` and `InvalidUserName` are dropped when `DuplicateEmail` / `InvalidEmail` are also present, and are otherwise renamed to them, so the SPA only ever sees email codes. *Revised in Phase 2 (item 7): `DuplicateEmail` and `DuplicateUserName` both become one generic `RegistrationFailed`, so the API never confirms a registered email.*
 
 #### 5. Register endpoint
 
@@ -360,6 +361,18 @@ Add the D5 configuration endpoints, rate limiting, and the 503 mapping for an un
   - The returned culture is the one actually served.
 - `[Route("resources")]`, `GET {culture}` is `[AllowAnonymous]` and returns `Task<ActionResult<UiResourcesModel>>`: `{ culture, labels: { key: text } }`, with `Cache-Control: public, max-age=300` and `Content-Language: <served culture>`. It does not touch the database.
 
+#### 7. Registration never confirms a registered email
+
+**File**: `PigeonWatch/Api/BusinessObjects/AccountErrorCodes.cs`, `PigeonWatch/Api/Data/Repositories/AccountRepository.cs`, `PigeonWatch/Api/BusinessObjects/Resources/UiLabels.resx`, `PigeonWatch/Api/UnitTests/AccountRepositoryTests.cs`, `PigeonWatch/CLAUDE.md`
+
+**Intent**: Added 2026-10-04 (user decision). A `DuplicateEmail` answer tells anyone with `curl.exe` which emails have accounts, and a confirmed email list makes targeted password guessing cheaper.
+
+**Contract**:
+- `AccountErrorCodes.RegistrationFailed = "RegistrationFailed"`.
+- `AccountRepository` maps Identity's `DuplicateEmail` and `DuplicateUserName` to a single `RegistrationFailed` with the description `The account could not be created.` (never Identity's own description, which names the email). `InvalidUserName` still becomes `InvalidEmail`. `DuplicateDisplayName` stays specific, because display names are public and not a login identifier.
+- The resx drops `auth.errors.duplicateEmail` and adds `auth.errors.registrationFailed` = `We couldn't create an account with these details.`
+- `PigeonWatch/CLAUDE.md` adds this as a hard rule, with the remaining limits (no email confirmation; `LockedOut` kept on login).
+
 ### Success Criteria:
 
 #### Automated Verification:
@@ -367,6 +380,7 @@ Add the D5 configuration endpoints, rate limiting, and the 503 mapping for an un
 - Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
 - Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`
 - Unit tests pass, adding the following:
+  - the repository maps `DuplicateEmail` and `DuplicateUserName` to one `RegistrationFailed` whose code and description name neither the email nor "duplicate"/"taken", and keeps `DuplicateDisplayName` beside it
   - the exception handler maps `RetryLimitExceededException` and a wrapped `SqlException` with numbers `40613` and `53` to 503 with `Retry-After: 10`, and leaves `InvalidOperationException` and a `SqlException` with number `2627` unhandled
   - the general configuration service returns `null` for an unknown id
   - the client configuration matches `AccountRules`
@@ -644,7 +658,7 @@ The user-visible slice: login, registration, the protected home page with logout
 - Styling uses tokens and `pw-*` classes only; variations are inputs, never outside CSS on the component.
 - `app-page-card`: a centered `mat-card` limited to `--pw-form-max-width`, with a `title` input rendered as the page `<h1>` and content projection for the body and a `[actions]` slot. Used by login and register, and by the warm-up panel's failed state.
 - `app-alert`: `kind: 'error' | 'info' | 'success'` (token colors `--pw-color-<kind>` on `--pw-color-<kind>-surface`). `error` renders `role="alert"`, the others `role="status"`. Content is projected. Used for form-level errors (401, 429, warm-up failed) and the "Account created" notice.
-- `app-field-errors`: takes a Signal Forms field and a `messages` map from error kind to translated text, and renders the first error of a touched invalid field. It is placed inside `<mat-error>` of a `mat-form-field`. Server errors set on a field (e.g. `DuplicateEmail`) render through the same component.
+- `app-field-errors`: takes a Signal Forms field and a `messages` map from error kind to translated text, and renders the first error of a touched invalid field. It is placed inside `<mat-error>` of a `mat-form-field`. Server errors set on a field (e.g. `DuplicateDisplayName`) render through the same component.
 - `app-submit-button`: a `mat-flat-button` with `type="submit"`, a `busy` input that disables it, sets `aria-busy="true"` and shows a small `mat-progress-spinner`, and a projected label.
 - Promotion rule (also in `Frontend/CLAUDE.md`): a pattern that appears in a second feature becomes a `shared/ui` component in the same change, not a copy.
 
@@ -678,7 +692,7 @@ The user-visible slice: login, registration, the protected home page with logout
 - Composition: the same building blocks as the login page (`app-page-card`, `mat-form-field` + `matInput`, `app-field-errors`, `app-alert`, `app-submit-button`). Password rules are shown as a `mat-hint`.
 - Client-side rules come from `clientConfig` (with fallback to 8 / 3–30 if the config is missing): length, the four character classes, no `@` in the display name, and matching passwords.
 - Server `errors` keys map to fields:
-  - `DuplicateEmail` → "An account with this email already exists."
+  - `RegistrationFailed` → a form-level `app-alert`: "We couldn't create an account with these details." It is never attached to the email field and never says the email is taken (Phase 2 item 7).
   - `DuplicateDisplayName` → "This name is already taken."
   - `Password*` → the password field
   - `DisplayName*` → the display-name field
@@ -731,7 +745,7 @@ The user-visible slice: login, registration, the protected home page with logout
 - Vitest specs pass, covering the following:
   - login page maps 401, `LockedOut` and 429 to the specified messages and navigates to a safe `returnUrl`
   - register page blocks submission for `ab`, `a@b`, a 7-character password and mismatched passwords
-  - register page maps `DuplicateEmail` and `DuplicateDisplayName` to their fields
+  - register page maps `RegistrationFailed` to the generic form-level alert and `DuplicateDisplayName` to the display-name field
   - register page falls back to `/login` with navigation state when the auto-login fails
   - warm-up panel shows the first message while `warming` and the "Try again" button when `failed`
   - command: `npm test -- --watch=false` in `PigeonWatch/Frontend`
@@ -840,35 +854,36 @@ The user-visible slice: login, registration, the protected home page with logout
 
 #### Automated
 
-- [x] 1.1 Solution builds with no warnings
-- [x] 1.2 Architecture tests pass with only the StaticClassTests allow-list change
-- [x] 1.3 Unit tests pass (display-name rules, store, repository mapping, current-user provider)
-- [x] 1.4 Migration matches the model
-- [x] 1.5 Migration applies to LocalDB
+- [x] 1.1 Solution builds with no warnings — 6bf182a
+- [x] 1.2 Architecture tests pass with only the StaticClassTests allow-list change — 6bf182a
+- [x] 1.3 Unit tests pass (display-name rules, store, repository mapping, current-user provider) — 6bf182a
+- [x] 1.4 Migration matches the model — 6bf182a
+- [x] 1.5 Migration applies to LocalDB — 6bf182a
 
 #### Manual
 
-- [x] 1.6 Register returns 200; duplicate email and duplicate display name return 400 with codes
-- [x] 1.7 Login returns token pair with expiresIn 3600; refresh returns a new pair
-- [x] 1.8 Five wrong passwords lock the account (LockedOut)
-- [x] 1.9 Blocked Identity routes return 404; useCookies returns 400 without Set-Cookie
-- [x] 1.10 USER_ACCOUNT row has hashed password, CREATE_USER SYSTEM, UTC CREATE_DATE
+- [x] 1.6 Register returns 200; duplicate email and duplicate display name return 400 with codes — 6bf182a
+- [x] 1.7 Login returns token pair with expiresIn 3600; refresh returns a new pair — 6bf182a
+- [x] 1.8 Five wrong passwords lock the account (LockedOut) — 6bf182a
+- [x] 1.9 Blocked Identity routes return 404; useCookies returns 400 without Set-Cookie — 6bf182a
+- [x] 1.10 USER_ACCOUNT row has hashed password, CREATE_USER SYSTEM, UTC CREATE_DATE — 6bf182a
 
 ### Phase 2: Configuration endpoints, hardening and deploy (API)
 
 #### Automated
 
-- [ ] 2.1 Solution builds
-- [ ] 2.2 Architecture tests pass
-- [ ] 2.3 Unit tests pass (exception handler, configuration services)
-- [ ] 2.4 No pending model changes; RemoveSmokeCheck only drops SMOKE_CHECK
-- [ ] 2.5 No health/db reference remains
-- [ ] 2.14 Unit tests cover the UI resource service
+- [x] 2.1 Solution builds
+- [x] 2.2 Architecture tests pass
+- [x] 2.3 Unit tests pass (exception handler, configuration services)
+- [x] 2.4 No pending model changes; RemoveSmokeCheck only drops SMOKE_CHECK
+- [x] 2.5 No health/db reference remains
+- [x] 2.14 Unit tests cover the UI resource service
+- [x] 2.16 Registration maps duplicate email to generic RegistrationFailed
 
 #### Manual
 
-- [ ] 2.6 Local configuration endpoints return expected bodies and cache headers; 11th login returns 429
-- [ ] 2.7 Unreachable DB returns 503 with Retry-After and CORS header locally
+- [x] 2.6 Local configuration endpoints return expected bodies and cache headers; 11th login returns 429
+- [x] 2.7 Unreachable DB returns 503 with Retry-After and CORS header locally
 - [ ] 2.8 Forwarded-headers app setting set; deploy workflow succeeds with new probe
 - [ ] 2.9 Live register, login, general configuration and refresh work; blocked routes 404
 - [ ] 2.10 Live rate limiting is per client IP
@@ -876,6 +891,7 @@ The user-visible slice: login, registration, the protected home page with logout
 - [ ] 2.12 Data Protection keys survive app restart
 - [ ] 2.13 Live /health/db returns 404
 - [ ] 2.15 Resources endpoint returns English labels with fallback
+- [x] 2.17 Registering a taken email returns only RegistrationFailed without the email
 
 ### Phase 3: SPA auth infrastructure
 

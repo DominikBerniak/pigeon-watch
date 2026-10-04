@@ -11,10 +11,10 @@ public static class AccountServiceCollectionExtensions
         services
             .AddIdentityApiEndpoints<ApplicationUser>(options =>
             {
-                options.Password.RequireDigit = true;
-                options.Password.RequireLowercase = true;
-                options.Password.RequireUppercase = true;
-                options.Password.RequireNonAlphanumeric = true;
+                options.Password.RequireDigit = AccountRules.PasswordRequiresDigit;
+                options.Password.RequireLowercase = AccountRules.PasswordRequiresLowercase;
+                options.Password.RequireUppercase = AccountRules.PasswordRequiresUppercase;
+                options.Password.RequireNonAlphanumeric = AccountRules.PasswordRequiresNonAlphanumeric;
                 options.Password.RequiredLength = AccountRules.PasswordMinLength;
 
                 options.Lockout.MaxFailedAccessAttempts = 5;
