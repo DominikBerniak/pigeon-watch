@@ -3,7 +3,7 @@ project: PigeonWatch
 version: 1
 status: draft
 created: 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-04
 prd_version: 1
 main_goal: speed
 top_blocker: decisions
@@ -41,7 +41,7 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 
 | ID   | Change ID                   | Outcome (user can …)                                                        | Prerequisites | PRD refs                       | Status   |
 | ---- | --------------------------- | --------------------------------------------------------------------------- | ------------- | ------------------------------ | -------- |
-| F-01 | persistence-wiring-smoke    | (foundation) deployed API reaches the provisioned database through a CI-applied migration | —             | NFR (map and list usable at expected record volumes) | in-progress |
+| F-01 | persistence-wiring-smoke    | (foundation) deployed API reaches the provisioned database through a CI-applied migration | —             | NFR (map and list usable at expected record volumes) | done |
 | S-01 | register-and-login          | register an account, log in and log out                                     | F-01          | FR-001                         | proposed |
 | S-02 | edit-profile-name           | view and edit their own profile name                                        | S-01          | FR-002                         | proposed |
 | S-03 | report-sighting-on-map      | report a sighting and see it on the nearby map and its detail page          | S-01          | US-01, FR-004, FR-005, FR-019  | blocked  |
@@ -90,7 +90,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Scoped to the single connection-and-migration path only; the actual schema grows inside each slice that needs it. Sequenced first because the free hosting and database tiers are the likeliest source of surprises.
-- **Status:** in-progress
+- **Status:** done
 
 ## Slices
 
@@ -274,3 +274,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ## Milestone History
 
 ## Done
+- **F-01: (foundation) the deployed API connects to the already-provisioned database and applies a schema migration through CI, proving a record can be stored and read in the live environment.** — Archived 2026-10-04 → `context/archive/2026-10-03-persistence-wiring-smoke/`. Lesson: —.
