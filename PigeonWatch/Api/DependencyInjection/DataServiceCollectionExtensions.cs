@@ -17,7 +17,8 @@ public static class DataServiceCollectionExtensions
     public static IServiceCollection AddData(this IServiceCollection services, IConfiguration configuration)
     {
         services.TryAddSingleton(TimeProvider.System);
-        services.AddScoped<ICurrentUserProvider, SystemCurrentUserProvider>();
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserProvider, HttpContextCurrentUserProvider>();
         services.AddScoped<ISaveChangesInterceptor, AuditSaveChangesInterceptor>();
 
         services.AddDbContext<PigeonWatchDbContext>((serviceProvider, options) =>
@@ -32,6 +33,8 @@ public static class DataServiceCollectionExtensions
 
         services.AddScoped<ISmokeCheckMapper, SmokeCheckMapper>();
         services.AddScoped<ISmokeCheckRepository, SmokeCheckRepository>();
+        services.AddScoped<IUserAccountMapper, UserAccountMapper>();
+        services.AddScoped<IAccountRepository, AccountRepository>();
 
         return services;
     }

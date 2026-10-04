@@ -8,6 +8,7 @@ public static class BusinessLogicServiceCollectionExtensions
     public static IServiceCollection AddBusinessLogic(this IServiceCollection services)
     {
         services.AddScoped<IDatabaseHealthService, DatabaseHealthService>();
+        services.AddScoped<IAccountService, AccountService>();
 
         return services;
     }

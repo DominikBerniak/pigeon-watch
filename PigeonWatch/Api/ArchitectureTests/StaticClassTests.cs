@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace PigeonWatch.ArchitectureTests;
@@ -20,7 +21,7 @@ public class StaticClassTests
 
         Assert.True(
             offenders.Count == 0,
-            $"Static classes are only allowed for const-only holders and IServiceCollection extension classes in {PigeonWatchAssemblies.DependencyInjectionName}. Offending types:{Environment.NewLine}"
+            $"Static classes are only allowed for const-only holders and IServiceCollection or IEndpointRouteBuilder extension classes in {PigeonWatchAssemblies.DependencyInjectionName}. Offending types:{Environment.NewLine}"
             + PigeonWatchAssemblies.Describe(offenders));
     }
 
@@ -55,7 +56,8 @@ public class StaticClassTests
 
         return method.IsDefined(typeof(ExtensionAttribute), false)
             && parameters.Length > 0
-            && parameters[0].ParameterType == typeof(IServiceCollection);
+            && (parameters[0].ParameterType == typeof(IServiceCollection)
+                || parameters[0].ParameterType == typeof(IEndpointRouteBuilder));
     }
 
     private static bool IsCompilerGeneratedMember(MemberInfo member) =>

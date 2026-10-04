@@ -8,6 +8,8 @@ public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options
 {
     internal DbSet<SmokeCheckEntity> SmokeChecks => Set<SmokeCheckEntity>();
 
+    internal DbSet<UserAccountEntity> UserAccounts => Set<UserAccountEntity>();
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder.Conventions.Add(_ => new UpperSnakeCaseNamingConvention());
@@ -19,6 +21,16 @@ public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options
         {
             entity.ToTable("SmokeCheck");
             entity.HasKey(e => e.Id);
+        });
+
+        modelBuilder.Entity<UserAccountEntity>(entity =>
+        {
+            entity.ToTable("UserAccount");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ConcurrencyStamp).IsConcurrencyToken();
+            entity.HasIndex(e => e.NormalizedEmail).IsUnique();
+            entity.HasIndex(e => e.NormalizedUserName).IsUnique();
+            entity.HasIndex(e => e.NormalizedDisplayName).IsUnique();
         });
     }
 }

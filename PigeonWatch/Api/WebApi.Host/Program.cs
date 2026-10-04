@@ -45,9 +45,13 @@ namespace PigeonWatch.WebApi.Host
 
             app.UseCors("Frontend");
 
+            app.UseAuthentication();
+
             app.UseAuthorization();
 
             app.MapControllers();
+
+            app.MapPigeonWatch();
 
             app.Run();
         }

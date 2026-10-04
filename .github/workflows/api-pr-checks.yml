@@ -32,6 +32,9 @@ jobs:
       - name: Architecture tests
         run: dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj --no-build
 
+      - name: Unit tests
+        run: dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj --no-build
+
       - name: Restore .NET tools
         run: dotnet tool restore
 

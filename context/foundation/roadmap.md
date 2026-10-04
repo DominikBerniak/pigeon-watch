@@ -42,7 +42,7 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 | ID   | Change ID                   | Outcome (user can …)                                                        | Prerequisites | PRD refs                       | Status   |
 | ---- | --------------------------- | --------------------------------------------------------------------------- | ------------- | ------------------------------ | -------- |
 | F-01 | persistence-wiring-smoke    | (foundation) deployed API reaches the provisioned database through a CI-applied migration | —             | NFR (map and list usable at expected record volumes) | done |
-| S-01 | register-and-login          | register an account, log in and log out                                     | F-01          | FR-001                         | proposed |
+| S-01 | register-and-login          | register an account, log in and log out                                     | F-01          | FR-001                         | in-progress |
 | S-02 | edit-profile-name           | view and edit their own profile name                                        | S-01          | FR-002                         | proposed |
 | S-03 | report-sighting-on-map      | report a sighting and see it on the nearby map and its detail page          | S-01          | US-01, FR-004, FR-005, FR-019  | blocked  |
 | S-04 | attach-sighting-photo       | attach an optional photo to a sighting                                      | S-03          | FR-005                         | proposed |
@@ -53,6 +53,7 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 | S-09 | edit-own-sighting-with-lock | edit their own sighting, with location and description locked once others engage | S-07, S-08 | FR-006                    | proposed |
 | S-10 | admin-remove-sightings      | (as admin) remove sightings                                                 | S-03          | FR-017                         | proposed |
 | S-11 | admin-moderate-users        | (as admin) message, warn or ban users                                       | S-08, S-10    | FR-018                         | proposed |
+| S-12 | switch-ui-language          | switch the UI language between English and Polish, remembered in the browser | S-01         | — (post-PRD, see Q6)           | proposed |
 
 ## Streams
 
@@ -64,6 +65,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | B      | Talk about a sighting    | `S-07` → `S-08` → `S-09`                            | Joins Stream A at `S-03`; `S-09` needs the engagement signals from `S-07` and `S-08`.   |
 | C      | Moderation               | `S-10` → `S-11`                                     | Joins Stream A at `S-03`; `S-11` also joins Stream B at `S-08`.                         |
 | D      | Profile                  | `S-02`                                              | Joins Stream A at `S-01`; independent of everything after login.                        |
+| E      | Localization             | `S-12`                                              | Joins Stream A at `S-01` (resource management lands there); independent of later slices. |
 
 ## Baseline
 
@@ -105,7 +107,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Which login mechanism (email/password or OAuth) — Owner: user. Block: no.
 - **Risk:** Login is a wall in front of every must-have, so it goes first after the foundation.
-- **Status:** proposed
+- **Status:** in-progress
 
 ### S-02: Edit profile name
 
@@ -233,6 +235,20 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** Admin messaging is the one permitted exception to the "contact only through a sighting" rule in `S-08`.
 - **Status:** proposed
 
+### S-12: Switch UI language
+
+- **Outcome:** user can switch the UI language between English and Polish; the choice is stored in the browser (`localStorage`, key `pigeonwatch.culture`) and applied on every later visit, falling back to English when nothing is stored.
+- **Change ID:** switch-ui-language
+- **PRD refs:** — (requirement added after PRD v1 on 2026-10-04; see Open Roadmap Question 6)
+- **Prerequisites:** S-01 (introduces resource management: every UI label is a key in `UiLabels.resx`, served by `GET /resources/{culture}`, bundled as per-culture snapshots, with saved-culture selection and EN fallback already implemented)
+- **Parallel with:** S-02, S-03, S-04, S-05, S-06, S-07, S-08, S-09, S-10, S-11
+- **Blockers:** —
+- **Unknowns:**
+  - Is the language switcher available before login (on the login and register pages) or only for logged-in users? — Owner: user. Block: no.
+  - Does S-12 translate every label existing at that point, and must each later slice add Polish values for its own keys? — Owner: user. Block: no.
+- **Risk:** Mostly content work (`UiLabels.pl.resx` plus a switcher calling `CultureStore.save`); the longer it waits, the more keys need translating at once.
+- **Status:** proposed
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                    | Suggested issue title                                  | Ready for `/10x-plan` | Notes                                                    |
@@ -249,6 +265,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-09       | edit-own-sighting-with-lock  | Edit own sighting with engagement lock                 | no                    | Needs S-07 and S-08 done                                 |
 | S-10       | admin-remove-sightings       | Admin removes sightings                                | no                    | Needs S-03 done                                          |
 | S-11       | admin-moderate-users         | Admin message, warn, ban users                         | no                    | Needs S-08 and S-10 done                                 |
+| S-12       | switch-ui-language           | Switch UI language EN/PL, remembered in the browser    | no                    | Needs S-01 done                                          |
 
 ## Open Roadmap Questions
 
@@ -257,6 +274,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 3. **What access rule should govern anonymous/unregistered reporting, if it's built post-MVP?** — Owner: user. Block: none (deferred with the Secondary persona).
 4. **What are the criticality levels a reporter can choose (names and count)?** — Owner: user. Block: S-03.
 5. **The PRD's second primary success criterion (flock locations as a map layer) is covered only by nice-to-have FRs, which this milestone parks. Is that still the intent?** — Owner: user. Block: none (affects whether a later milestone is needed).
+6. **S-12 (EN/PL language switch) has no FR in PRD v1. Should the next PRD revision add it (and its priority), or does it stay a roadmap-only addition?** — Owner: user. Block: none.
 
 ## Parked
 

@@ -4,6 +4,7 @@
   <Project Path="BusinessObjects/PigeonWatch.BusinessObjects.csproj" />
   <Project Path="Data/PigeonWatch.Data.csproj" />
   <Project Path="DependencyInjection/PigeonWatch.DependencyInjection.csproj" />
+  <Project Path="UnitTests/PigeonWatch.UnitTests.csproj" />
   <Project Path="WebApi/PigeonWatch.WebApi.csproj" />
   <Project Path="WebApi.Host/PigeonWatch.WebApi.Host.csproj" />
 </Solution>

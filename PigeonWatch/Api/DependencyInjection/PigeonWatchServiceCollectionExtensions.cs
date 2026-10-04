@@ -10,6 +10,7 @@ public static class PigeonWatchServiceCollectionExtensions
         services.AddData(configuration);
         services.AddBusinessLogic();
         services.AddWebApi();
+        services.AddAccounts();
 
         return services;
     }

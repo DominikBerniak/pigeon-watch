@@ -26,7 +26,7 @@ Both projects are currently minimal bases with the CLI sample code removed (no b
   - `ArchitectureTests/` — tests that enforce the layer and coding rules.
 
   The layer rules, reference direction, coding rules and commands live in `@PigeonWatch/Api/CLAUDE.md`; read it before changing anything under `Api/`.
-- `Frontend/` — Angular 22 app. See `@PigeonWatch/Frontend/CLAUDE.md` for commands and specifics.
+- `Frontend/` — Angular 22 app on Angular Material, styled through `--pw-*` design tokens, `pw-*` common classes and reusable `shared/ui` components. See `@PigeonWatch/Frontend/CLAUDE.md` for the UI rules, commands and specifics.
 
 There is no bundled .NET+Angular starter — the two are separate projects that talk over HTTP; the frontend consumes the API, they don't share a build or a repo-root package manifest.
 
