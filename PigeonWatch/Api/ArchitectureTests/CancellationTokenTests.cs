@@ -54,5 +54,8 @@ public class CancellationTokenTests
         return definition == typeof(Task<>) || definition == typeof(ValueTask<>);
     }
 
-    private static string Describe(MethodInfo method) => $"{method.DeclaringType!.FullName}.{method.Name}";
+    private static string Describe(MethodInfo method)
+    {
+        return $"{method.DeclaringType!.FullName}.{method.Name}";
+    }
 }

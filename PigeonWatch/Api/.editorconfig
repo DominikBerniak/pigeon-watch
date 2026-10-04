@@ -10,6 +10,11 @@ dotnet_diagnostic.IDE0008.severity = error
 csharp_style_prefer_primary_constructors = true:error
 dotnet_diagnostic.IDE0290.severity = error
 
+csharp_style_expression_bodied_methods = false:error
+dotnet_diagnostic.IDE0022.severity = error
+csharp_style_expression_bodied_local_functions = false:error
+dotnet_diagnostic.IDE0061.severity = error
+
 dotnet_naming_symbols.private_fields.applicable_kinds = field
 dotnet_naming_symbols.private_fields.applicable_accessibilities = private
 dotnet_naming_style.camel_case_no_prefix.capitalization = camel_case

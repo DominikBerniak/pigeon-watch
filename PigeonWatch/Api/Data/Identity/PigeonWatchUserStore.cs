@@ -145,11 +145,15 @@ public class PigeonWatchUserStore(
         return entity is null ? null : userAccountMapper.ToUser(entity);
     }
 
-    public Task<string> GetUserIdAsync(ApplicationUser user, CancellationToken cancellationToken = default) =>
-        Task.FromResult(user.Id.ToString());
+    public Task<string> GetUserIdAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(user.Id.ToString());
+    }
 
-    public Task<string?> GetUserNameAsync(ApplicationUser user, CancellationToken cancellationToken = default) =>
-        Task.FromResult<string?>(user.UserName);
+    public Task<string?> GetUserNameAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<string?>(user.UserName);
+    }
 
     public Task SetUserNameAsync(ApplicationUser user, string? userName, CancellationToken cancellationToken = default)
     {
@@ -158,8 +162,10 @@ public class PigeonWatchUserStore(
         return Task.CompletedTask;
     }
 
-    public Task<string?> GetNormalizedUserNameAsync(ApplicationUser user, CancellationToken cancellationToken = default) =>
-        Task.FromResult<string?>(user.NormalizedUserName);
+    public Task<string?> GetNormalizedUserNameAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<string?>(user.NormalizedUserName);
+    }
 
     public Task SetNormalizedUserNameAsync(ApplicationUser user, string? normalizedName, CancellationToken cancellationToken = default)
     {
@@ -175,11 +181,15 @@ public class PigeonWatchUserStore(
         return Task.CompletedTask;
     }
 
-    public Task<string?> GetPasswordHashAsync(ApplicationUser user, CancellationToken cancellationToken = default) =>
-        Task.FromResult<string?>(string.IsNullOrEmpty(user.PasswordHash) ? null : user.PasswordHash);
+    public Task<string?> GetPasswordHashAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<string?>(string.IsNullOrEmpty(user.PasswordHash) ? null : user.PasswordHash);
+    }
 
-    public Task<bool> HasPasswordAsync(ApplicationUser user, CancellationToken cancellationToken = default) =>
-        Task.FromResult(!string.IsNullOrEmpty(user.PasswordHash));
+    public Task<bool> HasPasswordAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(!string.IsNullOrEmpty(user.PasswordHash));
+    }
 
     public Task SetEmailAsync(ApplicationUser user, string? email, CancellationToken cancellationToken = default)
     {
@@ -188,17 +198,25 @@ public class PigeonWatchUserStore(
         return Task.CompletedTask;
     }
 
-    public Task<string?> GetEmailAsync(ApplicationUser user, CancellationToken cancellationToken = default) =>
-        Task.FromResult<string?>(user.Email);
+    public Task<string?> GetEmailAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<string?>(user.Email);
+    }
 
-    public Task<bool> GetEmailConfirmedAsync(ApplicationUser user, CancellationToken cancellationToken = default) =>
-        Task.FromResult(false);
+    public Task<bool> GetEmailConfirmedAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(false);
+    }
 
-    public Task SetEmailConfirmedAsync(ApplicationUser user, bool confirmed, CancellationToken cancellationToken = default) =>
-        Task.CompletedTask;
+    public Task SetEmailConfirmedAsync(ApplicationUser user, bool confirmed, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
 
-    public Task<string?> GetNormalizedEmailAsync(ApplicationUser user, CancellationToken cancellationToken = default) =>
-        Task.FromResult<string?>(user.NormalizedEmail);
+    public Task<string?> GetNormalizedEmailAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<string?>(user.NormalizedEmail);
+    }
 
     public Task SetNormalizedEmailAsync(ApplicationUser user, string? normalizedEmail, CancellationToken cancellationToken = default)
     {
@@ -214,11 +232,15 @@ public class PigeonWatchUserStore(
         return Task.CompletedTask;
     }
 
-    public Task<string?> GetSecurityStampAsync(ApplicationUser user, CancellationToken cancellationToken = default) =>
-        Task.FromResult<string?>(user.SecurityStamp);
+    public Task<string?> GetSecurityStampAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<string?>(user.SecurityStamp);
+    }
 
-    public Task<DateTimeOffset?> GetLockoutEndDateAsync(ApplicationUser user, CancellationToken cancellationToken = default) =>
-        Task.FromResult(user.LockoutEnd);
+    public Task<DateTimeOffset?> GetLockoutEndDateAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(user.LockoutEnd);
+    }
 
     public Task SetLockoutEndDateAsync(ApplicationUser user, DateTimeOffset? lockoutEnd, CancellationToken cancellationToken = default)
     {
@@ -241,11 +263,15 @@ public class PigeonWatchUserStore(
         return Task.CompletedTask;
     }
 
-    public Task<int> GetAccessFailedCountAsync(ApplicationUser user, CancellationToken cancellationToken = default) =>
-        Task.FromResult(user.AccessFailedCount);
+    public Task<int> GetAccessFailedCountAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(user.AccessFailedCount);
+    }
 
-    public Task<bool> GetLockoutEnabledAsync(ApplicationUser user, CancellationToken cancellationToken = default) =>
-        Task.FromResult(user.LockoutEnabled);
+    public Task<bool> GetLockoutEnabledAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(user.LockoutEnabled);
+    }
 
     public Task SetLockoutEnabledAsync(ApplicationUser user, bool enabled, CancellationToken cancellationToken = default)
     {
@@ -259,11 +285,15 @@ public class PigeonWatchUserStore(
         GC.SuppressFinalize(this);
     }
 
-    private string NormalizeDisplayName(ApplicationUser user) =>
-        lookupNormalizer.NormalizeName(user.DisplayName) ?? string.Empty;
+    private string NormalizeDisplayName(ApplicationUser user)
+    {
+        return lookupNormalizer.NormalizeName(user.DisplayName) ?? string.Empty;
+    }
 
-    private Task<bool> IsDisplayNameTakenAsync(string normalizedDisplayName, Guid userId, CancellationToken cancellationToken = default) =>
-        db.UserAccounts.AnyAsync(u => u.NormalizedDisplayName == normalizedDisplayName && u.Id != userId, cancellationToken);
+    private Task<bool> IsDisplayNameTakenAsync(string normalizedDisplayName, Guid userId, CancellationToken cancellationToken = default)
+    {
+        return db.UserAccounts.AnyAsync(u => u.NormalizedDisplayName == normalizedDisplayName && u.Id != userId, cancellationToken);
+    }
 
     private IdentityError? DuplicateIndexError(DbUpdateException exception, ApplicationUser user)
     {
@@ -284,10 +314,12 @@ public class PigeonWatchUserStore(
         return null;
     }
 
-    private static IdentityError DuplicateDisplayName(ApplicationUser user) =>
-        new()
+    private static IdentityError DuplicateDisplayName(ApplicationUser user)
+    {
+        return new()
         {
             Code = AccountErrorCodes.DuplicateDisplayName,
             Description = $"Display name '{user.DisplayName}' is already taken."
         };
+    }
 }

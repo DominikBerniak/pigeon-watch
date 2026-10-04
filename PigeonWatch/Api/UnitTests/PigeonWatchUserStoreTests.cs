@@ -146,8 +146,9 @@ public sealed class PigeonWatchUserStoreTests : IDisposable
         return await CreateStore(db).CreateAsync(user, cancellationToken);
     }
 
-    private ApplicationUser NewUser(string email, string displayName) =>
-        new()
+    private ApplicationUser NewUser(string email, string displayName)
+    {
+        return new()
         {
             Email = email,
             NormalizedEmail = normalizer.NormalizeEmail(email)!,
@@ -157,9 +158,12 @@ public sealed class PigeonWatchUserStoreTests : IDisposable
             PasswordHash = "hash",
             SecurityStamp = Guid.NewGuid().ToString()
         };
+    }
 
-    private PigeonWatchUserStore CreateStore(PigeonWatchDbContext db) =>
-        new(db, new UserAccountMapper(), normalizer, new IdentityErrorDescriber());
+    private PigeonWatchUserStore CreateStore(PigeonWatchDbContext db)
+    {
+        return new(db, new UserAccountMapper(), normalizer, new IdentityErrorDescriber());
+    }
 
     private PigeonWatchDbContext CreateContext()
     {

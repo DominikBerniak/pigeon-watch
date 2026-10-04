@@ -95,8 +95,9 @@ public class ConfigurationTests
         Assert.IsType<UnauthorizedResult>(result.Result);
     }
 
-    private ConfigurationController CreateController(ClaimsPrincipal user) =>
-        new(
+    private ConfigurationController CreateController(ClaimsPrincipal user)
+    {
+        return new(
             new ClientConfigurationService(),
             new GeneralConfigurationService(accountRepository),
             new ClientConfigurationViewModelCreator(),
@@ -104,7 +105,10 @@ public class ConfigurationTests
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } }
         };
+    }
 
-    private static ClaimsPrincipal Authenticated(Guid userId) =>
-        new(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId.ToString())], "Bearer"));
+    private static ClaimsPrincipal Authenticated(Guid userId)
+    {
+        return new(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId.ToString())], "Bearer"));
+    }
 }

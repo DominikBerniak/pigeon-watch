@@ -5,8 +5,9 @@ namespace PigeonWatch.Data.Mappers;
 
 public class UserAccountMapper : IUserAccountMapper
 {
-    ApplicationUser IUserAccountMapper.ToUser(UserAccountEntity entity) =>
-        new()
+    ApplicationUser IUserAccountMapper.ToUser(UserAccountEntity entity)
+    {
+        return new()
         {
             Id = entity.Id,
             Email = entity.Email,
@@ -21,6 +22,7 @@ public class UserAccountMapper : IUserAccountMapper
             LockoutEnabled = entity.LockoutEnabled,
             AccessFailedCount = entity.AccessFailedCount
         };
+    }
 
     void IUserAccountMapper.CopyToEntity(ApplicationUser user, UserAccountEntity entity)
     {

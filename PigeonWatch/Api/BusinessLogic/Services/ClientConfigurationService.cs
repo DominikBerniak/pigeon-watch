@@ -4,8 +4,9 @@ namespace PigeonWatch.BusinessLogic.Services;
 
 public class ClientConfigurationService : IClientConfigurationService
 {
-    public Task<ClientConfiguration> GetAsync(CancellationToken cancellationToken = default) =>
-        Task.FromResult(new ClientConfiguration(
+    public Task<ClientConfiguration> GetAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new ClientConfiguration(
             AccountRules.PasswordMinLength,
             AccountRules.PasswordRequiresDigit,
             AccountRules.PasswordRequiresLowercase,
@@ -13,4 +14,5 @@ public class ClientConfigurationService : IClientConfigurationService
             AccountRules.PasswordRequiresNonAlphanumeric,
             AccountRules.DisplayNameMinLength,
             AccountRules.DisplayNameMaxLength));
+    }
 }

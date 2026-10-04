@@ -27,8 +27,10 @@ public class PigeonWatchAssemblies
     public static IReadOnlyList<Assembly> All { get; } =
         [BusinessObjects, Data, BusinessLogic, WebApi, DependencyInjection, WebApiHost];
 
-    public static IEnumerable<Type> AllTypes() =>
-        All.SelectMany(assembly => assembly.GetTypes()).Where(type => !IsCompilerGenerated(type));
+    public static IEnumerable<Type> AllTypes()
+    {
+        return All.SelectMany(assembly => assembly.GetTypes()).Where(type => !IsCompilerGenerated(type));
+    }
 
     public static bool IsCompilerGenerated(Type type)
     {
@@ -41,11 +43,18 @@ public class PigeonWatchAssemblies
         return false;
     }
 
-    public static bool IsCompilerGenerated(MethodInfo method) =>
-        method.Name.Contains('<') || method.IsDefined(typeof(CompilerGeneratedAttribute), false);
+    public static bool IsCompilerGenerated(MethodInfo method)
+    {
+        return method.Name.Contains('<') || method.IsDefined(typeof(CompilerGeneratedAttribute), false);
+    }
 
-    public static string Describe(IEnumerable<string> offenders) =>
-        string.Join(Environment.NewLine, offenders.Order(StringComparer.Ordinal));
+    public static string Describe(IEnumerable<string> offenders)
+    {
+        return string.Join(Environment.NewLine, offenders.Order(StringComparer.Ordinal));
+    }
 
-    private static Assembly Load(string name) => Assembly.Load(new AssemblyName(name));
+    private static Assembly Load(string name)
+    {
+        return Assembly.Load(new AssemblyName(name));
+    }
 }

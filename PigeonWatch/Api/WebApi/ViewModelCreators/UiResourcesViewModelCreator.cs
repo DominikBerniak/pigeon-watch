@@ -5,10 +5,12 @@ namespace PigeonWatch.WebApi.ViewModelCreators;
 
 public class UiResourcesViewModelCreator : IUiResourcesViewModelCreator
 {
-    public UiResourcesModel Create(UiLabelSet labelSet) =>
-        new()
+    public UiResourcesModel Create(UiLabelSet labelSet)
+    {
+        return new()
         {
             Culture = labelSet.Culture,
             Labels = labelSet.Labels
         };
+    }
 }

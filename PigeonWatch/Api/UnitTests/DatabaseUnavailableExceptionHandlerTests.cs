@@ -58,7 +58,10 @@ public class DatabaseUnavailableExceptionHandlerTests
         await problemDetailsService.DidNotReceive().TryWriteAsync(Arg.Any<ProblemDetailsContext>());
     }
 
-    private DatabaseUnavailableExceptionHandler CreateHandler() => new(problemDetailsService);
+    private DatabaseUnavailableExceptionHandler CreateHandler()
+    {
+        return new(problemDetailsService);
+    }
 
     private static SqlException CreateSqlException(int number)
     {

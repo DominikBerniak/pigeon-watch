@@ -5,8 +5,9 @@ namespace PigeonWatch.WebApi.ViewModelCreators;
 
 public class GeneralConfigurationViewModelCreator : IGeneralConfigurationViewModelCreator
 {
-    public GeneralConfigurationModel Create(CurrentUser currentUser, IReadOnlyList<string> roles) =>
-        new()
+    public GeneralConfigurationModel Create(CurrentUser currentUser, IReadOnlyList<string> roles)
+    {
+        return new()
         {
             CurrentUser = new CurrentUserModel
             {
@@ -16,4 +17,5 @@ public class GeneralConfigurationViewModelCreator : IGeneralConfigurationViewMod
                 Roles = roles
             }
         };
+    }
 }

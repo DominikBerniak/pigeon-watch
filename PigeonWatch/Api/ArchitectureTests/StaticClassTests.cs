@@ -25,7 +25,10 @@ public class StaticClassTests
             + PigeonWatchAssemblies.Describe(offenders));
     }
 
-    public static bool IsStaticClass(Type type) => type.IsClass && type.IsAbstract && type.IsSealed;
+    public static bool IsStaticClass(Type type)
+    {
+        return type.IsClass && type.IsAbstract && type.IsSealed;
+    }
 
     private static bool IsConstOnly(Type type)
     {
@@ -58,8 +61,10 @@ public class StaticClassTests
                 || parameters[0].ParameterType == typeof(IEndpointRouteBuilder));
     }
 
-    private static bool IsCompilerGeneratedMember(MemberInfo member) =>
-        member.Name.Contains('<')
-        || member.IsDefined(typeof(CompilerGeneratedAttribute), false)
-        || (member is Type nested && PigeonWatchAssemblies.IsCompilerGenerated(nested));
+    private static bool IsCompilerGeneratedMember(MemberInfo member)
+    {
+        return member.Name.Contains('<')
+            || member.IsDefined(typeof(CompilerGeneratedAttribute), false)
+            || (member is Type nested && PigeonWatchAssemblies.IsCompilerGenerated(nested));
+    }
 }

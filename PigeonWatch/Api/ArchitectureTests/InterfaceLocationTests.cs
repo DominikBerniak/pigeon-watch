@@ -58,10 +58,15 @@ public class InterfaceLocationTests
                 .Any(segment => excludedFolders.Contains(segment, StringComparer.Ordinal)));
     }
 
-    private static bool IsInInterfacesFolder(string file) =>
-        string.Equals(Path.GetFileName(Path.GetDirectoryName(file)), interfacesFolderName, StringComparison.Ordinal);
+    private static bool IsInInterfacesFolder(string file)
+    {
+        return string.Equals(Path.GetFileName(Path.GetDirectoryName(file)), interfacesFolderName, StringComparison.Ordinal);
+    }
 
-    private static string RelativePath(string file) => Path.GetRelativePath(ApiDirectory(), file);
+    private static string RelativePath(string file)
+    {
+        return Path.GetRelativePath(ApiDirectory(), file);
+    }
 
     private static string ApiDirectory()
     {

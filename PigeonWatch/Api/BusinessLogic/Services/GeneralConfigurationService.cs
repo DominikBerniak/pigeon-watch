@@ -5,6 +5,8 @@ namespace PigeonWatch.BusinessLogic.Services;
 
 public class GeneralConfigurationService(IAccountRepository accountRepository) : IGeneralConfigurationService
 {
-    public Task<CurrentUser?> GetAsync(Guid userId, CancellationToken cancellationToken = default) =>
-        accountRepository.GetCurrentUserAsync(userId, cancellationToken);
+    public Task<CurrentUser?> GetAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return accountRepository.GetCurrentUserAsync(userId, cancellationToken);
+    }
 }

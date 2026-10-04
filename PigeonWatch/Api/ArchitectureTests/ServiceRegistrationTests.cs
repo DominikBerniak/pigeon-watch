@@ -71,10 +71,12 @@ public class ServiceRegistrationTests
             + PigeonWatchAssemblies.Describe(offenders));
     }
 
-    private static List<Type> RoleTypes() =>
-        PigeonWatchAssemblies.AllTypes()
+    private static List<Type> RoleTypes()
+    {
+        return PigeonWatchAssemblies.AllTypes()
             .Where(type => type.IsClass && roleSuffixes.Any(suffix => type.Name.EndsWith(suffix, StringComparison.Ordinal)))
             .ToList();
+    }
 
     private static Type? FindMatchingInterface(Type type)
     {

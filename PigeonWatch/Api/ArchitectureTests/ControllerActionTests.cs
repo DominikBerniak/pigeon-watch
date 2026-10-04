@@ -46,21 +46,25 @@ public class ControllerActionTests
             + PigeonWatchAssemblies.Describe(offenders));
     }
 
-    public static bool IsControllerAction(MethodInfo method) =>
-        method.IsPublic
-        && !method.IsStatic
-        && !method.IsSpecialName
-        && !method.IsAbstract
-        && method.DeclaringType is not null
-        && typeof(ControllerBase).IsAssignableFrom(method.DeclaringType)
-        && method.DeclaringType.Assembly != typeof(ControllerBase).Assembly
-        && method.DeclaringType != typeof(object)
-        && !method.IsDefined(typeof(NonActionAttribute), true);
+    public static bool IsControllerAction(MethodInfo method)
+    {
+        return method.IsPublic
+            && !method.IsStatic
+            && !method.IsSpecialName
+            && !method.IsAbstract
+            && method.DeclaringType is not null
+            && typeof(ControllerBase).IsAssignableFrom(method.DeclaringType)
+            && method.DeclaringType.Assembly != typeof(ControllerBase).Assembly
+            && method.DeclaringType != typeof(object)
+            && !method.IsDefined(typeof(NonActionAttribute), true);
+    }
 
-    public static List<Type> ControllerTypes() =>
-        PigeonWatchAssemblies.AllTypes()
+    public static List<Type> ControllerTypes()
+    {
+        return PigeonWatchAssemblies.AllTypes()
             .Where(type => type.IsClass && typeof(ControllerBase).IsAssignableFrom(type))
             .ToList();
+    }
 
     private static bool ReturnsTaskOfActionResultOfApiModel(Type returnType)
     {

@@ -73,5 +73,8 @@ public class AccountServiceTests
             Arg.Any<CancellationToken>());
     }
 
-    private AccountService CreateService() => new(accountRepository);
+    private AccountService CreateService()
+    {
+        return new(accountRepository);
+    }
 }

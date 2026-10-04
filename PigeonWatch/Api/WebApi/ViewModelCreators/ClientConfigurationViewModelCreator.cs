@@ -5,8 +5,9 @@ namespace PigeonWatch.WebApi.ViewModelCreators;
 
 public class ClientConfigurationViewModelCreator : IClientConfigurationViewModelCreator
 {
-    public ClientConfigurationModel Create(ClientConfiguration configuration) =>
-        new()
+    public ClientConfigurationModel Create(ClientConfiguration configuration)
+    {
+        return new()
         {
             PasswordRules = new PasswordRulesModel
             {
@@ -22,4 +23,5 @@ public class ClientConfigurationViewModelCreator : IClientConfigurationViewModel
                 MaxLength = configuration.DisplayNameMaxLength
             }
         };
+    }
 }
