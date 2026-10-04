@@ -507,91 +507,91 @@ The first migration creates the throwaway `SMOKE_CHECK` table and the `EF_MIGRAT
 
 #### Automated
 
-- [x] 0.1 API builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.csproj` — bb9952b
-- [x] 0.2 Frontend builds for production: `npm run build --prefix PigeonWatch/Frontend` — bb9952b
-- [x] 0.3 No weather references remain in source: `git grep -n -i "weather\|forecast" -- PigeonWatch ':!PigeonWatch/Frontend/package-lock.json'` prints nothing — bb9952b
-- [x] 0.4 Running API no longer serves the sample: `curl -s -o /dev/null -w "%{http_code}" http://localhost:5285/weatherforecast` prints `404` — bb9952b
+- [x] 0.1 API builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.csproj` — aed3289
+- [x] 0.2 Frontend builds for production: `npm run build --prefix PigeonWatch/Frontend` — aed3289
+- [x] 0.3 No weather references remain in source: `git grep -n -i "weather\|forecast" -- PigeonWatch ':!PigeonWatch/Frontend/package-lock.json'` prints nothing — aed3289
+- [x] 0.4 Running API no longer serves the sample: `curl -s -o /dev/null -w "%{http_code}" http://localhost:5285/weatherforecast` prints `404` — aed3289
 
 #### Manual
 
-- [x] 0.5 `npm start` serves the placeholder at `http://localhost:4200/` with the `PigeonWatch` heading and no errors in the browser console — bb9952b
-- [x] 0.6 The browser tab title reads `PigeonWatch` — bb9952b
+- [x] 0.5 `npm start` serves the placeholder at `http://localhost:4200/` with the `PigeonWatch` heading and no errors in the browser console — aed3289
+- [x] 0.6 The browser tab title reads `PigeonWatch` — aed3289
 
 ### Phase 1: Layered API and data layer
 
 #### Automated
 
-- [x] 1.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 4448c4f
-- [x] 1.2 Old flat project is gone: `test ! -e PigeonWatch/Api/PigeonWatchApi.csproj` — 4448c4f
-- [x] 1.3 Tools restore and EF model matches migrations: `dotnet tool restore && dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj` — 4448c4f
-- [x] 1.4 Migration applies to a fresh LocalDB database: `dotnet ef database drop --force --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj && dotnet ef database update --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj` — 4448c4f
-- [x] 1.5 Local probe returns 200 from the running API: `curl -f http://localhost:5285/health/db` — 4448c4f
-- [x] 1.6 Local probe leaves no rows behind: `sqlcmd -S "(localdb)\MSSQLLocalDB" -d PigeonWatch -Q "SELECT COUNT(*) FROM SMOKE_CHECK"` returns 0 — 4448c4f
-- [x] 1.7 Dependency audit is clean: `dotnet list PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj package --vulnerable --include-transitive` — 4448c4f
+- [x] 1.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — aed3289
+- [x] 1.2 Old flat project is gone: `test ! -e PigeonWatch/Api/PigeonWatchApi.csproj` — aed3289
+- [x] 1.3 Tools restore and EF model matches migrations: `dotnet tool restore && dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj` — aed3289
+- [x] 1.4 Migration applies to a fresh LocalDB database: `dotnet ef database drop --force --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj && dotnet ef database update --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj` — aed3289
+- [x] 1.5 Local probe returns 200 from the running API: `curl -f http://localhost:5285/health/db` — aed3289
+- [x] 1.6 Local probe leaves no rows behind: `sqlcmd -S "(localdb)\MSSQLLocalDB" -d PigeonWatch -Q "SELECT COUNT(*) FROM SMOKE_CHECK"` returns 0 — aed3289
+- [x] 1.7 Dependency audit is clean: `dotnet list PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj package --vulnerable --include-transitive` — aed3289
 
 #### Manual
 
-- [x] 1.8 Running the API with `ConnectionStrings__Default` overridden to `Server=(localdb)\NoSuchInstance;Database=PigeonWatch;Trusted_Connection=True` and calling `/health/db` returns 503 with no stack trace or connection string in the body (LocalDB auto-starts on connect, so stopping it does not exercise this path; real transient outages return 503 only after the `EnableRetryOnFailure` budget runs out) — 4448c4f
-- [x] 1.9 The project layout and references match the layer rules in this plan, the response of `/health/db` is the API model (not a business object or entity), the database name in the local connection string is the intended one and no secret is committed — 4448c4f
-- [x] 1.10 Adding a `var` local or a `_`-prefixed private field to any non-migration file makes `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` fail, and removing it makes the build pass again — 4448c4f
+- [x] 1.8 Running the API with `ConnectionStrings__Default` overridden to `Server=(localdb)\NoSuchInstance;Database=PigeonWatch;Trusted_Connection=True` and calling `/health/db` returns 503 with no stack trace or connection string in the body (LocalDB auto-starts on connect, so stopping it does not exercise this path; real transient outages return 503 only after the `EnableRetryOnFailure` budget runs out) — aed3289
+- [x] 1.9 The project layout and references match the layer rules in this plan, the response of `/health/db` is the API model (not a business object or entity), the database name in the local connection string is the intended one and no secret is committed — aed3289
+- [x] 1.10 Adding a `var` local or a `_`-prefixed private field to any non-migration file makes `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` fail, and removing it makes the build pass again — aed3289
 
 ### Phase 2: Architecture tests and guardrails
 
 #### Automated
 
-- [x] 2.1 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — 8186b77
-- [x] 2.2 Solution still builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 8186b77
-- [x] 2.3 Test project dependency audit is clean: `dotnet list PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj package --vulnerable --include-transitive` — 8186b77
+- [x] 2.1 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — aed3289
+- [x] 2.2 Solution still builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — aed3289
+- [x] 2.3 Test project dependency audit is clean: `dotnet list PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj package --vulnerable --include-transitive` — aed3289
 
 #### Manual
 
-- [x] 2.4 A deliberate violation (a controller action returning a business object, an action declared as `Task<IActionResult>` that returns `Ok(businessObject)`, `WebApi` using a `PigeonWatch.Data` type, a new static helper class, or a service without an interface or registration) makes the architecture tests fail, and removing it makes them pass again — 8186b77
-- [x] 2.5 Both `CLAUDE.md` files describe the layout and the layer rules accurately — 8186b77
+- [x] 2.4 A deliberate violation (a controller action returning a business object, an action declared as `Task<IActionResult>` that returns `Ok(businessObject)`, `WebApi` using a `PigeonWatch.Data` type, a new static helper class, or a service without an interface or registration) makes the architecture tests fail, and removing it makes them pass again — aed3289
+- [x] 2.5 Both `CLAUDE.md` files describe the layout and the layer rules accurately — aed3289
 
 ### Phase 3: Azure access grants (manual)
 
 #### Automated
 
-- [x] 3.1 SQL user and roles exist: `sqlcmd -S pigeonwatch-sql.database.windows.net -d pigeonwatch-db -G -Q "SELECT dp.name, r.name FROM sys.database_role_members m JOIN sys.database_principals r ON m.role_principal_id = r.principal_id JOIN sys.database_principals dp ON m.member_principal_id = dp.principal_id WHERE dp.name = 'pigeon-watch-api-github-oidc'"` — 9ec7e6f
-- [x] 3.2 Firewall role assignment exists at server scope: `az role assignment list --assignee d5757dbf-4a84-4d27-99e0-edd83841cdb9 --scope <pigeonwatch-sql resource id>` — 9ec7e6f
+- [x] 3.1 SQL user and roles exist: `sqlcmd -S pigeonwatch-sql.database.windows.net -d pigeonwatch-db -G -Q "SELECT dp.name, r.name FROM sys.database_role_members m JOIN sys.database_principals r ON m.role_principal_id = r.principal_id JOIN sys.database_principals dp ON m.member_principal_id = dp.principal_id WHERE dp.name = 'pigeon-watch-api-github-oidc'"` — aed3289
+- [x] 3.2 Firewall role assignment exists at server scope: `az role assignment list --assignee d5757dbf-4a84-4d27-99e0-edd83841cdb9 --scope <pigeonwatch-sql resource id>` — aed3289
 
 #### Manual
 
-- [x] 3.3 The temporary client-IP firewall rule used for the `sqlcmd` session has been deleted — 9ec7e6f
-- [x] 3.4 The managed identity's roles on the database are unchanged (still reader and writer only) — 9ec7e6f
-- [x] 3.5 `deploy-plan.md` records the CI SQL user, its three roles and the scoped firewall role with the verification commands used — 9ec7e6f
+- [x] 3.3 The temporary client-IP firewall rule used for the `sqlcmd` session has been deleted — aed3289
+- [x] 3.4 The managed identity's roles on the database are unchanged (still reader and writer only) — aed3289
+- [x] 3.5 `deploy-plan.md` records the CI SQL user, its three roles and the scoped firewall role with the verification commands used — aed3289
 
 ### Phase 4: CI test and migrate jobs
 
 #### Automated
 
-- [x] 4.1 Workflow file is valid YAML with the job chain `test` -> `migrate` -> `build-and-deploy`: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/deploy-api.yml')); j=d['jobs']; n=lambda k: (lambda v: v if isinstance(v, list) else [v])(j[k]['needs']); assert 'migrate' in n('build-and-deploy') and 'test' in n('migrate')"` — b612afe
-- [x] 4.2 No secret value appears in the workflow file: `git grep -n -i "password\|secret" .github/workflows/deploy-api.yml` lists only `secrets.AZURE_CLIENT_ID`, `secrets.AZURE_TENANT_ID` and `secrets.AZURE_SUBSCRIPTION_ID` references (one set in each job that logs in) — b612afe
-- [x] 4.3 Migration bundle builds locally the same way CI builds it: `dotnet ef migrations bundle --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj --self-contained -r linux-x64 --output <scratch>/efbundle` — b612afe
-- [x] 4.4 The deploy host publishes locally the same way CI publishes it: `dotnet publish PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -c Release -o <scratch>/publish` — b612afe
+- [x] 4.1 Workflow file is valid YAML with the job chain `test` -> `migrate` -> `build-and-deploy`: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/deploy-api.yml')); j=d['jobs']; n=lambda k: (lambda v: v if isinstance(v, list) else [v])(j[k]['needs']); assert 'migrate' in n('build-and-deploy') and 'test' in n('migrate')"` — aed3289
+- [x] 4.2 No secret value appears in the workflow file: `git grep -n -i "password\|secret" .github/workflows/deploy-api.yml` lists only `secrets.AZURE_CLIENT_ID`, `secrets.AZURE_TENANT_ID` and `secrets.AZURE_SUBSCRIPTION_ID` references (one set in each job that logs in) — aed3289
+- [x] 4.3 Migration bundle builds locally the same way CI builds it: `dotnet ef migrations bundle --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj --self-contained -r linux-x64 --output <scratch>/efbundle` — aed3289
+- [x] 4.4 The deploy host publishes locally the same way CI publishes it: `dotnet publish PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -c Release -o <scratch>/publish` — aed3289
 
-- [x] 4.6 PR gate workflow is valid YAML, triggers on pull requests to `main` and has the `architecture-tests` job: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'main' in d[True]['pull_request']['branches'] and 'architecture-tests' in d['jobs']"` — b612afe
-- [x] 4.8 Frontend builds and its unit tests pass the way the PR gate runs them, and the gate has the `frontend-build-and-test` job: `npm ci --prefix PigeonWatch/Frontend && npm run build --prefix PigeonWatch/Frontend && npm test --prefix PigeonWatch/Frontend -- --watch=false && python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'frontend-build-and-test' in d['jobs']"` — f79819e
-- [x] 4.10 Migration bundle builds from a clean clone the way CI builds it: in a fresh `git clone` of the branch, `dotnet tool restore && dotnet restore PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -r linux-x64 && dotnet ef migrations bundle --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj --configuration Release --self-contained -r linux-x64 --output efbundle` — 83c96c5
-- [x] 4.11 Deploy is clean, the startup command is pinned and no workflow action targets Node 20: `python -c "import yaml,glob; d=yaml.safe_load(open('.github/workflows/deploy-api.yml')); w=[st['with'] for st in d['jobs']['build-and-deploy']['steps'] if 'webapps-deploy' in st.get('uses','')][0]; assert w['clean'] is True and 'type' not in w; u=[l for f in glob.glob('.github/workflows/*.yml') for l in open(f) if 'uses:' in l]; assert not [l for l in u if any(o in l for o in ('checkout@v3','checkout@v4','setup-dotnet@v4','setup-node@v4','login@v2'))]" && az webapp config show --name pigeonwatch-api --resource-group pigeon-watch-rg --query appCommandLine -o tsv` prints `dotnet PigeonWatch.WebApi.Host.dll` — 7a0719c
+- [x] 4.6 PR gate workflow is valid YAML, triggers on pull requests to `main` and has the `architecture-tests` job: `python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'main' in d[True]['pull_request']['branches'] and 'architecture-tests' in d['jobs']"` — aed3289
+- [x] 4.8 Frontend builds and its unit tests pass the way the PR gate runs them, and the gate has the `frontend-build-and-test` job: `npm ci --prefix PigeonWatch/Frontend && npm run build --prefix PigeonWatch/Frontend && npm test --prefix PigeonWatch/Frontend -- --watch=false && python -c "import yaml; d=yaml.safe_load(open('.github/workflows/api-pr-checks.yml')); assert 'frontend-build-and-test' in d['jobs']"` — aed3289
+- [x] 4.10 Migration bundle builds from a clean clone the way CI builds it: in a fresh `git clone` of the branch, `dotnet tool restore && dotnet restore PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj -r linux-x64 && dotnet ef migrations bundle --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj --configuration Release --self-contained -r linux-x64 --output efbundle` — 954367c
+- [x] 4.11 Deploy is clean, the startup command is pinned and no workflow action targets Node 20: `python -c "import yaml,glob; d=yaml.safe_load(open('.github/workflows/deploy-api.yml')); w=[st['with'] for st in d['jobs']['build-and-deploy']['steps'] if 'webapps-deploy' in st.get('uses','')][0]; assert w['clean'] is True and 'type' not in w; u=[l for f in glob.glob('.github/workflows/*.yml') for l in open(f) if 'uses:' in l]; assert not [l for l in u if any(o in l for o in ('checkout@v3','checkout@v4','setup-dotnet@v4','setup-node@v4','login@v2'))]" && az webapp config show --name pigeonwatch-api --resource-group pigeon-watch-rg --query appCommandLine -o tsv` prints `dotnet PigeonWatch.WebApi.Host.dll` — 29b7155
 
 #### Manual
 
-- [x] 4.5 Workflow diff reviewed by Dominik, including that the firewall rule name is unique per run and is deleted under `if: always()` — b612afe
-- [x] 4.7 `architecture-tests` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge — 83c96c5
-- [x] 4.9 `frontend-build-and-test` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge — 83c96c5
+- [x] 4.5 Workflow diff reviewed by Dominik, including that the firewall rule name is unique per run and is deleted under `if: always()` — aed3289
+- [x] 4.7 `architecture-tests` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge — 954367c
+- [x] 4.9 `frontend-build-and-test` is a required status check in `main`'s branch protection, and the Phase 5 PR shows it passing before merge — 954367c
 
 ### Phase 5: Live verification and close-out
 
 #### Automated
 
-- [x] 5.1 Latest `deploy-api.yml` run on `main` concluded successfully: `gh run list --workflow deploy-api.yml --branch main --limit 1 --json conclusion --jq '.[0].conclusion'` prints `success` — 7c417ae
-- [x] 5.2 Live probe returns 200: `curl -f https://pigeonwatch-api.azurewebsites.net/health/db` — 7c417ae
-- [x] 5.3 Only the baseline firewall rule remains: `az sql server firewall-rule list --resource-group pigeon-watch-rg --server pigeonwatch-sql --query "[].name" -o tsv` prints only `AllowAzureServices` (checked after the temporary client-IP rule for 5.4 and 5.5 is deleted) — 7c417ae
-- [x] 5.4 Migration history applied in the live database: `sqlcmd -S pigeonwatch-sql.database.windows.net -d pigeonwatch-db -G -Q "SELECT MIGRATION_ID FROM EF_MIGRATIONS_HISTORY"` lists one row — 7c417ae
+- [x] 5.1 Latest `deploy-api.yml` run on `main` concluded successfully: `gh run list --workflow deploy-api.yml --branch main --limit 1 --json conclusion --jq '.[0].conclusion'` prints `success` — 0012335
+- [x] 5.2 Live probe returns 200: `curl -f https://pigeonwatch-api.azurewebsites.net/health/db` — 0012335
+- [x] 5.3 Only the baseline firewall rule remains: `az sql server firewall-rule list --resource-group pigeon-watch-rg --server pigeonwatch-sql --query "[].name" -o tsv` prints only `AllowAzureServices` (checked after the temporary client-IP rule for 5.4 and 5.5 is deleted) — 0012335
+- [x] 5.4 Migration history applied in the live database: `sqlcmd -S pigeonwatch-sql.database.windows.net -d pigeonwatch-db -G -Q "SELECT MIGRATION_ID FROM EF_MIGRATIONS_HISTORY"` lists one row — 0012335
 
 #### Manual
 
-- [x] 5.5 `SELECT COUNT(*) FROM SMOKE_CHECK` in the live database returns 0 after several probe calls — 7c417ae
-- [x] 5.6 Calling `/health/db` after the database has been idle long enough to auto-pause eventually returns 200 rather than 503 — 7c417ae
-- [x] 5.7 `deploy-plan.md` reads accurately: Phase 3 data-layer item ticked, layered-layout and runbook note present — 7c417ae
+- [x] 5.5 `SELECT COUNT(*) FROM SMOKE_CHECK` in the live database returns 0 after several probe calls — 0012335
+- [x] 5.6 Calling `/health/db` after the database has been idle long enough to auto-pause eventually returns 200 rather than 503 — 0012335
+- [x] 5.7 `deploy-plan.md` reads accurately: Phase 3 data-layer item ticked, layered-layout and runbook note present — 0012335
