@@ -872,18 +872,18 @@ The user-visible slice: login, registration, the protected home page with logout
 
 #### Automated
 
-- [x] 2.1 Solution builds
-- [x] 2.2 Architecture tests pass
-- [x] 2.3 Unit tests pass (exception handler, configuration services)
-- [x] 2.4 No pending model changes; RemoveSmokeCheck only drops SMOKE_CHECK
-- [x] 2.5 No health/db reference remains
-- [x] 2.14 Unit tests cover the UI resource service
-- [x] 2.16 Registration maps duplicate email to generic RegistrationFailed
+- [x] 2.1 Solution builds — 5273c29
+- [x] 2.2 Architecture tests pass — 5273c29
+- [x] 2.3 Unit tests pass (exception handler, configuration services) — 5273c29
+- [x] 2.4 No pending model changes; RemoveSmokeCheck only drops SMOKE_CHECK — 5273c29
+- [x] 2.5 No health/db reference remains — 5273c29
+- [x] 2.14 Unit tests cover the UI resource service — 5273c29
+- [x] 2.16 Registration maps duplicate email to generic RegistrationFailed — 5273c29
 
 #### Manual
 
-- [x] 2.6 Local configuration endpoints return expected bodies and cache headers; 11th login returns 429
-- [x] 2.7 Unreachable DB returns 503 with Retry-After and CORS header locally
+- [x] 2.6 Local configuration endpoints return expected bodies and cache headers; 11th login returns 429 — 5273c29
+- [x] 2.7 Unreachable DB returns 503 with Retry-After and CORS header locally — 5273c29
 - [ ] 2.8 Forwarded-headers app setting set; deploy workflow succeeds with new probe
 - [ ] 2.9 Live register, login, general configuration and refresh work; blocked routes 404
 - [ ] 2.10 Live rate limiting is per client IP
@@ -891,23 +891,23 @@ The user-visible slice: login, registration, the protected home page with logout
 - [ ] 2.12 Data Protection keys survive app restart
 - [ ] 2.13 Live /health/db returns 404
 - [ ] 2.15 Resources endpoint returns English labels with fallback
-- [x] 2.17 Registering a taken email returns only RegistrationFailed without the email
+- [x] 2.17 Registering a taken email returns only RegistrationFailed without the email — 5273c29
 
 ### Phase 3: SPA auth infrastructure
 
 #### Automated
 
-- [ ] 3.1 Production build succeeds with SWA config and no onload handler
-- [ ] 3.2 Vitest specs pass (token store, interceptors, guards, safeReturnUrl, session initialize)
-- [ ] 3.5 Resource snapshot generation and resource specs pass
-- [ ] 3.7 Angular Material installed and themed from tokens; style token coverage spec passes
+- [x] 3.1 Production build succeeds with SWA config and no onload handler
+- [x] 3.2 Vitest specs pass (token store, interceptors, guards, safeReturnUrl, session initialize)
+- [x] 3.5 Resource snapshot generation and resource specs pass
+- [x] 3.7 Angular Material installed and themed from tokens; style token coverage spec passes
 
 #### Manual
 
-- [ ] 3.3 Logged-out deep link redirects to login with returnUrl
-- [ ] 3.4 configuration/client request carries no Authorization header
-- [ ] 3.6 SPA renders snapshot labels with the API stopped
-- [ ] 3.8 Tokens visible on :root and drive the Material theme live
+- [x] 3.3 Logged-out deep link redirects to login with returnUrl
+- [x] 3.4 configuration/client request carries no Authorization header
+- [x] 3.6 SPA renders snapshot labels with the API stopped
+- [x] 3.8 Tokens visible on :root and drive the Material theme live
 
 ### Phase 4: SPA pages, warm-up panel and end-to-end
 

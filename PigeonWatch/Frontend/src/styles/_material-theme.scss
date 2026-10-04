@@ -1,0 +1,35 @@
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light;
+
+  @include mat.theme(
+    (
+      color: (
+        theme-type: light,
+        primary: mat.$azure-palette,
+      ),
+      typography: var(--pw-font-family),
+      density: 0,
+    )
+  );
+
+  @include mat.theme-overrides(
+    (
+      primary: var(--pw-color-primary),
+      on-primary: var(--pw-color-on-primary),
+      background: var(--pw-color-background),
+      on-background: var(--pw-color-text),
+      surface: var(--pw-color-surface),
+      on-surface: var(--pw-color-text),
+      on-surface-variant: var(--pw-color-text-muted),
+      outline: var(--pw-color-border),
+      error: var(--pw-color-danger),
+      corner-extra-small: var(--pw-radius-sm),
+      corner-small: var(--pw-radius-md),
+      corner-medium: var(--pw-radius-md),
+      corner-large: var(--pw-radius-lg),
+      corner-full: var(--pw-radius-full),
+    )
+  );
+}

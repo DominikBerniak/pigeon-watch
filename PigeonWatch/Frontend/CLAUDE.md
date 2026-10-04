@@ -8,7 +8,7 @@ Scope: `PigeonWatch/Frontend/` only — the Angular app. See `@PigeonWatch/CLAUD
 
 Angular 22 app (standalone components, SCSS, routing enabled, no SSR). Consumes the `Api/` project over HTTP — there is no shared build or repo-root package manifest between them.
 
-Currently a minimal shell — the root `App` component renders the PigeonWatch heading and a router outlet, with no real components/services yet. Unit tests run on Vitest with jsdom through the `@angular/build:unit-test` builder (`test` target in `angular.json`); `src/app/app.spec.ts` is the only spec. The schematics still default to `skipTests`, so add a `*.spec.ts` by hand when a component or service needs one. The `frontend-build-and-test` job in `.github/workflows/api-pr-checks.yml` runs the production build and the tests on every PR to `main`.
+Cross-cutting plumbing lives in `src/app/core/` (`auth/` token store, session, auth interceptor and guards; `configuration/`; `warmup/` state and interceptor; `resources/` UI labels and the `translate` pipe; `http/` context tokens), lazy-loaded pages in `src/app/features/`, and global styles in `src/styles/`. Unit tests run on Vitest with jsdom through the `@angular/build:unit-test` builder (`test` target in `angular.json`); specs sit next to the code they cover as `*.spec.ts`. The schematics still default to `skipTests`, so add a `*.spec.ts` by hand when a component or service needs one. The `frontend-build-and-test` job in `.github/workflows/api-pr-checks.yml` runs the production build and the tests on every PR to `main`.
 
 ## UI library, styling and reusable components
 
@@ -28,7 +28,12 @@ These rules apply to every UI change. They are being introduced by the `register
 - **Every UI text is a key in `PigeonWatch/Api/BusinessObjects/Resources/UiLabels.resx`.** Templates and components contain no literal UI text: labels, buttons, messages, hints, validation and warm-up lines all come from that file. Need a new text? Add a key to the resx in the same change, not a string in the SPA.
 - **Key format**: lowercase dot paths, `<area>.<group>.<name>` with camelCase segments (`common.appName`, `auth.login.title`, `auth.errors.invalidCredentials`, `warmup.messages.1`). Values use positional placeholders only (`{0}`, `{1}`); no ICU or plural syntax.
 - **A new culture** is added as `UiLabels.<culture>.resx` next to the neutral English file (for example `UiLabels.pl.resx`). Missing keys fall back to English per key, and the API serves `en` for any culture without a resx.
-- The API serves the map at `GET {apiUrl}/resources/{culture}`. These rules are introduced by the `register-and-login` change; the snapshot generator, `ResourceService` and `t` pipe arrive in its Phase 3.
+- **Reading labels**: templates use the `translate` pipe (`{{ 'auth.login.title' | translate }}`, `{{ 'auth.validation.passwordMinLength' | translate: 8 }}`); code uses `ResourceService.t(key, ...args)`. The API serves the map at `GET {apiUrl}/resources/{culture}`. `scripts/generate-resources.mjs` (run by `prestart`, `prebuild` and `pretest`) bundles every `UiLabels*.resx` into `src/app/core/resources/generated/` (gitignored), so labels render before the API answers.
+
+## Angular conventions
+
+- Components use `templateUrl` with a sibling `.html` file. No inline `template:` outside host components declared in `*.spec.ts` files.
+- Async APIs in services, guards and resolvers return RxJS Observables, not Promises: no `async`/`await`/`firstValueFrom` in production code. The exceptions are `loadComponent` dynamic imports and router navigation calls (`void router.navigate(...)`); wrap other promise sources with `from(...)`.
 
 ## TypeScript coding rules
 
