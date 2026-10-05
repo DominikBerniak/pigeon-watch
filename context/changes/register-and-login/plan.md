@@ -884,13 +884,13 @@ The user-visible slice: login, registration, the protected home page with logout
 
 - [x] 2.6 Local configuration endpoints return expected bodies and cache headers; 11th login returns 429 — 5273c29
 - [x] 2.7 Unreachable DB returns 503 with Retry-After and CORS header locally — 5273c29
-- [ ] 2.8 Forwarded-headers app setting set; deploy workflow succeeds with new probe
-- [ ] 2.9 Live register, login, general configuration and refresh work; blocked routes 404
-- [ ] 2.10 Live rate limiting is per client IP
-- [ ] 2.11 Live CORS preflight with Authorization header succeeds
-- [ ] 2.12 Data Protection keys survive app restart
-- [ ] 2.13 Live /health/db returns 404
-- [ ] 2.15 Resources endpoint returns English labels with fallback
+- [x] 2.8 Forwarded-headers app setting set; deploy workflow succeeds with new probe — f524fea
+- [x] 2.9 Live register, login, general configuration and refresh work; blocked routes 404 — f524fea
+- [x] 2.10 Live rate limiting is per client IP — f524fea
+- [x] 2.11 Live CORS preflight with Authorization header succeeds — f524fea
+- [x] 2.12 Data Protection keys survive app restart — f524fea
+- [x] 2.13 Live /health/db returns 404 — f524fea
+- [x] 2.15 Resources endpoint returns English labels with fallback — f524fea
 - [x] 2.17 Registering a taken email returns only RegistrationFailed without the email — 5273c29
 
 ### Phase 3: SPA auth infrastructure
@@ -924,8 +924,8 @@ The user-visible slice: login, registration, the protected home page with logout
 - [x] 4.4 Local register, reload, new tab, logout and login with returnUrl — 6e96dd8
 - [x] 4.5 Silent token refresh shows no error — 6e96dd8
 - [x] 4.6 Warm-up panel appears on 503 and recovers — 6e96dd8
-- [ ] 4.7 Live flow works in Chrome, Chrome Incognito and Safari without API cookies
-- [ ] 4.8 Live deep link loads with CSP and no violations
-- [ ] 4.9 Live cold start shows warm-up panel and loads
-- [ ] 4.11 Label-only resx change redeploys API and SPA
+- [x] 4.7 Live flow works in Chrome, Chrome Incognito and Safari without API cookies — f524fea
+- [x] 4.8 Live deep link loads with CSP and no violations — f524fea
+- [x] 4.9 Live cold start shows warm-up panel and loads — f524fea
+- [x] 4.11 Label-only resx change redeploys API and SPA — f524fea
 - [x] 4.13 Pages share one visual system and a token change restyles all of them — 6e96dd8
