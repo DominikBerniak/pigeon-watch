@@ -897,35 +897,35 @@ The user-visible slice: login, registration, the protected home page with logout
 
 #### Automated
 
-- [x] 3.1 Production build succeeds with SWA config and no onload handler
-- [x] 3.2 Vitest specs pass (token store, interceptors, guards, safeReturnUrl, session initialize)
-- [x] 3.5 Resource snapshot generation and resource specs pass
-- [x] 3.7 Angular Material installed and themed from tokens; style token coverage spec passes
+- [x] 3.1 Production build succeeds with SWA config and no onload handler — 31c62ba
+- [x] 3.2 Vitest specs pass (token store, interceptors, guards, safeReturnUrl, session initialize) — 31c62ba
+- [x] 3.5 Resource snapshot generation and resource specs pass — 31c62ba
+- [x] 3.7 Angular Material installed and themed from tokens; style token coverage spec passes — 31c62ba
 
 #### Manual
 
-- [x] 3.3 Logged-out deep link redirects to login with returnUrl
-- [x] 3.4 configuration/client request carries no Authorization header
-- [x] 3.6 SPA renders snapshot labels with the API stopped
-- [x] 3.8 Tokens visible on :root and drive the Material theme live
+- [x] 3.3 Logged-out deep link redirects to login with returnUrl — 31c62ba
+- [x] 3.4 configuration/client request carries no Authorization header — 31c62ba
+- [x] 3.6 SPA renders snapshot labels with the API stopped — 31c62ba
+- [x] 3.8 Tokens visible on :root and drive the Material theme live — 31c62ba
 
 ### Phase 4: SPA pages, warm-up panel and end-to-end
 
 #### Automated
 
-- [ ] 4.1 Production build succeeds
-- [ ] 4.2 Vitest specs pass (login, register, warm-up panel)
+- [x] 4.1 Production build succeeds
+- [x] 4.2 Vitest specs pass (login, register, warm-up panel)
 - [ ] 4.3 PR workflow green
-- [ ] 4.10 Label coverage spec passes
-- [ ] 4.12 Reusable app component specs pass and pages use them
+- [x] 4.10 Label coverage spec passes
+- [x] 4.12 Reusable app component specs pass and pages use them
 
 #### Manual
 
-- [ ] 4.4 Local register, reload, new tab, logout and login with returnUrl
-- [ ] 4.5 Silent token refresh shows no error
-- [ ] 4.6 Warm-up panel appears on 503 and recovers
+- [x] 4.4 Local register, reload, new tab, logout and login with returnUrl
+- [x] 4.5 Silent token refresh shows no error
+- [x] 4.6 Warm-up panel appears on 503 and recovers
 - [ ] 4.7 Live flow works in Chrome, Chrome Incognito and Safari without API cookies
 - [ ] 4.8 Live deep link loads with CSP and no violations
 - [ ] 4.9 Live cold start shows warm-up panel and loads
 - [ ] 4.11 Label-only resx change redeploys API and SPA
-- [ ] 4.13 Pages share one visual system and a token change restyles all of them
+- [x] 4.13 Pages share one visual system and a token change restyles all of them

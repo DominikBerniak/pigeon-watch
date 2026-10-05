@@ -1,0 +1,41 @@
+.warmup-panel--visible {
+  position: fixed;
+  inset: 0;
+  z-index: var(--pw-z-overlay);
+  display: grid;
+  place-items: center;
+  padding: var(--pw-space-4);
+  overflow-y: auto;
+  background-color: var(--pw-color-overlay);
+}
+
+.warmup-panel__content {
+  max-width: var(--pw-form-max-width);
+  align-items: center;
+  text-align: center;
+}
+
+.warmup-panel__message {
+  color: var(--pw-color-text-muted);
+}
+
+.warmup-panel__pulse {
+  width: var(--pw-space-7);
+  height: var(--pw-space-7);
+  border-radius: var(--pw-radius-full);
+  background-color: var(--pw-color-primary);
+  animation: warmup-pulse calc(var(--pw-duration-normal) * 4) var(--pw-easing-standard) infinite
+    alternate;
+}
+
+@keyframes warmup-pulse {
+  from {
+    opacity: 0.4;
+    transform: scale(0.75);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

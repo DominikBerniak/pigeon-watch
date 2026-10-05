@@ -6,6 +6,6 @@ export class TranslatePipe implements PipeTransform {
   private readonly resources = inject(ResourceService);
 
   transform(key: string, ...args: unknown[]): string {
-    return this.resources.t(key, ...args);
+    return this.resources.translate(key, ...args);
   }
 }

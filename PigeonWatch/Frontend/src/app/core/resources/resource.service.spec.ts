@@ -42,13 +42,15 @@ describe('ResourceService', () => {
   it('is seeded synchronously from the en snapshot', () => {
     expect(service.culture()).toBe('en');
     expect(service.labels()).toBe(defaultLabels);
-    expect(service.t('common.appName')).toBe('PigeonWatch');
+    expect(service.translate('common.appName')).toBe('PigeonWatch');
     expect(document.documentElement.lang).toBe('en');
   });
 
   it('substitutes positional placeholders', () => {
-    expect(service.t('auth.validation.passwordMinLength', 8)).toBe('Use at least 8 characters.');
-    expect(service.t('auth.register.displayNameHint', 3, 30)).toBe(
+    expect(service.translate('auth.validation.passwordMinLength', 8)).toBe(
+      'Use at least 8 characters.',
+    );
+    expect(service.translate('auth.register.displayNameHint', 3, 30)).toBe(
       'Shown to other rescuers. 3–30 characters, no "@".',
     );
   });
@@ -56,9 +58,9 @@ describe('ResourceService', () => {
   it('returns the key for a missing key and warns once', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    expect(service.t('missing.key')).toBe('missing.key');
-    expect(service.t('missing.key')).toBe('missing.key');
-    expect(service.t('constructor')).toBe('constructor');
+    expect(service.translate('missing.key')).toBe('missing.key');
+    expect(service.translate('missing.key')).toBe('missing.key');
+    expect(service.translate('constructor')).toBe('constructor');
 
     expect(warn).toHaveBeenCalledTimes(2);
   });
@@ -70,7 +72,7 @@ describe('ResourceService', () => {
     request.flush({ culture: 'en', labels: { 'common.appName': 'PigeonWatch API' } });
     await load;
 
-    expect(service.t('common.appName')).toBe('PigeonWatch API');
+    expect(service.translate('common.appName')).toBe('PigeonWatch API');
     expect(document.documentElement.lang).toBe('en');
   });
 

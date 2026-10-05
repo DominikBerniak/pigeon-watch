@@ -60,6 +60,9 @@
   <data name="auth.login.title" xml:space="preserve">
     <value>Log in</value>
   </data>
+  <data name="auth.login.subtitle" xml:space="preserve">
+    <value>Welcome back. Log in to keep an eye out for birds in need.</value>
+  </data>
   <data name="auth.login.submit" xml:space="preserve">
     <value>Log in</value>
   </data>
@@ -71,6 +74,9 @@
   </data>
   <data name="auth.register.title" xml:space="preserve">
     <value>Create account</value>
+  </data>
+  <data name="auth.register.subtitle" xml:space="preserve">
+    <value>Join the rescuers looking out for the city's pigeons.</value>
   </data>
   <data name="auth.register.submit" xml:space="preserve">
     <value>Create account</value>

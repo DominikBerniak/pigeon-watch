@@ -20,6 +20,13 @@ import { WarmupState } from '../warmup/warmup-state';
 import { AuthApi, RegisterRequest } from './auth-api';
 import { AccessTokenResponse, TokenStore, refreshTokenStorageKey } from './token-store';
 
+export class AutoLoginError extends Error {
+  constructor(cause: unknown) {
+    super('The account was created, but the automatic login failed.', { cause });
+    this.name = 'AutoLoginError';
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class SessionService {
   private readonly tokens = inject(TokenStore);
@@ -73,7 +80,13 @@ export class SessionService {
   register(request: RegisterRequest): Observable<void> {
     return this.authApi
       .register(request)
-      .pipe(switchMap(() => this.login(request.email, request.password)));
+      .pipe(
+        switchMap(() =>
+          this.login(request.email, request.password).pipe(
+            catchError((error: unknown) => throwError(() => new AutoLoginError(error))),
+          ),
+        ),
+      );
   }
 
   logout(): void {

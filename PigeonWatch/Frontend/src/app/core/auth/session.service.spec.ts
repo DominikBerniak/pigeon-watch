@@ -6,7 +6,7 @@ import { Observable, firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ConfigurationService } from '../configuration/configuration.service';
 import { authInterceptor } from './auth.interceptor';
-import { SessionService } from './session.service';
+import { AutoLoginError, SessionService } from './session.service';
 import { TokenStore, refreshTokenStorageKey } from './token-store';
 
 const apiUrl = environment.apiUrl;
@@ -188,6 +188,39 @@ describe('SessionService', () => {
     await register;
 
     expect(session.isAuthenticated()).toBe(true);
+    httpMock.verify();
+  });
+
+  it('reports a registration error as it is', async () => {
+    const session = TestBed.inject(SessionService);
+    const request = { email: 'jan@example.com', password: 'Secret1!', displayName: 'Jan K' };
+
+    const register = firstValueFrom(session.register(request));
+    httpMock
+      .expectOne(`${apiUrl}/account/register`)
+      .flush({ errors: { RegistrationFailed: ['x'] } }, { status: 400, statusText: 'Bad Request' });
+
+    await expect(register).rejects.toMatchObject({ status: 400 });
+    httpMock.expectNone(`${apiUrl}/auth/login`);
+    httpMock.verify();
+  });
+
+  it('wraps a failed auto-login after registration in AutoLoginError', async () => {
+    const session = TestBed.inject(SessionService);
+    const request = { email: 'jan@example.com', password: 'Secret1!', displayName: 'Jan K' };
+
+    const register = firstValueFrom(session.register(request));
+    httpMock
+      .expectOne(`${apiUrl}/account/register`)
+      .flush({ email: request.email, displayName: request.displayName });
+    httpMock
+      .expectOne(`${apiUrl}/auth/login`)
+      .flush(null, { status: 503, statusText: 'Service Unavailable' });
+
+    const error = await register.catch((failure: unknown) => failure);
+    expect(error).toBeInstanceOf(AutoLoginError);
+    expect((error as AutoLoginError).cause).toMatchObject({ status: 503 });
+    expect(session.isAuthenticated()).toBe(false);
     httpMock.verify();
   });
 

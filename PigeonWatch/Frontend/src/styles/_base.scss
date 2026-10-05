@@ -32,6 +32,19 @@ body {
   line-height: var(--pw-line-height-normal);
   color: var(--pw-color-text);
   background-color: var(--pw-color-background);
+  background-image: var(--pw-gradient-backdrop);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: var(--pw-letter-spacing-tight);
+}
+
+a {
+  color: var(--pw-color-primary);
 }
 
 :focus-visible {

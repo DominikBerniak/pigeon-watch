@@ -1,0 +1,23 @@
+<div
+  class="warmup-panel"
+  role="status"
+  aria-live="polite"
+  [class.warmup-panel--visible]="status() !== 'idle'"
+>
+  @if (status() === 'warming') {
+    <div class="pw-stack warmup-panel__content">
+      <div class="warmup-panel__pulse" aria-hidden="true"></div>
+      <h2 class="pw-subtitle">{{ 'warmup.title' | translate }}</h2>
+      <p class="warmup-panel__message">{{ message() }}</p>
+    </div>
+  } @else if (status() === 'failed') {
+    <app-page-card [title]="'warmup.failed.title' | translate">
+      <p>{{ 'warmup.failed.message' | translate }}</p>
+      <div actions>
+        <button mat-flat-button type="button" (click)="retry()">
+          {{ 'warmup.failed.retry' | translate }}
+        </button>
+      </div>
+    </app-page-card>
+  }
+</div>

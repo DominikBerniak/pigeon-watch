@@ -1,5 +1,24 @@
-<main>
-  <h1>PigeonWatch</h1>
-</main>
+<app-warmup-panel />
 
-<router-outlet />
+@if (currentUser(); as user) {
+  <header class="app-header">
+    <div class="pw-container pw-cluster app-header__bar">
+      <app-brand [name]="'common.appName' | translate" />
+      <div class="pw-cluster app-header__user">
+        <span class="pw-text-muted pw-text-small">{{
+          'header.loggedInAs' | translate: user.displayName
+        }}</span>
+        <button mat-stroked-button type="button" (click)="logout()">
+          {{ 'header.logout' | translate }}
+        </button>
+      </div>
+    </div>
+  </header>
+}
+
+<main class="app-main" [class.app-main--guest]="!currentUser()">
+  @if (!currentUser()) {
+    <app-brand size="lg" [name]="'common.appName' | translate" />
+  }
+  <router-outlet />
+</main>

@@ -1,0 +1,17 @@
+<button
+  mat-flat-button
+  type="submit"
+  class="pw-full-width"
+  [disabled]="busy()"
+  [attr.aria-busy]="busy() ? 'true' : null"
+>
+  @if (busy()) {
+    <mat-progress-spinner
+      class="submit-button__spinner"
+      mode="indeterminate"
+      aria-hidden="true"
+      [diameter]="spinnerDiameter"
+    />
+  }
+  <ng-content />
+</button>

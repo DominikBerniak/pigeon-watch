@@ -1,6 +1,39 @@
-main {
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--pw-z-header);
+  background-color: var(--pw-color-header);
+  backdrop-filter: blur(var(--pw-blur-md));
+  border-bottom: var(--pw-border-width) solid var(--pw-color-border-subtle);
+}
+
+.app-header__bar {
+  justify-content: space-between;
+  min-height: var(--pw-brand-mark-size-lg);
+  padding-block: var(--pw-space-3);
+}
+
+.app-header__user {
+  gap: var(--pw-space-4);
+}
+
+.app-main {
   max-width: var(--pw-content-max-width);
-  margin: var(--pw-space-7) auto;
+  margin: var(--pw-space-6) auto;
   padding: 0 var(--pw-space-4);
-  font-family: var(--pw-font-family);
+}
+
+.app-main--guest {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: var(--pw-space-6);
+  min-height: 100dvh;
+  margin-block: 0;
+  padding-block: var(--pw-space-6);
+}
+
+.app-main--guest > app-brand {
+  align-self: center;
 }

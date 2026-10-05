@@ -1,0 +1,48 @@
+@use 'breakpoints' as bp;
+
+:host {
+  display: block;
+  width: 100%;
+  max-width: var(--pw-form-max-width);
+  margin-inline: auto;
+  border-radius: var(--pw-radius-xl);
+  box-shadow: var(--pw-shadow-lg);
+}
+
+.page-card {
+  overflow: hidden;
+}
+
+.page-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-space-5);
+  padding: var(--pw-space-6) var(--pw-space-5) var(--pw-space-5);
+}
+
+.page-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-space-2);
+}
+
+.page-card__title {
+  font-size: var(--pw-font-size-xl);
+}
+
+.page-card__actions {
+  justify-content: center;
+  padding: var(--pw-space-3) var(--pw-space-5);
+  border-top: var(--pw-border-width) solid var(--pw-color-border-subtle);
+  background-color: var(--pw-color-background);
+}
+
+@include bp.from(sm) {
+  .page-card__body {
+    padding-inline: var(--pw-space-6);
+  }
+
+  .page-card__title {
+    font-size: var(--pw-font-size-2xl);
+  }
+}

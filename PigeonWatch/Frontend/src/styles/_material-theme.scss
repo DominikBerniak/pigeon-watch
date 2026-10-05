@@ -7,7 +7,7 @@ html {
     (
       color: (
         theme-type: light,
-        primary: mat.$azure-palette,
+        primary: mat.$blue-palette,
       ),
       typography: var(--pw-font-family),
       density: 0,
@@ -30,6 +30,39 @@ html {
       corner-medium: var(--pw-radius-md),
       corner-large: var(--pw-radius-lg),
       corner-full: var(--pw-radius-full),
+    )
+  );
+
+  @include mat.button-overrides(
+    (
+      filled-container-height: var(--pw-control-height),
+      filled-container-shape: var(--pw-radius-md),
+      filled-label-text-size: var(--pw-font-size-md),
+      filled-label-text-weight: var(--pw-font-weight-semibold),
+      filled-horizontal-padding: var(--pw-space-5),
+      text-container-shape: var(--pw-radius-md),
+      text-label-text-weight: var(--pw-font-weight-semibold),
+      outlined-container-shape: var(--pw-radius-md),
+      outlined-label-text-weight: var(--pw-font-weight-semibold),
+    )
+  );
+
+  @include mat.card-overrides(
+    (
+      outlined-container-shape: var(--pw-radius-xl),
+      outlined-outline-color: var(--pw-color-border-subtle),
+      outlined-container-color: var(--pw-color-surface),
+    )
+  );
+
+  @include mat.form-field-overrides(
+    (
+      outlined-container-shape: var(--pw-radius-md),
+      outlined-outline-color: var(--pw-color-border),
+      outlined-hover-outline-color: var(--pw-color-text),
+      outlined-focus-outline-color: var(--pw-color-primary),
+      outlined-focus-label-text-color: var(--pw-color-primary),
+      outlined-caret-color: var(--pw-color-primary),
     )
   );
 }

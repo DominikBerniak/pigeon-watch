@@ -34,7 +34,7 @@ export class ResourceService {
     this.loadSnapshot(this.requestedCulture).subscribe();
   }
 
-  t(key: string, ...args: unknown[]): string {
+  translate(key: string, ...args: unknown[]): string {
     const labels = this.labelsState();
 
     if (!Object.hasOwn(labels, key)) {
