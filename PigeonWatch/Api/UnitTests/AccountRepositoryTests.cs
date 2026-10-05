@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using NSubstitute;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data.Identity;
+using PigeonWatch.Data.Mappers;
 using PigeonWatch.Data.Repositories;
 
 namespace PigeonWatch.UnitTests;
@@ -16,7 +17,7 @@ public class AccountRepositoryTests
     {
         userManager.CreateAsync(Arg.Any<ApplicationUser>(), Arg.Any<string>()).Returns(IdentityResult.Success);
 
-        AccountCreationResult result = await new AccountRepository(userManager).CreateAsync(
+        AccountCreationResult result = await new AccountRepository(userManager, new UserAccountMapper()).CreateAsync(
             new NewAccount("user@example.com", "Secret1!", "Pidgey"),
             TestContext.Current.CancellationToken);
 
@@ -62,7 +63,7 @@ public class AccountRepositoryTests
             new IdentityErrorDescriber().DuplicateUserName("user@example.com"),
             new IdentityErrorDescriber().DuplicateEmail("user@example.com")));
 
-        AccountCreationResult result = await new AccountRepository(userManager).CreateAsync(
+        AccountCreationResult result = await new AccountRepository(userManager, new UserAccountMapper()).CreateAsync(
             new NewAccount("user@example.com", "Secret1!", "Pidgey"),
             TestContext.Current.CancellationToken);
 
@@ -96,7 +97,7 @@ public class AccountRepositoryTests
         Guid unknownId = Guid.NewGuid();
         userManager.FindByIdAsync(unknownId.ToString()).Returns((ApplicationUser?)null);
 
-        CurrentUser? currentUser = await new AccountRepository(userManager).GetCurrentUserAsync(
+        CurrentUser? currentUser = await new AccountRepository(userManager, new UserAccountMapper()).GetCurrentUserAsync(
             unknownId,
             TestContext.Current.CancellationToken);
 
@@ -109,7 +110,7 @@ public class AccountRepositoryTests
         ApplicationUser user = new() { Id = Guid.NewGuid(), Email = "user@example.com", DisplayName = "Pidgey" };
         userManager.FindByIdAsync(user.Id.ToString()).Returns(user);
 
-        CurrentUser? currentUser = await new AccountRepository(userManager).GetCurrentUserAsync(
+        CurrentUser? currentUser = await new AccountRepository(userManager, new UserAccountMapper()).GetCurrentUserAsync(
             user.Id,
             TestContext.Current.CancellationToken);
 
@@ -123,7 +124,7 @@ public class AccountRepositoryTests
             .ToArray();
         userManager.CreateAsync(Arg.Any<ApplicationUser>(), Arg.Any<string>()).Returns(IdentityResult.Failed(errors));
 
-        return new AccountRepository(userManager).CreateAsync(
+        return new AccountRepository(userManager, new UserAccountMapper()).CreateAsync(
             new NewAccount("user@example.com", "Secret1!", "Pidgey"),
             TestContext.Current.CancellationToken);
     }

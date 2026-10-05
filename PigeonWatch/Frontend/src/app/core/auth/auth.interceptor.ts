@@ -2,13 +2,13 @@ import { HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/comm
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { isApiUrl } from '../http/api-url';
 import { AUTH_RETRIED, SKIP_AUTH } from '../http/http-context-tokens';
 import { SessionService } from './session.service';
 import { TokenStore } from './token-store';
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
-  if (!request.url.startsWith(environment.apiUrl) || request.context.get(SKIP_AUTH)) {
+  if (!isApiUrl(request.url) || request.context.get(SKIP_AUTH)) {
     return next(request);
   }
 

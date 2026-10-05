@@ -913,19 +913,19 @@ The user-visible slice: login, registration, the protected home page with logout
 
 #### Automated
 
-- [x] 4.1 Production build succeeds
-- [x] 4.2 Vitest specs pass (login, register, warm-up panel)
-- [ ] 4.3 PR workflow green
-- [x] 4.10 Label coverage spec passes
-- [x] 4.12 Reusable app component specs pass and pages use them
+- [x] 4.1 Production build succeeds — 6e96dd8
+- [x] 4.2 Vitest specs pass (login, register, warm-up panel) — 6e96dd8
+- [x] 4.3 PR workflow green — 34c3f4a
+- [x] 4.10 Label coverage spec passes — 6e96dd8
+- [x] 4.12 Reusable app component specs pass and pages use them — 6e96dd8
 
 #### Manual
 
-- [x] 4.4 Local register, reload, new tab, logout and login with returnUrl
-- [x] 4.5 Silent token refresh shows no error
-- [x] 4.6 Warm-up panel appears on 503 and recovers
+- [x] 4.4 Local register, reload, new tab, logout and login with returnUrl — 6e96dd8
+- [x] 4.5 Silent token refresh shows no error — 6e96dd8
+- [x] 4.6 Warm-up panel appears on 503 and recovers — 6e96dd8
 - [ ] 4.7 Live flow works in Chrome, Chrome Incognito and Safari without API cookies
 - [ ] 4.8 Live deep link loads with CSP and no violations
 - [ ] 4.9 Live cold start shows warm-up panel and loads
 - [ ] 4.11 Label-only resx change redeploys API and SPA
-- [x] 4.13 Pages share one visual system and a token change restyles all of them
+- [x] 4.13 Pages share one visual system and a token change restyles all of them — 6e96dd8

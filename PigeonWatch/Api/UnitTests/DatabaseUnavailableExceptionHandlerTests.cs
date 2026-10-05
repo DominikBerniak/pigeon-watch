@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.Core;
 using PigeonWatch.Data.Diagnostics;
 
 namespace PigeonWatch.UnitTests;
@@ -11,6 +13,7 @@ namespace PigeonWatch.UnitTests;
 public class DatabaseUnavailableExceptionHandlerTests
 {
     private readonly IProblemDetailsService problemDetailsService = Substitute.For<IProblemDetailsService>();
+    private readonly ILogger<DatabaseUnavailableExceptionHandler> logger = Substitute.For<ILogger<DatabaseUnavailableExceptionHandler>>();
 
     public static TheoryData<Exception> UnavailableExceptions => new()
     {
@@ -42,6 +45,9 @@ public class DatabaseUnavailableExceptionHandlerTests
             context.HttpContext == httpContext
             && context.ProblemDetails.Status == StatusCodes.Status503ServiceUnavailable
             && context.ProblemDetails.Title == "Service warming up"));
+        ICall logCall = Assert.Single(LogCalls());
+        Assert.Equal(LogLevel.Warning, logCall.GetArguments()[0]);
+        Assert.Same(exception, logCall.GetArguments()[3]);
     }
 
     [Theory]
@@ -56,11 +62,17 @@ public class DatabaseUnavailableExceptionHandlerTests
         Assert.Equal(StatusCodes.Status200OK, httpContext.Response.StatusCode);
         Assert.False(httpContext.Response.Headers.ContainsKey("Retry-After"));
         await problemDetailsService.DidNotReceive().TryWriteAsync(Arg.Any<ProblemDetailsContext>());
+        Assert.Empty(LogCalls());
     }
 
     private DatabaseUnavailableExceptionHandler CreateHandler()
     {
-        return new(problemDetailsService);
+        return new(problemDetailsService, logger);
+    }
+
+    private IEnumerable<ICall> LogCalls()
+    {
+        return logger.ReceivedCalls().Where(call => call.GetMethodInfo().Name == nameof(ILogger.Log));
     }
 
     private static SqlException CreateSqlException(int number)

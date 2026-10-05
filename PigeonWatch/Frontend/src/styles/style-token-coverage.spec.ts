@@ -12,7 +12,7 @@ const allowedLengthLiterals: Readonly<Record<string, readonly string[]>> = {
 };
 
 const colorLiteral = /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?)\(/g;
-const lengthLiteral = /(?<![\w-])-?(?:\d+\.?\d*|\.\d+)(?:px|rem|em)\b/g;
+const lengthLiteral = /(?<![\w-])-?(?:\d+\.?\d*|\.\d+)(?:px|rem|em|vh|dvh|svh|lvh|vw|vmin|vmax)\b/g;
 const forbiddenSelector = /\.(?:mat|mdc)-|::ng-deep|!important/g;
 const tokenReference = /var\(\s*(--pw-[\w-]+)/g;
 const tokenDeclaration = /^\s*(--pw-[\w-]+)\s*:/gm;

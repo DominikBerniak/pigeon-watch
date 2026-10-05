@@ -1,3 +1,4 @@
+using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data.Entities;
 using PigeonWatch.Data.Identity;
 
@@ -37,5 +38,15 @@ public class UserAccountMapper : IUserAccountMapper
         entity.LockoutEnd = user.LockoutEnd;
         entity.LockoutEnabled = user.LockoutEnabled;
         entity.AccessFailedCount = user.AccessFailedCount;
+    }
+
+    RegisteredAccount IUserAccountMapper.ToRegisteredAccount(ApplicationUser user)
+    {
+        return new RegisteredAccount(user.Email, user.DisplayName);
+    }
+
+    CurrentUser IUserAccountMapper.ToCurrentUser(ApplicationUser user)
+    {
+        return new CurrentUser(user.Id, user.Email, user.DisplayName);
     }
 }

@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Identity;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data.Identity;
+using PigeonWatch.Data.Mappers;
 
 namespace PigeonWatch.Data.Repositories;
 
-public class AccountRepository(UserManager<ApplicationUser> userManager) : IAccountRepository
+public class AccountRepository(UserManager<ApplicationUser> userManager, IUserAccountMapper userAccountMapper) : IAccountRepository
 {
     private const string registrationFailedDescription = "The account could not be created.";
 
@@ -22,7 +23,7 @@ public class AccountRepository(UserManager<ApplicationUser> userManager) : IAcco
         IdentityResult result = await userManager.CreateAsync(user, account.Password);
 
         if (result.Succeeded)
-            return AccountCreationResult.Success(new RegisteredAccount(user.Email, user.DisplayName));
+            return AccountCreationResult.Success(userAccountMapper.ToRegisteredAccount(user));
 
         return AccountCreationResult.Failure(ToAccountErrors(result.Errors));
     }
@@ -33,7 +34,7 @@ public class AccountRepository(UserManager<ApplicationUser> userManager) : IAcco
 
         ApplicationUser? user = await userManager.FindByIdAsync(userId.ToString());
 
-        return user is null ? null : new CurrentUser(user.Id, user.Email, user.DisplayName);
+        return user is null ? null : userAccountMapper.ToCurrentUser(user);
     }
 
     private static List<AccountError> ToAccountErrors(IEnumerable<IdentityError> identityErrors)

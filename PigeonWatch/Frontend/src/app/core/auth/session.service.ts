@@ -7,6 +7,7 @@ import {
   ReplaySubject,
   catchError,
   defer,
+  filter,
   finalize,
   map,
   of,
@@ -36,6 +37,7 @@ export class SessionService {
   private readonly router = inject(Router);
   private readonly ready = new ReplaySubject<void>(1);
   private refreshInFlight: Observable<AccessTokenResponse> | null = null;
+  private sessionGeneration = 0;
   private initialized = false;
 
   readonly currentUser = computed(() => this.configuration.generalConfig()?.currentUser ?? null);
@@ -102,19 +104,24 @@ export class SessionService {
   refreshTokens(): Observable<AccessTokenResponse> {
     if (this.refreshInFlight) return this.refreshInFlight;
 
-    this.refreshInFlight = defer(() => {
+    const generation = this.sessionGeneration;
+    const inFlight: Observable<AccessTokenResponse> = defer(() => {
       const refreshToken = this.tokens.refreshToken();
 
       if (!refreshToken) return throwError(() => new HttpErrorResponse({ status: 401 }));
 
       return this.authApi.refresh(refreshToken);
     }).pipe(
+      filter(() => generation === this.sessionGeneration),
       tap((response) => this.tokens.setTokens(response)),
-      finalize(() => (this.refreshInFlight = null)),
+      finalize(() => {
+        if (this.refreshInFlight === inFlight) this.refreshInFlight = null;
+      }),
       shareReplay({ bufferSize: 1, refCount: false }),
     );
+    this.refreshInFlight = inFlight;
 
-    return this.refreshInFlight;
+    return inFlight;
   }
 
   private restore(): Observable<void> {
@@ -136,6 +143,8 @@ export class SessionService {
   }
 
   private clearSession(): void {
+    this.sessionGeneration++;
+    this.refreshInFlight = null;
     this.tokens.clear();
     this.configuration.clearGeneral();
   }

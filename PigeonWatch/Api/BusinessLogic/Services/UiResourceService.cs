@@ -32,7 +32,7 @@ public class UiResourceService : IUiResourceService
 
         try
         {
-            cultureInfo = CultureInfo.GetCultureInfo(culture);
+            cultureInfo = CultureInfo.GetCultureInfo(culture, predefinedOnly: true);
         }
         catch (CultureNotFoundException)
         {

@@ -21,7 +21,7 @@
 .pw-center-screen {
   display: grid;
   place-items: center;
-  min-height: 100vh;
+  min-height: var(--pw-viewport-min-height);
   padding: var(--pw-space-4);
 }
 

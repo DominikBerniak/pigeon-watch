@@ -1,3 +1,4 @@
+using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data.Entities;
 using PigeonWatch.Data.Identity;
 
@@ -8,4 +9,8 @@ public interface IUserAccountMapper
     internal ApplicationUser ToUser(UserAccountEntity entity);
 
     internal void CopyToEntity(ApplicationUser user, UserAccountEntity entity);
+
+    RegisteredAccount ToRegisteredAccount(ApplicationUser user);
+
+    CurrentUser ToCurrentUser(ApplicationUser user);
 }

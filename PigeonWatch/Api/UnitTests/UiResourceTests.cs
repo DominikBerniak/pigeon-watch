@@ -29,6 +29,8 @@ public class UiResourceTests
     [InlineData("EN")]
     [InlineData("en-US")]
     [InlineData("not a culture!")]
+    [InlineData("zz-q1")]
+    [InlineData("qaa-AB")]
     public async Task Unsupported_cultures_resolve_to_english(string culture)
     {
         UiResourceService service = new();

@@ -70,6 +70,16 @@ describe('authInterceptor', () => {
     request.flush({});
   });
 
+  it('does not add the header to a host that only starts with the API URL', () => {
+    signIn();
+
+    http.get(`${apiUrl}.evil.tld/data`).subscribe();
+
+    const request = httpMock.expectOne(`${apiUrl}.evil.tld/data`);
+    expect(request.request.headers.has('Authorization')).toBe(false);
+    request.flush({});
+  });
+
   it('never adds the header to SKIP_AUTH requests', () => {
     signIn();
 

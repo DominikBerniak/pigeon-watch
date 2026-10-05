@@ -155,6 +155,23 @@ describe('SessionService', () => {
     httpMock.verify();
   });
 
+  it('drops a refresh that completes after logout', () => {
+    TestBed.inject(TokenStore).setTokens({ ...tokenResponse, refreshToken: 'refresh-1' });
+    const session = TestBed.inject(SessionService);
+    vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    const received: string[] = [];
+
+    session.refreshTokens().subscribe((response) => received.push(response.accessToken));
+    const refresh = httpMock.expectOne(refreshUrl);
+    session.logout();
+    refresh.flush(tokenResponse);
+
+    expect(received).toEqual([]);
+    expect(localStorage.getItem(refreshTokenStorageKey)).toBeNull();
+    expect(TestBed.inject(TokenStore).accessToken()).toBeNull();
+    httpMock.verify();
+  });
+
   it('logs in by storing the tokens and loading general', async () => {
     const session = TestBed.inject(SessionService);
 

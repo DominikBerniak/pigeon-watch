@@ -13,7 +13,7 @@ Data layer: EF Core (SQL Server) via `Data/PigeonWatchDbContext.cs`, migrations 
 Auth: Identity bearer tokens (`MapIdentityApi`, no cookies). The bearer and refresh tokens are protected by the Data Protection key ring, so there is no signing key to configure. The endpoint surface is:
 
 - `POST account/register` (anonymous, rate limited): our own action, because the built-in `/register` cannot carry a display name.
-- `POST auth/login` (rate limited) and `POST auth/refresh`: the only Identity endpoints exposed. `MapPigeonWatch` maps `MapIdentityApi` under `auth` and its filter returns 404 for every other Identity route and 400 for `useCookies`/`useSessionCookies`.
+- `POST auth/login` (rate limited) and `POST auth/refresh`: the only Identity endpoints exposed. `MapPigeonWatch` maps `MapIdentityApi` under `auth`; a `.Finally` convention replaces every other Identity route's request delegate with a 404 (before body binding) and returns 400 when `useCookies`/`useSessionCookies` is set to anything but `false`.
 - `GET configuration/client` (anonymous, `Cache-Control: public, max-age=300`): validation rules from `BusinessObjects/AccountRules.cs`, never user data.
 - `GET configuration/general` (authorized, `Cache-Control: private, no-store`): the current user (id, email, display name, roles from token claims). There is no `/me` endpoint.
 - `GET resources/{culture}` (anonymous, `Cache-Control: public, max-age=300`, `Content-Language`): the UI label map; see "UI labels" below.

@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpEvent, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Observable, Subscription } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { isApiUrl } from '../http/api-url';
 import { SKIP_WARMUP } from '../http/http-context-tokens';
 import { WarmupState } from './warmup-state';
 
@@ -11,7 +11,7 @@ export const defaultRetryAfterSeconds = 10;
 export const minimumRetryAfterSeconds = 5;
 
 export const warmupInterceptor: HttpInterceptorFn = (request, next) => {
-  if (!request.url.startsWith(environment.apiUrl) || request.context.get(SKIP_WARMUP)) {
+  if (!isApiUrl(request.url) || request.context.get(SKIP_WARMUP)) {
     return next(request);
   }
 

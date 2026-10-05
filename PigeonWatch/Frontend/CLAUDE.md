@@ -12,7 +12,7 @@ Cross-cutting plumbing lives in `src/app/core/` (`auth/` token store, session, a
 
 ## UI library, styling and reusable components
 
-These rules apply to every UI change. They are being introduced by the `register-and-login` change (Phase 3: library, tokens, theme, common styles; Phase 4: `shared/ui` components). Until those phases land, some of the files below don't exist yet.
+These rules apply to every UI change. They were introduced by the `register-and-login` change (S-01).
 
 - **Component library: Angular Material** (`@angular/material` + `@angular/cdk`, MIT, kept on the same minor as `@angular/core`). Use its primitives (`mat-form-field` + `matInput`, `mat-button`/`mat-flat-button`, `mat-card`, `mat-progress-spinner`, …) instead of hand-rolled equivalents. Import Material modules per component; there is no shared "material module". `matInput` binds to Signal Forms directly, so no `ControlValueAccessor` glue.
 - **Never run `ng add @angular/material`** and never add web-font or icon-font `<link>`s: the CSP in `public/staticwebapp.config.json` allows only `'self'` fonts and stylesheets. Typography uses the system font stack; an icon font, if one is ever needed, is self-hosted.

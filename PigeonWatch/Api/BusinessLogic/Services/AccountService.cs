@@ -13,12 +13,22 @@ public class AccountService(IAccountRepository accountRepository) : IAccountServ
             DisplayName = account.DisplayName.Trim()
         };
 
-        List<AccountError> displayNameErrors = ValidateDisplayName(trimmed.DisplayName);
+        List<AccountError> errors = [.. ValidateEmail(trimmed.Email), .. ValidateDisplayName(trimmed.DisplayName)];
 
-        if (displayNameErrors.Count > 0)
-            return AccountCreationResult.Failure(displayNameErrors);
+        if (errors.Count > 0)
+            return AccountCreationResult.Failure(errors);
 
         return await accountRepository.CreateAsync(trimmed, cancellationToken);
+    }
+
+    private static List<AccountError> ValidateEmail(string email)
+    {
+        List<AccountError> errors = [];
+
+        if (email.Length > AccountRules.EmailMaxLength)
+            errors.Add(new AccountError(AccountErrorCodes.InvalidEmail, $"Email must be at most {AccountRules.EmailMaxLength} characters."));
+
+        return errors;
     }
 
     private static List<AccountError> ValidateDisplayName(string displayName)

@@ -25,7 +25,7 @@ html {
 }
 
 body {
-  min-height: 100vh;
+  min-height: var(--pw-viewport-min-height);
   font-family: var(--pw-font-family);
   font-size: var(--pw-font-size-md);
   font-weight: var(--pw-font-weight-regular);

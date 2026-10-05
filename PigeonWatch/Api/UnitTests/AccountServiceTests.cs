@@ -60,6 +60,33 @@ public class AccountServiceTests
     }
 
     [Fact]
+    public async Task Email_longer_than_the_column_is_rejected_without_calling_the_repository()
+    {
+        AccountCreationResult result = await CreateService().RegisterAsync(
+            new NewAccount($" {EmailOfLength(AccountRules.EmailMaxLength + 1)} ", "Secret1!", "Pidgey"),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([AccountErrorCodes.InvalidEmail], result.Errors.Select(error => error.Code));
+        await accountRepository.DidNotReceive().CreateAsync(Arg.Any<NewAccount>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Email_at_the_column_length_is_accepted()
+    {
+        string email = EmailOfLength(AccountRules.EmailMaxLength);
+
+        AccountCreationResult result = await CreateService().RegisterAsync(
+            new NewAccount($" {email} ", "Secret1!", "Pidgey"),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Succeeded);
+        await accountRepository.Received(1).CreateAsync(
+            Arg.Is<NewAccount>(account => account.Email == email),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Email_and_display_name_are_trimmed_before_reaching_the_repository()
     {
         AccountCreationResult result = await CreateService().RegisterAsync(
@@ -76,5 +103,12 @@ public class AccountServiceTests
     private AccountService CreateService()
     {
         return new(accountRepository);
+    }
+
+    private static string EmailOfLength(int length)
+    {
+        const string domain = "@example.com";
+
+        return new string('a', length - domain.Length) + domain;
     }
 }

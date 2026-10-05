@@ -3,10 +3,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace PigeonWatch.Data.Diagnostics;
 
-public class DatabaseUnavailableExceptionHandler(IProblemDetailsService problemDetailsService) : IExceptionHandler
+public class DatabaseUnavailableExceptionHandler(
+    IProblemDetailsService problemDetailsService,
+    ILogger<DatabaseUnavailableExceptionHandler> logger) : IExceptionHandler
 {
     private const string retryAfterSeconds = "10";
 
@@ -21,6 +24,7 @@ public class DatabaseUnavailableExceptionHandler(IProblemDetailsService problemD
         if (!IsDatabaseUnavailable(exception))
             return false;
 
+        logger.LogWarning(exception, "Database unavailable; responding 503 with Retry-After {RetryAfterSeconds} s.", retryAfterSeconds);
         httpContext.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
         httpContext.Response.Headers.RetryAfter = retryAfterSeconds;
 
