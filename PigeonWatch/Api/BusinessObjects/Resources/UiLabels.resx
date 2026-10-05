@@ -61,7 +61,7 @@
     <value>Log in</value>
   </data>
   <data name="auth.login.subtitle" xml:space="preserve">
-    <value>Welcome back. Log in to keep an eye out for birds in need.</value>
+    <value>Welcome Rescuer. Log in to keep an eye out for birds in need.</value>
   </data>
   <data name="auth.login.submit" xml:space="preserve">
     <value>Log in</value>
