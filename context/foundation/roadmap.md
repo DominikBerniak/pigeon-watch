@@ -3,7 +3,7 @@ project: PigeonWatch
 version: 1
 status: draft
 created: 2026-10-03
-updated: 2026-10-04
+updated: 2026-10-05
 prd_version: 1
 main_goal: speed
 top_blocker: decisions
@@ -42,7 +42,7 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 | ID   | Change ID                   | Outcome (user can …)                                                        | Prerequisites | PRD refs                       | Status   |
 | ---- | --------------------------- | --------------------------------------------------------------------------- | ------------- | ------------------------------ | -------- |
 | F-01 | persistence-wiring-smoke    | (foundation) deployed API reaches the provisioned database through a CI-applied migration | —             | NFR (map and list usable at expected record volumes) | done |
-| S-01 | register-and-login          | register an account, log in and log out                                     | F-01          | FR-001                         | in-progress |
+| S-01 | register-and-login          | register an account, log in and log out                                     | F-01          | FR-001                         | done     |
 | S-02 | edit-profile-name           | view and edit their own profile name                                        | S-01          | FR-002                         | proposed |
 | S-03 | report-sighting-on-map      | report a sighting and see it on the nearby map and its detail page          | S-01          | US-01, FR-004, FR-005, FR-019  | blocked  |
 | S-04 | attach-sighting-photo       | attach an optional photo to a sighting                                      | S-03          | FR-005                         | proposed |
@@ -107,7 +107,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Which login mechanism (email/password or OAuth) — Owner: user. Block: no.
 - **Risk:** Login is a wall in front of every must-have, so it goes first after the foundation.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-02: Edit profile name
 
@@ -293,3 +293,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Done
 - **F-01: (foundation) the deployed API connects to the already-provisioned database and applies a schema migration through CI, proving a record can be stored and read in the live environment.** — Archived 2026-10-04 → `context/archive/2026-10-03-persistence-wiring-smoke/`. Lesson: —.
+- **S-01: user can register an account, log in and log out.** — Archived 2026-10-05 → `context/archive/2026-10-04-register-and-login/`. Lesson: —.

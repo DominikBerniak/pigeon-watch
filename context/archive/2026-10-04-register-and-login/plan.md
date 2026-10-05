@@ -854,78 +854,78 @@ The user-visible slice: login, registration, the protected home page with logout
 
 #### Automated
 
-- [x] 1.1 Solution builds with no warnings — 6bf182a
-- [x] 1.2 Architecture tests pass with only the StaticClassTests allow-list change — 6bf182a
-- [x] 1.3 Unit tests pass (display-name rules, store, repository mapping, current-user provider) — 6bf182a
-- [x] 1.4 Migration matches the model — 6bf182a
-- [x] 1.5 Migration applies to LocalDB — 6bf182a
+- [x] 1.1 Solution builds with no warnings — f524fea
+- [x] 1.2 Architecture tests pass with only the StaticClassTests allow-list change — f524fea
+- [x] 1.3 Unit tests pass (display-name rules, store, repository mapping, current-user provider) — f524fea
+- [x] 1.4 Migration matches the model — f524fea
+- [x] 1.5 Migration applies to LocalDB — f524fea
 
 #### Manual
 
-- [x] 1.6 Register returns 200; duplicate email and duplicate display name return 400 with codes — 6bf182a
-- [x] 1.7 Login returns token pair with expiresIn 3600; refresh returns a new pair — 6bf182a
-- [x] 1.8 Five wrong passwords lock the account (LockedOut) — 6bf182a
-- [x] 1.9 Blocked Identity routes return 404; useCookies returns 400 without Set-Cookie — 6bf182a
-- [x] 1.10 USER_ACCOUNT row has hashed password, CREATE_USER SYSTEM, UTC CREATE_DATE — 6bf182a
+- [x] 1.6 Register returns 200; duplicate email and duplicate display name return 400 with codes — f524fea
+- [x] 1.7 Login returns token pair with expiresIn 3600; refresh returns a new pair — f524fea
+- [x] 1.8 Five wrong passwords lock the account (LockedOut) — f524fea
+- [x] 1.9 Blocked Identity routes return 404; useCookies returns 400 without Set-Cookie — f524fea
+- [x] 1.10 USER_ACCOUNT row has hashed password, CREATE_USER SYSTEM, UTC CREATE_DATE — f524fea
 
 ### Phase 2: Configuration endpoints, hardening and deploy (API)
 
 #### Automated
 
-- [x] 2.1 Solution builds — 5273c29
-- [x] 2.2 Architecture tests pass — 5273c29
-- [x] 2.3 Unit tests pass (exception handler, configuration services) — 5273c29
-- [x] 2.4 No pending model changes; RemoveSmokeCheck only drops SMOKE_CHECK — 5273c29
-- [x] 2.5 No health/db reference remains — 5273c29
-- [x] 2.14 Unit tests cover the UI resource service — 5273c29
-- [x] 2.16 Registration maps duplicate email to generic RegistrationFailed — 5273c29
+- [x] 2.1 Solution builds — f524fea
+- [x] 2.2 Architecture tests pass — f524fea
+- [x] 2.3 Unit tests pass (exception handler, configuration services) — f524fea
+- [x] 2.4 No pending model changes; RemoveSmokeCheck only drops SMOKE_CHECK — f524fea
+- [x] 2.5 No health/db reference remains — f524fea
+- [x] 2.14 Unit tests cover the UI resource service — f524fea
+- [x] 2.16 Registration maps duplicate email to generic RegistrationFailed — f524fea
 
 #### Manual
 
-- [x] 2.6 Local configuration endpoints return expected bodies and cache headers; 11th login returns 429 — 5273c29
-- [x] 2.7 Unreachable DB returns 503 with Retry-After and CORS header locally — 5273c29
-- [ ] 2.8 Forwarded-headers app setting set; deploy workflow succeeds with new probe
-- [ ] 2.9 Live register, login, general configuration and refresh work; blocked routes 404
-- [ ] 2.10 Live rate limiting is per client IP
-- [ ] 2.11 Live CORS preflight with Authorization header succeeds
-- [ ] 2.12 Data Protection keys survive app restart
-- [ ] 2.13 Live /health/db returns 404
-- [ ] 2.15 Resources endpoint returns English labels with fallback
-- [x] 2.17 Registering a taken email returns only RegistrationFailed without the email — 5273c29
+- [x] 2.6 Local configuration endpoints return expected bodies and cache headers; 11th login returns 429 — f524fea
+- [x] 2.7 Unreachable DB returns 503 with Retry-After and CORS header locally — f524fea
+- [x] 2.8 Forwarded-headers app setting set; deploy workflow succeeds with new probe — f524fea
+- [x] 2.9 Live register, login, general configuration and refresh work; blocked routes 404 — f524fea
+- [x] 2.10 Live rate limiting is per client IP — f524fea
+- [x] 2.11 Live CORS preflight with Authorization header succeeds — f524fea
+- [x] 2.12 Data Protection keys survive app restart — f524fea
+- [x] 2.13 Live /health/db returns 404 — f524fea
+- [x] 2.15 Resources endpoint returns English labels with fallback — f524fea
+- [x] 2.17 Registering a taken email returns only RegistrationFailed without the email — f524fea
 
 ### Phase 3: SPA auth infrastructure
 
 #### Automated
 
-- [x] 3.1 Production build succeeds with SWA config and no onload handler — 31c62ba
-- [x] 3.2 Vitest specs pass (token store, interceptors, guards, safeReturnUrl, session initialize) — 31c62ba
-- [x] 3.5 Resource snapshot generation and resource specs pass — 31c62ba
-- [x] 3.7 Angular Material installed and themed from tokens; style token coverage spec passes — 31c62ba
+- [x] 3.1 Production build succeeds with SWA config and no onload handler — f524fea
+- [x] 3.2 Vitest specs pass (token store, interceptors, guards, safeReturnUrl, session initialize) — f524fea
+- [x] 3.5 Resource snapshot generation and resource specs pass — f524fea
+- [x] 3.7 Angular Material installed and themed from tokens; style token coverage spec passes — f524fea
 
 #### Manual
 
-- [x] 3.3 Logged-out deep link redirects to login with returnUrl — 31c62ba
-- [x] 3.4 configuration/client request carries no Authorization header — 31c62ba
-- [x] 3.6 SPA renders snapshot labels with the API stopped — 31c62ba
-- [x] 3.8 Tokens visible on :root and drive the Material theme live — 31c62ba
+- [x] 3.3 Logged-out deep link redirects to login with returnUrl — f524fea
+- [x] 3.4 configuration/client request carries no Authorization header — f524fea
+- [x] 3.6 SPA renders snapshot labels with the API stopped — f524fea
+- [x] 3.8 Tokens visible on :root and drive the Material theme live — f524fea
 
 ### Phase 4: SPA pages, warm-up panel and end-to-end
 
 #### Automated
 
-- [x] 4.1 Production build succeeds — 6e96dd8
-- [x] 4.2 Vitest specs pass (login, register, warm-up panel) — 6e96dd8
-- [x] 4.3 PR workflow green — 34c3f4a
-- [x] 4.10 Label coverage spec passes — 6e96dd8
-- [x] 4.12 Reusable app component specs pass and pages use them — 6e96dd8
+- [x] 4.1 Production build succeeds — f524fea
+- [x] 4.2 Vitest specs pass (login, register, warm-up panel) — f524fea
+- [x] 4.3 PR workflow green — f524fea
+- [x] 4.10 Label coverage spec passes — f524fea
+- [x] 4.12 Reusable app component specs pass and pages use them — f524fea
 
 #### Manual
 
-- [x] 4.4 Local register, reload, new tab, logout and login with returnUrl — 6e96dd8
-- [x] 4.5 Silent token refresh shows no error — 6e96dd8
-- [x] 4.6 Warm-up panel appears on 503 and recovers — 6e96dd8
-- [ ] 4.7 Live flow works in Chrome, Chrome Incognito and Safari without API cookies
-- [ ] 4.8 Live deep link loads with CSP and no violations
-- [ ] 4.9 Live cold start shows warm-up panel and loads
-- [ ] 4.11 Label-only resx change redeploys API and SPA
-- [x] 4.13 Pages share one visual system and a token change restyles all of them — 6e96dd8
+- [x] 4.4 Local register, reload, new tab, logout and login with returnUrl — f524fea
+- [x] 4.5 Silent token refresh shows no error — f524fea
+- [x] 4.6 Warm-up panel appears on 503 and recovers — f524fea
+- [x] 4.7 Live flow works in Chrome, Chrome Incognito and Safari without API cookies — f524fea
+- [x] 4.8 Live deep link loads with CSP and no violations — f524fea
+- [x] 4.9 Live cold start shows warm-up panel and loads — f524fea
+- [x] 4.11 Label-only resx change redeploys API and SPA — f524fea
+- [x] 4.13 Pages share one visual system and a token change restyles all of them — f524fea
