@@ -1,6 +1,39 @@
-main {
-  max-width: 640px;
-  margin: 3rem auto;
-  padding: 0 1rem;
-  font-family: system-ui, sans-serif;
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--pw-z-header);
+  background-color: var(--pw-color-header);
+  backdrop-filter: blur(var(--pw-blur-md));
+  border-bottom: var(--pw-border-width) solid var(--pw-color-border-subtle);
+}
+
+.app-header__bar {
+  justify-content: space-between;
+  min-height: var(--pw-brand-mark-size-lg);
+  padding-block: var(--pw-space-3);
+}
+
+.app-header__user {
+  gap: var(--pw-space-4);
+}
+
+.app-main {
+  max-width: var(--pw-content-max-width);
+  margin: var(--pw-space-6) auto;
+  padding: 0 var(--pw-space-4);
+}
+
+.app-main--guest {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: var(--pw-space-6);
+  min-height: var(--pw-viewport-min-height-dynamic);
+  margin-block: 0;
+  padding-block: var(--pw-space-6);
+}
+
+.app-main--guest > app-brand {
+  align-self: center;
 }

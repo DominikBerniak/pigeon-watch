@@ -6,7 +6,7 @@ namespace PigeonWatch.Data;
 
 public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options) : DbContext(options)
 {
-    internal DbSet<SmokeCheckEntity> SmokeChecks => Set<SmokeCheckEntity>();
+    internal DbSet<UserAccountEntity> UserAccounts => Set<UserAccountEntity>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -15,10 +15,14 @@ public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<SmokeCheckEntity>(entity =>
+        modelBuilder.Entity<UserAccountEntity>(entity =>
         {
-            entity.ToTable("SmokeCheck");
+            entity.ToTable("UserAccount");
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.ConcurrencyStamp).IsConcurrencyToken();
+            entity.HasIndex(e => e.NormalizedEmail).IsUnique();
+            entity.HasIndex(e => e.NormalizedUserName).IsUnique();
+            entity.HasIndex(e => e.NormalizedDisplayName).IsUnique();
         });
     }
 }

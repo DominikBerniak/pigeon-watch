@@ -1,0 +1,39 @@
+:host {
+  --brand-mark-size: var(--pw-brand-mark-size-md);
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pw-space-2);
+  font-size: var(--pw-font-size-lg);
+  font-weight: var(--pw-font-weight-bold);
+  letter-spacing: var(--pw-letter-spacing-tight);
+  color: var(--pw-color-text);
+}
+
+:host(.brand--lg) {
+  --brand-mark-size: var(--pw-brand-mark-size-lg);
+
+  gap: var(--pw-space-3);
+  font-size: var(--pw-font-size-xl);
+}
+
+.brand__mark {
+  display: inline-grid;
+  place-items: center;
+  width: var(--brand-mark-size);
+  height: var(--brand-mark-size);
+  border-radius: var(--pw-radius-md);
+  background-image: var(--pw-gradient-brand);
+  box-shadow: var(--pw-shadow-brand);
+  color: var(--pw-color-on-primary);
+}
+
+.brand__bird {
+  width: 70%;
+  height: 70%;
+  fill: currentColor;
+}
+
+.brand__eye {
+  fill: var(--pw-color-accent-violet);
+}

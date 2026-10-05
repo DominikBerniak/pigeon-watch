@@ -1,0 +1,14 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/media/*",
+      "/*.{js,mjs,css,map,json,txt,ico,png,jpg,jpeg,gif,svg,webp,avif,woff,woff2,ttf,otf,webmanifest}"
+    ]
+  },
+  "globalHeaders": {
+    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://pigeonwatch-api.azurewebsites.net; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  }
+}

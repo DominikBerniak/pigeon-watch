@@ -1,0 +1,63 @@
+<app-page-card
+  [title]="'auth.register.title' | translate"
+  [subtitle]="'auth.register.subtitle' | translate"
+>
+  <form class="pw-stack" [formRoot]="registerForm" (submit)="submit()">
+    @if (formErrorText(); as text) {
+      <app-alert kind="error">{{ text }}</app-alert>
+    }
+    <mat-form-field class="pw-full-width">
+      <mat-label>{{ 'auth.fields.email' | translate }}</mat-label>
+      <input matInput type="email" autocomplete="email" [formField]="registerForm.email" />
+      <mat-error>
+        <app-field-errors [field]="registerForm.email" [messages]="emailMessages()" />
+      </mat-error>
+    </mat-form-field>
+    <mat-form-field class="pw-full-width">
+      <mat-label>{{ 'auth.fields.displayName' | translate }}</mat-label>
+      <input matInput type="text" autocomplete="nickname" [formField]="registerForm.displayName" />
+      <mat-hint>{{
+        'auth.register.displayNameHint'
+          | translate: displayNameRules().minLength : displayNameRules().maxLength
+      }}</mat-hint>
+      <mat-error>
+        <app-field-errors [field]="registerForm.displayName" [messages]="displayNameMessages()" />
+      </mat-error>
+    </mat-form-field>
+    <mat-form-field class="pw-full-width">
+      <mat-label>{{ 'auth.fields.password' | translate }}</mat-label>
+      <input
+        matInput
+        type="password"
+        autocomplete="new-password"
+        [formField]="registerForm.password"
+      />
+      <mat-hint>{{ 'auth.register.passwordHint' | translate: passwordRules().minLength }}</mat-hint>
+      <mat-error>
+        <app-field-errors [field]="registerForm.password" [messages]="passwordMessages()" />
+      </mat-error>
+    </mat-form-field>
+    <mat-form-field class="pw-full-width">
+      <mat-label>{{ 'auth.fields.confirmPassword' | translate }}</mat-label>
+      <input
+        matInput
+        type="password"
+        autocomplete="new-password"
+        [formField]="registerForm.confirmPassword"
+      />
+      <mat-error>
+        <app-field-errors
+          [field]="registerForm.confirmPassword"
+          [messages]="confirmPasswordMessages()"
+        />
+      </mat-error>
+    </mat-form-field>
+    <app-submit-button [busy]="busy()">{{ 'auth.register.submit' | translate }}</app-submit-button>
+  </form>
+  <div actions class="pw-cluster pw-text-small">
+    <span class="pw-text-muted">{{ 'auth.register.haveAccount' | translate }}</span>
+    <a mat-button routerLink="/login" queryParamsHandling="preserve">
+      {{ 'auth.register.login' | translate }}
+    </a>
+  </div>
+</app-page-card>

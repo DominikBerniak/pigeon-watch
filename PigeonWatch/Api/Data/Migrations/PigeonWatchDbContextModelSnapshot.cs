@@ -22,12 +22,22 @@ namespace PigeonWatch.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("PigeonWatch.Data.Entities.SmokeCheckEntity", b =>
+            modelBuilder.Entity("PigeonWatch.Data.Entities.UserAccountEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("ID");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int")
+                        .HasColumnName("ACCESS_FAILED_COUNT");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("CONCURRENCY_STAMP");
 
                     b.Property<DateTime>("CreateDate")
                         .HasColumnType("datetime2")
@@ -39,6 +49,54 @@ namespace PigeonWatch.Data.Migrations
                         .HasColumnType("nvarchar(128)")
                         .HasColumnName("CREATE_USER");
 
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("DISPLAY_NAME");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnName("EMAIL");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit")
+                        .HasColumnName("LOCKOUT_ENABLED");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("LOCKOUT_END");
+
+                    b.Property<string>("NormalizedDisplayName")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("NORMALIZED_DISPLAY_NAME");
+
+                    b.Property<string>("NormalizedEmail")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnName("NORMALIZED_EMAIL");
+
+                    b.Property<string>("NormalizedUserName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnName("NORMALIZED_USER_NAME");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("PASSWORD_HASH");
+
+                    b.Property<string>("SecurityStamp")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("SECURITY_STAMP");
+
                     b.Property<DateTime>("UpdateDate")
                         .HasColumnType("datetime2")
                         .HasColumnName("UPDATE_DATE");
@@ -49,10 +107,28 @@ namespace PigeonWatch.Data.Migrations
                         .HasColumnType("nvarchar(128)")
                         .HasColumnName("UPDATE_USER");
 
-                    b.HasKey("Id")
-                        .HasName("PK_SMOKE_CHECK");
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnName("USER_NAME");
 
-                    b.ToTable("SMOKE_CHECK", (string)null);
+                    b.HasKey("Id")
+                        .HasName("PK_USER_ACCOUNT");
+
+                    b.HasIndex("NormalizedDisplayName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_USER_ACCOUNT_NORMALIZED_DISPLAY_NAME");
+
+                    b.HasIndex("NormalizedEmail")
+                        .IsUnique()
+                        .HasDatabaseName("IX_USER_ACCOUNT_NORMALIZED_EMAIL");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_USER_ACCOUNT_NORMALIZED_USER_NAME");
+
+                    b.ToTable("USER_ACCOUNT", (string)null);
                 });
 #pragma warning restore 612, 618
         }

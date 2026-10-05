@@ -7,7 +7,10 @@ public static class BusinessLogicServiceCollectionExtensions
 {
     public static IServiceCollection AddBusinessLogic(this IServiceCollection services)
     {
-        services.AddScoped<IDatabaseHealthService, DatabaseHealthService>();
+        services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<IClientConfigurationService, ClientConfigurationService>();
+        services.AddScoped<IGeneralConfigurationService, GeneralConfigurationService>();
+        services.AddScoped<IUiResourceService, UiResourceService>();
 
         return services;
     }

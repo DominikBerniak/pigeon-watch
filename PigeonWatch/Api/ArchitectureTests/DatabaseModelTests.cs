@@ -24,10 +24,9 @@ public partial class DatabaseModelTests
         {
             identifiers.Add(("table", table.Name));
             identifiers.AddRange(table.Columns.Select(column => ($"column of {table.Name}", column.Name)));
+
             if (table.PrimaryKey is not null)
-            {
                 identifiers.Add(("primary key", table.PrimaryKey.Name));
-            }
 
             identifiers.AddRange(table.UniqueConstraints.Select(key => ("key", key.Name)));
             identifiers.AddRange(table.ForeignKeyConstraints.Select(foreignKey => ("foreign key", foreignKey.Name)));
@@ -124,9 +123,7 @@ public partial class DatabaseModelTests
             string? columnType = keyProperty.GetColumnType(table);
 
             if (columnName != "ID" || !string.Equals(columnType, "uniqueidentifier", StringComparison.OrdinalIgnoreCase))
-            {
                 offenders.Add($"{entityType.DisplayName()} primary key is {columnName} {columnType}, expected ID uniqueidentifier");
-            }
         }
 
         Assert.True(
@@ -144,9 +141,7 @@ public partial class DatabaseModelTests
         foreach (IEntityType entityType in MappedEntityTypes())
         {
             if (!auditableEntity.IsAssignableFrom(entityType.ClrType))
-            {
                 offenders.Add($"{entityType.DisplayName()} does not derive from {auditableEntity.Name}");
-            }
 
             StoreObjectIdentifier table = StoreObjectIdentifier.Create(entityType, StoreObjectType.Table)!.Value;
             foreach (string auditColumn in auditColumns)
@@ -155,13 +150,9 @@ public partial class DatabaseModelTests
                     .SingleOrDefault(candidate => candidate.GetColumnName(table) == auditColumn);
 
                 if (property is null)
-                {
                     offenders.Add($"{entityType.DisplayName()} does not map {auditColumn}");
-                }
                 else if (property.IsColumnNullable(table))
-                {
                     offenders.Add($"{entityType.DisplayName()} maps {auditColumn} as nullable");
-                }
             }
         }
 

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="common.appName" xml:space="preserve">
+    <value>PigeonWatch</value>
+  </data>
+  <data name="common.loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="common.unexpectedError" xml:space="preserve">
+    <value>Something went wrong. Try again.</value>
+  </data>
+  <data name="nav.home" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="nav.login" xml:space="preserve">
+    <value>Log in</value>
+  </data>
+  <data name="nav.register" xml:space="preserve">
+    <value>Create account</value>
+  </data>
+  <data name="nav.mainNavigation" xml:space="preserve">
+    <value>Main navigation</value>
+  </data>
+  <data name="header.loggedInAs" xml:space="preserve">
+    <value>Logged in as {0}</value>
+  </data>
+  <data name="header.logout" xml:space="preserve">
+    <value>Log out</value>
+  </data>
+  <data name="home.title" xml:space="preserve">
+    <value>Welcome to PigeonWatch</value>
+  </data>
+  <data name="home.placeholder" xml:space="preserve">
+    <value>Bird sightings near you will appear here soon.</value>
+  </data>
+  <data name="auth.fields.email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="auth.fields.password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="auth.fields.confirmPassword" xml:space="preserve">
+    <value>Confirm password</value>
+  </data>
+  <data name="auth.fields.displayName" xml:space="preserve">
+    <value>Display name</value>
+  </data>
+  <data name="auth.login.title" xml:space="preserve">
+    <value>Log in</value>
+  </data>
+  <data name="auth.login.subtitle" xml:space="preserve">
+    <value>Welcome back. Log in to keep an eye out for birds in need.</value>
+  </data>
+  <data name="auth.login.submit" xml:space="preserve">
+    <value>Log in</value>
+  </data>
+  <data name="auth.login.noAccount" xml:space="preserve">
+    <value>New to PigeonWatch?</value>
+  </data>
+  <data name="auth.login.createAccount" xml:space="preserve">
+    <value>Create account</value>
+  </data>
+  <data name="auth.register.title" xml:space="preserve">
+    <value>Create account</value>
+  </data>
+  <data name="auth.register.subtitle" xml:space="preserve">
+    <value>Join the rescuers looking out for the city's pigeons.</value>
+  </data>
+  <data name="auth.register.submit" xml:space="preserve">
+    <value>Create account</value>
+  </data>
+  <data name="auth.register.haveAccount" xml:space="preserve">
+    <value>Already have an account?</value>
+  </data>
+  <data name="auth.register.login" xml:space="preserve">
+    <value>Log in</value>
+  </data>
+  <data name="auth.register.passwordHint" xml:space="preserve">
+    <value>At least {0} characters, with an uppercase letter, a lowercase letter, a digit and a symbol.</value>
+  </data>
+  <data name="auth.register.displayNameHint" xml:space="preserve">
+    <value>Shown to other rescuers. {0}–{1} characters, no "@".</value>
+  </data>
+  <data name="auth.errors.invalidCredentials" xml:space="preserve">
+    <value>Invalid email or password.</value>
+  </data>
+  <data name="auth.errors.lockedOut" xml:space="preserve">
+    <value>Too many failed attempts. Try again in a few minutes.</value>
+  </data>
+  <data name="auth.errors.tooManyRequests" xml:space="preserve">
+    <value>Too many attempts from this device. Wait a minute and try again.</value>
+  </data>
+  <data name="auth.errors.warmupFailed" xml:space="preserve">
+    <value>PigeonWatch is still waking up. Try again in a moment.</value>
+  </data>
+  <data name="auth.errors.registrationFailed" xml:space="preserve">
+    <value>We couldn't create an account with these details.</value>
+  </data>
+  <data name="auth.errors.duplicateDisplayName" xml:space="preserve">
+    <value>This name is already taken.</value>
+  </data>
+  <data name="auth.errors.invalidEmail" xml:space="preserve">
+    <value>Enter a valid email address.</value>
+  </data>
+  <data name="auth.errors.invalidPassword" xml:space="preserve">
+    <value>This password does not meet the rules.</value>
+  </data>
+  <data name="auth.errors.invalidDisplayName" xml:space="preserve">
+    <value>This name does not meet the rules.</value>
+  </data>
+  <data name="auth.notices.accountCreated" xml:space="preserve">
+    <value>Account created — please log in.</value>
+  </data>
+  <data name="auth.validation.required" xml:space="preserve">
+    <value>This field is required.</value>
+  </data>
+  <data name="auth.validation.email" xml:space="preserve">
+    <value>Enter a valid email address.</value>
+  </data>
+  <data name="auth.validation.passwordMinLength" xml:space="preserve">
+    <value>Use at least {0} characters.</value>
+  </data>
+  <data name="auth.validation.passwordRequiresDigit" xml:space="preserve">
+    <value>Include at least one digit.</value>
+  </data>
+  <data name="auth.validation.passwordRequiresLowercase" xml:space="preserve">
+    <value>Include at least one lowercase letter.</value>
+  </data>
+  <data name="auth.validation.passwordRequiresUppercase" xml:space="preserve">
+    <value>Include at least one uppercase letter.</value>
+  </data>
+  <data name="auth.validation.passwordRequiresNonAlphanumeric" xml:space="preserve">
+    <value>Include at least one symbol, such as ! or #.</value>
+  </data>
+  <data name="auth.validation.passwordMismatch" xml:space="preserve">
+    <value>Passwords don't match.</value>
+  </data>
+  <data name="auth.validation.displayNameMinLength" xml:space="preserve">
+    <value>Use at least {0} characters.</value>
+  </data>
+  <data name="auth.validation.displayNameMaxLength" xml:space="preserve">
+    <value>Use at most {0} characters.</value>
+  </data>
+  <data name="auth.validation.displayNameInvalidCharacter" xml:space="preserve">
+    <value>The name can't contain "{0}".</value>
+  </data>
+  <data name="warmup.title" xml:space="preserve">
+    <value>Waking up PigeonWatch</value>
+  </data>
+  <data name="warmup.messages.1" xml:space="preserve">
+    <value>Congratulations! You're the first rescuer today. Wait for the application to load.</value>
+  </data>
+  <data name="warmup.messages.2" xml:space="preserve">
+    <value>Our server was napping on a warm windowsill. Waking it up…</value>
+  </data>
+  <data name="warmup.messages.3" xml:space="preserve">
+    <value>Rounding up the pigeons — this only happens to the early birds.</value>
+  </data>
+  <data name="warmup.messages.4" xml:space="preserve">
+    <value>Brewing coffee for the database. Hang tight!</value>
+  </data>
+  <data name="warmup.failed.title" xml:space="preserve">
+    <value>PigeonWatch is taking its time</value>
+  </data>
+  <data name="warmup.failed.message" xml:space="preserve">
+    <value>Still asleep. Give it another minute.</value>
+  </data>
+  <data name="warmup.failed.retry" xml:space="preserve">
+    <value>Try again</value>
+  </data>
+</root>

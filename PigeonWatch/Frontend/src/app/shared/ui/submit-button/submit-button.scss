@@ -1,0 +1,9 @@
+:host {
+  display: block;
+}
+
+.submit-button__spinner {
+  display: inline-block;
+  vertical-align: middle;
+  margin-inline-end: var(--pw-space-2);
+}

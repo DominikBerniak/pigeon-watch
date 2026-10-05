@@ -1,4 +1,7 @@
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using PigeonWatch.DependencyInjection;
+using PigeonWatch.WebApi.RateLimiting;
 
 namespace PigeonWatch.WebApi.Host
 {
@@ -31,7 +34,28 @@ namespace PigeonWatch.WebApi.Host
                 });
             });
 
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.AddPolicy(RateLimitPolicyNames.Auth, httpContext =>
+                {
+                    if (httpContext.Request.Path.Value?.EndsWith("/auth/refresh", StringComparison.OrdinalIgnoreCase) == true)
+                        return RateLimitPartition.GetNoLimiter(string.Empty);
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        httpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 10,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0
+                        });
+                });
+            });
+
             WebApplication app = builder.Build();
+
+            app.UseExceptionHandler();
 
             if (app.Environment.IsDevelopment())
             {
@@ -39,15 +63,21 @@ namespace PigeonWatch.WebApi.Host
                 app.UseSwaggerUI();
             }
             else
-            {
                 app.UseHttpsRedirection();
-            }
+
+            app.UseRouting();
 
             app.UseCors("Frontend");
+
+            app.UseAuthentication();
+
+            app.UseRateLimiter();
 
             app.UseAuthorization();
 
             app.MapControllers();
+
+            app.MapPigeonWatch();
 
             app.Run();
         }
