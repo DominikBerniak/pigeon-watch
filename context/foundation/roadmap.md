@@ -43,7 +43,7 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 | ---- | --------------------------- | --------------------------------------------------------------------------- | ------------- | ------------------------------ | -------- |
 | F-01 | persistence-wiring-smoke    | (foundation) deployed API reaches the provisioned database through a CI-applied migration | —             | NFR (map and list usable at expected record volumes) | done |
 | S-01 | register-and-login          | register an account, log in and log out                                     | F-01          | FR-001                         | done     |
-| S-02 | edit-profile-name           | view and edit their own profile name, and change their password, from a profile page opened through a header user menu | S-01          | FR-002 (password change: see Open Roadmap Question 7) | in-progress |
+| S-02 | edit-profile-name           | view and edit their own profile name, and change their password, from a profile page opened through a header user menu | S-01          | FR-002 (password change: see Open Roadmap Question 7) | done |
 | S-03 | report-sighting-on-map      | report a sighting and see it on the nearby map and its detail page          | S-01          | US-01, FR-004, FR-005, FR-019  | blocked  |
 | S-04 | attach-sighting-photo       | attach an optional photo to a sighting                                      | S-03          | FR-005                         | proposed |
 | S-05 | filter-sightings-nearby     | scope the map to their nearby area and filter by status and criticality     | S-03          | FR-004                         | proposed |
@@ -119,7 +119,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Wider than the original name-only slice: it adds a rate-limited password endpoint (the security stamp rotates, so other devices lose their session when their access token expires and refresh is rejected), a silent re-login on the current tab, and the header user menu on the initial bundle (500 kB budget). Still independent of every later slice; can fill gaps while other slices are waiting on a decision.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-03: Report a sighting and see it on the map
 
@@ -295,3 +295,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ## Done
 - **F-01: (foundation) the deployed API connects to the already-provisioned database and applies a schema migration through CI, proving a record can be stored and read in the live environment.** — Archived 2026-10-04 → `context/archive/2026-10-03-persistence-wiring-smoke/`. Lesson: —.
 - **S-01: user can register an account, log in and log out.** — Archived 2026-10-05 → `context/archive/2026-10-04-register-and-login/`. Lesson: —.
+- **S-02: user can view and edit their own profile name, and change their password, from a profile page opened through a header user menu that replaces the header name text and Log out button.** — Archived 2026-10-10 → `context/archive/2026-10-10-edit-profile-name/`. Lesson: —.
