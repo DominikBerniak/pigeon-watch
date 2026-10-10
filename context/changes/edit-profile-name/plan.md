@@ -412,13 +412,13 @@ None. No column, index or data change; `has-pending-model-changes` must stay cle
 
 #### Automated
 
-- [x] 4.1 Production build succeeds under the 500 kB initial budget: `npm run build`
-- [x] 4.2 Frontend tests pass: `npm test -- --watch=false`
-- [x] 4.3 Backend unit and architecture tests pass
+- [x] 4.1 Production build succeeds under the 500 kB initial budget: `npm run build` — 73a77ed
+- [x] 4.2 Frontend tests pass: `npm test -- --watch=false` — 73a77ed
+- [x] 4.3 Backend unit and architecture tests pass — 73a77ed
 
 #### Manual
 
-- [x] 4.4 Changing the password keeps the tab signed in, shows the success notice and clears the fields
-- [x] 4.5 A second browser profile signed in before the change is sent to login when its access token expires or it refreshes
-- [x] 4.6 Wrong current password and weak or mismatched new passwords show the right errors, and the old password is rejected at login
-- [x] 4.7 The roadmap shows the updated S-02 outcome and the new open question
+- [x] 4.4 Changing the password keeps the tab signed in, shows the success notice and clears the fields — 73a77ed
+- [x] 4.5 A second browser profile signed in before the change is sent to login when its access token expires or it refreshes — 73a77ed
+- [x] 4.6 Wrong current password and weak or mismatched new passwords show the right errors, and the old password is rejected at login — 73a77ed
+- [x] 4.7 The roadmap shows the updated S-02 outcome and the new open question — 73a77ed
