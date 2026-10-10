@@ -57,6 +57,23 @@ public class AccountRepository(UserManager<ApplicationUser> userManager, IUserAc
         return ProfileUpdateResult.Failure(ToAccountErrors(result.Errors));
     }
 
+    public async Task<PasswordChangeResult> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        ApplicationUser? user = await userManager.FindByIdAsync(userId.ToString());
+
+        if (user is null)
+            return PasswordChangeResult.Failure([new AccountError(AccountErrorCodes.UserNotFound, userNotFoundDescription)]);
+
+        IdentityResult result = await userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+
+        if (result.Succeeded)
+            return PasswordChangeResult.Success();
+
+        return PasswordChangeResult.Failure(ToAccountErrors(result.Errors));
+    }
+
     private static List<AccountError> ToAccountErrors(IEnumerable<IdentityError> identityErrors)
     {
         List<IdentityError> errors = identityErrors.ToList();

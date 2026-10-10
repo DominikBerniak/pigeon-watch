@@ -33,6 +33,11 @@ public class AccountService(IAccountRepository accountRepository) : IAccountServ
         return await accountRepository.UpdateDisplayNameAsync(userId, trimmed, cancellationToken);
     }
 
+    public async Task<PasswordChangeResult> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
+    {
+        return await accountRepository.ChangePasswordAsync(userId, currentPassword, newPassword, cancellationToken);
+    }
+
     private static List<AccountError> ValidateEmail(string email)
     {
         List<AccountError> errors = [];

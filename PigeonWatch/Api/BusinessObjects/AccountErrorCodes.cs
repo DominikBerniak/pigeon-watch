@@ -11,4 +11,10 @@ public static class AccountErrorCodes
     public const string DisplayNameLength = "DisplayNameLength";
     public const string DisplayNameInvalidCharacter = "DisplayNameInvalidCharacter";
     public const string UserNotFound = "UserNotFound";
+    public const string PasswordMismatch = "PasswordMismatch";
+    public const string PasswordTooShort = "PasswordTooShort";
+    public const string PasswordRequiresDigit = "PasswordRequiresDigit";
+    public const string PasswordRequiresLower = "PasswordRequiresLower";
+    public const string PasswordRequiresUpper = "PasswordRequiresUpper";
+    public const string PasswordRequiresNonAlphanumeric = "PasswordRequiresNonAlphanumeric";
 }

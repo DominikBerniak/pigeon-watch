@@ -371,27 +371,27 @@ None. No column, index or data change; `has-pending-model-changes` must stay cle
 
 #### Automated
 
-- [x] 1.1 Solution builds without warnings as errors: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
-- [x] 1.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`
-- [x] 1.3 Unit tests pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
-- [x] 1.4 No pending EF model changes: `dotnet ef migrations has-pending-model-changes`
+- [x] 1.1 Solution builds without warnings as errors: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — a4ae85e
+- [x] 1.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — a4ae85e
+- [x] 1.3 Unit tests pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — a4ae85e
+- [x] 1.4 No pending EF model changes: `dotnet ef migrations has-pending-model-changes` — a4ae85e
 
 #### Manual
 
-- [x] 1.5 Against the local API, `PUT account/profile` renames the user, a duplicate name differing by case returns 400 `DuplicateDisplayName`, and a missing token returns 401
+- [x] 1.5 Against the local API, `PUT account/profile` renames the user, a duplicate name differing by case returns 400 `DuplicateDisplayName`, and a missing token returns 401 — a4ae85e
 
 ### Phase 2: Backend change-password endpoint
 
 #### Automated
 
-- [ ] 2.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
-- [ ] 2.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`
-- [ ] 2.3 Unit tests pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
+- [x] 2.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
+- [x] 2.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`
+- [x] 2.3 Unit tests pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
 
 #### Manual
 
-- [ ] 2.4 Wrong current password returns 400 `PasswordMismatch`, weak new password returns `Password*` codes, a valid change returns 200, the old password stops working, and an old refresh token is rejected
-- [ ] 2.5 An eleventh request within a minute from the same IP returns 429
+- [x] 2.4 Wrong current password returns 400 `PasswordMismatch`, weak new password returns `Password*` codes, a valid change returns 200, the old password stops working, and an old refresh token is rejected
+- [x] 2.5 An eleventh request within a minute from the same IP returns 429
 
 ### Phase 3: Profile page with name edit and header user menu
 

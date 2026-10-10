@@ -174,6 +174,98 @@ public class AccountRepositoryTests
         Assert.Equal([concurrencyCode], result.Errors.Select(error => error.Code));
     }
 
+    [Fact]
+    public async Task Change_password_succeeds_through_the_user_manager()
+    {
+        ApplicationUser user = new() { Id = Guid.NewGuid(), Email = "user@example.com", DisplayName = "Pidgey" };
+        userManager.FindByIdAsync(user.Id.ToString()).Returns(user);
+        userManager.ChangePasswordAsync(user, "Old1!", "New1Password!").Returns(IdentityResult.Success);
+
+        PasswordChangeResult result = await new AccountRepository(userManager, new UserAccountMapper()).ChangePasswordAsync(
+            user.Id,
+            "Old1!",
+            "New1Password!",
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Empty(result.Errors);
+        await userManager.Received(1).ChangePasswordAsync(user, "Old1!", "New1Password!");
+    }
+
+    [Fact]
+    public async Task Change_password_of_an_unknown_user_fails_with_user_not_found_without_changing()
+    {
+        Guid unknownId = Guid.NewGuid();
+        userManager.FindByIdAsync(unknownId.ToString()).Returns((ApplicationUser?)null);
+
+        PasswordChangeResult result = await new AccountRepository(userManager, new UserAccountMapper()).ChangePasswordAsync(
+            unknownId,
+            "Old1!",
+            "New1Password!",
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([AccountErrorCodes.UserNotFound], result.Errors.Select(error => error.Code));
+        await userManager.DidNotReceive().ChangePasswordAsync(Arg.Any<ApplicationUser>(), Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task Change_password_passes_a_wrong_current_password_through_as_password_mismatch()
+    {
+        PasswordChangeResult result = await ChangePasswordWithErrors(new IdentityErrorDescriber().PasswordMismatch());
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([AccountErrorCodes.PasswordMismatch], result.Errors.Select(error => error.Code));
+    }
+
+    [Fact]
+    public async Task Change_password_passes_every_policy_violation_through_as_its_identity_code()
+    {
+        IdentityErrorDescriber describer = new();
+
+        PasswordChangeResult result = await ChangePasswordWithErrors(
+            describer.PasswordTooShort(8),
+            describer.PasswordRequiresDigit(),
+            describer.PasswordRequiresLower(),
+            describer.PasswordRequiresUpper(),
+            describer.PasswordRequiresNonAlphanumeric());
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(
+            [
+                AccountErrorCodes.PasswordTooShort,
+                AccountErrorCodes.PasswordRequiresDigit,
+                AccountErrorCodes.PasswordRequiresLower,
+                AccountErrorCodes.PasswordRequiresUpper,
+                AccountErrorCodes.PasswordRequiresNonAlphanumeric
+            ],
+            result.Errors.Select(error => error.Code));
+    }
+
+    [Fact]
+    public async Task Change_password_errors_never_carry_the_submitted_passwords()
+    {
+        IdentityErrorDescriber describer = new();
+
+        PasswordChangeResult result = await ChangePasswordWithErrors(describer.PasswordMismatch(), describer.PasswordTooShort(8));
+
+        Assert.DoesNotContain(result.Errors, error => error.Description.Contains("Old1!", StringComparison.Ordinal));
+        Assert.DoesNotContain(result.Errors, error => error.Description.Contains("New1Password!", StringComparison.Ordinal));
+    }
+
+    private Task<PasswordChangeResult> ChangePasswordWithErrors(params IdentityError[] errors)
+    {
+        ApplicationUser user = new() { Id = Guid.NewGuid(), Email = "user@example.com", DisplayName = "Pidgey" };
+        userManager.FindByIdAsync(user.Id.ToString()).Returns(user);
+        userManager.ChangePasswordAsync(user, "Old1!", "New1Password!").Returns(IdentityResult.Failed(errors));
+
+        return new AccountRepository(userManager, new UserAccountMapper()).ChangePasswordAsync(
+            user.Id,
+            "Old1!",
+            "New1Password!",
+            TestContext.Current.CancellationToken);
+    }
+
     private Task<ProfileUpdateResult> RenameWithErrors(params string[] codes)
     {
         ApplicationUser user = new() { Id = Guid.NewGuid(), Email = "user@example.com", DisplayName = "Pidgey" };

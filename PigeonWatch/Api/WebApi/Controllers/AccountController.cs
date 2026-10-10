@@ -17,7 +17,8 @@ public class AccountController(
     IAccountService accountService,
     IRegisterRequestMapper registerRequestMapper,
     IRegisteredAccountViewModelCreator registeredAccountViewModelCreator,
-    IUpdatedProfileViewModelCreator updatedProfileViewModelCreator) : ControllerBase
+    IUpdatedProfileViewModelCreator updatedProfileViewModelCreator,
+    IPasswordChangedViewModelCreator passwordChangedViewModelCreator) : ControllerBase
 {
     [HttpPost("register")]
     [AllowAnonymous]
@@ -49,6 +50,25 @@ public class AccountController(
             return GetValidationProblem<UpdatedProfileModel>(result.Errors);
 
         return Ok(updatedProfileViewModelCreator.Create(result.Profile));
+    }
+
+    [HttpPut("password")]
+    [Authorize]
+    [EnableRateLimiting(RateLimitPolicyNames.Auth)]
+    public async Task<ActionResult<PasswordChangedModel>> ChangePassword(ChangePasswordRequestModel request, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+            return Unauthorized();
+
+        PasswordChangeResult result = await accountService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword, cancellationToken);
+
+        if (result.Errors.Any(error => error.Code == AccountErrorCodes.UserNotFound))
+            return Unauthorized();
+
+        if (!result.Succeeded)
+            return GetValidationProblem<PasswordChangedModel>(result.Errors);
+
+        return Ok(passwordChangedViewModelCreator.Create(result));
     }
 
     private ActionResult<TResponseModel> GetValidationProblem<TResponseModel>(IReadOnlyList<AccountError> errors)

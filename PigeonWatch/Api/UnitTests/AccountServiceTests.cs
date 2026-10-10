@@ -183,6 +183,42 @@ public class AccountServiceTests
         Assert.Equal([duplicate], result.Errors);
     }
 
+    [Fact]
+    public async Task Change_password_delegates_to_the_repository_without_altering_the_passwords()
+    {
+        Guid userId = Guid.NewGuid();
+        accountRepository
+            .ChangePasswordAsync(userId, " Old1! ", " New1Password! ", Arg.Any<CancellationToken>())
+            .Returns(PasswordChangeResult.Success());
+
+        PasswordChangeResult result = await CreateService().ChangePasswordAsync(
+            userId,
+            " Old1! ",
+            " New1Password! ",
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Succeeded);
+        await accountRepository.Received(1).ChangePasswordAsync(userId, " Old1! ", " New1Password! ", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Change_password_returns_the_repository_failure_unchanged()
+    {
+        AccountError mismatch = new(AccountErrorCodes.PasswordMismatch, "wrong");
+        accountRepository
+            .ChangePasswordAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(PasswordChangeResult.Failure([mismatch]));
+
+        PasswordChangeResult result = await CreateService().ChangePasswordAsync(
+            Guid.NewGuid(),
+            "Old1!",
+            "New1Password!",
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([mismatch], result.Errors);
+    }
+
     private AccountService CreateService()
     {
         return new(accountRepository);
