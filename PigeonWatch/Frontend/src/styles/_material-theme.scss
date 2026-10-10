@@ -42,8 +42,11 @@ html {
       filled-horizontal-padding: var(--pw-space-5),
       text-container-shape: var(--pw-radius-md),
       text-label-text-weight: var(--pw-font-weight-semibold),
+      outlined-container-height: var(--pw-control-height),
       outlined-container-shape: var(--pw-radius-md),
+      outlined-label-text-size: var(--pw-font-size-md),
       outlined-label-text-weight: var(--pw-font-weight-semibold),
+      outlined-horizontal-padding: var(--pw-space-5),
     )
   );
 
