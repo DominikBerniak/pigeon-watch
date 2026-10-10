@@ -4,10 +4,11 @@ import { SubmitButton } from './submit-button';
 
 @Component({
   imports: [SubmitButton],
-  template: `<app-submit-button [busy]="busy()">Save</app-submit-button>`,
+  template: `<app-submit-button [busy]="busy()" [disabled]="disabled()">Save</app-submit-button>`,
 })
 class SubmitButtonHost {
   readonly busy = signal(false);
+  readonly disabled = signal(false);
 }
 
 describe('SubmitButton', () => {
@@ -27,6 +28,17 @@ describe('SubmitButton', () => {
     expect(button.hasAttribute('aria-busy')).toBe(false);
     expect(button.querySelector('mat-progress-spinner')).toBeNull();
     expect(button.textContent?.trim()).toBe('Save');
+  });
+
+  it('is disabled without a spinner or aria-busy when disabled', async () => {
+    const fixture = TestBed.createComponent(SubmitButtonHost);
+    fixture.componentInstance.disabled.set(true);
+    await fixture.whenStable();
+    const button: HTMLButtonElement = fixture.nativeElement.querySelector('button');
+
+    expect(button.disabled).toBe(true);
+    expect(button.hasAttribute('aria-busy')).toBe(false);
+    expect(button.querySelector('mat-progress-spinner')).toBeNull();
   });
 
   it('is disabled, aria-busy and shows the spinner when busy', async () => {

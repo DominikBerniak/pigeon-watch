@@ -384,29 +384,29 @@ None. No column, index or data change; `has-pending-model-changes` must stay cle
 
 #### Automated
 
-- [x] 2.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
-- [x] 2.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`
-- [x] 2.3 Unit tests pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
+- [x] 2.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — dddbe39
+- [x] 2.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — dddbe39
+- [x] 2.3 Unit tests pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — dddbe39
 
 #### Manual
 
-- [x] 2.4 Wrong current password returns 400 `PasswordMismatch`, weak new password returns `Password*` codes, a valid change returns 200, the old password stops working, and an old refresh token is rejected
-- [x] 2.5 An eleventh request within a minute from the same IP returns 429
+- [x] 2.4 Wrong current password returns 400 `PasswordMismatch`, weak new password returns `Password*` codes, a valid change returns 200, the old password stops working, and an old refresh token is rejected — dddbe39
+- [x] 2.5 An eleventh request within a minute from the same IP returns 429 — dddbe39
 
 ### Phase 3: Profile page with name edit and header user menu
 
 #### Automated
 
-- [ ] 3.1 Production build succeeds under the 500 kB initial budget: `npm run build`
-- [ ] 3.2 Frontend tests pass including label-coverage and style-token specs: `npm test -- --watch=false`
-- [ ] 3.3 Backend unit tests still pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
+- [x] 3.1 Production build succeeds under the 500 kB initial budget: `npm run build`
+- [x] 3.2 Frontend tests pass including label-coverage and style-token specs: `npm test -- --watch=false`
+- [x] 3.3 Backend unit tests still pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
 
 #### Manual
 
-- [ ] 3.4 The header user menu shows the name, opens Profile and Log out, Profile opens `/profile`, Log out logs out
-- [ ] 3.5 The profile page shows the read-only email, and saving a new name shows the success notice and updates the header without a reload
-- [ ] 3.6 A taken name, a 2-character name and a name containing `@` show the right inline errors
-- [ ] 3.7 The page and the menu are usable at phone width
+- [x] 3.4 The header user menu shows the name, opens Profile and Log out, Profile opens `/profile`, Log out logs out
+- [x] 3.5 The profile page shows the read-only email, and saving a new name shows the success notice and updates the header without a reload
+- [x] 3.6 A taken name, a 2-character name and a name containing `@` show the right inline errors
+- [x] 3.7 The page and the menu are usable at phone width
 
 ### Phase 4: Password change and roadmap update
 

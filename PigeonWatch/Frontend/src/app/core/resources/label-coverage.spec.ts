@@ -88,7 +88,7 @@ describe('label coverage', () => {
       expect.arrayContaining([
         'auth.login.title',
         'auth.errors.registrationFailed',
-        'header.loggedInAs',
+        'header.profile',
         'warmup.failed.retry',
       ]),
     );

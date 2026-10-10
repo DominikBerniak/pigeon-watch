@@ -20,6 +20,12 @@ export const routes: Routes = [
       import('./features/auth/register-page/register-page').then((m) => m.RegisterPage),
   },
   {
+    path: 'profile',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/profile/profile-page/profile-page').then((m) => m.ProfilePage),
+  },
+  {
     path: '**',
     redirectTo: unknownRouteRedirect,
   },

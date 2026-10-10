@@ -11,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 })
 export class SubmitButton {
   readonly busy = input(false);
+  readonly disabled = input(false);
 
   protected readonly spinnerDiameter = 18;
 }

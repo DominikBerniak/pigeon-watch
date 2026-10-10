@@ -33,11 +33,29 @@
   <data name="nav.mainNavigation" xml:space="preserve">
     <value>Main navigation</value>
   </data>
-  <data name="header.loggedInAs" xml:space="preserve">
-    <value>Logged in as {0}</value>
-  </data>
   <data name="header.logout" xml:space="preserve">
     <value>Log out</value>
+  </data>
+  <data name="header.profile" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="profile.title" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="profile.email.label" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="profile.edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="profile.cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="profile.submit" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="profile.notices.saved" xml:space="preserve">
+    <value>Your name has been updated.</value>
   </data>
   <data name="home.title" xml:space="preserve">
     <value>Welcome to PigeonWatch</value>

@@ -1,0 +1,69 @@
+<div class="pw-stack">
+  <app-page-card [title]="'profile.title' | translate">
+    <div class="pw-stack">
+      @if (formErrorText(); as text) {
+        <app-alert kind="error">{{ text }}</app-alert>
+      }
+      @if (saved()) {
+        <app-alert kind="success">{{ 'profile.notices.saved' | translate }}</app-alert>
+      }
+      @if (currentUser(); as user) {
+        <div class="profile-field">
+          <span class="pw-text-muted pw-text-small">{{ 'profile.email.label' | translate }}</span>
+          <span class="profile-value">{{ user.email }}</span>
+        </div>
+      }
+      @if (editing()) {
+        <form class="pw-stack" [formRoot]="profileForm" (submit)="submit()">
+          <mat-form-field class="pw-full-width">
+            <mat-label>{{ 'auth.fields.displayName' | translate }}</mat-label>
+            <input
+              matInput
+              type="text"
+              autocomplete="nickname"
+              [formField]="profileForm.displayName"
+            />
+            <mat-hint>{{
+              'auth.register.displayNameHint'
+                | translate: displayNameRules().minLength : displayNameRules().maxLength
+            }}</mat-hint>
+            <mat-error>
+              <app-field-errors
+                [field]="profileForm.displayName"
+                [messages]="displayNameMessages()"
+              />
+            </mat-error>
+          </mat-form-field>
+          <div class="profile-actions">
+            <button
+              mat-flat-button
+              type="button"
+              class="pw-full-width profile-actions__cancel"
+              [disabled]="busy()"
+              (click)="cancel()"
+            >
+              {{ 'profile.cancel' | translate }}
+            </button>
+            <app-submit-button
+              class="profile-actions__submit"
+              [busy]="busy()"
+              [disabled]="!changed()"
+            >
+              {{ 'profile.submit' | translate }}
+            </app-submit-button>
+          </div>
+        </form>
+      } @else {
+        <div class="profile-field">
+          <span class="pw-text-muted pw-text-small">{{
+            'auth.fields.displayName' | translate
+          }}</span>
+          <span class="profile-value">{{ displayName() }}</span>
+        </div>
+        <button mat-stroked-button type="button" class="pw-full-width" (click)="startEditing()">
+          {{ 'profile.edit' | translate }}
+        </button>
+      }
+    </div>
+  </app-page-card>
+</div>

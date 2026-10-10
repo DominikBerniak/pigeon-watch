@@ -1,16 +1,7 @@
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import {
-  ChangeDetectionStrategy,
-  Component,
-  Signal,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  FieldValidator,
   FormField,
   FormRoot,
-  ValidationError,
   email,
   form,
   maxLength,
@@ -25,11 +16,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { safeReturnUrl } from '../../../core/auth/safe-return-url';
 import { AutoLoginError, SessionService } from '../../../core/auth/session.service';
-import {
-  ConfigurationService,
-  DisplayNameRules,
-  PasswordRules,
-} from '../../../core/configuration/configuration.service';
+import { ConfigurationService } from '../../../core/configuration/configuration.service';
 import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import {
@@ -40,6 +27,16 @@ import {
   SubmitButton,
   provideFormFieldDefaults,
 } from '../../../shared/ui';
+import {
+  ServerFieldErrors,
+  confirmPasswordValidator,
+  displayNameCharacterValidator,
+  fallbackDisplayNameRules,
+  fallbackPasswordRules,
+  forbiddenDisplayNameCharacter,
+  passwordClassValidator,
+  serverErrorFor,
+} from '../../../shared/validation/account-validation';
 import { AuthFormError, RegisterField, authErrorMessage, registerFailure } from '../auth-errors';
 import { LoginNavigationState } from '../login-page/login-page';
 
@@ -49,25 +46,6 @@ interface RegisterModel {
   password: string;
   confirmPassword: string;
 }
-
-interface ServerFieldError {
-  kind: string;
-  value: string;
-}
-
-type ServerFieldErrors = Partial<Record<RegisterField, ServerFieldError>>;
-
-export const fallbackPasswordRules: PasswordRules = {
-  minLength: 8,
-  requireDigit: true,
-  requireLowercase: true,
-  requireUppercase: true,
-  requireNonAlphanumeric: true,
-};
-
-export const fallbackDisplayNameRules: DisplayNameRules = { minLength: 3, maxLength: 30 };
-
-const forbiddenDisplayNameCharacter = '@';
 
 @Component({
   providers: [provideFormFieldDefaults()],
@@ -101,7 +79,7 @@ export class RegisterPage {
     password: '',
     confirmPassword: '',
   });
-  private readonly serverErrors = signal<ServerFieldErrors>({});
+  private readonly serverErrors = signal<ServerFieldErrors<RegisterField>>({});
   private readonly formError = signal<AuthFormError | null>(null);
 
   protected readonly passwordRules = computed(
@@ -117,18 +95,17 @@ export class RegisterPage {
     required(path.displayName);
     minLength(path.displayName, () => this.displayNameRules().minLength);
     maxLength(path.displayName, () => this.displayNameRules().maxLength);
-    validate(path.displayName, ({ value }) =>
-      value().includes(forbiddenDisplayNameCharacter) ? { kind: 'invalidCharacter' } : undefined,
-    );
+    validate(path.displayName, displayNameCharacterValidator());
     validate(path.displayName, serverErrorFor(this.serverErrors, 'displayName'));
     required(path.password);
     minLength(path.password, () => this.passwordRules().minLength);
-    validate(path.password, ({ value }) => passwordClassErrors(value(), this.passwordRules()));
+    validate(
+      path.password,
+      passwordClassValidator(() => this.passwordRules()),
+    );
     validate(path.password, serverErrorFor(this.serverErrors, 'password'));
     required(path.confirmPassword);
-    validate(path.confirmPassword, ({ value, valueOf }) =>
-      value() !== valueOf(path.password) ? { kind: 'mismatch' } : undefined,
-    );
+    validate(path.confirmPassword, confirmPasswordValidator(path.password));
   });
   protected readonly busy = signal(false);
   protected readonly formErrorText = computed(() => {
@@ -206,7 +183,7 @@ export class RegisterPage {
     }
 
     const failure = registerFailure(error);
-    const serverErrors: ServerFieldErrors = {};
+    const serverErrors: ServerFieldErrors<RegisterField> = {};
 
     for (const field of Object.keys(failure.fieldErrors) as RegisterField[]) {
       const kind = failure.fieldErrors[field];
@@ -227,31 +204,4 @@ export class RegisterPage {
 
     void this.router.navigate(['/login'], { queryParams, state });
   }
-}
-
-function serverErrorFor(
-  errors: Signal<ServerFieldErrors>,
-  field: RegisterField,
-): FieldValidator<string> {
-  return ({ value }) => {
-    const error = errors()[field];
-
-    return error && error.value === value() ? { kind: error.kind } : undefined;
-  };
-}
-
-function passwordClassErrors(value: string, rules: PasswordRules): ValidationError[] {
-  const errors: ValidationError[] = [];
-
-  if (rules.requireDigit && !/[0-9]/.test(value)) errors.push({ kind: 'requireDigit' });
-
-  if (rules.requireLowercase && !/[a-z]/.test(value)) errors.push({ kind: 'requireLowercase' });
-
-  if (rules.requireUppercase && !/[A-Z]/.test(value)) errors.push({ kind: 'requireUppercase' });
-
-  if (rules.requireNonAlphanumeric && !/[^a-zA-Z0-9]/.test(value)) {
-    errors.push({ kind: 'requireNonAlphanumeric' });
-  }
-
-  return errors;
 }

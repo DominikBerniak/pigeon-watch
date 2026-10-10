@@ -1,6 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { ApplicationRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
@@ -48,16 +48,45 @@ describe('App', () => {
     expect(element.querySelector('header')).toBeNull();
   });
 
-  it('shows who is logged in and logs out', async () => {
+  async function openUserMenu(): Promise<HTMLElement> {
     currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
     const element = await render();
+    const trigger = element.querySelector<HTMLButtonElement>('header button');
 
-    expect(element.querySelector('header')?.textContent).toContain('Logged in as Jan K');
-    expect(element.querySelector('header')?.textContent).not.toContain('jan@example.com');
-    const button = element.querySelector<HTMLButtonElement>('header button');
-    expect(button?.textContent?.trim()).toBe('Log out');
+    trigger?.click();
+    await TestBed.inject(ApplicationRef).whenStable();
 
-    button?.click();
+    return element;
+  }
+
+  function menuItems(): HTMLElement[] {
+    return Array.from(document.body.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+  }
+
+  it('shows the user name as the menu button without the email', async () => {
+    currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
+    const element = await render();
+    const header = element.querySelector('header');
+
+    expect(header?.querySelector('button')?.textContent?.trim()).toBe('Jan K');
+    expect(header?.textContent).not.toContain('jan@example.com');
+    expect(header?.textContent).not.toContain('Logged in as');
+    expect(menuItems()).toEqual([]);
+  });
+
+  it('opens a menu with Profile and Log out', async () => {
+    await openUserMenu();
+
+    const items = menuItems();
+
+    expect(items.map((item) => item.textContent?.trim())).toEqual(['Profile', 'Log out']);
+    expect(items[0].getAttribute('href')).toBe('/profile');
+  });
+
+  it('logs out from the menu', async () => {
+    await openUserMenu();
+
+    menuItems()[1].click();
 
     expect(logout).toHaveBeenCalledOnce();
   });

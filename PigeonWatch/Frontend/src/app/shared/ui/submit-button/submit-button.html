@@ -2,7 +2,7 @@
   mat-flat-button
   type="submit"
   class="pw-full-width"
-  [disabled]="busy()"
+  [disabled]="busy() || disabled()"
   [attr.aria-busy]="busy() ? 'true' : null"
 >
   @if (busy()) {
