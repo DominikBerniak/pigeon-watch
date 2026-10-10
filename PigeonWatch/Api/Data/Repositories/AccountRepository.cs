@@ -8,6 +8,7 @@ namespace PigeonWatch.Data.Repositories;
 public class AccountRepository(UserManager<ApplicationUser> userManager, IUserAccountMapper userAccountMapper) : IAccountRepository
 {
     private const string registrationFailedDescription = "The account could not be created.";
+    private const string userNotFoundDescription = "The user could not be found.";
 
     public async Task<AccountCreationResult> CreateAsync(NewAccount account, CancellationToken cancellationToken = default)
     {
@@ -35,6 +36,25 @@ public class AccountRepository(UserManager<ApplicationUser> userManager, IUserAc
         ApplicationUser? user = await userManager.FindByIdAsync(userId.ToString());
 
         return user is null ? null : userAccountMapper.ToCurrentUser(user);
+    }
+
+    public async Task<ProfileUpdateResult> UpdateDisplayNameAsync(Guid userId, string displayName, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        ApplicationUser? user = await userManager.FindByIdAsync(userId.ToString());
+
+        if (user is null)
+            return ProfileUpdateResult.Failure([new AccountError(AccountErrorCodes.UserNotFound, userNotFoundDescription)]);
+
+        user.DisplayName = displayName;
+
+        IdentityResult result = await userManager.UpdateAsync(user);
+
+        if (result.Succeeded)
+            return ProfileUpdateResult.Success(userAccountMapper.ToUpdatedProfile(user));
+
+        return ProfileUpdateResult.Failure(ToAccountErrors(result.Errors));
     }
 
     private static List<AccountError> ToAccountErrors(IEnumerable<IdentityError> identityErrors)

@@ -117,6 +117,78 @@ public class AccountRepositoryTests
         Assert.Equal(new CurrentUser(user.Id, "user@example.com", "Pidgey"), currentUser);
     }
 
+    [Fact]
+    public async Task Rename_updates_the_display_name_and_returns_the_updated_profile()
+    {
+        ApplicationUser user = new() { Id = Guid.NewGuid(), Email = "user@example.com", DisplayName = "Pidgey" };
+        userManager.FindByIdAsync(user.Id.ToString()).Returns(user);
+        userManager.UpdateAsync(user).Returns(IdentityResult.Success);
+
+        ProfileUpdateResult result = await new AccountRepository(userManager, new UserAccountMapper()).UpdateDisplayNameAsync(
+            user.Id,
+            "Feathers",
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(new UpdatedProfile("user@example.com", "Feathers"), result.Profile);
+        await userManager.Received(1).UpdateAsync(Arg.Is<ApplicationUser>(updated => updated.Id == user.Id && updated.DisplayName == "Feathers"));
+    }
+
+    [Fact]
+    public async Task Rename_of_an_unknown_user_fails_with_user_not_found_without_updating()
+    {
+        Guid unknownId = Guid.NewGuid();
+        userManager.FindByIdAsync(unknownId.ToString()).Returns((ApplicationUser?)null);
+
+        ProfileUpdateResult result = await new AccountRepository(userManager, new UserAccountMapper()).UpdateDisplayNameAsync(
+            unknownId,
+            "Feathers",
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Null(result.Profile);
+        Assert.Equal([AccountErrorCodes.UserNotFound], result.Errors.Select(error => error.Code));
+        await userManager.DidNotReceive().UpdateAsync(Arg.Any<ApplicationUser>());
+    }
+
+    [Fact]
+    public async Task Rename_passes_a_duplicate_display_name_through()
+    {
+        ProfileUpdateResult result = await RenameWithErrors(AccountErrorCodes.DuplicateDisplayName);
+
+        Assert.False(result.Succeeded);
+        Assert.Null(result.Profile);
+        Assert.Equal(
+            [new AccountError(AccountErrorCodes.DuplicateDisplayName, $"{AccountErrorCodes.DuplicateDisplayName} description")],
+            result.Errors);
+    }
+
+    [Fact]
+    public async Task Rename_passes_a_concurrency_failure_through()
+    {
+        string concurrencyCode = new IdentityErrorDescriber().ConcurrencyFailure().Code;
+
+        ProfileUpdateResult result = await RenameWithErrors(concurrencyCode);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([concurrencyCode], result.Errors.Select(error => error.Code));
+    }
+
+    private Task<ProfileUpdateResult> RenameWithErrors(params string[] codes)
+    {
+        ApplicationUser user = new() { Id = Guid.NewGuid(), Email = "user@example.com", DisplayName = "Pidgey" };
+        IdentityError[] errors = codes
+            .Select(code => new IdentityError { Code = code, Description = $"{code} description" })
+            .ToArray();
+        userManager.FindByIdAsync(user.Id.ToString()).Returns(user);
+        userManager.UpdateAsync(user).Returns(IdentityResult.Failed(errors));
+
+        return new AccountRepository(userManager, new UserAccountMapper()).UpdateDisplayNameAsync(
+            user.Id,
+            "Feathers",
+            TestContext.Current.CancellationToken);
+    }
+
     private Task<AccountCreationResult> CreateWithErrors(params string[] codes)
     {
         IdentityError[] errors = codes

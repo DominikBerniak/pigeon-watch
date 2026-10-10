@@ -2,11 +2,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data;
 using PigeonWatch.Data.Auditing;
 using PigeonWatch.Data.Identity;
 using PigeonWatch.Data.Mappers;
+using PigeonWatch.Data.Repositories;
 
 namespace PigeonWatch.UnitTests;
 
@@ -83,6 +86,60 @@ public sealed class PigeonWatchUserStoreTests : IDisposable
         IdentityResult result = await store.UpdateAsync(loaded, cancellationToken);
 
         Assert.Equal([AccountErrorCodes.DuplicateDisplayName], result.Errors.Select(error => error.Code));
+    }
+
+    [Fact]
+    public async Task Update_allows_a_case_only_rename_of_the_users_own_display_name()
+    {
+        ApplicationUser user = NewUser("user@example.com", "Pidgey");
+        await CreateAsync(user);
+
+        await using PigeonWatchDbContext db = CreateContext();
+        PigeonWatchUserStore store = CreateStore(db);
+        ApplicationUser loaded = (await store.FindByIdAsync(user.Id.ToString(), cancellationToken))!;
+        loaded.DisplayName = "pIDGEY";
+        IdentityResult result = await store.UpdateAsync(loaded, cancellationToken);
+
+        Assert.True(result.Succeeded);
+        await using PigeonWatchDbContext readDb = CreateContext();
+        ApplicationUser reloaded = (await CreateStore(readDb).FindByIdAsync(user.Id.ToString(), cancellationToken))!;
+        Assert.Equal("pIDGEY", reloaded.DisplayName);
+    }
+
+    [Fact]
+    public async Task Rename_through_the_user_manager_accepts_the_unchanged_email_and_user_name()
+    {
+        ApplicationUser user = NewUser("user@example.com", "Pidgey");
+        await CreateAsync(user);
+
+        await using PigeonWatchDbContext db = CreateContext();
+        AccountRepository repository = new(CreateUserManager(db), new UserAccountMapper());
+        ProfileUpdateResult result = await repository.UpdateDisplayNameAsync(user.Id, "Feathers", cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(new UpdatedProfile("user@example.com", "Feathers"), result.Profile);
+        await using PigeonWatchDbContext readDb = CreateContext();
+        ApplicationUser reloaded = (await CreateStore(readDb).FindByIdAsync(user.Id.ToString(), cancellationToken))!;
+        Assert.Equal("Feathers", reloaded.DisplayName);
+        Assert.Equal("user@example.com", reloaded.Email);
+        Assert.Equal("user@example.com", reloaded.UserName);
+    }
+
+    [Fact]
+    public async Task Rename_through_the_user_manager_allows_a_case_only_change_and_rejects_a_name_taken_by_another_user()
+    {
+        ApplicationUser first = NewUser("first@example.com", "Pidgey");
+        await CreateAsync(first);
+        await CreateAsync(NewUser("second@example.com", "Feathers"));
+
+        await using PigeonWatchDbContext db = CreateContext();
+        AccountRepository repository = new(CreateUserManager(db), new UserAccountMapper());
+        ProfileUpdateResult caseOnly = await repository.UpdateDisplayNameAsync(first.Id, "pIDGEY", cancellationToken);
+        ProfileUpdateResult taken = await repository.UpdateDisplayNameAsync(first.Id, "FEATHERS", cancellationToken);
+
+        Assert.True(caseOnly.Succeeded);
+        Assert.False(taken.Succeeded);
+        Assert.Equal([AccountErrorCodes.DuplicateDisplayName], taken.Errors.Select(error => error.Code));
     }
 
     [Fact]
@@ -163,6 +220,25 @@ public sealed class PigeonWatchUserStoreTests : IDisposable
     private PigeonWatchUserStore CreateStore(PigeonWatchDbContext db)
     {
         return new(db, new UserAccountMapper(), normalizer, new IdentityErrorDescriber());
+    }
+
+    private UserManager<ApplicationUser> CreateUserManager(PigeonWatchDbContext db)
+    {
+        IdentityOptions options = new();
+        options.User.RequireUniqueEmail = true;
+        options.User.AllowedUserNameCharacters = string.Empty;
+        IdentityErrorDescriber errorDescriber = new();
+
+        return new UserManager<ApplicationUser>(
+            CreateStore(db),
+            Options.Create(options),
+            new PasswordHasher<ApplicationUser>(),
+            [new UserValidator<ApplicationUser>(errorDescriber)],
+            [],
+            normalizer,
+            errorDescriber,
+            null!,
+            NullLogger<UserManager<ApplicationUser>>.Instance);
     }
 
     private PigeonWatchDbContext CreateContext()

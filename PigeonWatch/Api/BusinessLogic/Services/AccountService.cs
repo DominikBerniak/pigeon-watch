@@ -21,6 +21,18 @@ public class AccountService(IAccountRepository accountRepository) : IAccountServ
         return await accountRepository.CreateAsync(trimmed, cancellationToken);
     }
 
+    public async Task<ProfileUpdateResult> UpdateDisplayNameAsync(Guid userId, string displayName, CancellationToken cancellationToken = default)
+    {
+        string trimmed = displayName.Trim();
+
+        List<AccountError> errors = ValidateDisplayName(trimmed);
+
+        if (errors.Count > 0)
+            return ProfileUpdateResult.Failure(errors);
+
+        return await accountRepository.UpdateDisplayNameAsync(userId, trimmed, cancellationToken);
+    }
+
     private static List<AccountError> ValidateEmail(string email)
     {
         List<AccountError> errors = [];

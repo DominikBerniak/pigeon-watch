@@ -15,6 +15,9 @@ public class AccountServiceTests
             .CreateAsync(Arg.Any<NewAccount>(), Arg.Any<CancellationToken>())
             .Returns(call => AccountCreationResult.Success(
                 new RegisteredAccount(call.Arg<NewAccount>().Email, call.Arg<NewAccount>().DisplayName)));
+        accountRepository
+            .UpdateDisplayNameAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => ProfileUpdateResult.Success(new UpdatedProfile("user@example.com", call.Arg<string>())));
     }
 
     [Theory]
@@ -98,6 +101,86 @@ public class AccountServiceTests
         await accountRepository.Received(1).CreateAsync(
             new NewAccount("user@example.com", " Secret1! ", "Pidgey"),
             Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("a")]
+    [InlineData("ab")]
+    [InlineData("abcdefghijklmnopqrstuvwxyz12345")]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task Rename_to_a_display_name_outside_length_bounds_is_rejected_without_calling_the_repository(string displayName)
+    {
+        ProfileUpdateResult result = await CreateService().UpdateDisplayNameAsync(
+            Guid.NewGuid(),
+            displayName,
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Null(result.Profile);
+        Assert.Equal([AccountErrorCodes.DisplayNameLength], result.Errors.Select(error => error.Code));
+        await accountRepository.DidNotReceive().UpdateDisplayNameAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("abc")]
+    [InlineData("abcdefghijklmnopqrstuvwxyz1234")]
+    public async Task Rename_to_a_display_name_within_length_bounds_reaches_the_repository(string displayName)
+    {
+        Guid userId = Guid.NewGuid();
+
+        ProfileUpdateResult result = await CreateService().UpdateDisplayNameAsync(
+            userId,
+            displayName,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Succeeded);
+        await accountRepository.Received(1).UpdateDisplayNameAsync(userId, displayName, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Rename_to_a_display_name_with_at_sign_is_rejected_without_calling_the_repository()
+    {
+        ProfileUpdateResult result = await CreateService().UpdateDisplayNameAsync(
+            Guid.NewGuid(),
+            "a@b",
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([AccountErrorCodes.DisplayNameInvalidCharacter], result.Errors.Select(error => error.Code));
+        await accountRepository.DidNotReceive().UpdateDisplayNameAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Rename_trims_the_display_name_before_validating_and_reaching_the_repository()
+    {
+        Guid userId = Guid.NewGuid();
+
+        ProfileUpdateResult result = await CreateService().UpdateDisplayNameAsync(
+            userId,
+            "  Pidgey  ",
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(new UpdatedProfile("user@example.com", "Pidgey"), result.Profile);
+        await accountRepository.Received(1).UpdateDisplayNameAsync(userId, "Pidgey", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Rename_returns_the_repository_failure_unchanged()
+    {
+        AccountError duplicate = new(AccountErrorCodes.DuplicateDisplayName, "taken");
+        accountRepository
+            .UpdateDisplayNameAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(ProfileUpdateResult.Failure([duplicate]));
+
+        ProfileUpdateResult result = await CreateService().UpdateDisplayNameAsync(
+            Guid.NewGuid(),
+            "Pidgey",
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([duplicate], result.Errors);
     }
 
     private AccountService CreateService()

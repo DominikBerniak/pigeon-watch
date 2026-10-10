@@ -10,6 +10,7 @@ public static class WebApiServiceCollectionExtensions
     {
         services.AddScoped<IRegisterRequestMapper, RegisterRequestMapper>();
         services.AddScoped<IRegisteredAccountViewModelCreator, RegisteredAccountViewModelCreator>();
+        services.AddScoped<IUpdatedProfileViewModelCreator, UpdatedProfileViewModelCreator>();
         services.AddScoped<IClientConfigurationViewModelCreator, ClientConfigurationViewModelCreator>();
         services.AddScoped<IGeneralConfigurationViewModelCreator, GeneralConfigurationViewModelCreator>();
         services.AddScoped<IUiResourcesViewModelCreator, UiResourcesViewModelCreator>();

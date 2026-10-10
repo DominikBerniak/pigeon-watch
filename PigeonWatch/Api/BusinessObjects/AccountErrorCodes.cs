@@ -10,4 +10,5 @@ public static class AccountErrorCodes
     public const string DuplicateDisplayName = "DuplicateDisplayName";
     public const string DisplayNameLength = "DisplayNameLength";
     public const string DisplayNameInvalidCharacter = "DisplayNameInvalidCharacter";
+    public const string UserNotFound = "UserNotFound";
 }

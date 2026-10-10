@@ -66,6 +66,7 @@ Known limits of the architecture tests: only classes deriving from `ControllerBa
 - Methods and local functions have block bodies (`{ return …; }`), never expression bodies (`=> …`). This covers one-line methods, mappers, view model creators and test helpers too. Lambdas passed as arguments (`.Select(x => …)`, `AddEndpointFilter(async (context, next) => …)`) are not methods and stay lambdas; expression-bodied properties are not covered by this rule.
 - Private fields are camelCase with no `_` prefix.
 - Every `if` and `return` statement is preceded by a blank line, unless it is the first statement of its enclosing block or body (method, constructor, accessor, lambda, `if`/`else` or loop body).
+- Interface members (methods and properties) are written without blank lines between them. Implementing classes separate methods with a blank line.
 - An `if`, `else`, `for`, `foreach` or `while` body that is a single statement on one line has no braces. A body with more than one statement, or a single statement wrapped over several lines, keeps its braces.
 
   ```csharp

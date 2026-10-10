@@ -49,4 +49,9 @@ public class UserAccountMapper : IUserAccountMapper
     {
         return new CurrentUser(user.Id, user.Email, user.DisplayName);
     }
+
+    UpdatedProfile IUserAccountMapper.ToUpdatedProfile(ApplicationUser user)
+    {
+        return new UpdatedProfile(user.Email, user.DisplayName);
+    }
 }
