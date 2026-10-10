@@ -6,7 +6,7 @@ import { Observable, firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ConfigurationService } from '../configuration/configuration.service';
 import { authInterceptor } from './auth.interceptor';
-import { AutoLoginError, SessionService } from './session.service';
+import { AutoLoginError, ReLoginError, SessionService } from './session.service';
 import { TokenStore, refreshTokenStorageKey } from './token-store';
 
 const apiUrl = environment.apiUrl;
@@ -239,6 +239,101 @@ describe('SessionService', () => {
     expect((error as AutoLoginError).cause).toMatchObject({ status: 503 });
     expect(session.isAuthenticated()).toBe(false);
     httpMock.verify();
+  });
+
+  describe('changePassword', () => {
+    const passwordUrl = `${apiUrl}/account/password`;
+    const loginUrl = `${apiUrl}/auth/login`;
+    const renewedTokens = {
+      tokenType: 'Bearer',
+      accessToken: 'access-3',
+      expiresIn: 3600,
+      refreshToken: 'refresh-3',
+    };
+
+    async function signIn(session: SessionService): Promise<void> {
+      const login = firstValueFrom(session.login('jan@example.com', 'Old1!pass'));
+      httpMock.expectOne(loginUrl).flush(tokenResponse);
+      await tick();
+      httpMock.expectOne(generalUrl).flush({ currentUser });
+      await login;
+    }
+
+    it('changes the password first, then logs in again with the new password', async () => {
+      const session = TestBed.inject(SessionService);
+      await signIn(session);
+
+      const change = firstValueFrom(session.changePassword('Old1!pass', 'New1!passw'));
+      const request = httpMock.expectOne(passwordUrl);
+      expect(request.request.method).toBe('PUT');
+      expect(request.request.headers.get('Authorization')).toBe('Bearer access-2');
+      expect(request.request.body).toEqual({
+        currentPassword: 'Old1!pass',
+        newPassword: 'New1!passw',
+      });
+      httpMock.expectNone(loginUrl);
+
+      request.flush({ changed: true });
+      const relogin = httpMock.expectOne(loginUrl);
+      expect(relogin.request.body).toEqual({ email: 'jan@example.com', password: 'New1!passw' });
+      relogin.flush(renewedTokens);
+      await tick();
+      httpMock.expectOne(generalUrl).flush({ currentUser });
+      await change;
+
+      expect(TestBed.inject(TokenStore).accessToken()).toBe('access-3');
+      expect(localStorage.getItem(refreshTokenStorageKey)).toBe('refresh-3');
+      expect(session.isAuthenticated()).toBe(true);
+      httpMock.verify();
+    });
+
+    it('reports a rejected change as it is without logging in again', async () => {
+      const session = TestBed.inject(SessionService);
+      await signIn(session);
+
+      const change = firstValueFrom(session.changePassword('Wrong1!pass', 'New1!passw'));
+      httpMock
+        .expectOne(passwordUrl)
+        .flush(
+          { status: 400, errors: { PasswordMismatch: ['Incorrect password.'] } },
+          { status: 400, statusText: 'Bad Request' },
+        );
+
+      await expect(change).rejects.toMatchObject({ status: 400 });
+      httpMock.expectNone(loginUrl);
+      expect(session.isAuthenticated()).toBe(true);
+      expect(TestBed.inject(TokenStore).accessToken()).toBe('access-2');
+      httpMock.verify();
+    });
+
+    it('wraps a failed login after the change in ReLoginError and ends the session', async () => {
+      const session = TestBed.inject(SessionService);
+      await signIn(session);
+
+      const change = firstValueFrom(session.changePassword('Old1!pass', 'New1!passw'));
+      httpMock.expectOne(passwordUrl).flush({ changed: true });
+      httpMock.expectOne(loginUrl).flush(null, { status: 503, statusText: 'Service Unavailable' });
+
+      const error = await change.catch((failure: unknown) => failure);
+      expect(error).toBeInstanceOf(ReLoginError);
+      expect((error as ReLoginError).cause).toMatchObject({ status: 503 });
+      expect(session.isAuthenticated()).toBe(false);
+      expect(TestBed.inject(TokenStore).accessToken()).toBeNull();
+      expect(localStorage.getItem(refreshTokenStorageKey)).toBeNull();
+      httpMock.verify();
+    });
+
+    it('rejects without any request when nobody is signed in', async () => {
+      const session = TestBed.inject(SessionService);
+
+      await expect(
+        firstValueFrom(session.changePassword('Old1!pass', 'New1!passw')),
+      ).rejects.toMatchObject({ status: 401 });
+
+      httpMock.expectNone(passwordUrl);
+      httpMock.expectNone(loginUrl);
+      httpMock.verify();
+    });
   });
 
   it('logs out by clearing the session and navigating to /login', () => {

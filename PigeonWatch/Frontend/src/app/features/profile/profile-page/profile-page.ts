@@ -9,6 +9,7 @@ import {
   validate,
 } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { catchError, finalize, of, switchMap } from 'rxjs';
@@ -32,6 +33,7 @@ import {
   serverErrorFor,
 } from '../../../shared/validation/account-validation';
 import { AuthFormError, authErrorMessage, registerFailure } from '../../auth/auth-errors';
+import { PasswordDialog } from '../password-dialog/password-dialog';
 import { ProfileApi } from '../profile-api';
 
 interface ProfileModel {
@@ -65,6 +67,7 @@ export class ProfilePage {
   private readonly configuration = inject(ConfigurationService);
   private readonly profileApi = inject(ProfileApi);
   private readonly resources = inject(ResourceService);
+  private readonly dialog = inject(MatDialog);
   private readonly savedName = signal(this.session.currentUser()?.displayName ?? '');
   private readonly model = signal<ProfileModel>({ displayName: this.savedName() });
   private readonly serverErrors = signal<ServerFieldErrors<ProfileField>>({});
@@ -84,6 +87,7 @@ export class ProfilePage {
   protected readonly busy = signal(false);
   protected readonly editing = signal(false);
   protected readonly saved = signal(false);
+  protected readonly passwordChanged = signal(false);
   protected readonly displayName = computed(() => this.model().displayName);
   protected readonly changed = computed(
     () => this.model().displayName.trim() !== this.savedName().trim(),
@@ -115,6 +119,14 @@ export class ProfilePage {
     this.saved.set(false);
     this.formError.set(null);
     this.editing.set(true);
+  }
+
+  protected changePassword(): void {
+    this.passwordChanged.set(false);
+    this.dialog
+      .open<PasswordDialog, void, boolean>(PasswordDialog)
+      .afterClosed()
+      .subscribe((changed) => this.passwordChanged.set(changed === true));
   }
 
   protected cancel(): void {

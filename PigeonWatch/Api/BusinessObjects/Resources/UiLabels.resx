@@ -57,6 +57,27 @@
   <data name="profile.notices.saved" xml:space="preserve">
     <value>Your name has been updated.</value>
   </data>
+  <data name="profile.password.title" xml:space="preserve">
+    <value>Change password</value>
+  </data>
+  <data name="profile.password.currentLabel" xml:space="preserve">
+    <value>Current password</value>
+  </data>
+  <data name="profile.password.newLabel" xml:space="preserve">
+    <value>New password</value>
+  </data>
+  <data name="profile.password.submit" xml:space="preserve">
+    <value>Change password</value>
+  </data>
+  <data name="profile.password.notices.changed" xml:space="preserve">
+    <value>Your password has been changed.</value>
+  </data>
+  <data name="profile.password.notices.reloginRequired" xml:space="preserve">
+    <value>Your password was changed, but we couldn't sign you in. Please log in again.</value>
+  </data>
+  <data name="profile.password.errors.wrongCurrent" xml:space="preserve">
+    <value>The current password is incorrect.</value>
+  </data>
   <data name="home.title" xml:space="preserve">
     <value>Welcome to PigeonWatch</value>
   </data>

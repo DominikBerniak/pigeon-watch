@@ -65,4 +65,15 @@ html {
       outlined-caret-color: var(--pw-color-primary),
     )
   );
+
+  @include mat.dialog-overrides(
+    (
+      container-shape: var(--pw-radius-xl),
+      container-color: var(--pw-color-surface),
+      headline-padding: var(--pw-space-5) var(--pw-space-5) 0,
+      content-padding: var(--pw-space-3) var(--pw-space-5),
+      with-actions-content-padding: var(--pw-space-3) var(--pw-space-5) 0,
+      actions-padding: var(--pw-space-5),
+    )
+  );
 }

@@ -397,28 +397,28 @@ None. No column, index or data change; `has-pending-model-changes` must stay cle
 
 #### Automated
 
-- [x] 3.1 Production build succeeds under the 500 kB initial budget: `npm run build`
-- [x] 3.2 Frontend tests pass including label-coverage and style-token specs: `npm test -- --watch=false`
-- [x] 3.3 Backend unit tests still pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
+- [x] 3.1 Production build succeeds under the 500 kB initial budget: `npm run build` — 5311d68
+- [x] 3.2 Frontend tests pass including label-coverage and style-token specs: `npm test -- --watch=false` — 5311d68
+- [x] 3.3 Backend unit tests still pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — 5311d68
 
 #### Manual
 
-- [x] 3.4 The header user menu shows the name, opens Profile and Log out, Profile opens `/profile`, Log out logs out
-- [x] 3.5 The profile page shows the read-only email, and saving a new name shows the success notice and updates the header without a reload
-- [x] 3.6 A taken name, a 2-character name and a name containing `@` show the right inline errors
-- [x] 3.7 The page and the menu are usable at phone width
+- [x] 3.4 The header user menu shows the name, opens Profile and Log out, Profile opens `/profile`, Log out logs out — 5311d68
+- [x] 3.5 The profile page shows the read-only email, and saving a new name shows the success notice and updates the header without a reload — 5311d68
+- [x] 3.6 A taken name, a 2-character name and a name containing `@` show the right inline errors — 5311d68
+- [x] 3.7 The page and the menu are usable at phone width — 5311d68
 
 ### Phase 4: Password change and roadmap update
 
 #### Automated
 
-- [ ] 4.1 Production build succeeds under the 500 kB initial budget: `npm run build`
-- [ ] 4.2 Frontend tests pass: `npm test -- --watch=false`
-- [ ] 4.3 Backend unit and architecture tests pass
+- [x] 4.1 Production build succeeds under the 500 kB initial budget: `npm run build`
+- [x] 4.2 Frontend tests pass: `npm test -- --watch=false`
+- [x] 4.3 Backend unit and architecture tests pass
 
 #### Manual
 
-- [ ] 4.4 Changing the password keeps the tab signed in, shows the success notice and clears the fields
-- [ ] 4.5 A second browser profile signed in before the change is sent to login when its access token expires or it refreshes
-- [ ] 4.6 Wrong current password and weak or mismatched new passwords show the right errors, and the old password is rejected at login
-- [ ] 4.7 The roadmap shows the updated S-02 outcome and the new open question
+- [x] 4.4 Changing the password keeps the tab signed in, shows the success notice and clears the fields
+- [x] 4.5 A second browser profile signed in before the change is sent to login when its access token expires or it refreshes
+- [x] 4.6 Wrong current password and weak or mismatched new passwords show the right errors, and the old password is rejected at login
+- [x] 4.7 The roadmap shows the updated S-02 outcome and the new open question

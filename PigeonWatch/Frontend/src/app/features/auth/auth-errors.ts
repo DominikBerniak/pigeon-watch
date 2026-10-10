@@ -16,6 +16,13 @@ export interface RegisterFailure {
   fieldErrors: Partial<Record<RegisterField, string>>;
 }
 
+export type PasswordChangeField = 'currentPassword' | 'newPassword';
+
+export interface PasswordChangeFailure {
+  formError: AuthFormError | null;
+  fieldErrors: Partial<Record<PasswordChangeField, string>>;
+}
+
 export function loginFailure(error: unknown): AuthFormError {
   if (!(error instanceof HttpErrorResponse)) return 'unexpected';
 
@@ -36,6 +43,22 @@ export function registerFailure(error: unknown): RegisterFailure {
   const failure: RegisterFailure = { formError: null, fieldErrors: {} };
 
   for (const code of codes) applyErrorCode(failure, code);
+
+  return failure;
+}
+
+export function passwordChangeFailure(error: unknown): PasswordChangeFailure {
+  if (!(error instanceof HttpErrorResponse)) return { formError: 'unexpected', fieldErrors: {} };
+
+  const codes = errorCodes(error);
+
+  if (error.status !== 400 || codes.length === 0) {
+    return { formError: transportFailure(error), fieldErrors: {} };
+  }
+
+  const failure: PasswordChangeFailure = { formError: null, fieldErrors: {} };
+
+  for (const code of codes) applyPasswordChangeCode(failure, code);
 
   return failure;
 }
@@ -71,6 +94,15 @@ function applyErrorCode(failure: RegisterFailure, code: string): void {
   else if (normalized.startsWith('displayname')) fields.displayName ??= 'invalidDisplayName';
   else if (normalized.startsWith('password')) fields.password ??= 'invalidPassword';
   else if (normalized === 'invalidemail') fields.email ??= 'invalidEmail';
+  else failure.formError ??= 'unexpected';
+}
+
+function applyPasswordChangeCode(failure: PasswordChangeFailure, code: string): void {
+  const normalized = code.toLowerCase();
+  const fields = failure.fieldErrors;
+
+  if (normalized === 'passwordmismatch') fields.currentPassword = 'wrongCurrentPassword';
+  else if (normalized.startsWith('password')) fields.newPassword ??= 'invalidPassword';
   else failure.formError ??= 'unexpected';
 }
 

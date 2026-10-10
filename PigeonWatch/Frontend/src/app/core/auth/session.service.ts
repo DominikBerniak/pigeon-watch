@@ -16,6 +16,7 @@ import {
   tap,
   throwError,
 } from 'rxjs';
+import { ProfileApi } from '../../features/profile/profile-api';
 import { ConfigurationService } from '../configuration/configuration.service';
 import { WarmupState } from '../warmup/warmup-state';
 import { AuthApi, RegisterRequest } from './auth-api';
@@ -28,10 +29,18 @@ export class AutoLoginError extends Error {
   }
 }
 
+export class ReLoginError extends Error {
+  constructor(cause: unknown) {
+    super('The password was changed, but signing in with the new password failed.', { cause });
+    this.name = 'ReLoginError';
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class SessionService {
   private readonly tokens = inject(TokenStore);
   private readonly authApi = inject(AuthApi);
+  private readonly profileApi = inject(ProfileApi);
   private readonly configuration = inject(ConfigurationService);
   private readonly warmup = inject(WarmupState);
   private readonly router = inject(Router);
@@ -89,6 +98,24 @@ export class SessionService {
           ),
         ),
       );
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<void> {
+    const email = this.currentUser()?.email;
+
+    if (!email) return throwError(() => new HttpErrorResponse({ status: 401 }));
+
+    return this.profileApi.changePassword(currentPassword, newPassword).pipe(
+      switchMap(() =>
+        this.login(email, newPassword).pipe(
+          catchError((error: unknown) => {
+            this.clearSession();
+
+            return throwError(() => new ReLoginError(error));
+          }),
+        ),
+      ),
+    );
   }
 
   logout(): void {

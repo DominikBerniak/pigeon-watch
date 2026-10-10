@@ -2,10 +2,10 @@ import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { Observable, of, throwError } from 'rxjs';
-import { SessionService } from '../../../core/auth/session.service';
+import { ReLoginError, SessionService } from '../../../core/auth/session.service';
 import {
   ClientConfiguration,
   ConfigurationService,
@@ -22,9 +22,15 @@ describe('ProfilePage', () => {
     typeof vi.fn<(displayName: string) => Observable<UpdatedProfile>>
   >;
   let loadGeneral: ReturnType<typeof vi.fn<() => Observable<GeneralConfiguration>>>;
+  let changePassword: ReturnType<
+    typeof vi.fn<(currentPassword: string, newPassword: string) => Observable<void>>
+  >;
   let harness: RouterTestingHarness;
 
   beforeEach(async () => {
+    changePassword = vi.fn<(currentPassword: string, newPassword: string) => Observable<void>>(() =>
+      of(undefined),
+    );
     updateDisplayName = vi.fn<(displayName: string) => Observable<UpdatedProfile>>((displayName) =>
       of({ email: user.email, displayName }),
     );
@@ -34,7 +40,10 @@ describe('ProfilePage', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([{ path: 'profile', component: ProfilePage }]),
-        { provide: SessionService, useValue: { currentUser: signal(user).asReadonly() } },
+        {
+          provide: SessionService,
+          useValue: { currentUser: signal(user).asReadonly(), changePassword },
+        },
         {
           provide: ConfigurationService,
           useValue: { clientConfig: signal<ClientConfiguration | null>(null), loadGeneral },
@@ -50,6 +59,14 @@ describe('ProfilePage', () => {
     await harness.fixture.whenStable();
 
     return harness.routeNativeElement as HTMLElement;
+  }
+
+  function profileCard(root: HTMLElement): HTMLElement {
+    const card = root.querySelector<HTMLElement>('app-page-card');
+
+    if (!card) throw new Error('No profile card');
+
+    return card;
   }
 
   function buttonByText(root: HTMLElement, text: string): HTMLButtonElement | null {
@@ -69,7 +86,7 @@ describe('ProfilePage', () => {
   }
 
   function saveButton(root: HTMLElement): HTMLButtonElement {
-    const button = root.querySelector<HTMLButtonElement>('app-submit-button button');
+    const button = profileCard(root).querySelector<HTMLButtonElement>('app-submit-button button');
 
     if (!button) throw new Error('No save button');
 
@@ -99,7 +116,7 @@ describe('ProfilePage', () => {
   }
 
   function nameInput(root: HTMLElement): HTMLInputElement {
-    const input = root.querySelector<HTMLInputElement>('mat-form-field input');
+    const input = profileCard(root).querySelector<HTMLInputElement>('mat-form-field input');
 
     if (!input) throw new Error('No display name input');
 
@@ -117,16 +134,18 @@ describe('ProfilePage', () => {
   async function submit(root: HTMLElement, value?: string): Promise<void> {
     if (value !== undefined) type(root, value);
 
-    root.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true }));
+    profileCard(root)
+      .querySelector('form')
+      ?.dispatchEvent(new Event('submit', { cancelable: true }));
     await settle();
   }
 
   function fieldError(root: HTMLElement): string | undefined {
-    return root.querySelector('mat-form-field mat-error')?.textContent?.trim();
+    return profileCard(root).querySelector('mat-form-field mat-error')?.textContent?.trim();
   }
 
   function alertText(root: HTMLElement, role: 'alert' | 'status'): string | undefined {
-    return root.querySelector(`app-alert[role="${role}"]`)?.textContent?.trim();
+    return profileCard(root).querySelector(`app-alert[role="${role}"]`)?.textContent?.trim();
   }
 
   function failWith(status: number, error: unknown = null): void {
@@ -141,15 +160,17 @@ describe('ProfilePage', () => {
     const root = await open();
 
     expect(root.querySelector('app-page-card h1')?.textContent?.trim()).toBe('Profile');
-    expect(root.querySelector('app-submit-button button[type="submit"]')?.textContent?.trim()).toBe(
-      'Save',
-    );
-    expect(root.querySelectorAll('mat-form-field input[matInput]').length).toBe(1);
+    expect(
+      profileCard(root)
+        .querySelector('app-submit-button button[type="submit"]')
+        ?.textContent?.trim(),
+    ).toBe('Save');
+    expect(profileCard(root).querySelectorAll('mat-form-field input[matInput]').length).toBe(1);
     expect(editButton(root)).toBeNull();
 
     await submit(root, '');
 
-    expect(root.querySelector('mat-error app-field-errors')).not.toBeNull();
+    expect(profileCard(root).querySelector('mat-error app-field-errors')).not.toBeNull();
   });
 
   it('shows the email and the display name as read-only text with an Edit button', async () => {
@@ -160,10 +181,10 @@ describe('ProfilePage', () => {
     expect(root.textContent).not.toContain("Your email can't be changed here.");
     expect(root.textContent).toContain('Email');
     expect(root.textContent).toContain('Display name');
-    expect(root.querySelectorAll('.profile-field').length).toBe(2);
-    expect(root.querySelectorAll('input').length).toBe(0);
-    expect(root.querySelector('mat-form-field')).toBeNull();
-    expect(root.querySelector('app-submit-button')).toBeNull();
+    expect(profileCard(root).querySelectorAll('.profile-field').length).toBe(2);
+    expect(profileCard(root).querySelectorAll('input').length).toBe(0);
+    expect(profileCard(root).querySelector('mat-form-field')).toBeNull();
+    expect(profileCard(root).querySelector('app-submit-button')).toBeNull();
     expect(editButton(root)?.textContent?.trim()).toBe('Edit');
   });
 
@@ -171,14 +192,16 @@ describe('ProfilePage', () => {
     const root = await open();
 
     expect(nameInput(root).value).toBe('Jan K');
-    expect(root.querySelector('mat-form-field mat-label')?.textContent?.trim()).toBe(
+    expect(profileCard(root).querySelector('mat-form-field mat-label')?.textContent?.trim()).toBe(
       'Display name',
     );
-    expect(root.querySelectorAll('input').length).toBe(1);
-    expect(root.querySelector('input[type="email"]')).toBeNull();
+    expect(profileCard(root).querySelectorAll('input').length).toBe(1);
+    expect(profileCard(root).querySelector('input[type="email"]')).toBeNull();
     expect(root.textContent).toContain('jan@example.com');
     expect(editButton(root)).toBeNull();
-    expect(root.querySelector('app-submit-button button')?.textContent?.trim()).toBe('Save');
+    expect(profileCard(root).querySelector('app-submit-button button')?.textContent?.trim()).toBe(
+      'Save',
+    );
   });
 
   it('places Cancel to the left of Save in edit mode', async () => {
@@ -234,7 +257,7 @@ describe('ProfilePage', () => {
     await settle();
 
     expect(updateDisplayName).not.toHaveBeenCalled();
-    expect(root.querySelectorAll('input').length).toBe(0);
+    expect(profileCard(root).querySelectorAll('input').length).toBe(0);
     expect(root.textContent).toContain('Jan K');
     expect(root.textContent).not.toContain('Something else');
     expect(editButton(root)).not.toBeNull();
@@ -294,7 +317,7 @@ describe('ProfilePage', () => {
     expect(loadGeneral).toHaveBeenCalledOnce();
     expect(alertText(root, 'status')).toBe('Your name has been updated.');
     expect(alertText(root, 'alert')).toBeUndefined();
-    expect(root.querySelectorAll('input').length).toBe(0);
+    expect(profileCard(root).querySelectorAll('input').length).toBe(0);
     expect(root.textContent).toContain('Jan K2');
     expect(editButton(root)?.textContent?.trim()).toBe('Edit');
   });
@@ -370,6 +393,329 @@ describe('ProfilePage', () => {
     expect(alertText(root, 'status')).toBeUndefined();
     expect(loadGeneral).not.toHaveBeenCalled();
     expect(nameInput(root).value).toBe('Valid name');
-    expect(root.querySelector('app-submit-button button')?.hasAttribute('disabled')).toBe(false);
+    expect(
+      profileCard(root).querySelector('app-submit-button button')?.hasAttribute('disabled'),
+    ).toBe(false);
+  });
+
+  describe('password dialog', () => {
+    const validPasswords: [string, string, string] = ['Old1!pass', 'New1!passw', 'New1!passw'];
+
+    function passwordDialog(): HTMLElement | null {
+      return document.querySelector<HTMLElement>('app-password-dialog');
+    }
+
+    function dialog(): HTMLElement {
+      const element = passwordDialog();
+
+      if (!element) throw new Error('No password dialog');
+
+      return element;
+    }
+
+    async function openPasswordDialog(root: HTMLElement): Promise<void> {
+      const button = buttonByText(root, 'Change password');
+
+      if (!button) throw new Error('No change password button');
+
+      button.click();
+      await settle();
+    }
+
+    async function waitUntilClosed(): Promise<void> {
+      for (let attempt = 0; attempt < 50 && passwordDialog(); attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        await settle();
+      }
+    }
+
+    function passwordInputs(): HTMLInputElement[] {
+      return [...dialog().querySelectorAll<HTMLInputElement>('input[type="password"]')];
+    }
+
+    function fillPasswords(values: readonly string[]): void {
+      passwordInputs().forEach((input, index) => {
+        input.value = values[index] ?? '';
+        input.dispatchEvent(new Event('input'));
+        input.dispatchEvent(new Event('blur'));
+      });
+    }
+
+    async function submitPassword(values?: readonly string[]): Promise<void> {
+      if (values) fillPasswords(values);
+
+      dialog()
+        .querySelector('form')
+        ?.dispatchEvent(new Event('submit', { cancelable: true }));
+      await settle();
+    }
+
+    function passwordFieldErrors(): string[] {
+      return [...dialog().querySelectorAll('mat-form-field')].map(
+        (field) => field.querySelector('mat-error')?.textContent?.trim() ?? '',
+      );
+    }
+
+    function dialogAlertText(): string | undefined {
+      return dialog().querySelector('app-alert[role="alert"]')?.textContent?.trim();
+    }
+
+    function failPasswordChange(status: number, error: unknown = null): void {
+      changePassword.mockReturnValue(throwError(() => new HttpErrorResponse({ status, error })));
+    }
+
+    function failPasswordChangeWithCodes(errors: Record<string, string[]>): void {
+      failPasswordChange(400, { status: 400, errors });
+    }
+
+    it('is not open until the Change password button is clicked', async () => {
+      const root = await openReadOnly();
+
+      expect(passwordDialog()).toBeNull();
+      expect(buttonByText(root, 'Change password')).not.toBeNull();
+
+      await openPasswordDialog(root);
+
+      expect(passwordDialog()).not.toBeNull();
+    });
+
+    it('shows a titled form with labelled fields, hint and buttons', async () => {
+      const root = await openReadOnly();
+
+      await openPasswordDialog(root);
+
+      expect(document.querySelector('[mat-dialog-title]')?.textContent?.trim()).toBe(
+        'Change password',
+      );
+      expect(
+        [...dialog().querySelectorAll('mat-form-field mat-label')].map((label) =>
+          label.textContent?.trim(),
+        ),
+      ).toEqual(['Current password', 'New password', 'Confirm password']);
+      expect(passwordInputs().map((input) => input.autocomplete)).toEqual([
+        'current-password',
+        'new-password',
+        'new-password',
+      ]);
+      expect(
+        dialog().querySelector('app-submit-button button[type="submit"]')?.textContent?.trim(),
+      ).toBe('Change password');
+      expect(
+        [...dialog().querySelectorAll('button[type="button"]')].map((button) =>
+          button.textContent?.trim(),
+        ),
+      ).toEqual(['Cancel']);
+    });
+
+    it('closes without calling the API when Cancel is clicked', async () => {
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+      fillPasswords(validPasswords);
+
+      dialog().querySelector<HTMLButtonElement>('button[type="button"]')?.click();
+      await waitUntilClosed();
+
+      expect(passwordDialog()).toBeNull();
+      expect(changePassword).not.toHaveBeenCalled();
+      expect(root.textContent).not.toContain('Your password has been changed.');
+    });
+
+    it('starts with empty fields every time it is opened', async () => {
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+      fillPasswords(validPasswords);
+      dialog().querySelector<HTMLButtonElement>('button[type="button"]')?.click();
+      await waitUntilClosed();
+
+      await openPasswordDialog(root);
+
+      expect(passwordInputs().map((input) => input.value)).toEqual(['', '', '']);
+      expect(passwordFieldErrors()).toEqual(['', '', '']);
+    });
+
+    it('requires all three fields', async () => {
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+
+      await submitPassword();
+
+      expect(changePassword).not.toHaveBeenCalled();
+      expect(passwordFieldErrors()).toEqual([
+        'This field is required.',
+        'This field is required.',
+        'This field is required.',
+      ]);
+    });
+
+    it('shows no errors before the first submit', async () => {
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+
+      fillPasswords(['', 'a', '']);
+      await settle();
+
+      expect(passwordFieldErrors()).toEqual(['', '', '']);
+    });
+
+    it.each([
+      ['too short', 'Ab1!', 'Use at least 8 characters.'],
+      ['without a digit', 'Abcdefg!', 'Include at least one digit.'],
+      ['without an uppercase letter', 'abcdefg1!', 'Include at least one uppercase letter.'],
+      ['without a lowercase letter', 'ABCDEFG1!', 'Include at least one lowercase letter.'],
+      ['without a symbol', 'Abcdefg12', 'Include at least one symbol, such as ! or #.'],
+    ])('blocks a new password that is %s', async (_case, value, message) => {
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+
+      await submitPassword(['Old1!pass', value, value]);
+
+      expect(changePassword).not.toHaveBeenCalled();
+      expect(passwordFieldErrors()).toEqual(['', message, '']);
+    });
+
+    it('blocks a confirmation that differs from the new password', async () => {
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+
+      await submitPassword(['Old1!pass', 'New1!passw', 'New1!passx']);
+
+      expect(changePassword).not.toHaveBeenCalled();
+      expect(passwordFieldErrors()).toEqual(['', '', "Passwords don't match."]);
+    });
+
+    it('changes the password, closes the dialog and shows the success notice on the page', async () => {
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+
+      await submitPassword(validPasswords);
+      await waitUntilClosed();
+
+      expect(changePassword).toHaveBeenCalledExactlyOnceWith('Old1!pass', 'New1!passw');
+      expect(passwordDialog()).toBeNull();
+      expect(alertText(root, 'status')).toBe('Your password has been changed.');
+      expect(root.textContent).not.toContain('New1!passw');
+    });
+
+    it('hides the success notice when the dialog is opened again', async () => {
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+      await submitPassword(validPasswords);
+      await waitUntilClosed();
+      expect(alertText(root, 'status')).toBe('Your password has been changed.');
+
+      await openPasswordDialog(root);
+
+      expect(alertText(root, 'status')).toBeUndefined();
+    });
+
+    it('maps PasswordMismatch to the current password field until it is edited', async () => {
+      failPasswordChangeWithCodes({ PasswordMismatch: ['Incorrect password.'] });
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+
+      await submitPassword(validPasswords);
+
+      expect(passwordFieldErrors()).toEqual(['The current password is incorrect.', '', '']);
+      expect(dialogAlertText()).toBeUndefined();
+      expect(passwordInputs().map((input) => input.value)).toEqual(validPasswords);
+      expect(alertText(root, 'status')).toBeUndefined();
+
+      changePassword.mockClear();
+      await submitPassword();
+      expect(changePassword).not.toHaveBeenCalled();
+
+      changePassword.mockReturnValue(of(undefined));
+      await submitPassword(['Other1!pass', 'New1!passw', 'New1!passw']);
+      await waitUntilClosed();
+
+      expect(changePassword).toHaveBeenCalledExactlyOnceWith('Other1!pass', 'New1!passw');
+      expect(alertText(root, 'status')).toBe('Your password has been changed.');
+    });
+
+    it.each([
+      [{ PasswordTooShort: ['x'] }],
+      [{ PasswordRequiresDigit: ['x'] }],
+      [{ PasswordRequiresUpper: ['x'] }],
+      [{ PasswordRequiresNonAlphanumeric: ['x'] }],
+      [{ PasswordRequiresDigit: ['x'], PasswordRequiresUpper: ['x'] }],
+    ])('maps policy errors %o to the new password field', async (errors) => {
+      failPasswordChangeWithCodes(errors);
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+
+      await submitPassword(validPasswords);
+
+      expect(passwordFieldErrors()).toEqual(['', 'This password does not meet the rules.', '']);
+      expect(dialogAlertText()).toBeUndefined();
+    });
+
+    it('maps a PasswordMismatch together with a policy error to both fields', async () => {
+      failPasswordChangeWithCodes({ PasswordMismatch: ['x'], PasswordTooShort: ['x'] });
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+
+      await submitPassword(validPasswords);
+
+      expect(passwordFieldErrors()).toEqual([
+        'The current password is incorrect.',
+        'This password does not meet the rules.',
+        '',
+      ]);
+    });
+
+    it.each([
+      [429, 'Too many attempts from this device. Wait a minute and try again.'],
+      [503, 'PigeonWatch is still waking up. Try again in a moment.'],
+      [0, 'PigeonWatch is still waking up. Try again in a moment.'],
+      [500, 'Something went wrong. Try again.'],
+    ])('maps status %s to a form-level alert', async (status, message) => {
+      failPasswordChange(status);
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+
+      await submitPassword(validPasswords);
+
+      expect(dialogAlertText()).toBe(message);
+      expect(passwordFieldErrors()).toEqual(['', '', '']);
+      expect(passwordInputs().map((input) => input.value)).toEqual(validPasswords);
+      expect(dialog().querySelector('app-submit-button button')?.hasAttribute('disabled')).toBe(
+        false,
+      );
+      expect(alertText(root, 'status')).toBeUndefined();
+    });
+
+    it('closes and sends the user to the login page when signing in again fails after the change', async () => {
+      changePassword.mockReturnValue(throwError(() => new ReLoginError(new Error('login failed'))));
+      const root = await openReadOnly();
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      await openPasswordDialog(root);
+
+      await submitPassword(validPasswords);
+      await waitUntilClosed();
+
+      expect(navigate).toHaveBeenCalledExactlyOnceWith(['/login'], {
+        state: {
+          email: 'jan@example.com',
+          notice: "Your password was changed, but we couldn't sign you in. Please log in again.",
+        },
+      });
+      expect(passwordDialog()).toBeNull();
+      expect(alertText(root, 'status')).toBeUndefined();
+    });
+
+    it('does not touch the profile form when the dialog is submitted', async () => {
+      failPasswordChangeWithCodes({ PasswordMismatch: ['x'] });
+      const root = await open();
+      type(root, 'ab');
+      await openPasswordDialog(root);
+
+      await submitPassword(validPasswords);
+
+      expect(fieldError(root)).toBeUndefined();
+      expect(alertText(root, 'alert')).toBeUndefined();
+      expect(updateDisplayName).not.toHaveBeenCalled();
+      expect(loadGeneral).not.toHaveBeenCalled();
+      expect(nameInput(root).value).toBe('ab');
+    });
   });
 });

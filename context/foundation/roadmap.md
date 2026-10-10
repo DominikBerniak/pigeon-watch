@@ -3,7 +3,7 @@ project: PigeonWatch
 version: 1
 status: draft
 created: 2026-10-03
-updated: 2026-10-05
+updated: 2026-10-10
 prd_version: 1
 main_goal: speed
 top_blocker: decisions
@@ -43,7 +43,7 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 | ---- | --------------------------- | --------------------------------------------------------------------------- | ------------- | ------------------------------ | -------- |
 | F-01 | persistence-wiring-smoke    | (foundation) deployed API reaches the provisioned database through a CI-applied migration | —             | NFR (map and list usable at expected record volumes) | done |
 | S-01 | register-and-login          | register an account, log in and log out                                     | F-01          | FR-001                         | done     |
-| S-02 | edit-profile-name           | view and edit their own profile name                                        | S-01          | FR-002                         | proposed |
+| S-02 | edit-profile-name           | view and edit their own profile name, and change their password, from a profile page opened through a header user menu | S-01          | FR-002 (password change: see Open Roadmap Question 7) | in-progress |
 | S-03 | report-sighting-on-map      | report a sighting and see it on the nearby map and its detail page          | S-01          | US-01, FR-004, FR-005, FR-019  | blocked  |
 | S-04 | attach-sighting-photo       | attach an optional photo to a sighting                                      | S-03          | FR-005                         | proposed |
 | S-05 | filter-sightings-nearby     | scope the map to their nearby area and filter by status and criticality     | S-03          | FR-004                         | proposed |
@@ -111,15 +111,15 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-02: Edit profile name
 
-- **Outcome:** user can view and edit their own profile name.
+- **Outcome:** user can view and edit their own profile name, and change their password, from a profile page opened through a header user menu that replaces the header name text and Log out button.
 - **Change ID:** edit-profile-name
-- **PRD refs:** FR-002
+- **PRD refs:** FR-002 (password change and the user menu were added during planning on 2026-10-10; see Open Roadmap Question 7)
 - **Prerequisites:** S-01
 - **Parallel with:** S-03, S-04, S-05, S-06, S-07, S-08, S-09, S-10, S-11
 - **Blockers:** —
 - **Unknowns:** —
-- **Risk:** Small and independent; can fill gaps while other slices are waiting on a decision.
-- **Status:** proposed
+- **Risk:** Wider than the original name-only slice: it adds a rate-limited password endpoint (the security stamp rotates, so other devices lose their session when their access token expires and refresh is rejected), a silent re-login on the current tab, and the header user menu on the initial bundle (500 kB budget). Still independent of every later slice; can fill gaps while other slices are waiting on a decision.
+- **Status:** in-progress
 
 ### S-03: Report a sighting and see it on the map
 
@@ -275,6 +275,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 4. **What are the criticality levels a reporter can choose (names and count)?** — Owner: user. Block: S-03.
 5. **The PRD's second primary success criterion (flock locations as a map layer) is covered only by nice-to-have FRs, which this milestone parks. Is that still the intent?** — Owner: user. Block: none (affects whether a later milestone is needed).
 6. **S-12 (EN/PL language switch) has no FR in PRD v1. Should the next PRD revision add it (and its priority), or does it stay a roadmap-only addition?** — Owner: user. Block: none.
+7. **Password change (and the header user menu) was added to S-02 on 2026-10-10 and has no FR in PRD v1. Should the next PRD revision add an FR for it (and its priority), or does it stay a roadmap-only addition?** — Owner: user. Block: none.
 
 ## Parked
 
