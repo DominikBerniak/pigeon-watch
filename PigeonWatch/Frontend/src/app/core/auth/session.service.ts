@@ -16,7 +16,6 @@ import {
   tap,
   throwError,
 } from 'rxjs';
-import { ProfileApi } from '../../features/profile/profile-api';
 import { ConfigurationService } from '../configuration/configuration.service';
 import { WarmupState } from '../warmup/warmup-state';
 import { AuthApi, RegisterRequest } from './auth-api';
@@ -40,7 +39,6 @@ export class ReLoginError extends Error {
 export class SessionService {
   private readonly tokens = inject(TokenStore);
   private readonly authApi = inject(AuthApi);
-  private readonly profileApi = inject(ProfileApi);
   private readonly configuration = inject(ConfigurationService);
   private readonly warmup = inject(WarmupState);
   private readonly router = inject(Router);
@@ -105,16 +103,22 @@ export class SessionService {
 
     if (!email) return throwError(() => new HttpErrorResponse({ status: 401 }));
 
-    return this.profileApi.changePassword(currentPassword, newPassword).pipe(
-      switchMap(() =>
-        this.login(email, newPassword).pipe(
+    const generation = this.sessionGeneration;
+
+    return this.authApi.changePassword(currentPassword, newPassword).pipe(
+      switchMap(() => {
+        if (generation !== this.sessionGeneration) {
+          return throwError(() => new ReLoginError(new HttpErrorResponse({ status: 401 })));
+        }
+
+        return this.login(email, newPassword).pipe(
           catchError((error: unknown) => {
             this.clearSession();
 
             return throwError(() => new ReLoginError(error));
           }),
-        ),
-      ),
+        );
+      }),
     );
   }
 

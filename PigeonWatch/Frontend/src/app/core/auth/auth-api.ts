@@ -16,6 +16,10 @@ export interface RegisteredAccount {
   displayName: string;
 }
 
+export interface PasswordChanged {
+  changed: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthApi {
   private readonly http = inject(HttpClient);
@@ -39,6 +43,13 @@ export class AuthApi {
   register(request: RegisterRequest): Observable<RegisteredAccount> {
     return this.http.post<RegisteredAccount>(`${environment.apiUrl}/account/register`, request, {
       context: skipAuth(),
+    });
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<PasswordChanged> {
+    return this.http.put<PasswordChanged>(`${environment.apiUrl}/account/password`, {
+      currentPassword,
+      newPassword,
     });
   }
 }

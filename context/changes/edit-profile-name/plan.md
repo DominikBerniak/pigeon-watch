@@ -211,7 +211,7 @@ Add the guarded `/profile` page with the name form, extract the shared display-n
 
 **Files**: `PigeonWatch/Frontend/src/app/features/profile/profile-page/`, `PigeonWatch/Frontend/src/app/app.routes.ts`
 
-**Intent**: A lazy `profile` route guarded by `authGuard`, added before the `**` redirect. The page has the "Profile" card: the email as read-only text with a hint that it cannot be changed here, an editable display name field prefilled from `currentUser`, and a submit button. On success it calls `configuration.loadGeneral()` so the header updates, shows a success `app-alert`, and clears the notice when the user edits again. Server errors map `DuplicateDisplayName`, `DisplayNameLength` and `DisplayNameInvalidCharacter` to field errors tied to the submitted value; 429, 503 and status 0 reuse the existing transport mapping.
+**Intent**: A lazy `profile` route guarded by `authGuard`, added before the `**` redirect. The page has the "Profile" card: the email as read-only text, an editable display name field prefilled from `currentUser`, and a submit button. On success it calls `configuration.loadGeneral()` so the header updates, shows a success `app-alert`, and clears the notice when the user edits again. Server errors map `DuplicateDisplayName`, `DisplayNameLength` and `DisplayNameInvalidCharacter` to field errors tied to the submitted value; 429, 503 and status 0 reuse the existing transport mapping.
 
 **Contract**: Follows `register-page` conventions: Signal Forms, `provideFormFieldDefaults()`, `FormSubmitState.markSubmitted()` first, `if (busy() || form().invalid()) return`, OnPush, `finalize(() => busy.set(false))`. Uses `app-page-card`, `app-alert`, `app-field-errors`, `app-submit-button`. The page is built so a second card can be added below in Phase 4.
 
@@ -227,7 +227,7 @@ Add the guarded `/profile` page with the name form, extract the shared display-n
 
 **File**: `PigeonWatch/Api/BusinessObjects/Resources/UiLabels.resx`
 
-**Intent**: Add English keys for the profile page (title, email label and its "cannot be changed here" hint, save, success notice) and the menu's Profile item, under `profile.*` and `header.*`. Reuse existing `auth.fields.displayName`, `auth.validation.*`, `auth.errors.*`, `header.logout` and the existing transport error keys.
+**Intent**: Add English keys for the profile page (title, email label, save, success notice) and the menu's Profile item, under `profile.*` and `header.*`. Reuse existing `auth.fields.displayName`, `auth.validation.*`, `auth.errors.*`, `header.logout` and the existing transport error keys.
 
 **Contract**: Lowercase dot paths, positional `{0}` placeholders only, literal keys in templates (the coverage spec matches them by regex). `UiResourceTests` must keep passing.
 
@@ -362,6 +362,16 @@ None. No column, index or data change; `has-pending-model-changes` must stay cle
 - Prior change: `context/archive/2026-10-04-register-and-login/plan.md` and `reviews/impl-review.md` (display-name rules, F3, F9)
 - Similar implementation: `PigeonWatch/Api/WebApi/Controllers/AccountController.cs:13`, `PigeonWatch/Api/WebApi/Controllers/ConfigurationController.cs:29`, `PigeonWatch/Frontend/src/app/features/auth/register-page/register-page.ts`
 - Lessons: `context/foundation/lessons.md` (use `curl.exe` in PowerShell)
+
+## Addendum: Implementation Deviations (2026-10-10)
+
+Recorded after implementation by `/10x-impl-review` (F2, F9). Where this section and the phase text above disagree, this section wins.
+
+- **Name form uses an Edit mode (Phase 3, item 3).** The profile card shows the name as read-only text with an Edit button. Edit opens the prefilled field with Cancel and Save. Save stays disabled until the trimmed value differs from the saved name. The success notice clears when Edit is clicked. This added a `disabled` input to `shared/ui/submit-button` and the `profile.edit` and `profile.cancel` labels.
+- **Password change is a dialog, not a second card (Phase 4, item 2).** A "Change password" button on the profile card opens `features/profile/password-dialog` (`MatDialog`, lazy chunk only). The dialog has its own form, busy state and errors, and starts empty on every open. On success it closes and the profile card shows the password notice. The independence contract becomes: the dialog and the name form never share errors or busy state, and both success notices can appear in the one profile card. Dialog styling lives in `mat.dialog-overrides` in `_material-theme.scss`. Password error mapping is `passwordChangeFailure` in `features/auth/auth-errors.ts`.
+- **No email hint (Phase 3, items 3 and 5).** The "cannot be changed here" hint under the read-only email was dropped from scope (impl-review F5); the email shows only its label and value.
+- **API convention (Phase 1).** `PigeonWatch/Api/CLAUDE.md` gained a rule that interfaces have no blank lines between members, and `IUserAccountMapper` and `IAccountRepository` were reformatted to follow it.
+- **Roadmap (Phase 4, item 5).** S-02 was set to `in-progress` and the roadmap's `updated:` date was bumped during the edit. `/10x-archive` still owns the final status flip.
 
 ## Progress
 

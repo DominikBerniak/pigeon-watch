@@ -323,6 +323,25 @@ describe('SessionService', () => {
       httpMock.verify();
     });
 
+    it('skips the re-login when the session ends while the change is in flight', async () => {
+      const session = TestBed.inject(SessionService);
+      await signIn(session);
+      vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+
+      const change = firstValueFrom(session.changePassword('Old1!pass', 'New1!passw'));
+      const request = httpMock.expectOne(passwordUrl);
+      session.logout();
+      request.flush({ changed: true });
+
+      const error = await change.catch((failure: unknown) => failure);
+      expect(error).toBeInstanceOf(ReLoginError);
+      httpMock.expectNone(loginUrl);
+      expect(session.isAuthenticated()).toBe(false);
+      expect(TestBed.inject(TokenStore).accessToken()).toBeNull();
+      expect(localStorage.getItem(refreshTokenStorageKey)).toBeNull();
+      httpMock.verify();
+    });
+
     it('rejects without any request when nobody is signed in', async () => {
       const session = TestBed.inject(SessionService);
 

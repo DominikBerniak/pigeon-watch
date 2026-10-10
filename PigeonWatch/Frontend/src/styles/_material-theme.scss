@@ -77,3 +77,12 @@ html {
     )
   );
 }
+
+.pw-button-success {
+  @include mat.button-overrides(
+    (
+      filled-container-color: var(--pw-color-success),
+      filled-label-text-color: var(--pw-color-on-primary),
+    )
+  );
+}

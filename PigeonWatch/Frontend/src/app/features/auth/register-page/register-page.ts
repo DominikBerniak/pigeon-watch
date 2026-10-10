@@ -37,8 +37,13 @@ import {
   passwordClassValidator,
   serverErrorFor,
 } from '../../../shared/validation/account-validation';
-import { AuthFormError, RegisterField, authErrorMessage, registerFailure } from '../auth-errors';
-import { LoginNavigationState } from '../login-page/login-page';
+import {
+  AuthFormError,
+  RegisterField,
+  authErrorMessage,
+  registerFailure,
+} from '../../../shared/auth/auth-errors';
+import { LoginNavigationState } from '../../../shared/auth/login-navigation-state';
 
 interface RegisterModel {
   email: string;

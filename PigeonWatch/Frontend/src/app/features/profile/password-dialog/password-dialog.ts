@@ -29,8 +29,8 @@ import {
   PasswordChangeField,
   authErrorMessage,
   passwordChangeFailure,
-} from '../../auth/auth-errors';
-import { LoginNavigationState } from '../../auth/login-page/login-page';
+} from '../../../shared/auth/auth-errors';
+import { LoginNavigationState } from '../../../shared/auth/login-navigation-state';
 
 interface PasswordModel {
   currentPassword: string;
@@ -123,10 +123,16 @@ export class PasswordDialog {
     const passwords = this.model();
     const email = this.session.currentUser()?.email ?? '';
     this.busy.set(true);
+    this.dialogRef.disableClose = true;
     this.formError.set(null);
     this.session
       .changePassword(passwords.currentPassword, passwords.newPassword)
-      .pipe(finalize(() => this.busy.set(false)))
+      .pipe(
+        finalize(() => {
+          this.busy.set(false);
+          this.dialogRef.disableClose = false;
+        }),
+      )
       .subscribe({
         next: () => this.dialogRef.close(true),
         error: (error: unknown) => this.handleFailure(error, passwords, email),

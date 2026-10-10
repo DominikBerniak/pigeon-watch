@@ -12,7 +12,7 @@ The user table already has a unique, case-insensitive `DisplayName`, and the use
 
 ## Desired End State
 
-From the header menu a user opens `/profile`. One card shows the read-only email and a name form; saving keeps them on the page with a success notice and the header updates at once. A second card changes the password, and the tab stays signed in afterwards. Sessions on other devices end when their access token expires and the refresh is rejected.
+From the header menu a user opens `/profile`. One card shows the read-only email and a name form; saving keeps them on the page with a success notice and the header updates at once. A Change password button on that card opens a dialog that changes the password, and the tab stays signed in afterwards. Sessions on other devices end when their access token expires and the refresh is rejected.
 
 ## Key Decisions Made
 
@@ -20,7 +20,7 @@ From the header menu a user opens `/profile`. One card shows the read-only email
 | ----------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | Where editing lives     | Guarded lazy `/profile` page                                           | Matches the page-per-feature pattern and gives S-03 a place to add sightings |
 | Page content            | Read-only email, editable name, password change                       | "View profile" is more than the name; password change requested by user |
-| Page layout             | Two independent cards                                                  | Two different backend calls and errors, plus the re-login side effect |
+| Page layout             | One profile card plus a password dialog                                | Changed during implementation, see plan Addendum                    |
 | Header entry            | Name button opening a menu with Profile and Log out                    | User's choice; replaces the text and Log out button                  |
 | After a rename          | Stay on the page, success notice, refetch `/configuration/general`     | Clear confirmation; the general-config state has no setter           |
 | Session after password change | Silent re-login with the new password; other devices end at refresh | Security stamp rotation invalidates every refresh token, including this tab's |
@@ -33,7 +33,7 @@ From the header menu a user opens `/profile`. One card shows the read-only email
 
 ## Scope
 
-**In scope:** rename endpoint and password endpoint with unit tests; `/profile` page with two cards; header user menu; shared validators; English labels; roadmap update.
+**In scope:** rename endpoint and password endpoint with unit tests; `/profile` page with a profile card and a password dialog; header user menu; shared validators; English labels; roadmap update.
 
 **Out of scope:** email change, forgot-password, other profile fields, name-change history, immediate revocation of other devices' access tokens, Polish translation, integration test project, any schema change.
 
@@ -48,7 +48,7 @@ Extend `AccountController`, `AccountService` and `AccountRepository` (through `U
 | 1. Backend rename endpoint                  | `PUT account/profile` with service, repository, DTOs and unit tests    | `UserManager.UpdateAsync` validators on a partial update              |
 | 2. Backend change-password endpoint         | `PUT account/password`, rate limited, with unit tests                  | Response-model rule forces a minimal empty model                      |
 | 3. Profile page with name edit and header menu | `/profile` name card, shared validators, user menu, labels, specs   | `MatMenu` enters the initial bundle (budget 500 kB, last 365 kB)      |
-| 4. Password change and roadmap update       | Password card, silent re-login flow, specs, roadmap edit               | Re-login failure after a successful change must not leave a dead session |
+| 4. Password change and roadmap update       | Password dialog, silent re-login flow, specs, roadmap edit             | Re-login failure after a successful change must not leave a dead session |
 
 **Prerequisites:** S-01 is done; local API with LocalDB and `npm start` available for the manual checks.
 **Estimated effort:** about 3-4 sessions across 4 phases.

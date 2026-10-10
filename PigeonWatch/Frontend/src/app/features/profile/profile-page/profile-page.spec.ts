@@ -4,7 +4,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, Subject, of, throwError } from 'rxjs';
 import { ReLoginError, SessionService } from '../../../core/auth/session.service';
 import {
   ClientConfiguration,
@@ -594,6 +594,29 @@ describe('ProfilePage', () => {
       expect(passwordDialog()).toBeNull();
       expect(alertText(root, 'status')).toBe('Your password has been changed.');
       expect(root.textContent).not.toContain('New1!passw');
+    });
+
+    it('stays open on Escape while the change is in flight', async () => {
+      const pending = new Subject<void>();
+      changePassword.mockReturnValue(pending);
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+      await submitPassword(validPasswords);
+
+      document.body.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await settle();
+
+      expect(passwordDialog()).not.toBeNull();
+
+      pending.next();
+      pending.complete();
+      await waitUntilClosed();
+
+      expect(passwordDialog()).toBeNull();
+      expect(alertText(root, 'status')).toBe('Your password has been changed.');
     });
 
     it('hides the success notice when the dialog is opened again', async () => {

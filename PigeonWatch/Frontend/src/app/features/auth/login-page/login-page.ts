@@ -17,12 +17,8 @@ import {
   SubmitButton,
   provideFormFieldDefaults,
 } from '../../../shared/ui';
-import { AuthFormError, authErrorMessage, loginFailure } from '../auth-errors';
-
-export interface LoginNavigationState {
-  email: string;
-  notice: string;
-}
+import { AuthFormError, authErrorMessage, loginFailure } from '../../../shared/auth/auth-errors';
+import { LoginNavigationState } from '../../../shared/auth/login-navigation-state';
 
 interface LoginModel {
   email: string;

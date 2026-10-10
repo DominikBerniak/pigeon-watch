@@ -38,19 +38,15 @@
         </mat-form-field>
         <div class="profile-actions">
           <button
-            mat-flat-button
+            mat-stroked-button
             type="button"
-            class="pw-full-width profile-actions__cancel"
+            class="pw-full-width"
             [disabled]="busy()"
             (click)="cancel()"
           >
             {{ 'profile.cancel' | translate }}
           </button>
-          <app-submit-button
-            class="profile-actions__submit"
-            [busy]="busy()"
-            [disabled]="!changed()"
-          >
+          <app-submit-button class="pw-button-success" [busy]="busy()" [disabled]="!changed()">
             {{ 'profile.submit' | translate }}
           </app-submit-button>
         </div>

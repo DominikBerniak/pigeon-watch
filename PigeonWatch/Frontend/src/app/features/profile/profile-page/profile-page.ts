@@ -32,7 +32,7 @@ import {
   forbiddenDisplayNameCharacter,
   serverErrorFor,
 } from '../../../shared/validation/account-validation';
-import { AuthFormError, authErrorMessage, registerFailure } from '../../auth/auth-errors';
+import { AuthFormError, authErrorMessage, profileFailure } from '../../../shared/auth/auth-errors';
 import { PasswordDialog } from '../password-dialog/password-dialog';
 import { ProfileApi } from '../profile-api';
 
@@ -166,7 +166,7 @@ export class ProfilePage {
   }
 
   private handleFailure(error: unknown, profile: ProfileModel): void {
-    const failure = registerFailure(error);
+    const failure = profileFailure(error);
     const kind = failure.fieldErrors.displayName;
 
     this.serverErrors.set(kind ? { displayName: { kind, value: profile.displayName } } : {});

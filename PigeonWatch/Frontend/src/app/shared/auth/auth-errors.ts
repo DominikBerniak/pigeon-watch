@@ -16,6 +16,13 @@ export interface RegisterFailure {
   fieldErrors: Partial<Record<RegisterField, string>>;
 }
 
+export type ProfileField = 'displayName';
+
+export interface ProfileFailure {
+  formError: AuthFormError | null;
+  fieldErrors: Partial<Record<ProfileField, string>>;
+}
+
 export type PasswordChangeField = 'currentPassword' | 'newPassword';
 
 export interface PasswordChangeFailure {
@@ -43,6 +50,22 @@ export function registerFailure(error: unknown): RegisterFailure {
   const failure: RegisterFailure = { formError: null, fieldErrors: {} };
 
   for (const code of codes) applyErrorCode(failure, code);
+
+  return failure;
+}
+
+export function profileFailure(error: unknown): ProfileFailure {
+  if (!(error instanceof HttpErrorResponse)) return { formError: 'unexpected', fieldErrors: {} };
+
+  const codes = errorCodes(error);
+
+  if (error.status !== 400 || codes.length === 0) {
+    return { formError: transportFailure(error), fieldErrors: {} };
+  }
+
+  const failure: ProfileFailure = { formError: null, fieldErrors: {} };
+
+  for (const code of codes) applyProfileCode(failure, code);
 
   return failure;
 }
@@ -94,6 +117,15 @@ function applyErrorCode(failure: RegisterFailure, code: string): void {
   else if (normalized.startsWith('displayname')) fields.displayName ??= 'invalidDisplayName';
   else if (normalized.startsWith('password')) fields.password ??= 'invalidPassword';
   else if (normalized === 'invalidemail') fields.email ??= 'invalidEmail';
+  else failure.formError ??= 'unexpected';
+}
+
+function applyProfileCode(failure: ProfileFailure, code: string): void {
+  const normalized = code.toLowerCase();
+  const fields = failure.fieldErrors;
+
+  if (normalized === 'duplicatedisplayname') fields.displayName = 'duplicateDisplayName';
+  else if (normalized.startsWith('displayname')) fields.displayName ??= 'invalidDisplayName';
   else failure.formError ??= 'unexpected';
 }
 
