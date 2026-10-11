@@ -1,0 +1,16 @@
+:host {
+  display: block;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-space-4);
+  padding: var(--pw-space-4);
+  border: var(--pw-border-width) dashed var(--pw-color-border-subtle);
+  border-radius: var(--pw-radius-xl);
+}
+
+.cell__header {
+  justify-content: space-between;
+}

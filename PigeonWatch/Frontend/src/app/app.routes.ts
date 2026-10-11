@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, unknownRouteRedirect } from './core/auth/auth.guards';
+import { devRoutes } from './dev/dev-routes';
 
 export const routes: Routes = [
   {
@@ -25,6 +26,7 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/profile/profile-page/profile-page').then((m) => m.ProfilePage),
   },
+  ...devRoutes,
   {
     path: '**',
     redirectTo: unknownRouteRedirect,

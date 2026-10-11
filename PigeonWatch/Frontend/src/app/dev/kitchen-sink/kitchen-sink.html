@@ -1,0 +1,17 @@
+<div class="pw-stack">
+  <header class="pw-stack">
+    <h1 class="pw-title">Kitchen sink: Profile</h1>
+    <p class="pw-text-muted">
+      Development only. Every cell runs its own stubbed services, so no API or login is needed.
+      Dialog states open one at a time over the page.
+    </p>
+  </header>
+  @for (group of groups; track group.title) {
+    <section class="sink__group">
+      <h2 class="pw-subtitle">{{ group.title }}</h2>
+      @for (cell of group.cells; track cell.id) {
+        <app-state-cell [definition]="cell" />
+      }
+    </section>
+  }
+</div>
