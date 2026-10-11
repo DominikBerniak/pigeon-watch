@@ -1,8 +1,16 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ApplicationRef, DebugElement, EnvironmentInjector, createComponent } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
-import { cellGroups } from './cell-definitions';
+import { firstValueFrom } from 'rxjs';
+import { ResourceService } from '../../core/resources/resource.service';
+import { NearbyMapPage } from '../../features/sightings/nearby-map-page/nearby-map-page';
+import { LEAFLET_LOADER, MapView } from '../../shared/map/map-view/map-view';
+import { MapViewStub } from '../../shared/map/testing/map-view-stub';
+import { CellDefinition, cellGroups } from './cell-definitions';
+import { sinkPosition, sinkSightings } from './cell-stubs';
 import { KitchenSink } from './kitchen-sink';
 
 const patience = { timeout: 2000, interval: 25 };
@@ -15,6 +23,10 @@ describe('KitchenSink', () => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     });
+    TestBed.overrideComponent(NearbyMapPage, {
+      remove: { imports: [MapView] },
+      add: { imports: [MapViewStub] },
+    });
     fixture = TestBed.createComponent(KitchenSink);
     root = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
@@ -26,6 +38,18 @@ describe('KitchenSink', () => {
     if (!element) throw new Error(`No cell ${id}`);
 
     return element;
+  }
+
+  function cellDebug(id: string): DebugElement {
+    return fixture.debugElement.query(By.css(`[data-cell="${id}"]`));
+  }
+
+  function mapOf(id: string): MapViewStub {
+    return cellDebug(id).query(By.directive(MapViewStub)).componentInstance as MapViewStub;
+  }
+
+  function label(key: string, ...args: unknown[]): string {
+    return TestBed.inject(ResourceService).translate(key, ...args);
   }
 
   function dialog(): HTMLElement | null {
@@ -62,14 +86,127 @@ describe('KitchenSink', () => {
     panel.remove();
   });
 
-  it('renders every cell once with its label', () => {
+  it('renders every cell once with its label and the page of its group', () => {
     const definitions = cellGroups.flatMap((group) => group.cells);
+    const pageOf: Record<CellDefinition['group'], string> = {
+      profile: 'app-profile-page',
+      nearbyMap: 'app-nearby-map-page',
+    };
 
-    expect(definitions.length).toBe(13);
+    expect(root.querySelectorAll('app-state-cell').length).toBe(definitions.length);
+    expect(new Set(definitions.map((definition) => definition.id)).size).toBe(definitions.length);
 
     for (const definition of definitions) {
-      expect(textOf(cell(definition.id).querySelector('h3'))).toBe(definition.label);
-      expect(cell(definition.id).querySelector('app-profile-page')).not.toBeNull();
+      const element = cell(definition.id);
+
+      expect(textOf(element.querySelector('h3'))).toBe(definition.label);
+      expect(element.querySelectorAll('app-profile-page, app-nearby-map-page')).toHaveLength(1);
+      expect(element.querySelector(pageOf[definition.group])).not.toBeNull();
+    }
+  });
+
+  it('heads the page and each view group', () => {
+    expect(textOf(root.querySelector('h1'))).toBe('Kitchen sink');
+    expect([...root.querySelectorAll('.sink__group > h2')].map(textOf)).toEqual(
+      cellGroups.map((group) => group.title),
+    );
+  });
+
+  it('shows the locating map state', async () => {
+    await eventually(() => {
+      expect(textOf(cell('map-locating').querySelector('p[role="status"]'))).toBe(
+        label('map.locating'),
+      );
+      expect(cell('map-locating').querySelector('app-alert')).toBeNull();
+    });
+  });
+
+  it('shows the hint when the position is unknown', async () => {
+    await eventually(() => {
+      expect(textOf(cell('map-position-unknown').querySelector('app-alert'))).toBe(
+        label('map.hint'),
+      );
+      expect(mapOf('map-position-unknown').markers()).toEqual([]);
+    });
+  });
+
+  it('shows the spinner while the nearby query is pending', async () => {
+    await eventually(() => {
+      expect(cell('map-loading').querySelector('mat-progress-spinner')).not.toBeNull();
+      expect(mapOf('map-loading').center()).toEqual(sinkPosition);
+    });
+  });
+
+  it('shows a marker for every fixture sighting', async () => {
+    await eventually(() => {
+      const markers = mapOf('map-loaded').markers();
+
+      expect(markers.map((marker) => marker.id)).toEqual(
+        sinkSightings.map((sighting) => sighting.id),
+      );
+      expect(new Set(markers.map((marker) => marker.kind))).toEqual(
+        new Set(['monitor', 'needsHelpSoon', 'urgent']),
+      );
+      expect(markers.map((marker) => marker.label)).toContain(label('sighting.unnamed'));
+    });
+  });
+
+  it('shows the card of the selected marker', async () => {
+    await eventually(() => expect(mapOf('map-selected').markers()).toHaveLength(4));
+
+    mapOf('map-selected').markerSelect.emit('sink-urgent');
+
+    await eventually(() => {
+      expect(textOf(cell('map-selected').querySelector('mat-card h2'))).toBe('Limpy');
+    });
+  });
+
+  it('shows the empty text when nothing is nearby', async () => {
+    await eventually(() => {
+      expect(textOf(cell('map-empty').querySelector('.nearby-empty'))).toBe(label('map.empty', 10));
+    });
+  });
+
+  it('shows the nearby error as an alert', async () => {
+    await eventually(() => {
+      expect(textOf(cell('map-nearby-error').querySelector('app-alert[role="alert"]'))).toBe(
+        label('map.error'),
+      );
+    });
+  });
+
+  it('gives the map-library cell a loader that fails', async () => {
+    const loader = cellDebug('map-load-failed').injector.get(LEAFLET_LOADER);
+
+    await expect(firstValueFrom(loader())).rejects.toThrow();
+  });
+
+  it('draws focusable markers with no tile images through a map cell loader', async () => {
+    const appRef = TestBed.inject(ApplicationRef);
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const map = createComponent(MapView, {
+      environmentInjector: TestBed.inject(EnvironmentInjector),
+      elementInjector: cellDebug('map-loaded').injector,
+      hostElement: host,
+    });
+    appRef.attachView(map.hostView);
+    map.setInput('label', 'Map');
+    map.setInput('center', sinkPosition);
+    map.setInput('zoom', 12);
+    map.setInput('markers', [{ ...sinkPosition, id: 'marker', kind: 'urgent', label: 'Limpy' }]);
+
+    try {
+      await vi.waitFor(() => {
+        appRef.tick();
+        expect(host.querySelector('.pw-map-marker--urgent')?.getAttribute('tabindex')).toBe('0');
+      }, patience);
+
+      expect(host.querySelector('.leaflet-tile-pane')).not.toBeNull();
+      expect(host.querySelector('img')).toBeNull();
+    } finally {
+      map.destroy();
+      host.remove();
     }
   });
 

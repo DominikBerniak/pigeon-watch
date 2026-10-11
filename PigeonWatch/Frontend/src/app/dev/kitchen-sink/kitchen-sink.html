@@ -1,9 +1,10 @@
 <div class="pw-stack">
   <header class="pw-stack">
-    <h1 class="pw-title">Kitchen sink: Profile</h1>
+    <h1 class="pw-title">Kitchen sink</h1>
     <p class="pw-text-muted">
       Development only. Every cell runs its own stubbed services, so no API or login is needed.
-      Dialog states open one at a time over the page.
+      Dialog states open one at a time over the page. Map cells draw no tiles, so they never contact
+      the tile server.
     </p>
   </header>
   @for (group of groups; track group.title) {

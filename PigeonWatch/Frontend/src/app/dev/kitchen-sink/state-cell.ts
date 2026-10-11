@@ -21,23 +21,31 @@ import {
 import { filter, finalize, ignoreElements, merge, switchMap, take, tap, timeout } from 'rxjs';
 import { SessionService } from '../../core/auth/session.service';
 import { ConfigurationService } from '../../core/configuration/configuration.service';
+import { GeolocationService } from '../../core/geolocation/geolocation.service';
 import { ResourceService } from '../../core/resources/resource.service';
 import { ProfileApi } from '../../features/profile/profile-api';
 import { ProfilePage } from '../../features/profile/profile-page/profile-page';
+import { NearbyMapPage } from '../../features/sightings/nearby-map-page/nearby-map-page';
 import { SightingsApi } from '../../features/sightings/sightings-api';
+import { LEAFLET_LOADER } from '../../shared/map/map-view/map-view';
 import { CellDefinition } from './cell-definitions';
 import { CellContext, press, runSteps, until, waitLimitMilliseconds } from './cell-driver';
 import { CellStubs } from './cell-stubs';
 
 @Component({
   selector: 'app-state-cell',
-  imports: [MatButtonModule, ProfilePage],
+  imports: [MatButtonModule, ProfilePage, NearbyMapPage],
   providers: [
     CellStubs,
     { provide: SessionService, useFactory: () => inject(CellStubs).session },
     { provide: ConfigurationService, useFactory: () => inject(CellStubs).configuration },
     { provide: ProfileApi, useFactory: () => inject(CellStubs).profileApi },
     { provide: SightingsApi, useFactory: () => inject(CellStubs).sightingsApi },
+    { provide: GeolocationService, useFactory: () => inject(CellStubs).geolocation },
+    {
+      provide: LEAFLET_LOADER,
+      useFactory: () => inject(CellStubs).leafletLoader(inject(LEAFLET_LOADER, { skipSelf: true })),
+    },
     MatDialog,
     {
       provide: MAT_DIALOG_DEFAULT_OPTIONS,
