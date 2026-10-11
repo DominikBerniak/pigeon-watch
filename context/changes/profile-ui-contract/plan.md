@@ -348,28 +348,28 @@ None: no data, API or resx changes. The `.pw-button-success` class is removed in
 
 #### Automated
 
-- [x] 2.1 Unit tests pass, including the `SubmitButton` tone, `FormActions` and `PageCard` empty-footer cases: `npm test -- --watch=false`
-- [x] 2.2 No template uses `pw-button-success` and `_material-theme.scss` no longer defines it (grep returns nothing)
-- [x] 2.3 Production build passes within the bundle budgets: `npm run build`
-- [x] 2.4 Hardcoded-value scan returns 0 hits on the Profile view files, the new components and the kitchen-sink files
+- [x] 2.1 Unit tests pass, including the `SubmitButton` tone, `FormActions` and `PageCard` empty-footer cases: `npm test -- --watch=false` — 206d30a
+- [x] 2.2 No template uses `pw-button-success` and `_material-theme.scss` no longer defines it (grep returns nothing) — 206d30a
+- [x] 2.3 Production build passes within the bundle budgets: `npm run build` — 206d30a
+- [x] 2.4 Hardcoded-value scan returns 0 hits on the Profile view files, the new components and the kitchen-sink files — 206d30a
 
 #### Manual
 
-- [x] 2.5 In `/dev/kitchen-sink` the Profile Save and the dialog Save are still green and the Cancel/Save pair looks like the baseline (or stacks as the 375px rule decided); login and register submit buttons are still blue
-- [x] 2.6 Login, register and the warm-up panel still show their footer links exactly as before (page-card footer change has no regression)
+- [x] 2.5 In `/dev/kitchen-sink` the Profile Save and the dialog Save are still green and the Cancel/Save pair looks like the baseline (or stacks as the 375px rule decided); login and register submit buttons are still blue — 206d30a
+- [x] 2.6 Login, register and the warm-up panel still show their footer links exactly as before (page-card footer change has no regression) — 206d30a
 
 ### Phase 3: Profile view (C3, C4)
 
 #### Automated
 
-- [ ] 3.1 Unit tests pass with the new and updated cases: `npm test -- --watch=false`
-- [ ] 3.2 Production build passes within the bundle budgets: `npm run build`
-- [ ] 3.3 Hardcoded-value scan returns 0 hits and the style-token-coverage spec passes on the Profile view files
+- [x] 3.1 Unit tests pass with the new and updated cases: `npm test -- --watch=false`
+- [x] 3.2 Production build passes within the bundle budgets: `npm run build`
+- [x] 3.3 Hardcoded-value scan returns 0 hits and the style-token-coverage spec passes on the Profile view files
 
 #### Manual
 
-- [ ] 3.4 In `/dev/kitchen-sink` read-only mode at desktop and 375px the card reads with a clear hierarchy: Edit is lighter than Save, Change password is in the footer, and in edit mode no empty footer strip remains
-- [ ] 3.5 Success and server-error notices in the sink: success at the top, error directly above Save, never two notices together
+- [x] 3.4 In `/dev/kitchen-sink` read-only mode at desktop and 375px the card reads with a clear hierarchy: Edit is lighter than Save, Change password is in the footer, and in edit mode no empty footer strip remains
+- [x] 3.5 Success and server-error notices in the sink: success at the top, error directly above Save, never two notices together
 
 ### Phase 4: States, gate and guard (C5)
 
