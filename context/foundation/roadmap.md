@@ -3,8 +3,8 @@ project: PigeonWatch
 version: 1
 status: draft
 created: 2026-10-03
-updated: 2026-10-10
-prd_version: 1
+updated: 2026-10-11
+prd_version: 2
 main_goal: speed
 top_blocker: decisions
 milestone_id: rescue-coordination-mvp
@@ -14,7 +14,7 @@ milestone_status: open
 
 # Roadmap: PigeonWatch
 
-> Derived from `context/foundation/prd.md` (v1) + auto-researched codebase baseline.
+> Derived from `context/foundation/prd.md` (v2) + auto-researched codebase baseline.
 > Edit-in-place; archive when superseded.
 > Slices below are listed in dependency order. The "At a glance" table is the index.
 
@@ -23,9 +23,9 @@ milestone_status: open
 **M-01: Rescue coordination MVP** — Status: open
 
 - **Intent:** A logged-in rescuer can report a distressed pigeon, find sightings by location and urgency, discuss them with other members, and an admin can moderate. No dates; the milestone closes when its items are done.
-- **Source materials:** `context/foundation/prd.md` (v1)
+- **Source materials:** `context/foundation/prd.md` (v2)
 - **Done when:** every F-NN and S-NN below is `done`.
-- **Scope anchors:** all `must-have` FRs (FR-001, FR-002, FR-004, FR-005, FR-006, FR-009, FR-012, FR-013, FR-017, FR-018, FR-019, FR-020) and US-01. The `nice-to-have` FRs are parked (see `## Parked`).
+- **Scope anchors:** all `must-have` FRs (FR-001, FR-002, FR-004, FR-005, FR-006, FR-009, FR-012, FR-013, FR-017, FR-018, FR-019, FR-020, FR-021, FR-022) and US-01. The `nice-to-have` FRs are parked (see `## Parked`).
 
 ## Vision recap
 
@@ -43,8 +43,8 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 | ---- | --------------------------- | --------------------------------------------------------------------------- | ------------- | ------------------------------ | -------- |
 | F-01 | persistence-wiring-smoke    | (foundation) deployed API reaches the provisioned database through a CI-applied migration | —             | NFR (map and list usable at expected record volumes) | done |
 | S-01 | register-and-login          | register an account, log in and log out                                     | F-01          | FR-001                         | done     |
-| S-02 | edit-profile-name           | view and edit their own profile name, and change their password, from a profile page opened through a header user menu | S-01          | FR-002 (password change: see Open Roadmap Question 7) | done |
-| S-03 | report-sighting-on-map      | report a sighting and see it on the nearby map and its detail page          | S-01          | US-01, FR-004, FR-005, FR-019  | blocked  |
+| S-02 | edit-profile-name           | view and edit their own profile name, and change their password, from a profile page opened through a header user menu | S-01          | FR-002, FR-022                 | done     |
+| S-03 | report-sighting-on-map      | report a sighting and see it on the nearby map and its detail page          | S-01          | US-01, FR-004, FR-005, FR-019  | in-progress |
 | S-04 | attach-sighting-photo       | attach an optional photo to a sighting                                      | S-03          | FR-005                         | proposed |
 | S-05 | filter-sightings-nearby     | scope the map to their nearby area and filter by status and criticality     | S-03          | FR-004                         | proposed |
 | S-06 | urgency-ranked-sighting-list | browse nearby sightings as a list ordered by urgency                       | S-03          | FR-020                         | proposed |
@@ -53,7 +53,7 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 | S-09 | edit-own-sighting-with-lock | edit their own sighting, with location and description locked once others engage | S-07, S-08 | FR-006                    | proposed |
 | S-10 | admin-remove-sightings      | (as admin) remove sightings                                                 | S-03          | FR-017                         | proposed |
 | S-11 | admin-moderate-users        | (as admin) message, warn or ban users                                       | S-08, S-10    | FR-018                         | proposed |
-| S-12 | switch-ui-language          | switch the UI language between English and Polish, remembered in the browser | S-01         | — (post-PRD, see Q6)           | proposed |
+| S-12 | switch-ui-language          | switch the UI language between English and Polish, remembered in the browser | S-01         | FR-021                         | proposed |
 
 ## Streams
 
@@ -113,7 +113,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 - **Outcome:** user can view and edit their own profile name, and change their password, from a profile page opened through a header user menu that replaces the header name text and Log out button.
 - **Change ID:** edit-profile-name
-- **PRD refs:** FR-002 (password change and the user menu were added during planning on 2026-10-10; see Open Roadmap Question 7)
+- **PRD refs:** FR-002, FR-022 (password change and the user menu were added during planning on 2026-10-10 and recorded as FR-022 in PRD v2)
 - **Prerequisites:** S-01
 - **Parallel with:** S-03, S-04, S-05, S-06, S-07, S-08, S-09, S-10, S-11
 - **Blockers:** —
@@ -129,11 +129,9 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Prerequisites:** S-01
 - **Parallel with:** S-02
 - **Blockers:** —
-- **Unknowns:**
-  - What are the exact status names and transitions of a sighting's rescue workflow? — Owner: user. Block: yes.
-  - What are the criticality levels (names and count)? — Owner: user. Block: yes.
-- **Risk:** Carries the first map integration, the cost-conscious map-provider guardrail, and the phone-usable reporting requirement; blocked until the status and criticality values exist because both are required fields.
-- **Status:** blocked
+- **Unknowns:** — (status workflow and criticality levels resolved 2026-10-11, see PRD Business Logic: a new sighting starts as Spotted or Caught; criticality is Monitor, Needs help soon or Urgent. "Nearby" resolved 2026-10-11 during planning: open sightings within a 10 km radius of the map centre, where the centre comes from the browser's geolocation or, without a position, from "Search this area" after panning a neutral Poland view)
+- **Risk:** Carries the first map integration, the cost-conscious map-provider guardrail, and the phone-usable reporting requirement. It defines the status and criticality types that every later sighting slice reuses, so the full transition graph should land here even though only the initial status is settable in this slice. It also defines the "nearby" rule (`SightingRules.NearbyRadiusKilometers`, served to the SPA in the client configuration) that `S-05` and `S-06` reuse.
+- **Status:** in-progress
 
 ### S-04: Attach a sighting photo
 
@@ -156,8 +154,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-02, S-04, S-06, S-07, S-08, S-10
 - **Blockers:** —
 - **Unknowns:**
-  - What defines "nearby area/city" (radius from the user's location vs. named city)? — Owner: user. Block: no.
-- **Risk:** The definition of "nearby" is also needed by `S-06`; settling it once avoids two different rules.
+  - Which refinements of the S-03 "nearby" rule (10 km around the map centre) are needed: a user-changeable radius, or a named city instead of a radius? — Owner: user. Block: no.
+- **Risk:** "Nearby" is defined once in `S-03` and shared with `S-06`; a refinement here changes both, so it changes the one rule rather than adding a second.
 - **Status:** proposed
 
 ### S-06: Urgency-ranked sighting list
@@ -170,7 +168,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:**
   - How are criticality and time-since-reported weighted into the urgency order? — Owner: user. Block: no.
-- **Risk:** Carries the PRD's business rule (urgency ranking); resolved sightings only appear once owners can change status in `S-09`, so the first version ranks on the reported status.
+- **Risk:** Carries the PRD's business rule (urgency ranking); resolved sightings only appear once owners can change status in `S-09`, so the first version ranks on the reported status. "Nearby" is inherited from `S-03` (10 km around the map centre), not redefined here.
 - **Status:** proposed
 
 ### S-07: Comment on a sighting
@@ -205,7 +203,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Prerequisites:** S-07, S-08
 - **Parallel with:** S-02, S-04, S-05, S-06, S-10
 - **Blockers:** —
-- **Unknowns:** —
+- **Unknowns:** — (status changes follow the strict PRD workflow with no undo, decided 2026-10-11)
 - **Risk:** Sequenced after comments and messaging because those are the engagement signals that trigger the lock.
 - **Status:** proposed
 
@@ -239,7 +237,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 - **Outcome:** user can switch the UI language between English and Polish; the choice is stored in the browser (`localStorage`, key `pigeonwatch.culture`) and applied on every later visit, falling back to English when nothing is stored.
 - **Change ID:** switch-ui-language
-- **PRD refs:** — (requirement added after PRD v1 on 2026-10-04; see Open Roadmap Question 6)
+- **PRD refs:** FR-021 (requirement added on 2026-10-04, recorded in PRD v2)
 - **Prerequisites:** S-01 (introduces resource management: every UI label is a key in `UiLabels.resx`, served by `GET /resources/{culture}`, bundled as per-culture snapshots, with saved-culture selection and EN fallback already implemented)
 - **Parallel with:** S-02, S-03, S-04, S-05, S-06, S-07, S-08, S-09, S-10, S-11
 - **Blockers:** —
@@ -256,7 +254,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | F-01       | persistence-wiring-smoke     | Prove live API-to-database path with a CI migration    | yes                   | Run `/10x-plan persistence-wiring-smoke`                 |
 | S-01       | register-and-login           | Register, log in and log out                           | no                    | Needs F-01 done                                          |
 | S-02       | edit-profile-name            | Edit own profile name                                  | no                    | Needs S-01 done                                          |
-| S-03       | report-sighting-on-map       | Report a sighting and see it on the map                | no                    | Needs S-01 done; resolve status names and criticality levels |
+| S-03       | report-sighting-on-map       | Report a sighting and see it on the map                | yes                   | Run `/10x-new report-sighting-on-map`, then `/10x-plan`  |
 | S-04       | attach-sighting-photo        | Attach optional photo to a sighting                    | no                    | Needs S-03 done                                          |
 | S-05       | filter-sightings-nearby      | Scope map to nearby area and filter by status/criticality | no                 | Needs S-03 done                                          |
 | S-06       | urgency-ranked-sighting-list | Urgency-ranked list of nearby sightings                | no                    | Needs S-03 done                                          |
@@ -269,17 +267,18 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Open Roadmap Questions
 
-1. **What are the exact status names and the transition graph for a sighting's rescue workflow (e.g. Reported → Contacted → Taken to vet → Healed/Returned, plus any closed/unable-to-help end state)?** — Owner: user, pending consultation. Block: S-03 (and everything that depends on it).
-2. **What specific latency/performance target, if any, applies to the map and sighting list?** — Owner: user. Block: none (not blocking for MVP).
-3. **What access rule should govern anonymous/unregistered reporting, if it's built post-MVP?** — Owner: user. Block: none (deferred with the Secondary persona).
-4. **What are the criticality levels a reporter can choose (names and count)?** — Owner: user. Block: S-03.
-5. **The PRD's second primary success criterion (flock locations as a map layer) is covered only by nice-to-have FRs, which this milestone parks. Is that still the intent?** — Owner: user. Block: none (affects whether a later milestone is needed).
-6. **S-12 (EN/PL language switch) has no FR in PRD v1. Should the next PRD revision add it (and its priority), or does it stay a roadmap-only addition?** — Owner: user. Block: none.
-7. **Password change (and the header user menu) was added to S-02 on 2026-10-10 and has no FR in PRD v1. Should the next PRD revision add an FR for it (and its priority), or does it stay a roadmap-only addition?** — Owner: user. Block: none.
+1. ~~**What are the exact status names and the transition graph for a sighting's rescue workflow?**~~ — Resolved 2026-10-11: Spotted, Caught, At the vet, In home care, Awaiting adoption, Adopted, Released, Passed away, Not found; transitions in PRD Business Logic → Status workflow.
+2. ~~**What specific latency/performance target, if any, applies to the map and sighting list?**~~ — Resolved 2026-10-11: no numeric target for MVP.
+3. ~~**What access rule should govern anonymous/unregistered reporting, if it's built post-MVP?**~~ — Decided 2026-10-11: stays deferred until a milestone picks up anonymous reporting.
+4. ~~**What are the criticality levels a reporter can choose (names and count)?**~~ — Resolved 2026-10-11: Monitor, Needs help soon, Urgent (PRD Business Logic → Criticality levels).
+5. ~~**The PRD's second primary success criterion (flock locations as a map layer) is covered only by nice-to-have FRs, which this milestone parks. Is that still the intent?**~~ — Resolved 2026-10-11: yes; flocks (FR-003, FR-011, FR-016) go to milestone M-02.
+6. ~~**S-12 (EN/PL language switch) has no FR in PRD v1. Should the next PRD revision add it (and its priority), or does it stay a roadmap-only addition?**~~ — Resolved 2026-10-11: added as FR-021, must-have, in PRD v2.
+7. ~~**Password change (and the header user menu) was added to S-02 on 2026-10-10 and has no FR in PRD v1. Should the next PRD revision add an FR for it (and its priority), or does it stay a roadmap-only addition?**~~ — Resolved 2026-10-11: added as FR-022, must-have, in PRD v2.
+8. ~~**Can an owner undo a mistaken status change, or is the transition graph strict?**~~ — Resolved 2026-10-11: strict, no undo.
 
 ## Parked
 
-- **FR-003: View flock locations on the map** — Why parked: nice-to-have; `speed` goal keeps the milestone to must-haves. See Open Roadmap Question 5.
+- **FR-003: View flock locations on the map** — Why parked: nice-to-have; `speed` goal keeps the milestone to must-haves. Deferred to milestone M-02 together with FR-011 and FR-016 (decided 2026-10-11).
 - **FR-011: Submit a flock location pending admin approval** — Why parked: nice-to-have, depends on the flock feature.
 - **FR-016: Admin accepts or rejects flock requests** — Why parked: nice-to-have, tied to FR-011.
 - **FR-007: "I've seen this bird" counter** — Why parked: nice-to-have; PRD notes it encourages noise.

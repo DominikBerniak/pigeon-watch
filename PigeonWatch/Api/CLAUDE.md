@@ -6,21 +6,39 @@ Scope: `PigeonWatch/Api/` only — the ASP.NET Core Web API. See `@PigeonWatch/C
 
 ## What this owns
 
-ASP.NET Core Web API (.NET 10). Owns auth and the status-workflow/urgency-ranking business logic for sightings (spotted → contacted → taken to vet → healed/returned). Solution: `PigeonWatchApi.slnx` with six layered projects plus two test projects: `ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` and `UnitTests/PigeonWatch.UnitTests.csproj` (xUnit, NSubstitute, SQLite in-memory for the user store).
+ASP.NET Core Web API (.NET 10). Owns auth and the status-workflow/urgency-ranking business logic for sightings (the status workflow and criticality levels are defined in `@context/foundation/prd.md`, Business Logic). Solution: `PigeonWatchApi.slnx` with six layered projects plus two test projects: `ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` and `UnitTests/PigeonWatch.UnitTests.csproj` (xUnit, NSubstitute, SQLite in-memory for the user store).
 
-Data layer: EF Core (SQL Server) via `Data/PigeonWatchDbContext.cs`, migrations in `Data/Migrations/`. The only table is `USER_ACCOUNT`, persisted for ASP.NET Core Identity through the custom `Data/Identity/PigeonWatchUserStore.cs` (no `IdentityDbContext`, no stock Identity tables).
+Data layer: EF Core (SQL Server) via `Data/PigeonWatchDbContext.cs`, migrations in `Data/Migrations/`. Two tables:
+
+- `USER_ACCOUNT`, persisted for ASP.NET Core Identity through the custom `Data/Identity/PigeonWatchUserStore.cs` (no `IdentityDbContext`, no stock Identity tables).
+- `SIGHTING` (migration `AddSighting`): `REPORTER_ID` FK to `USER_ACCOUNT.ID` (restrict delete; the `Reporter` navigation supplies the display name), nullable `NAME`, `DESCRIPTION`, `BEHAVIOUR`, `LATITUDE`/`LONGITUDE` as `double`, `STATUS`/`CRITICALITY` as `int`. Indexes on `(LATITUDE, LONGITUDE)` for the nearby box and `(REPORTER_ID, CREATE_DATE)` for the cooldown lookup and the user's own list. No spatial type or index (no NetTopologySuite).
 
 Auth: Identity bearer tokens (`MapIdentityApi`, no cookies). The bearer and refresh tokens are protected by the Data Protection key ring, so there is no signing key to configure. The endpoint surface is:
 
 - `POST account/register` (anonymous, rate limited): our own action, because the built-in `/register` cannot carry a display name.
 - `POST auth/login` (rate limited) and `POST auth/refresh`: the only Identity endpoints exposed. `MapPigeonWatch` maps `MapIdentityApi` under `auth`; a `.Finally` convention replaces every other Identity route's request delegate with a 404 (before body binding) and returns 400 when `useCookies`/`useSessionCookies` is set to anything but `false`.
-- `GET configuration/client` (anonymous, `Cache-Control: public, max-age=300`): validation rules from `BusinessObjects/AccountRules.cs`, never user data.
+- `GET configuration/client` (anonymous, `Cache-Control: public, max-age=300`): validation rules from `BusinessObjects/AccountRules.cs` and the sighting rules (`sightingRules`: field lengths, cooldown seconds, nearby radius) from `BusinessObjects/SightingRules.cs`, never user data.
 - `GET configuration/general` (authorized, `Cache-Control: private, no-store`): the current user (id, email, display name, roles from token claims). There is no `/me` endpoint.
 - `GET resources/{culture}` (anonymous, `Cache-Control: public, max-age=300`, `Content-Language`): the UI label map; see "UI labels" below.
+- `POST sightings`: creates a sighting for the current user and returns 201 with `SightingModel` and a `Location` header; see "Sightings" below for the failures.
+- `GET sightings/{id:guid}`: one `SightingModel`, or 404.
+- `GET sightings/nearby?latitude=&longitude=` (both required and range-validated): up to 200 newest open sightings within 10 km of the point, as `SightingListModel`.
+- `GET sightings/mine`: up to 50 of the current user's newest sightings, any status, as `SightingListModel`.
+
+All four `sightings` endpoints are `[Authorize]` (`SightingsController`), and the reads send `Cache-Control: private, no-store`. `SightingModel` carries the reporter's display name, never the reporter id or email.
 
 The `auth` rate-limit policy (`WebApi/RateLimiting/RateLimitPolicyNames.cs`, configured in `Program.cs`) allows 10 requests per minute per client IP for login and register; `auth/refresh` is exempt. A database that is paused or unreachable surfaces as `503` ProblemDetails with `Retry-After: 10` through `Data/Diagnostics/DatabaseUnavailableExceptionHandler.cs`; other exceptions stay `500`.
 
 Auditing records the user id: `Data/Auditing/HttpContextCurrentUserProvider.cs` returns the `ClaimTypes.NameIdentifier` of the current request, or `SYSTEM` for anonymous saves (registration, failed-login lockout counters).
+
+## Sightings
+
+- **Rules** live in the const-only `BusinessObjects/SightingRules.cs`: name 60, description 1000, behaviour 500, cooldown 60 s, nearby radius 10 km, nearby cap 200, mine cap 50. Change a limit there; the request model, the entity and the client configuration read it.
+- **Status and criticality are integers end to end.** `SightingStatus` (Spotted 1, Caught 2, AtTheVet 3, InHomeCare 4, AwaitingAdoption 5, Adopted 6, Released 7, PassedAway 8, NotFound 9) and `SightingCriticality` (Monitor 1, NeedsHelpSoon 2, Urgent 3) have explicit values, are stored as `int` columns, and cross the wire as plain `int` fields, because API models may not use `BusinessObjects` types: `CreateSightingRequestMapper` casts in and `SightingViewModelCreator` casts out. Never renumber or reuse a value; the database rows and the SPA's label maps (`Frontend/src/app/features/sightings/sighting.types.ts`) depend on them.
+- **Workflow**: `BusinessLogic/Services/SightingStatusTransitionProvider.cs` holds the PRD transition graph as a `static readonly` map in a non-static, injected class, plus the resolved set (Adopted, Released, PassedAway, NotFound), the valid initial statuses (Spotted, Caught) and the criticality rank. Reuse it; do not re-encode the graph. No endpoint changes a status yet.
+- **Nearby**: `SightingService.GetNearbyAsync` asks the repository for non-resolved sightings inside a latitude/longitude box from `GeoDistanceCalculator`, then keeps those within the exact great-circle (haversine) radius, newest first, capped. Longitude wrap at the antimeridian and polar latitudes are not handled (accepted for a Poland-scoped MVP).
+- **Cooldown**: `SightingService.CreateAsync` reads the reporter's latest `CREATE_DATE` and refuses a create when less than `CooldownSeconds` have elapsed on the injected `TimeProvider` (exactly 60 s is allowed). It is a per-user business rule, not the rate limiter, and it is not atomic: two truly concurrent submissions may both pass (accepted).
+- **Failures**: like account failures, they are 400 `ValidationProblemDetails` keyed by error code from `SightingErrorCodes` (`CooldownActive`, `InvalidInitialStatus`, `InvalidCriticality`, `InvalidLocation`). `CooldownActive` also carries the remaining whole seconds as the `retryAfterSeconds` extension on the problem body and as a `Retry-After` header, because `ModelState` holds only descriptions; the SPA reads `retryAfterSeconds` into its message placeholder, so keep that name. `ReporterNotFound` (a token for a deleted user) becomes 401.
 
 ## Architecture
 

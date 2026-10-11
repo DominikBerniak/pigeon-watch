@@ -1,6 +1,6 @@
 ---
 project: "PigeonWatch"
-version: 1
+version: 2
 status: draft
 created: 2026-09-26
 context_type: greenfield
@@ -19,7 +19,7 @@ timeline_budget:
 
 Active members of the city pigeon/bird rescue community currently coordinate sightings of distressed pigeons (tied feet, visible injury, other conditions needing attention) through Facebook groups. Posts get buried in the feed, duplicate reports happen for the same bird, there is no way to see at a glance what sightings are nearby or already being handled, and there is no persistent record of a bird's status once someone picks up its care.
 
-City pigeon welfare is a community that has only recently started organizing itself. A shared, mappable, status-tracked record — with a status lifecycle specific to bird rescue (spotted, contacted, taken to vet, healed/returned) — serves this community's actual coordination need in a way that a generic lost-pet board or classifieds app does not.
+City pigeon welfare is a community that has only recently started organizing itself. A shared, mappable, status-tracked record — with a status lifecycle specific to bird rescue (spotted, caught, at the vet, in home care, awaiting adoption, adopted/released) — serves this community's actual coordination need in a way that a generic lost-pet board or classifieds app does not.
 
 ## User & Persona
 
@@ -33,7 +33,7 @@ A member of the general public who spots a distressed pigeon and wants to report
 
 ### Primary
 - A rescuer can log a distressed-bird sighting (description, photo, criticality), see it and other members' sightings plotted on a map, and open one through to its full detail page.
-- A rescuer can see confirmed pigeon-herd (flock/congregation) locations as a separate map layer from individual distress sightings.
+- A rescuer can see confirmed pigeon-herd (flock/congregation) locations as a separate map layer from individual distress sightings. (Deferred to the second milestone, M-02; decided 2026-10-11.)
 - Users can contact each other about a sighting via a basic (non-real-time) message inbox.
 
 ### Secondary
@@ -64,6 +64,7 @@ A member of the general public who spots a distressed pigeon and wants to report
   > Socrates: Counter-argument considered: "requiring an account before browsing the map adds friction for a first-time reporter who just wants to flag one bird." Resolution: kept as written — login-wall stays for MVP simplicity.
 - FR-002: User can view and edit their own profile (name only for MVP). Priority: must-have
   > Socrates: Counter-argument considered: "a full profile page (name+description+photo) is over-scoped for v1." Resolution: revised — MVP captures name only; description/photo deferred (see Non-Goals).
+- FR-022: User can change their own password from their profile page, opened through a header user menu, by confirming the current password; other signed-in devices lose their session once their current access token expires. Priority: must-have (added in PRD v2, 2026-10-11; shipped in roadmap S-02)
 
 ### Map & Browsing
 - FR-003: User can view pigeon flock (congregation) locations on the map. Priority: nice-to-have
@@ -76,7 +77,7 @@ A member of the general public who spots a distressed pigeon and wants to report
 ### Sightings
 - FR-005: User can add a new sighting with name (optional), appearance description, behaviour, location, status, and criticality; photo is optional but encouraged. Priority: must-have
   > Socrates: Counter-argument considered: "requiring a photo blocks reporting when the bird is in a large flock (hard to photograph a specific bird) or the reporter is just passing by without a chance to take one." Resolution: revised — photo is now optional.
-- FR-006: User can edit their own sightings; once another user has commented on or contacted the reporter about a sighting, its location and description become locked (status remains freely editable by the owner). Priority: must-have
+- FR-006: User can edit their own sightings; once another user has commented on or contacted the reporter about a sighting, its location and description become locked (the owner can still change status along the status workflow). Priority: must-have
   > Socrates: Counter-argument considered: "unrestricted editing could silently change details an in-progress rescue is already relying on, wasting a trip or losing the bird." Resolution: revised — core fields lock once another user has engaged with the sighting.
 - FR-007: User can mark on a sighting's detail page that they have seen the bird, incrementing a sighting counter. Priority: nice-to-have
   > Socrates: Counter-argument considered: "an unverified raw tally encourages noise (meaningless duplicate taps) rather than useful signal." Resolution: demoted to nice-to-have — not essential for MVP.
@@ -107,6 +108,9 @@ A member of the general public who spots a distressed pigeon and wants to report
 - FR-018: Admin can message, warn, or ban users. Priority: must-have
   > Socrates: Counter-argument considered: "three separate moderation actions may be more than needed at launch." Resolution: kept as written — graduated moderation (message → warn → ban) is better than a blunt ban-only tool.
 
+### Localization
+- FR-021: User can switch the UI language between English and Polish; the choice is remembered in the browser and applied on later visits, with English as the default when nothing is stored. Priority: must-have (added in PRD v2, 2026-10-11)
+
 ### Anti-abuse
 - FR-019: System enforces a short cooldown period between a user's sighting submissions and comment submissions (short enough that genuine back-to-back reports during an outing aren't blocked, only rapid spam). Priority: must-have
   > Socrates: Counter-argument considered: "a cooldown could throttle a legitimate rescuer reporting several distinct birds in one outing." Resolution: kept as written — cooldown duration is set short enough to allow genuine multi-bird reporting while still deterring spam.
@@ -118,7 +122,7 @@ A member of the general public who spots a distressed pigeon and wants to report
 - The map and sighting list remain usable at the small-to-medium record volumes expected during and after the MVP period (no specific latency target set yet — see Open Questions).
 - The core reporting flow (adding a sighting) is fully usable from a phone's browser in the field, not just from a desktop.
 - Any user action (submitting a sighting, sending a message, changing status) shows acknowledgement quickly, with visible progress on anything that takes noticeably longer.
-- Resolved (healed/returned) sightings are excluded from the default map/list view, but remain viewable when a user explicitly asks to see them.
+- Resolved (adopted, released, passed away or not found) sightings are excluded from the default map/list view, but remain viewable when a user explicitly asks to see them.
 
 ## Business Logic
 
@@ -126,7 +130,30 @@ The app enforces an ordered (non-linear) status workflow for each sighting and c
 
 The rule consumes two user-facing inputs: the criticality level a reporter sets when logging a sighting, and the sighting's current position in its status workflow (each transition timestamped as it happens). From these, the app produces an urgency ranking that orders unresolved sightings so the ones needing attention longest, or reported most critical, surface first — this ordering is what a rescuer sees on the map and any sighting list, not just a flat feed by recency. Because the product is intended to work anywhere, not one city, this ranking and the map/list itself are scoped to the viewer's nearby area/city by default, rather than surfacing a single unranked worldwide feed.
 
-The exact set of status names and the shape of the transition graph (which statuses can follow which) are not yet decided — see Open Questions.
+### Status workflow
+
+A new sighting starts as **Spotted** or **Caught** (the reporter chooses). The owner may then move it only along these transitions (decided 2026-10-11):
+
+| From | Allowed next statuses |
+| --- | --- |
+| Spotted | Caught, Not found |
+| Caught | At the vet, In home care, Released |
+| At the vet | In home care, Awaiting adoption, Released, Passed away |
+| In home care | At the vet, Awaiting adoption, Released |
+| Awaiting adoption | Adopted, At the vet |
+| Adopted, Released, Passed away, Not found | — (end states) |
+
+The four end states are the **resolved** statuses: they are excluded from the default map/list and urgency ranking. Every other status is open. The workflow is strict: there is no undo, so an owner can only move a sighting along the transitions above (decided 2026-10-11).
+
+### Criticality levels
+
+A reporter picks one of three levels (decided 2026-10-11), ordered from least to most urgent:
+
+| Level | Meaning |
+| --- | --- |
+| Monitor | Needs attention but is mobile and not in immediate danger (e.g. string-foot, still flying) |
+| Needs help soon | Injured or unwell but can still move |
+| Urgent | Cannot fly, bleeding, or in immediate danger |
 
 ## Access Control
 
@@ -141,6 +168,7 @@ Login required (email/password or OAuth — mechanism is a downstream stack deci
 
 ## Open Questions
 
-1. **What are the exact status names and the transition graph for a sighting's rescue workflow (e.g. Reported → Contacted → Taken to vet → Healed/Returned, plus any closed/unable-to-help end state)?** — Owner: user, pending consultation. Block: partially — FR-005/FR-006/Business Logic assume an ordered, non-linear workflow exists, but the concrete states are not yet named.
-2. **What specific latency/performance target, if any, applies to the map and sighting list?** — Owner: user. Not blocking for MVP; "usable at small-to-medium record volumes" is the working assumption until a concrete number is needed.
-3. **What access rule should govern anonymous/unregistered reporting, if it's built post-MVP?** — Owner: user. Not blocking for MVP; deferred alongside the Secondary persona itself.
+1. ~~**What are the exact status names and the transition graph for a sighting's rescue workflow?**~~ — Resolved 2026-10-11: see Business Logic → Status workflow. Criticality levels resolved the same day (Business Logic → Criticality levels).
+2. ~~**What specific latency/performance target, if any, applies to the map and sighting list?**~~ — Resolved 2026-10-11: no numeric target for MVP; "usable at small-to-medium record volumes" stands.
+3. ~~**What access rule should govern anonymous/unregistered reporting, if it's built post-MVP?**~~ — Decided 2026-10-11: stays deferred; the rule is set when a later milestone picks up anonymous reporting.
+4. ~~**Can an owner undo a mistaken status change, or is the transition graph strict?**~~ — Resolved 2026-10-11: strict, no undo (Business Logic → Status workflow).

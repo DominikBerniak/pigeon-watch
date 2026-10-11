@@ -531,29 +531,29 @@ The `AddSighting` migration is additive (new table and indexes only), applied by
 
 #### Automated
 
-- [x] 4.1 Production build passes with no new budget warnings: `npm run build` (from `PigeonWatch/Frontend`)
-- [x] 4.2 Tests pass, including the new view specs, the updated guard spec and the kitchen-sink spec: `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
+- [x] 4.1 Production build passes with no new budget warnings: `npm run build` (from `PigeonWatch/Frontend`) — 2700afe
+- [x] 4.2 Tests pass, including the new view specs, the updated guard spec and the kitchen-sink spec: `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — 2700afe
 
 #### Manual
 
-- [x] 4.3 On the dev server against LocalDB, reporting a sighting via a tapped pin, via "Use my location" and via "Place pin at map centre" each submits and lands on the detail page
-- [x] 4.4 At 375 px, submitting the empty report form shows required errors for description, behaviour, status, criticality and location
-- [x] 4.5 A second submission within 60 seconds shows the message with the remaining seconds
-- [x] 4.6 Map home with location allowed centres on the position and shows pins; with location denied it shows the Poland view and hint, and "Search this area" loads pins
-- [x] 4.7 Detail page shows coordinates without loading tiles, "Show map" then shows the single marker, and an unknown id shows the not-found state
-- [x] 4.8 Profile page shows the user's own sightings, and its empty, loading and error states render
-- [x] 4.9 `visual-notes.md` holds desktop and 375 px screenshots of all four views
+- [x] 4.3 On the dev server against LocalDB, reporting a sighting via a tapped pin, via "Use my location" and via "Place pin at map centre" each submits and lands on the detail page — 2700afe
+- [x] 4.4 At 375 px, submitting the empty report form shows required errors for description, behaviour, status, criticality and location — 2700afe
+- [x] 4.5 A second submission within 60 seconds shows the message with the remaining seconds — 2700afe
+- [x] 4.6 Map home with location allowed centres on the position and shows pins; with location denied it shows the Poland view and hint, and "Search this area" loads pins — 2700afe
+- [x] 4.7 Detail page shows coordinates without loading tiles, "Show map" then shows the single marker, and an unknown id shows the not-found state — 2700afe
+- [x] 4.8 Profile page shows the user's own sightings, and its empty, loading and error states render — 2700afe
+- [x] 4.9 `visual-notes.md` holds desktop and 375 px screenshots of all four views — 2700afe
 
 ### Phase 5: Verification and docs
 
 #### Automated
 
-- [ ] 5.1 Backend builds and both test projects pass: `dotnet test PigeonWatch/Api/PigeonWatchApi.slnx`
-- [ ] 5.2 Frontend production build and tests pass: `npm run build` then `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
-- [ ] 5.3 Backend dependency audit is clean: `dotnet list PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj package --vulnerable --include-transitive`
+- [x] 5.1 Backend builds and both test projects pass: `dotnet test PigeonWatch/Api/PigeonWatchApi.slnx`
+- [x] 5.2 Frontend production build and tests pass: `npm run build` then `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
+- [x] 5.3 Backend dependency audit is clean: `dotnet list PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj package --vulnerable --include-transitive`
 
 #### Manual
 
-- [ ] 5.4 With the CSP headers applied, tiles load from the OSM host and the console shows no CSP violations on the map home and the report form
-- [ ] 5.5 On the deployed or header-emulated build, register or log in, report a sighting, see it on the map, open its detail page and see it on the profile
-- [ ] 5.6 The three CLAUDE.md files and the roadmap read correctly against the shipped behaviour
+- [x] 5.4 With the CSP headers applied, tiles load from the OSM host and the console shows no CSP violations on the map home and the report form
+- [x] 5.5 On the deployed or header-emulated build, register or log in, report a sighting, see it on the map, open its detail page and see it on the profile
+- [x] 5.6 The three CLAUDE.md files and the roadmap read correctly against the shipped behaviour
