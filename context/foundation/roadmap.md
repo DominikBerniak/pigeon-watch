@@ -44,7 +44,7 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 | F-01 | persistence-wiring-smoke    | (foundation) deployed API reaches the provisioned database through a CI-applied migration | —             | NFR (map and list usable at expected record volumes) | done |
 | S-01 | register-and-login          | register an account, log in and log out                                     | F-01          | FR-001                         | done     |
 | S-02 | edit-profile-name           | view and edit their own profile name, and change their password, from a profile page opened through a header user menu | S-01          | FR-002, FR-022                 | done     |
-| S-03 | report-sighting-on-map      | report a sighting and see it on the nearby map and its detail page          | S-01          | US-01, FR-004, FR-005, FR-019  | in-progress |
+| S-03 | report-sighting-on-map      | report a sighting and see it on the nearby map and its detail page          | S-01          | US-01, FR-004, FR-005, FR-019  | done |
 | S-04 | attach-sighting-photo       | attach an optional photo to a sighting                                      | S-03          | FR-005                         | proposed |
 | S-05 | filter-sightings-nearby     | scope the map to their nearby area and filter by status and criticality     | S-03          | FR-004                         | proposed |
 | S-06 | urgency-ranked-sighting-list | browse nearby sightings as a list ordered by urgency                       | S-03          | FR-020                         | proposed |
@@ -131,7 +131,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** — (status workflow and criticality levels resolved 2026-10-11, see PRD Business Logic: a new sighting starts as Spotted or Caught; criticality is Monitor, Needs help soon or Urgent. "Nearby" resolved 2026-10-11 during planning: open sightings within a 10 km radius of the map centre, where the centre comes from the browser's geolocation or, without a position, from "Search this area" after panning a neutral Poland view)
 - **Risk:** Carries the first map integration, the cost-conscious map-provider guardrail, and the phone-usable reporting requirement. It defines the status and criticality types that every later sighting slice reuses, so the full transition graph should land here even though only the initial status is settable in this slice. It also defines the "nearby" rule (`SightingRules.NearbyRadiusKilometers`, served to the SPA in the client configuration) that `S-05` and `S-06` reuse.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-04: Attach a sighting photo
 
@@ -295,3 +295,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **F-01: (foundation) the deployed API connects to the already-provisioned database and applies a schema migration through CI, proving a record can be stored and read in the live environment.** — Archived 2026-10-04 → `context/archive/2026-10-03-persistence-wiring-smoke/`. Lesson: —.
 - **S-01: user can register an account, log in and log out.** — Archived 2026-10-05 → `context/archive/2026-10-04-register-and-login/`. Lesson: —.
 - **S-02: user can view and edit their own profile name, and change their password, from a profile page opened through a header user menu that replaces the header name text and Log out button.** — Archived 2026-10-10 → `context/archive/2026-10-10-edit-profile-name/`. Lesson: —.
+- **S-03: user can log in, report a sighting (location, description, behaviour, status, criticality), see it plotted on the nearby map and on their own profile, and open its detail page.** — Archived 2026-10-11 → `context/archive/2026-10-11-report-sighting-on-map/`. Lesson: —.

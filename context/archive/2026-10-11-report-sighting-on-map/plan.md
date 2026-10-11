@@ -509,68 +509,68 @@ Recorded after implementation (impl-review F7). These are intended and tested.
 
 #### Automated
 
-- [x] 1.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — d771c16
-- [x] 1.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — d771c16
-- [x] 1.3 Unit tests pass, including the transition table and repository tests: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — d771c16
-- [x] 1.4 No pending model changes: `dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj` — d771c16
+- [x] 1.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 3ba5058
+- [x] 1.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — 3ba5058
+- [x] 1.3 Unit tests pass, including the transition table and repository tests: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — 3ba5058
+- [x] 1.4 No pending model changes: `dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj` — 3ba5058
 
 #### Manual
 
-- [x] 1.5 `dotnet ef database update` (command in `Api/CLAUDE.md`) applies the migration to LocalDB and the `SIGHTING` table shows the FK and both indexes — d771c16
+- [x] 1.5 `dotnet ef database update` (command in `Api/CLAUDE.md`) applies the migration to LocalDB and the `SIGHTING` table shows the FK and both indexes — 3ba5058
 
 ### Phase 2: Service and API
 
 #### Automated
 
-- [x] 2.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 5ae461e
-- [x] 2.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — 5ae461e
-- [x] 2.3 Unit tests pass, including cooldown boundaries, radius filtering and controller mapping: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — 5ae461e
-- [x] 2.4 No pending model changes: `dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj` — 5ae461e
+- [x] 2.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 3ba5058
+- [x] 2.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — 3ba5058
+- [x] 2.3 Unit tests pass, including cooldown boundaries, radius filtering and controller mapping: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — 3ba5058
+- [x] 2.4 No pending model changes: `dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj` — 3ba5058
 
 #### Manual
 
-- [x] 2.5 With the API running on LocalDB and a bearer token from `POST auth/login` (use `curl.exe`), a create returns 201, fetching it by id returns 200, an unknown id returns 404, `nearby` returns it for a centre within 10 km and not for a centre 15 km away, and a second create within 60 seconds returns 400 with `retryAfterSeconds` — 5ae461e
+- [x] 2.5 With the API running on LocalDB and a bearer token from `POST auth/login` (use `curl.exe`), a create returns 201, fetching it by id returns 200, an unknown id returns 404, `nearby` returns it for a centre within 10 km and not for a centre 15 km away, and a second create within 60 seconds returns 400 with `retryAfterSeconds` — 3ba5058
 
 ### Phase 3: Frontend foundation
 
 #### Automated
 
-- [x] 3.1 Production build passes with no new budget warnings: `npm run build` (from `PigeonWatch/Frontend`) — ccf30ff
-- [x] 3.2 Tests pass, including style guard, label coverage and the new specs: `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — ccf30ff
-- [x] 3.3 Dependency audit shows no high or critical findings for production dependencies: `npm audit --omit=dev` (from `PigeonWatch/Frontend`) — ccf30ff
+- [x] 3.1 Production build passes with no new budget warnings: `npm run build` (from `PigeonWatch/Frontend`) — 3ba5058
+- [x] 3.2 Tests pass, including style guard, label coverage and the new specs: `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — 3ba5058
+- [x] 3.3 Dependency audit shows no high or critical findings for production dependencies: `npm audit --omit=dev` (from `PigeonWatch/Frontend`) — 3ba5058
 
 #### Manual
 
-- [x] 3.4 The build output lists Leaflet only in lazy chunks, and the initial total stays under 500 kB — ccf30ff
-- [x] 3.5 The only CSP change in the diff is the single `img-src` tile host — ccf30ff
+- [x] 3.4 The build output lists Leaflet only in lazy chunks, and the initial total stays under 500 kB — 3ba5058
+- [x] 3.5 The only CSP change in the diff is the single `img-src` tile host — 3ba5058
 
 ### Phase 4: Frontend views
 
 #### Automated
 
-- [x] 4.1 Production build passes with no new budget warnings: `npm run build` (from `PigeonWatch/Frontend`) — 2700afe
-- [x] 4.2 Tests pass, including the new view specs, the updated guard spec and the kitchen-sink spec: `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — 2700afe
+- [x] 4.1 Production build passes with no new budget warnings: `npm run build` (from `PigeonWatch/Frontend`) — 3ba5058
+- [x] 4.2 Tests pass, including the new view specs, the updated guard spec and the kitchen-sink spec: `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — 3ba5058
 
 #### Manual
 
-- [x] 4.3 On the dev server against LocalDB, reporting a sighting via a tapped pin, via "Use my location" and via "Place pin at map centre" each submits and lands on the detail page — 2700afe
-- [x] 4.4 At 375 px, submitting the empty report form shows required errors for description, behaviour, status, criticality and location — 2700afe
-- [x] 4.5 A second submission within 60 seconds shows the message with the remaining seconds — 2700afe
-- [x] 4.6 Map home with location allowed centres on the position and shows pins; with location denied it shows the Poland view and hint, and "Search this area" loads pins — 2700afe
-- [x] 4.7 Detail page shows coordinates without loading tiles, "Show map" then shows the single marker, and an unknown id shows the not-found state — 2700afe
-- [x] 4.8 Profile page shows the user's own sightings, and its empty, loading and error states render — 2700afe
-- [x] 4.9 `visual-notes.md` holds desktop and 375 px screenshots of all four views — 2700afe (partial, per impl-review F6: Profile "My sightings" was seen but not committed because it shows the account email; map-selected at 375, report form untouched at 375 and detail not-found on desktop were not captured)
+- [x] 4.3 On the dev server against LocalDB, reporting a sighting via a tapped pin, via "Use my location" and via "Place pin at map centre" each submits and lands on the detail page — 3ba5058
+- [x] 4.4 At 375 px, submitting the empty report form shows required errors for description, behaviour, status, criticality and location — 3ba5058
+- [x] 4.5 A second submission within 60 seconds shows the message with the remaining seconds — 3ba5058
+- [x] 4.6 Map home with location allowed centres on the position and shows pins; with location denied it shows the Poland view and hint, and "Search this area" loads pins — 3ba5058
+- [x] 4.7 Detail page shows coordinates without loading tiles, "Show map" then shows the single marker, and an unknown id shows the not-found state — 3ba5058
+- [x] 4.8 Profile page shows the user's own sightings, and its empty, loading and error states render — 3ba5058
+- [x] 4.9 `visual-notes.md` holds desktop and 375 px screenshots of all four views — 3ba5058 (partial, per impl-review F6: Profile "My sightings" was seen but not committed because it shows the account email; map-selected at 375, report form untouched at 375 and detail not-found on desktop were not captured)
 
 ### Phase 5: Verification and docs
 
 #### Automated
 
-- [x] 5.1 Backend builds and both test projects pass: `dotnet test PigeonWatch/Api/PigeonWatchApi.slnx` — fa8b75e
-- [x] 5.2 Frontend production build and tests pass: `npm run build` then `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — fa8b75e
-- [x] 5.3 Backend dependency audit is clean: `dotnet list PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj package --vulnerable --include-transitive` — fa8b75e
+- [x] 5.1 Backend builds and both test projects pass: `dotnet test PigeonWatch/Api/PigeonWatchApi.slnx` — 3ba5058
+- [x] 5.2 Frontend production build and tests pass: `npm run build` then `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — 3ba5058
+- [x] 5.3 Backend dependency audit is clean: `dotnet list PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj package --vulnerable --include-transitive` — 3ba5058
 
 #### Manual
 
-- [x] 5.4 With the CSP headers applied, tiles load from the OSM host and the console shows no CSP violations on the map home and the report form — fa8b75e
-- [x] 5.5 On the deployed or header-emulated build, register or log in, report a sighting, see it on the map, open its detail page and see it on the profile — fa8b75e
-- [x] 5.6 The three CLAUDE.md files and the roadmap read correctly against the shipped behaviour — fa8b75e
+- [x] 5.4 With the CSP headers applied, tiles load from the OSM host and the console shows no CSP violations on the map home and the report form — 3ba5058
+- [x] 5.5 On the deployed or header-emulated build, register or log in, report a sighting, see it on the map, open its detail page and see it on the profile — 3ba5058
+- [x] 5.6 The three CLAUDE.md files and the roadmap read correctly against the shipped behaviour — 3ba5058
