@@ -81,6 +81,14 @@ html {
   );
 }
 
+@include mat.strong-focus-indicators(
+  (
+    border-color: var(--pw-color-focus),
+    border-width: var(--pw-focus-ring-width),
+    border-radius: var(--pw-radius-md),
+  )
+);
+
 app-submit-button[data-tone='success'] {
   @include mat.button-overrides(
     (

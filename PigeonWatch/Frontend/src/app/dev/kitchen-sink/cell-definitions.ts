@@ -83,6 +83,17 @@ const profileCells: readonly CellDefinition[] = [
       steps: [fill(passwordFields, validPasswords), submitForm()],
     },
   },
+  {
+    id: 'saved-then-password-changed',
+    label: 'Saved, then password changed (one notice at a time)',
+    save: 'success',
+    password: 'success',
+    steps: submittedName('Jan Kowalski', waitFor('app-alert[role="status"]')),
+    dialog: {
+      action: 'Run password change',
+      steps: [fill(passwordFields, validPasswords), submitForm()],
+    },
+  },
 ];
 
 const dialogCells: readonly CellDefinition[] = [

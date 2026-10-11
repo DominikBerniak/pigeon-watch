@@ -362,28 +362,28 @@ None: no data, API or resx changes. The `.pw-button-success` class is removed in
 
 #### Automated
 
-- [x] 3.1 Unit tests pass with the new and updated cases: `npm test -- --watch=false`
-- [x] 3.2 Production build passes within the bundle budgets: `npm run build`
-- [x] 3.3 Hardcoded-value scan returns 0 hits and the style-token-coverage spec passes on the Profile view files
+- [x] 3.1 Unit tests pass with the new and updated cases: `npm test -- --watch=false` — 2dc22de
+- [x] 3.2 Production build passes within the bundle budgets: `npm run build` — 2dc22de
+- [x] 3.3 Hardcoded-value scan returns 0 hits and the style-token-coverage spec passes on the Profile view files — 2dc22de
 
 #### Manual
 
-- [x] 3.4 In `/dev/kitchen-sink` read-only mode at desktop and 375px the card reads with a clear hierarchy: Edit is lighter than Save, Change password is in the footer, and in edit mode no empty footer strip remains
-- [x] 3.5 Success and server-error notices in the sink: success at the top, error directly above Save, never two notices together
+- [x] 3.4 In `/dev/kitchen-sink` read-only mode at desktop and 375px the card reads with a clear hierarchy: Edit is lighter than Save, Change password is in the footer, and in edit mode no empty footer strip remains — 2dc22de
+- [x] 3.5 Success and server-error notices in the sink: success at the top, error directly above Save, never two notices together — 2dc22de
 
 ### Phase 4: States, gate and guard (C5)
 
 #### Automated
 
-- [ ] 4.1 Unit tests pass, including the extended `style-token-coverage.spec.ts` and the kitchen-sink spec: `npm test -- --watch=false`
-- [ ] 4.2 Production build passes within the bundle budgets: `npm run build`
-- [ ] 4.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink`
-- [ ] 4.4 Hardcoded-value scan returns 0 hits (no higher than the Phase 1 count) on the Profile view files, the shared components and the kitchen-sink files
-- [ ] 4.5 `Frontend/CLAUDE.md` names `kitchen-sink`, `tone` and `app-form-actions` (grep)
+- [x] 4.1 Unit tests pass, including the extended `style-token-coverage.spec.ts` and the kitchen-sink spec: `npm test -- --watch=false`
+- [x] 4.2 Production build passes within the bundle budgets: `npm run build`
+- [x] 4.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink`
+- [x] 4.4 Hardcoded-value scan returns 0 hits (no higher than the Phase 1 count) on the Profile view files, the shared components and the kitchen-sink files
+- [x] 4.5 `Frontend/CLAUDE.md` names `kitchen-sink`, `tone` and `app-form-actions` (grep)
 
 #### Manual
 
-- [ ] 4.6 Every cell of the 7-state matrix in `visual-notes.md` is shown on screen or marked N/A with a reason, at desktop and 375px
-- [ ] 4.7 Keyboard pass: every control on the page and the dialog shows a visible focus ring, has an accessible name, and tabs in visual order
-- [ ] 4.8 "After" screenshots compared with the baseline; every visual delta in `visual-notes.md` is labelled intended or fixed
+- [x] 4.6 Every cell of the 7-state matrix in `visual-notes.md` is shown on screen or marked N/A with a reason, at desktop and 375px
+- [x] 4.7 Keyboard pass: every control on the page and the dialog shows a visible focus ring, has an accessible name, and tabs in visual order
+- [x] 4.8 "After" screenshots compared with the baseline; every visual delta in `visual-notes.md` is labelled intended or fixed
 - [ ] 4.9 The next step, `/10x-impl-review`, is run before archive; UI findings are triaged by user impact, not skipped as cosmetic

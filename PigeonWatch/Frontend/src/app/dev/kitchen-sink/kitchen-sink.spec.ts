@@ -65,7 +65,7 @@ describe('KitchenSink', () => {
   it('renders every cell once with its label', () => {
     const definitions = cellGroups.flatMap((group) => group.cells);
 
-    expect(definitions.length).toBe(12);
+    expect(definitions.length).toBe(13);
 
     for (const definition of definitions) {
       expect(textOf(cell(definition.id).querySelector('h3'))).toBe(definition.label);
@@ -81,14 +81,28 @@ describe('KitchenSink', () => {
     expect(element.textContent).toContain('Jan K');
   });
 
+  it('shows email and name as description list rows with Change password in the footer', () => {
+    const element = cell('read-only');
+
+    expect(element.querySelectorAll('dl > div > dt').length).toBe(2);
+    expect(element.querySelectorAll('dl > div > dd').length).toBe(2);
+    expect(element.querySelectorAll('mat-card-actions button').length).toBe(1);
+  });
+
   it('shows the pristine edit state with Save disabled', async () => {
     await eventually(() => {
       const save = cell('edit-pristine').querySelector<HTMLButtonElement>(
         'app-submit-button button',
       );
 
+      const cancel = cell('edit-pristine').querySelector<HTMLButtonElement>(
+        'app-form-actions button[type="button"]',
+      );
+
       expect(save).not.toBeNull();
       expect(save?.disabled).toBe(true);
+      expect(cancel?.disabled).toBe(false);
+      expect(cell('edit-pristine').querySelector('mat-card-actions button')).toBeNull();
     });
   });
 
@@ -112,6 +126,16 @@ describe('KitchenSink', () => {
     await eventually(() => {
       expect(textOf(cell('edit-form-error').querySelector('app-alert[role="alert"]'))).not.toBe('');
     });
+
+    const element = cell('edit-form-error');
+    const alert = element.querySelector('form app-alert[role="alert"]');
+    const actions = element.querySelector('form app-form-actions');
+
+    expect(alert).not.toBeNull();
+    expect(
+      alert!.compareDocumentPosition(actions!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(element.querySelectorAll('app-alert').length).toBe(1);
   });
 
   it('shows the saving state with a spinner in the submit button', async () => {
@@ -119,6 +143,10 @@ describe('KitchenSink', () => {
       expect(
         cell('saving').querySelector('app-submit-button [aria-busy="true"] mat-progress-spinner'),
       ).not.toBeNull();
+      expect(
+        cell('saving').querySelector<HTMLButtonElement>('app-form-actions button[type="button"]')
+          ?.disabled,
+      ).toBe(true);
     });
   });
 
@@ -136,6 +164,23 @@ describe('KitchenSink', () => {
       expect(textOf(cell('password-changed').querySelector('app-alert[role="status"]'))).not.toBe(
         '',
       );
+    });
+  });
+
+  it('shows only the password notice after a name save followed by a password change', async () => {
+    const element = cell('saved-then-password-changed');
+
+    await eventually(() =>
+      expect(element.querySelectorAll('app-alert[role="status"]').length).toBe(1),
+    );
+
+    const savedNotice = textOf(element.querySelector('app-alert'));
+
+    await openDialogOf('saved-then-password-changed');
+
+    await eventually(() => {
+      expect(element.querySelectorAll('app-alert').length).toBe(1);
+      expect(textOf(element.querySelector('app-alert'))).not.toBe(savedNotice);
     });
   });
 
@@ -174,6 +219,10 @@ describe('KitchenSink', () => {
       expect(
         dialog()?.querySelector('app-submit-button [aria-busy="true"] mat-progress-spinner'),
       ).not.toBeNull();
+      expect(
+        dialog()?.querySelector<HTMLButtonElement>('app-form-actions button[type="button"]')
+          ?.disabled,
+      ).toBe(true);
     });
   });
 });
