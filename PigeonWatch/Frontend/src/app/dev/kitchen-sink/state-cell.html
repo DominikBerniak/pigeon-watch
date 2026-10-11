@@ -1,0 +1,11 @@
+<section class="cell" [attr.data-cell]="definition().id">
+  <header class="cell__header pw-cluster">
+    <h3 class="pw-subtitle">{{ definition().label }}</h3>
+    @if (definition().dialog; as dialog) {
+      <button mat-stroked-button type="button" [disabled]="running()" (click)="openDialog()">
+        {{ dialog.action }}
+      </button>
+    }
+  </header>
+  <app-profile-page />
+</section>

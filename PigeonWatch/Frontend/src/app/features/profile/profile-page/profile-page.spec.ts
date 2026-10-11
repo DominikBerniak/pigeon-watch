@@ -181,11 +181,48 @@ describe('ProfilePage', () => {
     expect(root.textContent).not.toContain("Your email can't be changed here.");
     expect(root.textContent).toContain('Email');
     expect(root.textContent).toContain('Display name');
-    expect(profileCard(root).querySelectorAll('.profile-field').length).toBe(2);
+    expect(profileCard(root).querySelectorAll('dl > div > dt + dd').length).toBe(2);
     expect(profileCard(root).querySelectorAll('input').length).toBe(0);
     expect(profileCard(root).querySelector('mat-form-field')).toBeNull();
     expect(profileCard(root).querySelector('app-submit-button')).toBeNull();
     expect(editButton(root)?.textContent?.trim()).toBe('Edit');
+  });
+
+  it('renders the email and the display name as description list pairs', async () => {
+    const root = await openReadOnly();
+    const pairs = [...profileCard(root).querySelectorAll('dl > div')].map((row) => [
+      row.querySelector('dt')?.textContent?.trim(),
+      row.querySelector('dd')?.textContent?.trim(),
+    ]);
+
+    expect(pairs).toEqual([
+      ['Email', 'jan@example.com'],
+      ['Display name', 'Jan K Edit'],
+    ]);
+    expect(editButton(root)?.closest('dd')).not.toBeNull();
+  });
+
+  it('puts Change password in the card footer only while read-only', async () => {
+    const root = await openReadOnly();
+    const footer = profileCard(root).querySelector<HTMLElement>('mat-card-actions');
+
+    expect(footer).not.toBeNull();
+    expect(buttonByText(footer!, 'Change password')).not.toBeNull();
+    expect(getComputedStyle(footer!).display).not.toBe('none');
+    expect(profileCard(root).querySelector('mat-card-content')?.textContent).not.toContain(
+      'Change password',
+    );
+
+    await startEditing(root);
+
+    expect(buttonByText(root, 'Change password')).toBeNull();
+    expect(getComputedStyle(footer!).display).toBe('none');
+
+    cancelButton(root)!.click();
+    await settle();
+
+    expect(buttonByText(footer!, 'Change password')).not.toBeNull();
+    expect(getComputedStyle(footer!).display).not.toBe('none');
   });
 
   it('turns the name into a prefilled input with a label and a Save button in edit mode', async () => {
@@ -322,6 +359,19 @@ describe('ProfilePage', () => {
     expect(editButton(root)?.textContent?.trim()).toBe('Edit');
   });
 
+  it('shows the success notice at the top of the card body above the details', async () => {
+    const root = await open();
+
+    await submit(root, 'Jan K2');
+
+    const notice = profileCard(root).querySelector('app-alert[role="status"]');
+    const details = profileCard(root).querySelector('dl');
+
+    expect(
+      notice!.compareDocumentPosition(details!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it('hides the success notice and reopens the input when Edit is clicked again', async () => {
     const root = await open();
     await submit(root, 'Jan K2');
@@ -396,6 +446,59 @@ describe('ProfilePage', () => {
     expect(
       profileCard(root).querySelector('app-submit-button button')?.hasAttribute('disabled'),
     ).toBe(false);
+  });
+
+  it('renders a server error inside the form directly above the Save button', async () => {
+    failWith(500);
+    const root = await open();
+
+    await submit(root, 'Valid name');
+
+    const form = profileCard(root).querySelector('form')!;
+    const notice = form.querySelector('app-alert[role="alert"]');
+    const email = profileCard(root).querySelector('dl')!;
+
+    expect(notice).not.toBeNull();
+    expect(notice!.nextElementSibling?.tagName.toLowerCase()).toBe('app-form-actions');
+    expect(
+      notice!.compareDocumentPosition(saveButton(root)) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(email.compareDocumentPosition(notice!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(profileCard(root).querySelectorAll('app-alert').length).toBe(1);
+  });
+
+  it('clears the error notice when a new submit starts', async () => {
+    failWith(500);
+    const root = await open();
+    await submit(root, 'Valid name');
+    expect(alertText(root, 'alert')).not.toBeUndefined();
+
+    const pending = new Subject<UpdatedProfile>();
+    updateDisplayName.mockReturnValue(pending);
+    await submit(root);
+
+    expect(alertText(root, 'alert')).toBeUndefined();
+    expect(alertText(root, 'status')).toBeUndefined();
+
+    pending.next({ email: user.email, displayName: 'Valid name' });
+    pending.complete();
+    await settle();
+
+    expect(alertText(root, 'status')).toBe('Your name has been updated.');
+  });
+
+  it('clears the error notice when an invalid resubmit is blocked', async () => {
+    failWith(500);
+    const root = await open();
+    await submit(root, 'Valid name');
+    expect(alertText(root, 'alert')).not.toBeUndefined();
+
+    updateDisplayName.mockClear();
+    await submit(root, 'ab');
+
+    expect(updateDisplayName).not.toHaveBeenCalled();
+    expect(fieldError(root)).toBe('Use at least 3 characters.');
+    expect(alertText(root, 'alert')).toBeUndefined();
   });
 
   describe('password dialog', () => {
@@ -547,6 +650,37 @@ describe('ProfilePage', () => {
       ]);
     });
 
+    function dialogSubmitDisabled(): boolean {
+      return (
+        dialog()
+          .querySelector('app-submit-button button[type="submit"]')
+          ?.hasAttribute('disabled') ?? false
+      );
+    }
+
+    it('keeps the submit button disabled until all three fields are filled', async () => {
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+
+      expect(dialogSubmitDisabled()).toBe(true);
+
+      fillPasswords(['Old1!pass', '', '']);
+      await settle();
+      expect(dialogSubmitDisabled()).toBe(true);
+
+      fillPasswords(['Old1!pass', 'New1!passw', '']);
+      await settle();
+      expect(dialogSubmitDisabled()).toBe(true);
+
+      fillPasswords(validPasswords);
+      await settle();
+      expect(dialogSubmitDisabled()).toBe(false);
+
+      fillPasswords(['Old1!pass', 'New1!passw', '']);
+      await settle();
+      expect(dialogSubmitDisabled()).toBe(true);
+    });
+
     it('shows no errors before the first submit', async () => {
       const root = await openReadOnly();
       await openPasswordDialog(root);
@@ -617,6 +751,43 @@ describe('ProfilePage', () => {
 
       expect(passwordDialog()).toBeNull();
       expect(alertText(root, 'status')).toBe('Your password has been changed.');
+    });
+
+    it('shows only the password notice after a name save followed by a password change', async () => {
+      const root = await open();
+      await submit(root, 'Jan K2');
+      expect(alertText(root, 'status')).toBe('Your name has been updated.');
+
+      await openPasswordDialog(root);
+      expect(profileCard(root).querySelectorAll('app-alert').length).toBe(0);
+
+      await submitPassword(validPasswords);
+      await waitUntilClosed();
+
+      expect(profileCard(root).querySelectorAll('app-alert').length).toBe(1);
+      expect(alertText(root, 'status')).toBe('Your password has been changed.');
+    });
+
+    it('shows no notice after a password change followed by Edit', async () => {
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+      await submitPassword(validPasswords);
+      await waitUntilClosed();
+      expect(alertText(root, 'status')).toBe('Your password has been changed.');
+
+      await startEditing(root);
+
+      expect(profileCard(root).querySelectorAll('app-alert').length).toBe(0);
+    });
+
+    it('shows no notice when the dialog is cancelled', async () => {
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+
+      dialog().querySelector<HTMLButtonElement>('button[type="button"]')?.click();
+      await waitUntilClosed();
+
+      expect(profileCard(root).querySelectorAll('app-alert').length).toBe(0);
     });
 
     it('hides the success notice when the dialog is opened again', async () => {
@@ -728,17 +899,19 @@ describe('ProfilePage', () => {
 
     it('does not touch the profile form when the dialog is submitted', async () => {
       failPasswordChangeWithCodes({ PasswordMismatch: ['x'] });
-      const root = await open();
-      type(root, 'ab');
+      const root = await openReadOnly();
       await openPasswordDialog(root);
 
       await submitPassword(validPasswords);
 
-      expect(fieldError(root)).toBeUndefined();
       expect(alertText(root, 'alert')).toBeUndefined();
       expect(updateDisplayName).not.toHaveBeenCalled();
       expect(loadGeneral).not.toHaveBeenCalled();
-      expect(nameInput(root).value).toBe('ab');
+
+      await startEditing(root);
+
+      expect(fieldError(root)).toBeUndefined();
+      expect(nameInput(root).value).toBe('Jan K');
     });
   });
 });

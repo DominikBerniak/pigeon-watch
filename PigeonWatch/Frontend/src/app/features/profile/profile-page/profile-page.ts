@@ -12,7 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { catchError, finalize, of, switchMap } from 'rxjs';
+import { catchError, filter, finalize, of, switchMap } from 'rxjs';
 import { SessionService } from '../../../core/auth/session.service';
 import { ConfigurationService } from '../../../core/configuration/configuration.service';
 import { ResourceService } from '../../../core/resources/resource.service';
@@ -20,6 +20,7 @@ import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import {
   Alert,
   FieldErrors,
+  FormActions,
   FormSubmitState,
   PageCard,
   SubmitButton,
@@ -42,6 +43,11 @@ interface ProfileModel {
 
 type ProfileField = 'displayName';
 
+type ProfileNotice =
+  | { readonly kind: 'saved' }
+  | { readonly kind: 'passwordChanged' }
+  | { readonly kind: 'error'; readonly error: AuthFormError };
+
 @Component({
   providers: [provideFormFieldDefaults()],
   selector: 'app-profile-page',
@@ -54,6 +60,7 @@ type ProfileField = 'displayName';
     TranslatePipe,
     Alert,
     FieldErrors,
+    FormActions,
     PageCard,
     SubmitButton,
   ],
@@ -71,7 +78,7 @@ export class ProfilePage {
   private readonly savedName = signal(this.session.currentUser()?.displayName ?? '');
   private readonly model = signal<ProfileModel>({ displayName: this.savedName() });
   private readonly serverErrors = signal<ServerFieldErrors<ProfileField>>({});
-  private readonly formError = signal<AuthFormError | null>(null);
+  private readonly notice = signal<ProfileNotice | null>(null);
 
   protected readonly currentUser = this.session.currentUser;
   protected readonly displayNameRules = computed(
@@ -86,16 +93,23 @@ export class ProfilePage {
   });
   protected readonly busy = signal(false);
   protected readonly editing = signal(false);
-  protected readonly saved = signal(false);
-  protected readonly passwordChanged = signal(false);
   protected readonly displayName = computed(() => this.model().displayName);
   protected readonly changed = computed(
     () => this.model().displayName.trim() !== this.savedName().trim(),
   );
-  protected readonly formErrorText = computed(() => {
-    const error = this.formError();
+  protected readonly successText = computed(() => {
+    const notice = this.notice();
 
-    return error ? authErrorMessage(this.resources, error) : null;
+    if (notice?.kind === 'saved') return this.resources.translate('profile.notices.saved');
+
+    return notice?.kind === 'passwordChanged'
+      ? this.resources.translate('profile.password.notices.changed')
+      : null;
+  });
+  protected readonly errorText = computed(() => {
+    const notice = this.notice();
+
+    return notice?.kind === 'error' ? authErrorMessage(this.resources, notice.error) : null;
   });
   protected readonly displayNameMessages = computed(() => ({
     required: this.resources.translate('auth.validation.required'),
@@ -116,36 +130,35 @@ export class ProfilePage {
   }));
 
   protected startEditing(): void {
-    this.saved.set(false);
-    this.formError.set(null);
+    this.notice.set(null);
     this.editing.set(true);
   }
 
   protected changePassword(): void {
-    this.passwordChanged.set(false);
+    this.notice.set(null);
     this.dialog
       .open<PasswordDialog, void, boolean>(PasswordDialog)
       .afterClosed()
-      .subscribe((changed) => this.passwordChanged.set(changed === true));
+      .pipe(filter((changed) => changed === true))
+      .subscribe(() => this.notice.set({ kind: 'passwordChanged' }));
   }
 
   protected cancel(): void {
     this.model.set({ displayName: this.savedName() });
     this.profileForm().reset();
     this.serverErrors.set({});
-    this.formError.set(null);
+    this.notice.set(null);
     this.editing.set(false);
   }
 
   protected submit(): void {
     this.submitState.markSubmitted();
+    this.notice.set(null);
 
     if (this.busy() || this.profileForm().invalid()) return;
 
     const profile = this.model();
     this.busy.set(true);
-    this.formError.set(null);
-    this.saved.set(false);
     this.profileApi
       .updateDisplayName(profile.displayName)
       .pipe(
@@ -158,7 +171,7 @@ export class ProfilePage {
 
           this.savedName.set(name);
           this.model.set({ displayName: name });
-          this.saved.set(true);
+          this.notice.set({ kind: 'saved' });
           this.editing.set(false);
         },
         error: (error: unknown) => this.handleFailure(error, profile),
@@ -170,6 +183,6 @@ export class ProfilePage {
     const kind = failure.fieldErrors.displayName;
 
     this.serverErrors.set(kind ? { displayName: { kind, value: profile.displayName } } : {});
-    this.formError.set(failure.formError);
+    this.notice.set(failure.formError ? { kind: 'error', error: failure.formError } : null);
   }
 }

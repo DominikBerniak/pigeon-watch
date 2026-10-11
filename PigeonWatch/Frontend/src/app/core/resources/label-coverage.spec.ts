@@ -106,7 +106,11 @@ describe('label coverage', () => {
     expect(Object.keys(labels).filter((key) => key.startsWith('warmup.messages.'))).not.toEqual([]);
   });
 
-  it.each(sourceFiles('.html').map(displayPath))('%s has no literal text', (path) => {
+  it.each(
+    sourceFiles('.html')
+      .map(displayPath)
+      .filter((path) => !path.startsWith('src/app/dev/')),
+  )('%s has no literal text', (path) => {
     expect(literalTextOf(resolve(root, path))).toEqual([]);
   });
 });

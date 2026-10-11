@@ -16,6 +16,9 @@ const lengthLiteral = /(?<![\w-])-?(?:\d+\.?\d*|\.\d+)(?:px|rem|em|vh|dvh|svh|lv
 const forbiddenSelector = /\.(?:mat|mdc)-|::ng-deep|!important/g;
 const tokenReference = /var\(\s*(--pw-[\w-]+)/g;
 const tokenDeclaration = /^\s*(--pw-[\w-]+)\s*:/gm;
+const commonClassDeclaration = /\.(pw-[a-z][\w-]*)/g;
+const templateClassUsage = /(?<![\w-])pw-[a-z][\w-]*/g;
+const templateReference = /(?<=\s)#[\w-]+(?=[\s=>/])/g;
 
 function filesUnder(directory: string, extension: string): string[] {
   return readdirSync(directory, { recursive: true, withFileTypes: true })
@@ -39,7 +42,16 @@ function matchesOf(pattern: RegExp, text: string): string[] {
   return [...text.matchAll(pattern)].map((match) => match[0]);
 }
 
+function withoutTemplateReferences(template: string): string {
+  return template.replace(templateReference, '');
+}
+
 describe('style token coverage', () => {
+  const declaredCommonClasses = new Set(
+    [...readFileSync(join(stylesDir, '_common.scss'), 'utf8').matchAll(commonClassDeclaration)].map(
+      (match) => match[1],
+    ),
+  );
   const declaredTokens = new Set(
     [...readFileSync(tokensFile, 'utf8').matchAll(tokenDeclaration)].map((match) => match[1]),
   );
@@ -84,6 +96,56 @@ describe('style token coverage', () => {
         .filter((token) => !declaredTokens.has(token)),
       'undefined --pw-* tokens',
     ).toEqual([]);
+  });
+
+  it('finds the templates it guards, the dev folder included', () => {
+    expect(filesUnder(appDir, '.html').map(displayPath)).toEqual(
+      expect.arrayContaining([
+        'src/app/features/profile/profile-page/profile-page.html',
+        'src/app/dev/kitchen-sink/kitchen-sink.html',
+      ]),
+    );
+  });
+
+  it('declares the common classes it checks templates against', () => {
+    expect([...declaredCommonClasses]).toEqual(
+      expect.arrayContaining(['pw-stack', 'pw-full-width', 'pw-visually-hidden']),
+    );
+    expect(
+      matchesOf(
+        templateClassUsage,
+        readFileSync(
+          resolve(appDir, 'features', 'profile', 'profile-page', 'profile-page.html'),
+          'utf8',
+        ),
+      ),
+    ).toEqual(expect.arrayContaining(['pw-stack', 'pw-full-width']));
+  });
+
+  it('templates use only pw-* classes declared in _common.scss', () => {
+    const undeclared = filesUnder(appDir, '.html').flatMap((file) =>
+      matchesOf(templateClassUsage, readFileSync(file, 'utf8'))
+        .filter((name) => !declaredCommonClasses.has(name))
+        .map((name) => `${displayPath(file)}: ${name}`),
+    );
+
+    expect(undeclared).toEqual([]);
+  });
+
+  it('templates contain no color literals', () => {
+    const offenders = filesUnder(appDir, '.html').flatMap((file) =>
+      matchesOf(colorLiteral, withoutTemplateReferences(readFileSync(file, 'utf8'))).map(
+        (literal) => `${displayPath(file)}: ${literal}`,
+      ),
+    );
+
+    expect(offenders).toEqual([]);
+  });
+
+  it('ignores template reference names but still finds color literals in values', () => {
+    expect(
+      matchesOf(colorLiteral, withoutTemplateReferences(`<input #face [style.color]="'#abc'" />`)),
+    ).toEqual(['#abc']);
   });
 
   it('templates have no inline style attributes', () => {

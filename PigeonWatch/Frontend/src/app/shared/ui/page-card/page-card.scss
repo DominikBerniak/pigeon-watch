@@ -37,6 +37,10 @@
   background-color: var(--pw-color-background);
 }
 
+.page-card__actions:empty {
+  display: none;
+}
+
 @include bp.from(sm) {
   .page-card__body {
     padding-inline: var(--pw-space-6);

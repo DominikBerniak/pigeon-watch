@@ -1,12 +1,15 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { SubmitButton } from './submit-button';
+import { SubmitButton, SubmitButtonTone } from './submit-button';
 
 @Component({
   imports: [SubmitButton],
-  template: `<app-submit-button [busy]="busy()" [disabled]="disabled()">Save</app-submit-button>`,
+  template: `<app-submit-button [tone]="tone()" [busy]="busy()" [disabled]="disabled()"
+    >Save</app-submit-button
+  >`,
 })
 class SubmitButtonHost {
+  readonly tone = signal<SubmitButtonTone>('primary');
   readonly busy = signal(false);
   readonly disabled = signal(false);
 }
@@ -28,6 +31,23 @@ describe('SubmitButton', () => {
     expect(button.hasAttribute('aria-busy')).toBe(false);
     expect(button.querySelector('mat-progress-spinner')).toBeNull();
     expect(button.textContent?.trim()).toBe('Save');
+  });
+
+  it('defaults to the primary tone', async () => {
+    const fixture = TestBed.createComponent(SubmitButtonHost);
+    await fixture.whenStable();
+    const host: HTMLElement = fixture.nativeElement.querySelector('app-submit-button');
+
+    expect(host.getAttribute('data-tone')).toBe('primary');
+  });
+
+  it('reflects the success tone on the host', async () => {
+    const fixture = TestBed.createComponent(SubmitButtonHost);
+    fixture.componentInstance.tone.set('success');
+    await fixture.whenStable();
+    const host: HTMLElement = fixture.nativeElement.querySelector('app-submit-button');
+
+    expect(host.getAttribute('data-tone')).toBe('success');
   });
 
   it('is disabled without a spinner or aria-busy when disabled', async () => {
