@@ -66,6 +66,7 @@ public class SightingService(
             box.MinLongitude,
             box.MaxLongitude,
             openStatuses,
+            SightingRules.NearbyBoxMaxRows,
             cancellationToken);
 
         return candidates

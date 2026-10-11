@@ -8,7 +8,7 @@ import { RouterLink } from '@angular/router';
 import { Subject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import { Alert } from '../../../shared/ui';
-import { Sighting, sightingCriticalityLabels, sightingStatusLabels } from '../sighting.types';
+import { Sighting, sightingCriticalityLabel, sightingStatusLabel } from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
 
 type MySightingsState =
@@ -37,8 +37,8 @@ export class MySightings {
 
   protected readonly spinnerDiameter = 32;
   protected readonly state = signal<MySightingsState>({ kind: 'loading' });
-  protected readonly statusLabels = sightingStatusLabels;
-  protected readonly criticalityLabels = sightingCriticalityLabels;
+  protected readonly statusLabel = sightingStatusLabel;
+  protected readonly criticalityLabel = sightingCriticalityLabel;
 
   constructor() {
     this.reloads

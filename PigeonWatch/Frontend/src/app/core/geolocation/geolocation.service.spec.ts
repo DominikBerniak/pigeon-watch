@@ -1,6 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
-import { GeolocationService, geolocationTimeoutMs } from './geolocation.service';
+import {
+  GeolocationOutcome,
+  GeolocationService,
+  geolocationBackstopMs,
+  geolocationTimeoutMs,
+} from './geolocation.service';
 
 type GetCurrentPosition = Geolocation['getCurrentPosition'];
 
@@ -79,5 +84,38 @@ describe('GeolocationService', () => {
     const outcome = await firstValueFrom(TestBed.inject(GeolocationService).currentPosition(true));
 
     expect(outcome).toEqual({ status: 'unavailable' });
+  });
+
+  describe('when the browser never answers', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('reports a timeout once the backstop elapses', () => {
+      stubGeolocation(() => undefined);
+      const outcomes: GeolocationOutcome[] = [];
+      let completed = false;
+
+      TestBed.inject(GeolocationService)
+        .currentPosition(true)
+        .subscribe({
+          next: (outcome) => outcomes.push(outcome),
+          complete: () => (completed = true),
+        });
+
+      vi.advanceTimersByTime(geolocationBackstopMs - 1);
+
+      expect(outcomes).toEqual([]);
+
+      vi.advanceTimersByTime(1);
+
+      expect(outcomes).toEqual([{ status: 'timeout' }]);
+      expect(completed).toBe(true);
+      expect(geolocationBackstopMs).toBeGreaterThan(geolocationTimeoutMs);
+    });
   });
 });

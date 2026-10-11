@@ -1,8 +1,10 @@
+import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
   ElementRef,
+  InjectionToken,
   afterNextRender,
   computed,
   effect,
@@ -14,17 +16,50 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
 import type * as Leaflet from 'leaflet';
-import { EMPTY, catchError, from } from 'rxjs';
+import { EMPTY, Observable, catchError, from } from 'rxjs';
 import { GeoPoint } from '../../../core/geolocation/geo-point';
 import { ResourceService } from '../../../core/resources/resource.service';
+import { TranslatePipe } from '../../../core/resources/translate.pipe';
+import { Alert } from '../../ui/alert/alert';
 import { attributionHtml, mapTiles } from '../map-config';
 import { MapMarker, mapMarkerClassNames, mapPinClassName } from '../map-marker';
 
 type LeafletModule = typeof Leaflet;
+type LeafletImport = LeafletModule & { default?: LeafletModule };
+
+export const leafletStylesheetHref = 'leaflet.css';
+
+export const LEAFLET_LOADER = new InjectionToken<() => Observable<LeafletImport>>(
+  'LEAFLET_LOADER',
+  {
+    providedIn: 'root',
+    factory: () => {
+      const document = inject(DOCUMENT);
+
+      return () => {
+        addLeafletStylesheet(document);
+
+        return from(import('leaflet'));
+      };
+    },
+  },
+);
+
+function addLeafletStylesheet(document: Document): void {
+  if (document.head.querySelector(`link[href="${leafletStylesheetHref}"]`)) return;
+
+  const link = document.createElement('link');
+
+  link.rel = 'stylesheet';
+  link.href = leafletStylesheetHref;
+  document.head.appendChild(link);
+}
 
 @Component({
   selector: 'app-map-view',
+  imports: [MatButtonModule, TranslatePipe, Alert],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './map-view.html',
   styleUrl: './map-view.scss',
@@ -32,6 +67,7 @@ type LeafletModule = typeof Leaflet;
 export class MapView {
   private readonly resources = inject(ResourceService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly loadLeaflet = inject(LEAFLET_LOADER);
   private readonly canvas = viewChild.required<ElementRef<HTMLElement>>('canvas');
   private readonly attribution = computed(() =>
     attributionHtml(this.resources.translate('map.attribution')),
@@ -52,6 +88,9 @@ export class MapView {
   readonly centerChange = output<GeoPoint>();
   readonly markerSelect = output<string>();
   readonly pinMove = output<GeoPoint>();
+  readonly mapReady = output<void>();
+
+  protected readonly loadFailed = signal(false);
 
   constructor() {
     afterNextRender(() => this.load());
@@ -62,10 +101,19 @@ export class MapView {
     this.destroyRef.onDestroy(() => this.map?.remove());
   }
 
+  protected retry(): void {
+    this.load();
+  }
+
   private load(): void {
-    from(import('leaflet'))
+    this.loadFailed.set(false);
+    this.loadLeaflet()
       .pipe(
-        catchError(() => EMPTY),
+        catchError(() => {
+          this.loadFailed.set(true);
+
+          return EMPTY;
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((module) => this.create(leafletOf(module)));
@@ -93,6 +141,7 @@ export class MapView {
     this.map = map;
     this.markerLayer = leaflet.layerGroup().addTo(map);
     this.ready.set(true);
+    this.mapReady.emit();
   }
 
   private applyView(): void {
@@ -179,7 +228,7 @@ export class MapView {
   }
 }
 
-function leafletOf(module: LeafletModule & { default?: LeafletModule }): LeafletModule {
+function leafletOf(module: LeafletImport): LeafletModule {
   return module.default ?? module;
 }
 

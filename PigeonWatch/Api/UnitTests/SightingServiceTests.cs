@@ -208,7 +208,7 @@ public class SightingServiceTests
     }
 
     [Fact]
-    public async Task Nearby_queries_the_bounding_box_for_open_statuses_only()
+    public async Task Nearby_queries_the_bounding_box_for_open_statuses_only_capped_at_the_box_row_limit()
     {
         GeoBoundingBox box = geoDistanceCalculator.GetBoundingBox(centreLatitude, centreLongitude, SightingRules.NearbyRadiusKilometers);
         SightingStatus[] openStatuses =
@@ -223,6 +223,7 @@ public class SightingServiceTests
             box.MinLongitude,
             box.MaxLongitude,
             Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.Order().SequenceEqual(openStatuses)),
+            SightingRules.NearbyBoxMaxRows,
             Arg.Any<CancellationToken>());
     }
 
@@ -307,6 +308,7 @@ public class SightingServiceTests
                 Arg.Any<double>(),
                 Arg.Any<double>(),
                 Arg.Any<IReadOnlyCollection<SightingStatus>>(),
+                Arg.Any<int>(),
                 Arg.Any<CancellationToken>())
             .Returns(candidates);
     }

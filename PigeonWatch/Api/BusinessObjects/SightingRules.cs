@@ -8,5 +8,6 @@ public static class SightingRules
     public const int CooldownSeconds = 60;
     public const int NearbyRadiusKilometers = 10;
     public const int NearbyMaxResults = 200;
+    public const int NearbyBoxMaxRows = NearbyMaxResults * 2;
     public const int MineMaxResults = 50;
 }

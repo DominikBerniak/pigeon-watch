@@ -61,7 +61,7 @@
           <div class="nearby-selected__row">
             <dt class="pw-text-muted pw-text-small">{{ 'map.selected.status' | translate }}</dt>
             <dd class="nearby-selected__value">
-              {{ statusLabels[sighting.status] | translate }}
+              {{ statusLabel(sighting.status) | translate }}
             </dd>
           </div>
           <div class="nearby-selected__row">
@@ -69,7 +69,7 @@
               {{ 'map.selected.criticality' | translate }}
             </dt>
             <dd class="nearby-selected__value">
-              {{ criticalityLabels[sighting.criticality] | translate }}
+              {{ criticalityLabel(sighting.criticality) | translate }}
             </dd>
           </div>
         </dl>

@@ -195,6 +195,24 @@ describe('ReportSightingPage', () => {
     expect(locationError()).toBe('Choose a location on the map.');
   });
 
+  it('treats a whitespace-only description and behaviour as missing', async () => {
+    await fillValid();
+    setValue(textareas()[0], '   ');
+    setValue(textareas()[1], '\n ');
+    await settle();
+
+    await submit();
+
+    expect(create).not.toHaveBeenCalled();
+    expect(fieldErrors()).toEqual([
+      '',
+      'This field is required.',
+      'This field is required.',
+      '',
+      '',
+    ]);
+  });
+
   it('blocks a name over the configured maximum length', async () => {
     await fillValid('a'.repeat(61));
 

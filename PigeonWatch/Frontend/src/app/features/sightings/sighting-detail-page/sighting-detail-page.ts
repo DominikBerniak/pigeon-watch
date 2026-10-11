@@ -15,9 +15,9 @@ import { Alert, PageCard } from '../../../shared/ui';
 import { sightingFailure } from '../sighting-errors';
 import {
   Sighting,
-  sightingCriticalityLabels,
-  sightingCriticalityMarkers,
-  sightingStatusLabels,
+  sightingCriticalityLabel,
+  sightingCriticalityMarker,
+  sightingStatusLabel,
 } from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
 
@@ -55,8 +55,8 @@ export class SightingDetailPage {
   protected readonly mapZoom = pickerMapZoom;
   protected readonly state = signal<DetailState>({ kind: 'loading' });
   protected readonly mapShown = signal(false);
-  protected readonly statusLabels = sightingStatusLabels;
-  protected readonly criticalityLabels = sightingCriticalityLabels;
+  protected readonly statusLabel = sightingStatusLabel;
+  protected readonly criticalityLabel = sightingCriticalityLabel;
   protected readonly sighting = computed(() => {
     const state = this.state();
 
@@ -95,7 +95,7 @@ export class SightingDetailPage {
         id: sighting.id,
         latitude: sighting.latitude,
         longitude: sighting.longitude,
-        kind: sightingCriticalityMarkers[sighting.criticality],
+        kind: sightingCriticalityMarker(sighting.criticality),
         label: this.title(),
       },
     ];

@@ -74,6 +74,26 @@ export const sightingCriticalityMarkers: Readonly<Record<SightingCriticality, Ma
   3: 'urgent',
 };
 
+export const unknownSightingValueLabel = 'sighting.unknown';
+
+export function sightingStatusLabel(status: SightingStatus): string {
+  const label: string | undefined = sightingStatusLabels[status];
+
+  return label ?? unknownSightingValueLabel;
+}
+
+export function sightingCriticalityLabel(criticality: SightingCriticality): string {
+  const label: string | undefined = sightingCriticalityLabels[criticality];
+
+  return label ?? unknownSightingValueLabel;
+}
+
+export function sightingCriticalityMarker(criticality: SightingCriticality): MapMarkerKind {
+  const kind: MapMarkerKind | undefined = sightingCriticalityMarkers[criticality];
+
+  return kind ?? 'monitor';
+}
+
 export const initialSightingStatuses: readonly SightingStatus[] = [
   SightingStatus.spotted,
   SightingStatus.caught,

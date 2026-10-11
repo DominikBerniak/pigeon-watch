@@ -1,9 +1,10 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { from, throwError } from 'rxjs';
 import { GeoPoint } from '../../../core/geolocation/geo-point';
 import { MapMarker } from '../map-marker';
-import { MapView } from './map-view';
+import { LEAFLET_LOADER, MapView, leafletStylesheetHref } from './map-view';
 
 const centre: GeoPoint = { latitude: 52.07, longitude: 19.48 };
 const marker: MapMarker = { id: 'sighting-1', latitude: 52.1, longitude: 19.5, kind: 'urgent' };
@@ -29,6 +30,34 @@ describe('MapView', () => {
 
     return root;
   }
+
+  function leafletStylesheets(): HTMLLinkElement[] {
+    return [
+      ...document.head.querySelectorAll<HTMLLinkElement>(
+        `link[rel="stylesheet"][href="${leafletStylesheetHref}"]`,
+      ),
+    ];
+  }
+
+  afterEach(() => {
+    leafletStylesheets().forEach((link) => link.remove());
+  });
+
+  it('adds the Leaflet stylesheet once, however many maps render', async () => {
+    await render();
+    const second = TestBed.createComponent(MapView);
+    second.componentRef.setInput('label', 'Second map');
+    second.componentRef.setInput('center', centre);
+    second.componentRef.setInput('zoom', 6);
+    await second.whenStable();
+    await vi.waitFor(() =>
+      expect(
+        (second.nativeElement as HTMLElement).querySelector('.leaflet-container'),
+      ).not.toBeNull(),
+    );
+
+    expect(leafletStylesheets()).toHaveLength(1);
+  });
 
   it('labels the map region', async () => {
     const root = await render();
@@ -94,5 +123,56 @@ describe('MapView', () => {
     fixture.destroy();
 
     expect(canvas?.querySelector('.leaflet-map-pane')).toBeNull();
+  });
+
+  it('emits mapReady once the map is created', async () => {
+    let readyCount = 0;
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    fixture = TestBed.createComponent(MapView);
+    fixture.componentInstance.mapReady.subscribe(() => readyCount++);
+    fixture.componentRef.setInput('label', 'Map of sightings');
+    fixture.componentRef.setInput('center', centre);
+    fixture.componentRef.setInput('zoom', 6);
+    await fixture.whenStable();
+
+    await vi.waitFor(() => expect(readyCount).toBe(1));
+  });
+
+  it('shows an error with a retry when Leaflet fails to load, then loads on retry', async () => {
+    const loader = vi
+      .fn()
+      .mockReturnValueOnce(throwError(() => new Error('chunk failed')))
+      .mockImplementation(() => from(import('leaflet')));
+    let readyCount = 0;
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: LEAFLET_LOADER, useValue: loader },
+      ],
+    });
+    fixture = TestBed.createComponent(MapView);
+    fixture.componentInstance.mapReady.subscribe(() => readyCount++);
+    fixture.componentRef.setInput('label', 'Map of sightings');
+    fixture.componentRef.setInput('center', centre);
+    fixture.componentRef.setInput('zoom', 6);
+    await fixture.whenStable();
+
+    const root = fixture.nativeElement as HTMLElement;
+
+    expect(root.querySelector('app-alert')?.textContent?.trim()).toBe(
+      "The map couldn't be loaded. Check your connection and try again.",
+    );
+    expect(readyCount).toBe(0);
+
+    root.querySelector<HTMLButtonElement>('button')?.click();
+    await vi.waitFor(() => expect(root.querySelector('.leaflet-container')).not.toBeNull());
+    await fixture.whenStable();
+
+    expect(root.querySelector('app-alert')).toBeNull();
+    expect(readyCount).toBe(1);
+    expect(loader).toHaveBeenCalledTimes(2);
   });
 });

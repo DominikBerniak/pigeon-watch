@@ -38,6 +38,7 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
         double minLongitude,
         double maxLongitude,
         IReadOnlyCollection<SightingStatus> statuses,
+        int take,
         CancellationToken cancellationToken = default)
     {
         List<SightingStatus> statusList = statuses.ToList();
@@ -50,6 +51,7 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
                 && e.Longitude <= maxLongitude
                 && statusList.Contains(e.Status))
             .OrderByDescending(e => e.CreateDate)
+            .Take(take)
             .ToListAsync(cancellationToken);
 
         return entities.Select(sightingMapper.ToSighting).ToList();

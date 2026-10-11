@@ -47,6 +47,7 @@ export class LocationPicker implements FormValueControl<GeoPoint | null> {
   protected readonly viewZoom = signal<number>(neutralMapView.zoom);
   protected readonly locating = signal(false);
   protected readonly locationFailed = signal(false);
+  protected readonly mapReady = signal(false);
   protected readonly field = computed(() => this.formField?.field() ?? null);
   protected readonly errorMessages = computed(() => ({
     required: this.resources.translate('sighting.form.locationRequired'),

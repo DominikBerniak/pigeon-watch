@@ -4,9 +4,13 @@ import {
   SightingStatus,
   initialSightingStatuses,
   selectableSightingCriticalities,
+  sightingCriticalityLabel,
   sightingCriticalityLabels,
+  sightingCriticalityMarker,
   sightingCriticalityMarkers,
+  sightingStatusLabel,
   sightingStatusLabels,
+  unknownSightingValueLabel,
 } from './sighting.types';
 
 describe('sighting types', () => {
@@ -27,6 +31,21 @@ describe('sighting types', () => {
       Object.values(sightingCriticalityLabels).filter((key) => !Object.hasOwn(defaultLabels, key)),
     ).toEqual([]);
     expect(Object.keys(sightingCriticalityMarkers).map(Number)).toEqual(levels);
+  });
+
+  it('looks up known values and falls back for values the SPA does not know', () => {
+    const unknownStatus = 99 as SightingStatus;
+    const unknownCriticality = 99 as SightingCriticality;
+
+    expect(sightingStatusLabel(SightingStatus.caught)).toBe('sighting.status.caught');
+    expect(sightingCriticalityLabel(SightingCriticality.urgent)).toBe(
+      'sighting.criticality.urgent',
+    );
+    expect(sightingCriticalityMarker(SightingCriticality.needsHelpSoon)).toBe('needsHelpSoon');
+    expect(sightingStatusLabel(unknownStatus)).toBe(unknownSightingValueLabel);
+    expect(sightingCriticalityLabel(unknownCriticality)).toBe(unknownSightingValueLabel);
+    expect(sightingCriticalityMarker(unknownCriticality)).toBe('monitor');
+    expect(Object.hasOwn(defaultLabels, unknownSightingValueLabel)).toBe(true);
   });
 
   it('offers only Spotted and Caught as initial statuses', () => {

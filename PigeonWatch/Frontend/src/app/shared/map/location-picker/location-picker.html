@@ -10,12 +10,18 @@
       (mapClick)="placePin($event)"
       (pinMove)="placePin($event)"
       (centerChange)="trackCentre($event)"
+      (mapReady)="mapReady.set(true)"
     />
     <div class="pw-cluster">
       <button mat-stroked-button type="button" [disabled]="locating()" (click)="useMyLocation()">
         {{ 'map.useMyLocation' | translate }}
       </button>
-      <button mat-stroked-button type="button" (click)="placePinAtCentre()">
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="!mapReady()"
+        (click)="placePinAtCentre()"
+      >
         {{ 'map.placePinAtCentre' | translate }}
       </button>
     </div>

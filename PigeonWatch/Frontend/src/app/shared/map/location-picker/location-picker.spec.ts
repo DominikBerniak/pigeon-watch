@@ -195,8 +195,20 @@ describe('LocationPicker', () => {
     expect(location()).toEqual(warsaw);
   });
 
+  it('keeps "Place pin at map centre" disabled until the map is ready', async () => {
+    await render();
+
+    expect(button('Place pin at map centre').disabled).toBe(true);
+
+    map().mapReady.emit();
+    await settle();
+
+    expect(button('Place pin at map centre').disabled).toBe(false);
+  });
+
   it('places the pin at the current map centre without a pointer', async () => {
     await render();
+    map().mapReady.emit();
     map().centerChange.emit(krakow);
     await settle();
 
@@ -208,6 +220,8 @@ describe('LocationPicker', () => {
 
   it('places the pin at the opening centre before the map moves', async () => {
     await render();
+    map().mapReady.emit();
+    await settle();
 
     button('Place pin at map centre').click();
     await settle();

@@ -254,7 +254,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | F-01       | persistence-wiring-smoke     | Prove live API-to-database path with a CI migration    | yes                   | Run `/10x-plan persistence-wiring-smoke`                 |
 | S-01       | register-and-login           | Register, log in and log out                           | no                    | Needs F-01 done                                          |
 | S-02       | edit-profile-name            | Edit own profile name                                  | no                    | Needs S-01 done                                          |
-| S-03       | report-sighting-on-map       | Report a sighting and see it on the map                | yes                   | Run `/10x-new report-sighting-on-map`, then `/10x-plan`  |
+| S-03       | report-sighting-on-map       | Report a sighting and see it on the map                | yes                   | Implemented; run `/10x-archive report-sighting-on-map`   |
 | S-04       | attach-sighting-photo        | Attach optional photo to a sighting                    | no                    | Needs S-03 done                                          |
 | S-05       | filter-sightings-nearby      | Scope map to nearby area and filter by status/criticality | no                 | Needs S-03 done                                          |
 | S-06       | urgency-ranked-sighting-list | Urgency-ranked list of nearby sightings                | no                    | Needs S-03 done                                          |

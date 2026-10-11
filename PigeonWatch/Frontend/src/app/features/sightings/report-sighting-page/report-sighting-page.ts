@@ -1,5 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormField, FormRoot, form, maxLength, required } from '@angular/forms/signals';
+import {
+  FormField,
+  FormRoot,
+  form,
+  maxLength,
+  required,
+  requiredError,
+  validate,
+} from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -89,8 +97,10 @@ export class ReportSightingPage {
   protected readonly reportForm = form(this.model, (path) => {
     maxLength(path.name, () => this.rules().nameMaxLength);
     required(path.description);
+    validate(path.description, ({ value }) => (isBlank(value()) ? requiredError() : undefined));
     maxLength(path.description, () => this.rules().descriptionMaxLength);
     required(path.behaviour);
+    validate(path.behaviour, ({ value }) => (isBlank(value()) ? requiredError() : undefined));
     maxLength(path.behaviour, () => this.rules().behaviourMaxLength);
     required(path.status);
     required(path.criticality);
@@ -144,6 +154,10 @@ export class ReportSightingPage {
   private maxLengthMessage(length: number): string {
     return this.resources.translate('sighting.form.maxLength', length);
   }
+}
+
+function isBlank(value: string): boolean {
+  return value !== '' && value.trim() === '';
 }
 
 function newSightingOf(report: ReportModel): NewSighting | null {

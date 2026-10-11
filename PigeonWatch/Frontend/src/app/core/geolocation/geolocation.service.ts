@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, of, timeout } from 'rxjs';
 
 export type GeolocationFailure = 'denied' | 'unavailable' | 'timeout' | 'unsupported';
 
@@ -9,6 +9,7 @@ export type GeolocationOutcome =
   | { readonly status: GeolocationFailure };
 
 export const geolocationTimeoutMs = 10000;
+export const geolocationBackstopMs = geolocationTimeoutMs + 5000;
 
 const permissionDeniedCode = 1;
 const timeoutCode = 3;
@@ -45,7 +46,12 @@ export class GeolocationService {
       } catch {
         emit({ status: 'unavailable' });
       }
-    });
+    }).pipe(
+      timeout({
+        first: geolocationBackstopMs,
+        with: () => of<GeolocationOutcome>({ status: 'timeout' }),
+      }),
+    );
   }
 }
 

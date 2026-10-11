@@ -95,7 +95,7 @@ public sealed class SightingRepositoryTests : IDisposable
         await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.5001, SightingStatus.Spotted));
 
         await using PigeonWatchDbContext db = CreateContext();
-        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, cancellationToken);
+        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, 50, cancellationToken);
 
         Assert.Equal(
             new[] { minCorner.Id, maxCorner.Id, centre.Id }.Order(),
@@ -117,10 +117,29 @@ public sealed class SightingRepositoryTests : IDisposable
         }
 
         await using PigeonWatchDbContext db = CreateContext();
-        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, cancellationToken);
+        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, 50, cancellationToken);
 
         Assert.Equal(openIds.Order(), found.Select(sighting => sighting.Id).Order());
         Assert.All(found, sighting => Assert.Contains(sighting.Status, openStatuses));
+    }
+
+    [Fact]
+    public async Task List_in_box_returns_the_newest_sightings_up_to_the_take()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Sighting oldest = (await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.25, SightingStatus.Spotted)))!;
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(5);
+        Sighting middle = (await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.25, SightingStatus.Spotted)))!;
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(5);
+        Sighting newest = (await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.25, SightingStatus.Spotted)))!;
+
+        await using PigeonWatchDbContext db = CreateContext();
+        ISightingRepository repository = CreateRepository(db);
+        IReadOnlyList<Sighting> all = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, 50, cancellationToken);
+        IReadOnlyList<Sighting> firstTwo = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, 2, cancellationToken);
+
+        Assert.Equal([newest.Id, middle.Id, oldest.Id], all.Select(sighting => sighting.Id));
+        Assert.Equal([newest.Id, middle.Id], firstTwo.Select(sighting => sighting.Id));
     }
 
     [Fact]

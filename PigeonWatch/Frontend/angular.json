@@ -56,7 +56,11 @@
               }
             ],
             "styles": [
-              "node_modules/leaflet/dist/leaflet.css",
+              {
+                "input": "node_modules/leaflet/dist/leaflet.css",
+                "bundleName": "leaflet",
+                "inject": false
+              },
               "src/styles.scss"
             ],
             "stylePreprocessorOptions": {

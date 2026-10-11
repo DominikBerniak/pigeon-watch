@@ -481,8 +481,25 @@ The `AddSighting` migration is additive (new table and indexes only), applied by
 - Related research: `context/changes/report-sighting-on-map/research.md`
 - Frame brief: `context/changes/report-sighting-on-map/frame.md`
 - Similar implementation: `PigeonWatch/Api/WebApi/Controllers/AccountController.cs:37-80`, `PigeonWatch/Frontend/src/app/features/profile/profile-page/profile-page.ts:84-179`
-- Status and criticality tables: `context/foundation/prd.md:133-156`
+- Status and criticality tables: `context/foundation/prd.md:133-156` (PRD v2; it was in the working tree during planning and was committed with Phase 5, fa8b75e, together with the roadmap's PRD v2 alignment and the S-03 status change)
 - CSP precedent: `context/archive/2026-10-04-register-and-login/plan.md:513,518,596,775,928`
+
+## Deviations
+
+Recorded after implementation (impl-review F7). These are intended and tested.
+
+- **Marker title carries the sighting name.** `map-view` sets Leaflet's `title` option to the marker label, which can be the user-typed name, as a native hover and accessibility label. Leaflet assigns it as a DOM property, not HTML, so it is not an XSS sink. Popups, tooltips and `divIcon` `html` still never carry user text.
+- **`ReporterNotFound` is 401, not a coded 400.** A token for a deleted user is treated like `AccountController`'s `UserNotFound`.
+- **The service normalises input.** `SightingService` trims name, description and behaviour, stores a blank name as null, validates before reading the cooldown, and caps `retryAfterSeconds` at 60 so a future-dated `CREATE_DATE` cannot inflate it.
+- **The report form has a Cancel button** in `app-form-actions` that returns to the map (`sighting.form.cancel`).
+- **Review fixes** (impl-review F1-F4 and F8) added these, after the phases:
+  - a Leaflet load-failed alert with retry and a `mapReady` output on `map-view`;
+  - a 15 s geolocation backstop;
+  - a SQL row cap on the nearby box query (`SightingRules.NearbyBoxMaxRows`);
+  - whitespace-only description and behaviour treated as missing;
+  - the Leaflet CSS moved to the planned `inject: false` fallback (initial bundle 486 kB).
+
+  See `reviews/impl-review.md`.
 
 ## Progress
 
@@ -542,7 +559,7 @@ The `AddSighting` migration is additive (new table and indexes only), applied by
 - [x] 4.6 Map home with location allowed centres on the position and shows pins; with location denied it shows the Poland view and hint, and "Search this area" loads pins — 2700afe
 - [x] 4.7 Detail page shows coordinates without loading tiles, "Show map" then shows the single marker, and an unknown id shows the not-found state — 2700afe
 - [x] 4.8 Profile page shows the user's own sightings, and its empty, loading and error states render — 2700afe
-- [x] 4.9 `visual-notes.md` holds desktop and 375 px screenshots of all four views — 2700afe
+- [x] 4.9 `visual-notes.md` holds desktop and 375 px screenshots of all four views — 2700afe (partial, per impl-review F6: Profile "My sightings" was seen but not committed because it shows the account email; map-selected at 375, report form untouched at 375 and detail not-found on desktop were not captured)
 
 ### Phase 5: Verification and docs
 

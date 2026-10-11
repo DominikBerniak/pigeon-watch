@@ -17,9 +17,9 @@ import { Alert } from '../../../shared/ui';
 import {
   Sighting,
   fallbackSightingRules,
-  sightingCriticalityLabels,
-  sightingCriticalityMarkers,
-  sightingStatusLabels,
+  sightingCriticalityLabel,
+  sightingCriticalityMarker,
+  sightingStatusLabel,
 } from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
 
@@ -60,8 +60,8 @@ export class NearbyMapPage {
   protected readonly locating = signal(true);
   protected readonly positionUnknown = signal(false);
   protected readonly state = signal<NearbyState>({ kind: 'idle' });
-  protected readonly statusLabels = sightingStatusLabels;
-  protected readonly criticalityLabels = sightingCriticalityLabels;
+  protected readonly statusLabel = sightingStatusLabel;
+  protected readonly criticalityLabel = sightingCriticalityLabel;
   protected readonly radiusKm = computed(
     () =>
       this.configuration.clientConfig()?.sightingRules?.nearbyRadiusKm ??
@@ -79,7 +79,7 @@ export class NearbyMapPage {
       id: sighting.id,
       latitude: sighting.latitude,
       longitude: sighting.longitude,
-      kind: sightingCriticalityMarkers[sighting.criticality],
+      kind: sightingCriticalityMarker(sighting.criticality),
       label: sighting.name ?? unnamed,
     }));
   });

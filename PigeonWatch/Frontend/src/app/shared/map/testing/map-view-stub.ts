@@ -17,4 +17,5 @@ export class MapViewStub {
   readonly centerChange = output<GeoPoint>();
   readonly markerSelect = output<string>();
   readonly pinMove = output<GeoPoint>();
+  readonly mapReady = output<void>();
 }

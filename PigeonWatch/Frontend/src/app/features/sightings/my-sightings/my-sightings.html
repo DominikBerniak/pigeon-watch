@@ -32,8 +32,8 @@
                   {{ sighting.name ?? ('sighting.unnamed' | translate) }}
                 </a>
                 <p class="pw-text-muted pw-text-small">
-                  {{ statusLabels[sighting.status] | translate }} ·
-                  {{ criticalityLabels[sighting.criticality] | translate }} ·
+                  {{ statusLabel(sighting.status) | translate }} ·
+                  {{ criticalityLabel(sighting.criticality) | translate }} ·
                   <time [attr.datetime]="sighting.createdAt">{{
                     sighting.createdAt | date: 'medium'
                   }}</time>

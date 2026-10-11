@@ -390,6 +390,9 @@
   <data name="sighting.unnamed" xml:space="preserve">
     <value>Unnamed bird</value>
   </data>
+  <data name="sighting.unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
   <data name="map.title" xml:space="preserve">
     <value>Sightings near you</value>
   </data>
@@ -422,6 +425,9 @@
   </data>
   <data name="map.error" xml:space="preserve">
     <value>We couldn't load sightings for this area.</value>
+  </data>
+  <data name="map.loadFailed" xml:space="preserve">
+    <value>The map couldn't be loaded. Check your connection and try again.</value>
   </data>
   <data name="map.retry" xml:space="preserve">
     <value>Try again</value>

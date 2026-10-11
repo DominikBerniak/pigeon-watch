@@ -30,13 +30,13 @@
         <dl class="detail-list">
           <div class="detail-row">
             <dt class="pw-text-muted pw-text-small">{{ 'sighting.detail.status' | translate }}</dt>
-            <dd class="detail-value">{{ statusLabels[sighting.status] | translate }}</dd>
+            <dd class="detail-value">{{ statusLabel(sighting.status) | translate }}</dd>
           </div>
           <div class="detail-row">
             <dt class="pw-text-muted pw-text-small">
               {{ 'sighting.detail.criticality' | translate }}
             </dt>
-            <dd class="detail-value">{{ criticalityLabels[sighting.criticality] | translate }}</dd>
+            <dd class="detail-value">{{ criticalityLabel(sighting.criticality) | translate }}</dd>
           </div>
           <div class="detail-row">
             <dt class="pw-text-muted pw-text-small">
