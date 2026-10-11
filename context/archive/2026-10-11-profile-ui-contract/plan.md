@@ -339,56 +339,56 @@ None: no data, API or resx changes. The `.pw-button-success` class is removed in
 
 #### Automated
 
-- [x] 1.1 Unit tests pass, including the new kitchen-sink spec: `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — aa482fe
-- [x] 1.2 Production build passes within the bundle budgets: `npm run build` — aa482fe
-- [x] 1.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink` — aa482fe
-- [x] 1.4 Hardcoded-value scan from `/10x-ui` returns 0 hits on the 6 Profile view files and the kitchen-sink files — aa482fe
+- [x] 1.1 Unit tests pass, including the new kitchen-sink spec: `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — 5b8c307
+- [x] 1.2 Production build passes within the bundle budgets: `npm run build` — 5b8c307
+- [x] 1.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink` — 5b8c307
+- [x] 1.4 Hardcoded-value scan from `/10x-ui` returns 0 hits on the 6 Profile view files and the kitchen-sink files — 5b8c307
 
 #### Manual
 
-- [x] 1.5 With `npm start`, `/dev/kitchen-sink` renders every baseline cell of the unchanged view with no API running and no login, and the password dialog uses stub behaviour (no HTTP request to the API) — aa482fe
-- [x] 1.6 Baseline screenshots at desktop and 375px have been reviewed and the findings recorded in `visual-notes.md`, including whether button labels wrap at 375px — aa482fe
+- [x] 1.5 With `npm start`, `/dev/kitchen-sink` renders every baseline cell of the unchanged view with no API running and no login, and the password dialog uses stub behaviour (no HTTP request to the API) — 5b8c307
+- [x] 1.6 Baseline screenshots at desktop and 375px have been reviewed and the findings recorded in `visual-notes.md`, including whether button labels wrap at 375px — 5b8c307
 
 ### Phase 2: Shared components (C1, C2)
 
 #### Automated
 
-- [x] 2.1 Unit tests pass, including the `SubmitButton` tone, `FormActions` and `PageCard` empty-footer cases: `npm test -- --watch=false` — 206d30a
-- [x] 2.2 No template uses `pw-button-success` and `_material-theme.scss` no longer defines it (grep returns nothing) — 206d30a
-- [x] 2.3 Production build passes within the bundle budgets: `npm run build` — 206d30a
-- [x] 2.4 Hardcoded-value scan returns 0 hits on the Profile view files, the new components and the kitchen-sink files — 206d30a
+- [x] 2.1 Unit tests pass, including the `SubmitButton` tone, `FormActions` and `PageCard` empty-footer cases: `npm test -- --watch=false` — 5b8c307
+- [x] 2.2 No template uses `pw-button-success` and `_material-theme.scss` no longer defines it (grep returns nothing) — 5b8c307
+- [x] 2.3 Production build passes within the bundle budgets: `npm run build` — 5b8c307
+- [x] 2.4 Hardcoded-value scan returns 0 hits on the Profile view files, the new components and the kitchen-sink files — 5b8c307
 
 #### Manual
 
-- [x] 2.5 In `/dev/kitchen-sink` the Profile Save and the dialog Save are still green and the Cancel/Save pair looks like the baseline (or stacks as the 375px rule decided); login and register submit buttons are still blue — 206d30a
-- [x] 2.6 Login, register and the warm-up panel still show their footer links exactly as before (page-card footer change has no regression) — 206d30a
+- [x] 2.5 In `/dev/kitchen-sink` the Profile Save and the dialog Save are still green and the Cancel/Save pair looks like the baseline (or stacks as the 375px rule decided); login and register submit buttons are still blue — 5b8c307
+- [x] 2.6 Login, register and the warm-up panel still show their footer links exactly as before (page-card footer change has no regression) — 5b8c307
 
 ### Phase 3: Profile view (C3, C4)
 
 #### Automated
 
-- [x] 3.1 Unit tests pass with the new and updated cases: `npm test -- --watch=false` — 2dc22de
-- [x] 3.2 Production build passes within the bundle budgets: `npm run build` — 2dc22de
-- [x] 3.3 Hardcoded-value scan returns 0 hits and the style-token-coverage spec passes on the Profile view files — 2dc22de
+- [x] 3.1 Unit tests pass with the new and updated cases: `npm test -- --watch=false` — 5b8c307
+- [x] 3.2 Production build passes within the bundle budgets: `npm run build` — 5b8c307
+- [x] 3.3 Hardcoded-value scan returns 0 hits and the style-token-coverage spec passes on the Profile view files — 5b8c307
 
 #### Manual
 
-- [x] 3.4 In `/dev/kitchen-sink` read-only mode at desktop and 375px the card reads with a clear hierarchy: Edit is lighter than Save, Change password is in the footer, and in edit mode no empty footer strip remains — 2dc22de
-- [x] 3.5 Success and server-error notices in the sink: success at the top, error directly above Save, never two notices together — 2dc22de
+- [x] 3.4 In `/dev/kitchen-sink` read-only mode at desktop and 375px the card reads with a clear hierarchy: Edit is lighter than Save, Change password is in the footer, and in edit mode no empty footer strip remains — 5b8c307
+- [x] 3.5 Success and server-error notices in the sink: success at the top, error directly above Save, never two notices together — 5b8c307
 
 ### Phase 4: States, gate and guard (C5)
 
 #### Automated
 
-- [x] 4.1 Unit tests pass, including the extended `style-token-coverage.spec.ts` and the kitchen-sink spec: `npm test -- --watch=false` — 3cf9873
-- [x] 4.2 Production build passes within the bundle budgets: `npm run build` — 3cf9873
-- [x] 4.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink` — 3cf9873
-- [x] 4.4 Hardcoded-value scan returns 0 hits (no higher than the Phase 1 count) on the Profile view files, the shared components and the kitchen-sink files — 3cf9873
-- [x] 4.5 `Frontend/CLAUDE.md` names `kitchen-sink`, `tone` and `app-form-actions` (grep) — 3cf9873
+- [x] 4.1 Unit tests pass, including the extended `style-token-coverage.spec.ts` and the kitchen-sink spec: `npm test -- --watch=false` — 5b8c307
+- [x] 4.2 Production build passes within the bundle budgets: `npm run build` — 5b8c307
+- [x] 4.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink` — 5b8c307
+- [x] 4.4 Hardcoded-value scan returns 0 hits (no higher than the Phase 1 count) on the Profile view files, the shared components and the kitchen-sink files — 5b8c307
+- [x] 4.5 `Frontend/CLAUDE.md` names `kitchen-sink`, `tone` and `app-form-actions` (grep) — 5b8c307
 
 #### Manual
 
-- [x] 4.6 Every cell of the 7-state matrix in `visual-notes.md` is shown on screen or marked N/A with a reason, at desktop and 375px — 3cf9873
-- [x] 4.7 Keyboard pass: every control on the page and the dialog shows a visible focus ring, has an accessible name, and tabs in visual order — 3cf9873
-- [x] 4.8 "After" screenshots compared with the baseline; every visual delta in `visual-notes.md` is labelled intended or fixed — 3cf9873
+- [x] 4.6 Every cell of the 7-state matrix in `visual-notes.md` is shown on screen or marked N/A with a reason, at desktop and 375px — 5b8c307
+- [x] 4.7 Keyboard pass: every control on the page and the dialog shows a visible focus ring, has an accessible name, and tabs in visual order — 5b8c307
+- [x] 4.8 "After" screenshots compared with the baseline; every visual delta in `visual-notes.md` is labelled intended or fixed — 5b8c307
 - [x] 4.9 The next step, `/10x-impl-review`, is run before archive; UI findings are triaged by user impact, not skipped as cosmetic — reviews/impl-review.md
