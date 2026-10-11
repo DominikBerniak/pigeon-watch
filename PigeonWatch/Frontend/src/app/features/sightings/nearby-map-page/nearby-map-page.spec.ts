@@ -110,19 +110,41 @@ describe('NearbyMapPage', () => {
     expect(root().querySelector('app-alert')).toBeNull();
   });
 
-  it('shows a marker per sighting with its criticality and no popup content', async () => {
+  it('shows a marker per sighting named with its criticality and no popup content', async () => {
     await render({ status: 'ok', ...warsaw });
 
     expect(map().markers()).toEqual([
-      { id: 'sighting-1', latitude: 52.23, longitude: 21.01, kind: 'urgent', label: 'Limpy' },
+      {
+        id: 'sighting-1',
+        latitude: 52.23,
+        longitude: 21.01,
+        kind: 'urgent',
+        label: 'Limpy, Urgent',
+      },
       {
         id: 'sighting-2',
         latitude: 52.23,
         longitude: 21.01,
         kind: 'monitor',
-        label: 'Unnamed bird',
+        label: 'Unnamed bird, Monitor',
       },
     ]);
+  });
+
+  it('passes the selected sighting to the map and clears it on Close', async () => {
+    await render({ status: 'ok', ...warsaw });
+
+    expect(map().selectedId()).toBeNull();
+
+    map().markerSelect.emit('sighting-2');
+    await settle();
+
+    expect(map().selectedId()).toBe('sighting-2');
+
+    button('Close').click();
+    await settle();
+
+    expect(map().selectedId()).toBeNull();
   });
 
   it.each(['denied', 'unavailable', 'timeout', 'unsupported'] as const)(

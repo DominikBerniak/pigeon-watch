@@ -83,6 +83,14 @@
   background-color: var(--pw-color-criticality-urgent);
 }
 
+.pw-map-marker--selected {
+  width: var(--pw-map-marker-size-selected);
+  height: var(--pw-map-marker-size-selected);
+  margin-block-start: calc(var(--pw-map-marker-size-selected) / -2);
+  margin-inline-start: calc(var(--pw-map-marker-size-selected) / -2);
+  border-color: var(--pw-color-primary);
+}
+
 .pw-map-marker--pin {
   width: var(--pw-map-pin-size);
   height: var(--pw-map-pin-size);

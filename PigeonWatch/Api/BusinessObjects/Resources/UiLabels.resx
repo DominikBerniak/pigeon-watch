@@ -399,6 +399,9 @@
   <data name="map.ariaLabel" xml:space="preserve">
     <value>Map of sightings</value>
   </data>
+  <data name="map.markerLabel" xml:space="preserve">
+    <value>{0}, {1}</value>
+  </data>
   <data name="map.locating" xml:space="preserve">
     <value>Finding your location…</value>
   </data>

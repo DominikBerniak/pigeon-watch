@@ -147,7 +147,9 @@ describe('KitchenSink', () => {
       expect(new Set(markers.map((marker) => marker.kind))).toEqual(
         new Set(['monitor', 'needsHelpSoon', 'urgent']),
       );
-      expect(markers.map((marker) => marker.label)).toContain(label('sighting.unnamed'));
+      expect(markers.map((marker) => marker.label)).toContain(
+        label('map.markerLabel', label('sighting.unnamed'), label('sighting.criticality.monitor')),
+      );
     });
   });
 
@@ -158,6 +160,7 @@ describe('KitchenSink', () => {
 
     await eventually(() => {
       expect(textOf(cell('map-selected').querySelector('mat-card h2'))).toBe('Limpy');
+      expect(mapOf('map-selected').selectedId()).toBe('sink-urgent');
     });
   });
 

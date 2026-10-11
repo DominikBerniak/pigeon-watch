@@ -13,9 +13,16 @@ export class MapViewStub {
   readonly zoom = input.required<number>();
   readonly markers = input<readonly MapMarker[]>([]);
   readonly pin = input<GeoPoint | null>(null);
+  readonly selectedId = input<string | null>(null);
   readonly mapClick = output<GeoPoint>();
   readonly centerChange = output<GeoPoint>();
+  readonly zoomChange = output<number>();
   readonly markerSelect = output<string>();
   readonly pinMove = output<GeoPoint>();
   readonly mapReady = output<void>();
+  readonly focusedMarkers: string[] = [];
+
+  focusMarker(id: string): void {
+    this.focusedMarkers.push(id);
+  }
 }

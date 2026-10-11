@@ -61,9 +61,9 @@ export class NearbyMapPage {
   private readonly resources = inject(ResourceService);
   private readonly searches = new Subject<GeoPoint>();
   private readonly mapCentre = signal<GeoPoint>(neutralMapView.centre);
-  private readonly selectedId = signal<string | null>(null);
   private lastSearchCentre: GeoPoint | null = null;
 
+  protected readonly selectedId = signal<string | null>(null);
   protected readonly viewCentre = signal<GeoPoint>(neutralMapView.centre);
   protected readonly viewZoom = signal<number>(neutralMapView.zoom);
   protected readonly locating = signal(true);
@@ -90,7 +90,11 @@ export class NearbyMapPage {
       latitude: sighting.latitude,
       longitude: sighting.longitude,
       kind: sightingCriticalityMarker(sighting.criticality),
-      label: sighting.name ?? unnamed,
+      label: this.resources.translate(
+        'map.markerLabel',
+        sighting.name ?? unnamed,
+        this.resources.translate(sightingCriticalityLabel(sighting.criticality)),
+      ),
     }));
   });
   protected readonly selected = computed(() => {

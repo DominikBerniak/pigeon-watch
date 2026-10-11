@@ -14,4 +14,6 @@ export const mapMarkerClassNames: Readonly<Record<MapMarkerKind, string>> = {
   urgent: 'pw-map-marker pw-map-marker--urgent',
 };
 
+export const mapMarkerSelectedClassName = 'pw-map-marker--selected';
+
 export const mapPinClassName = 'pw-map-marker pw-map-marker--pin';

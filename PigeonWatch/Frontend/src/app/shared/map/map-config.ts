@@ -16,6 +16,8 @@ export const nearbyMapZoom = 12;
 
 export const pickerMapZoom = 16;
 
+export const minSearchZoom = 10;
+
 export function attributionHtml(text: string): string {
   return `<a href="${mapTiles.copyrightUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`;
 }

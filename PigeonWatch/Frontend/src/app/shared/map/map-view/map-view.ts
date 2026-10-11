@@ -23,12 +23,21 @@ import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import { ErrorRetry } from '../../ui/error-retry/error-retry';
 import { attributionHtml, mapTiles } from '../map-config';
-import { MapMarker, mapMarkerClassNames, mapPinClassName } from '../map-marker';
+import {
+  MapMarker,
+  mapMarkerClassNames,
+  mapMarkerSelectedClassName,
+  mapPinClassName,
+} from '../map-marker';
 
 type LeafletModule = typeof Leaflet;
 type LeafletImport = LeafletModule & { default?: LeafletModule };
 
 export const leafletStylesheetHref = 'leaflet.css';
+
+const raisedZIndexOffset = 1000;
+
+const selectKeys: ReadonlySet<string> = new Set(['Enter', ' ']);
 
 export const LEAFLET_LOADER = new InjectionToken<() => Observable<LeafletImport>>(
   'LEAFLET_LOADER',
@@ -76,6 +85,7 @@ export class MapView {
   private map: Leaflet.Map | null = null;
   private markerLayer: Leaflet.LayerGroup | null = null;
   private pinMarker: Leaflet.Marker | null = null;
+  private readonly shownMarkers = new Map<string, Leaflet.Marker>();
   private shownAttribution: string | null = null;
 
   readonly label = input.required<string>();
@@ -83,8 +93,10 @@ export class MapView {
   readonly zoom = input.required<number>();
   readonly markers = input<readonly MapMarker[]>([]);
   readonly pin = input<GeoPoint | null>(null);
+  readonly selectedId = input<string | null>(null);
   readonly mapClick = output<GeoPoint>();
   readonly centerChange = output<GeoPoint>();
+  readonly zoomChange = output<number>();
   readonly markerSelect = output<string>();
   readonly pinMove = output<GeoPoint>();
   readonly mapReady = output<void>();
@@ -95,9 +107,14 @@ export class MapView {
     afterNextRender(() => this.load());
     effect(() => this.applyView());
     effect(() => this.applyMarkers());
+    effect(() => this.applySelection(this.selectedId()));
     effect(() => this.applyPin());
     effect(() => this.applyAttribution());
     this.destroyRef.onDestroy(() => this.map?.remove());
+  }
+
+  focusMarker(id: string): void {
+    this.shownMarkers.get(id)?.getElement()?.focus();
   }
 
   protected retry(): void {
@@ -134,7 +151,10 @@ export class MapView {
     map.on('click', (event: Leaflet.LeafletMouseEvent) =>
       this.mapClick.emit(pointOf(event.latlng)),
     );
-    map.on('moveend', () => this.centerChange.emit(pointOf(map.getCenter())));
+    map.on('moveend', () => {
+      this.centerChange.emit(pointOf(map.getCenter()));
+      this.zoomChange.emit(map.getZoom());
+    });
 
     this.leaflet = leaflet;
     this.map = map;
@@ -162,9 +182,10 @@ export class MapView {
     if (!leaflet || !layer) return;
 
     layer.clearLayers();
+    this.shownMarkers.clear();
 
     for (const marker of markers) {
-      leaflet
+      const shown = leaflet
         .marker([marker.latitude, marker.longitude], {
           icon: leaflet.divIcon({
             className: mapMarkerClassNames[marker.kind],
@@ -174,7 +195,30 @@ export class MapView {
           keyboard: true,
         })
         .on('click', () => this.markerSelect.emit(marker.id))
+        .on('keydown', (event: Leaflet.LeafletKeyboardEvent) => this.onMarkerKey(event, marker.id))
         .addTo(layer);
+
+      this.shownMarkers.set(marker.id, shown);
+    }
+
+    this.applySelection(untracked(this.selectedId));
+  }
+
+  private onMarkerKey(event: Leaflet.LeafletKeyboardEvent, id: string): void {
+    if (!selectKeys.has(event.originalEvent.key)) return;
+
+    event.originalEvent.preventDefault();
+    this.markerSelect.emit(id);
+  }
+
+  private applySelection(selectedId: string | null): void {
+    for (const [id, marker] of this.shownMarkers) {
+      const selected = id === selectedId;
+      const element = marker.getElement();
+
+      element?.classList.toggle(mapMarkerSelectedClassName, selected);
+      element?.setAttribute('aria-pressed', String(selected));
+      marker.setZIndexOffset(selected ? raisedZIndexOffset : 0);
     }
   }
 
@@ -205,7 +249,7 @@ export class MapView {
       draggable: true,
       autoPan: true,
       keyboard: true,
-      zIndexOffset: 1000,
+      zIndexOffset: raisedZIndexOffset,
     });
 
     pinMarker.on('dragend', () => this.pinMove.emit(pointOf(pinMarker.getLatLng())));

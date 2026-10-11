@@ -448,28 +448,28 @@ None: no data or API contract changes. `UiLabels.resx` gains six keys (`map.mark
 
 #### Automated
 
-- [x] 2.1 Unit tests pass, including specs for the four new components: `npm test -- --watch=false`
-- [x] 2.2 No feature or `shared/map` template contains `mat-progress-spinner`, and no `spinnerDiameter` remains under `src/app` (grep returns nothing)
-- [x] 2.3 Production build passes within the bundle budgets: `npm run build`
-- [x] 2.4 Hardcoded-value scan returns 0 hits on the touched view files, the new components and the kitchen-sink files
+- [x] 2.1 Unit tests pass, including specs for the four new components: `npm test -- --watch=false` — 7f6cc22
+- [x] 2.2 No feature or `shared/map` template contains `mat-progress-spinner`, and no `spinnerDiameter` remains under `src/app` (grep returns nothing) — 7f6cc22
+- [x] 2.3 Production build passes within the bundle budgets: `npm run build` — 7f6cc22
+- [x] 2.4 Hardcoded-value scan returns 0 hits on the touched view files, the new components and the kitchen-sink files — 7f6cc22
 
 #### Manual
 
-- [x] 2.5 In `/dev/kitchen-sink` the map cells and Profile cells look like the baseline except for the badge on the map card and the natural-width retry buttons
-- [x] 2.6 With `npm start` against the local API, the detail page (loaded, loading, error) and Profile with My sightings items show the shared list, badge, spinner and error+retry with no layout regression at 375px and desktop
+- [x] 2.5 In `/dev/kitchen-sink` the map cells and Profile cells look like the baseline except for the badge on the map card and the natural-width retry buttons — 7f6cc22
+- [x] 2.6 With `npm start` against the local API, the detail page (loaded, loading, error) and Profile with My sightings items show the shared list, badge, spinner and error+retry with no layout regression at 375px and desktop — 7f6cc22
 
 ### Phase 3: Map component (C1)
 
 #### Automated
 
-- [ ] 3.1 Unit tests pass, including the new `map-view` keyboard, selected-state and zoom cases: `npm test -- --watch=false`
-- [ ] 3.2 Production build passes within the bundle budgets: `npm run build`
-- [ ] 3.3 Hardcoded-value scan returns 0 hits on the touched view and map files
+- [x] 3.1 Unit tests pass, including the new `map-view` keyboard, selected-state and zoom cases: `npm test -- --watch=false`
+- [x] 3.2 Production build passes within the bundle budgets: `npm run build`
+- [x] 3.3 Hardcoded-value scan returns 0 hits on the touched view and map files
 
 #### Manual
 
-- [ ] 3.4 In `/dev/kitchen-sink`, Tab reaches a marker, its focus is visible, Enter and Space each open the card, and the selected marker is visibly different from the others
-- [ ] 3.5 The location picker on `/sightings/new` still places, drags and centres the pin as before
+- [x] 3.4 In `/dev/kitchen-sink`, Tab reaches a marker, its focus is visible, Enter and Space each open the card, and the selected marker is visibly different from the others
+- [x] 3.5 The location picker on `/sightings/new` still places, drags and centres the pin as before
 
 ### Phase 4: Map view layout (C4, C5)
 
