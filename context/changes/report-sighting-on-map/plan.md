@@ -548,12 +548,12 @@ The `AddSighting` migration is additive (new table and indexes only), applied by
 
 #### Automated
 
-- [x] 5.1 Backend builds and both test projects pass: `dotnet test PigeonWatch/Api/PigeonWatchApi.slnx`
-- [x] 5.2 Frontend production build and tests pass: `npm run build` then `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
-- [x] 5.3 Backend dependency audit is clean: `dotnet list PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj package --vulnerable --include-transitive`
+- [x] 5.1 Backend builds and both test projects pass: `dotnet test PigeonWatch/Api/PigeonWatchApi.slnx` — fa8b75e
+- [x] 5.2 Frontend production build and tests pass: `npm run build` then `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — fa8b75e
+- [x] 5.3 Backend dependency audit is clean: `dotnet list PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj package --vulnerable --include-transitive` — fa8b75e
 
 #### Manual
 
-- [x] 5.4 With the CSP headers applied, tiles load from the OSM host and the console shows no CSP violations on the map home and the report form
-- [x] 5.5 On the deployed or header-emulated build, register or log in, report a sighting, see it on the map, open its detail page and see it on the profile
-- [x] 5.6 The three CLAUDE.md files and the roadmap read correctly against the shipped behaviour
+- [x] 5.4 With the CSP headers applied, tiles load from the OSM host and the console shows no CSP violations on the map home and the report form — fa8b75e
+- [x] 5.5 On the deployed or header-emulated build, register or log in, report a sighting, see it on the map, open its detail page and see it on the profile — fa8b75e
+- [x] 5.6 The three CLAUDE.md files and the roadmap read correctly against the shipped behaviour — fa8b75e

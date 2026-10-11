@@ -1,7 +1,7 @@
 ---
 change_id: report-sighting-on-map
 title: Report sighting on map
-status: implementing
+status: implemented
 created: 2026-10-11
 updated: 2026-10-11
 archived_at: null
