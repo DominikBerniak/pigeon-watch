@@ -326,6 +326,11 @@ None: no data, API or resx changes. The `.pw-button-success` class is removed in
 - Existing token guard: `PigeonWatch/Frontend/src/styles/style-token-coverage.spec.ts`
 - Existing profile spec patterns: `PigeonWatch/Frontend/src/app/features/profile/profile-page/profile-page.spec.ts`
 
+## Addenda
+
+- **A1 (impl-review F2, 2026-10-11): password dialog submit gate.** Phase 2 also made the dialog's submit stay disabled until all three password fields are filled (`allFieldsFilled` in `password-dialog.ts`, bound in `password-dialog.html`), with a profile spec case and the `dialog-field-errors` sink cell filling invalid values. Accepted as intended, matching the Profile Save (disabled until the name changes). Known effects: the required-field messages cannot appear, Enter does not submit an incomplete dialog, and the disabled submit is not in the tab order.
+- **A2 (impl-review F3, 2026-10-11): changes outside the planned file list.** `mat.strong-focus-indicators` in `_material-theme.scss` (global; login and register checked, header not, see visual-notes F1); `label-coverage.spec.ts` exempts `src/app/dev/` from the literal-text check (needed for the sink's literal-English exception); `KitchenSink` hides `app-warmup-panel` while mounted (dev-only); `.claude/launch.json` (dev-server config for the browser pane); root `CLAUDE.md`, `.claude/.10x-cli-manifest.json` and `.claude/skills/10x-ui` were pre-existing dirty paths bundled into aa482fe.
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
@@ -386,4 +391,4 @@ None: no data, API or resx changes. The `.pw-button-success` class is removed in
 - [x] 4.6 Every cell of the 7-state matrix in `visual-notes.md` is shown on screen or marked N/A with a reason, at desktop and 375px — 3cf9873
 - [x] 4.7 Keyboard pass: every control on the page and the dialog shows a visible focus ring, has an accessible name, and tabs in visual order — 3cf9873
 - [x] 4.8 "After" screenshots compared with the baseline; every visual delta in `visual-notes.md` is labelled intended or fixed — 3cf9873
-- [ ] 4.9 The next step, `/10x-impl-review`, is run before archive; UI findings are triaged by user impact, not skipped as cosmetic
+- [x] 4.9 The next step, `/10x-impl-review`, is run before archive; UI findings are triaged by user impact, not skipped as cosmetic — reviews/impl-review.md

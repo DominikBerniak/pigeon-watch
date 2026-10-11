@@ -473,11 +473,32 @@ describe('ProfilePage', () => {
     await submit(root, 'Valid name');
     expect(alertText(root, 'alert')).not.toBeUndefined();
 
-    updateDisplayName.mockReturnValue(of({ email: user.email, displayName: 'Valid name' }));
+    const pending = new Subject<UpdatedProfile>();
+    updateDisplayName.mockReturnValue(pending);
     await submit(root);
 
     expect(alertText(root, 'alert')).toBeUndefined();
+    expect(alertText(root, 'status')).toBeUndefined();
+
+    pending.next({ email: user.email, displayName: 'Valid name' });
+    pending.complete();
+    await settle();
+
     expect(alertText(root, 'status')).toBe('Your name has been updated.');
+  });
+
+  it('clears the error notice when an invalid resubmit is blocked', async () => {
+    failWith(500);
+    const root = await open();
+    await submit(root, 'Valid name');
+    expect(alertText(root, 'alert')).not.toBeUndefined();
+
+    updateDisplayName.mockClear();
+    await submit(root, 'ab');
+
+    expect(updateDisplayName).not.toHaveBeenCalled();
+    expect(fieldError(root)).toBe('Use at least 3 characters.');
+    expect(alertText(root, 'alert')).toBeUndefined();
   });
 
   describe('password dialog', () => {

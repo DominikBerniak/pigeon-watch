@@ -11,15 +11,21 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
-import { MAT_DIALOG_DEFAULT_OPTIONS, MatDialog, MatDialogConfig } from '@angular/material/dialog';
-import { finalize, ignoreElements, merge, switchMap, take } from 'rxjs';
+import {
+  MAT_DIALOG_DEFAULT_OPTIONS,
+  MatDialog,
+  MatDialogConfig,
+  MatDialogRef,
+  MatDialogState,
+} from '@angular/material/dialog';
+import { filter, finalize, ignoreElements, merge, switchMap, take, tap, timeout } from 'rxjs';
 import { SessionService } from '../../core/auth/session.service';
 import { ConfigurationService } from '../../core/configuration/configuration.service';
 import { ResourceService } from '../../core/resources/resource.service';
 import { ProfileApi } from '../../features/profile/profile-api';
 import { ProfilePage } from '../../features/profile/profile-page/profile-page';
 import { CellDefinition } from './cell-definitions';
-import { CellContext, press, runSteps, until } from './cell-driver';
+import { CellContext, press, runSteps, until, waitLimitMilliseconds } from './cell-driver';
 import { CellStubs } from './cell-stubs';
 
 @Component({
@@ -51,12 +57,17 @@ export class StateCell {
 
   protected readonly running = signal(false);
 
+  private openRef: MatDialogRef<unknown> | null = null;
+
   constructor() {
     this.stubs.follow(this.definition);
+    this.destroyRef.onDestroy(() => {
+      if (this.openRef?.getState() === MatDialogState.OPEN) this.openRef.close();
+    });
     afterNextRender(() =>
       runSteps(this.definition().steps, this.context(this.host.nativeElement))
         .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(),
+        .subscribe({ error: (error: unknown) => this.report(error) }),
     );
   }
 
@@ -66,7 +77,10 @@ export class StateCell {
     if (!scenario) return;
 
     const opened = this.dialogs.afterOpened.pipe(
+      filter((ref) => ref.componentRef?.injector.get(CellStubs, null) === this.stubs),
       take(1),
+      timeout(waitLimitMilliseconds),
+      tap((ref) => (this.openRef = ref)),
       switchMap((ref) =>
         until<HTMLElement>(() => ref.componentRef?.location.nativeElement ?? null),
       ),
@@ -80,7 +94,11 @@ export class StateCell {
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.running.set(false)),
       )
-      .subscribe();
+      .subscribe({ error: (error: unknown) => this.report(error) });
+  }
+
+  private report(error: unknown): void {
+    console.error(`Kitchen-sink cell "${this.definition().id}" stopped`, error);
   }
 
   private context(root: HTMLElement): CellContext {

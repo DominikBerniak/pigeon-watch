@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { cellGroups } from './cell-definitions';
 import { KitchenSink } from './kitchen-sink';
 
-const patience = { timeout: 5000, interval: 25 };
+const patience = { timeout: 2000, interval: 25 };
 
 describe('KitchenSink', () => {
   let fixture: ComponentFixture<KitchenSink>;

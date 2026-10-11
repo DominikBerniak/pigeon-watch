@@ -8,7 +8,7 @@ export interface CellContext {
 export type CellStep = (context: CellContext) => Observable<unknown>;
 
 const pollMilliseconds = 20;
-const waitLimitMilliseconds = 5000;
+export const waitLimitMilliseconds = 5000;
 
 export function until<T>(read: () => T | null): Observable<T> {
   return interval(pollMilliseconds).pipe(

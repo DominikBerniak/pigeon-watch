@@ -153,12 +153,12 @@ export class ProfilePage {
 
   protected submit(): void {
     this.submitState.markSubmitted();
+    this.notice.set(null);
 
     if (this.busy() || this.profileForm().invalid()) return;
 
     const profile = this.model();
     this.busy.set(true);
-    this.notice.set(null);
     this.profileApi
       .updateDisplayName(profile.displayName)
       .pipe(

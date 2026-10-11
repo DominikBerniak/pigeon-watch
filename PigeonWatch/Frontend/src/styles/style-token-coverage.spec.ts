@@ -18,6 +18,7 @@ const tokenReference = /var\(\s*(--pw-[\w-]+)/g;
 const tokenDeclaration = /^\s*(--pw-[\w-]+)\s*:/gm;
 const commonClassDeclaration = /\.(pw-[a-z][\w-]*)/g;
 const templateClassUsage = /(?<![\w-])pw-[a-z][\w-]*/g;
+const templateReference = /(?<=\s)#[\w-]+(?=[\s=>/])/g;
 
 function filesUnder(directory: string, extension: string): string[] {
   return readdirSync(directory, { recursive: true, withFileTypes: true })
@@ -39,6 +40,10 @@ function scannedStylesheets(): string[] {
 
 function matchesOf(pattern: RegExp, text: string): string[] {
   return [...text.matchAll(pattern)].map((match) => match[0]);
+}
+
+function withoutTemplateReferences(template: string): string {
+  return template.replace(templateReference, '');
 }
 
 describe('style token coverage', () => {
@@ -129,12 +134,18 @@ describe('style token coverage', () => {
 
   it('templates contain no color literals', () => {
     const offenders = filesUnder(appDir, '.html').flatMap((file) =>
-      matchesOf(colorLiteral, readFileSync(file, 'utf8')).map(
+      matchesOf(colorLiteral, withoutTemplateReferences(readFileSync(file, 'utf8'))).map(
         (literal) => `${displayPath(file)}: ${literal}`,
       ),
     );
 
     expect(offenders).toEqual([]);
+  });
+
+  it('ignores template reference names but still finds color literals in values', () => {
+    expect(
+      matchesOf(colorLiteral, withoutTemplateReferences(`<input #face [style.color]="'#abc'" />`)),
+    ).toEqual(['#abc']);
   });
 
   it('templates have no inline style attributes', () => {
