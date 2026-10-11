@@ -1,11 +1,20 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef, signal } from '@angular/core';
+import { ApplicationRef, Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, Routes, provideRouter } from '@angular/router';
 import { App } from './app';
+import { routes } from './app.routes';
 import { SessionService } from './core/auth/session.service';
 import { CurrentUser } from './core/configuration/configuration.service';
+
+@Component({ template: '' })
+class BlankPage {}
+
+const testRoutes: Routes = [
+  { path: '', pathMatch: 'full', component: BlankPage, data: { layout: 'wide' } },
+  { path: 'profile', component: BlankPage },
+];
 
 describe('App', () => {
   const currentUser = signal<CurrentUser | null>(null);
@@ -19,7 +28,7 @@ describe('App', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideRouter([]),
+        provideRouter(testRoutes),
         { provide: SessionService, useValue: { currentUser: currentUser.asReadonly(), logout } },
       ],
     }).compileComponents();
@@ -94,5 +103,28 @@ describe('App', () => {
     menuItems()[2].click();
 
     expect(logout).toHaveBeenCalledOnce();
+  });
+
+  it('widens main only on a route whose data asks for the wide layout', async () => {
+    currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
+    const element = await render();
+    const router = TestBed.inject(Router);
+    const main = element.querySelector('main')!;
+
+    await router.navigateByUrl('/');
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(main.classList).toContain('app-main--wide');
+
+    await router.navigateByUrl('/profile');
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(main.classList).not.toContain('app-main--wide');
+  });
+
+  it('declares the wide layout on the home route only', () => {
+    const wide = routes.filter((route) => route.data?.['layout'] === 'wide');
+
+    expect(wide.map((route) => route.path)).toEqual(['']);
   });
 });

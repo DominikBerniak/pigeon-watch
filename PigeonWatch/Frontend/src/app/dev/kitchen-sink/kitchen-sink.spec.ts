@@ -114,25 +114,28 @@ describe('KitchenSink', () => {
 
   it('shows the locating map state', async () => {
     await eventually(() => {
-      expect(textOf(cell('map-locating').querySelector('p[role="status"]'))).toBe(
+      expect(textOf(cell('map-locating').querySelector('[role="status"]'))).toBe(
         label('map.locating'),
       );
       expect(cell('map-locating').querySelector('app-alert')).toBeNull();
     });
   });
 
-  it('shows the hint when the position is unknown', async () => {
+  it('asks to zoom in when the position is unknown at the country view', async () => {
     await eventually(() => {
-      expect(textOf(cell('map-position-unknown').querySelector('app-alert'))).toBe(
-        label('map.hint'),
+      expect(textOf(cell('map-position-unknown').querySelector('[role="status"]'))).toBe(
+        label('map.zoomToSearch'),
       );
+      expect(textOf(cell('map-position-unknown').querySelector('h1'))).toBe(label('map.titleArea'));
       expect(mapOf('map-position-unknown').markers()).toEqual([]);
     });
   });
 
   it('shows the spinner while the nearby query is pending', async () => {
     await eventually(() => {
-      expect(cell('map-loading').querySelector('mat-progress-spinner')).not.toBeNull();
+      expect(
+        cell('map-loading').querySelector('[role="status"] mat-progress-spinner'),
+      ).not.toBeNull();
       expect(mapOf('map-loading').center()).toEqual(sinkPosition);
     });
   });
@@ -166,7 +169,9 @@ describe('KitchenSink', () => {
 
   it('shows the empty text when nothing is nearby', async () => {
     await eventually(() => {
-      expect(textOf(cell('map-empty').querySelector('.nearby-empty'))).toBe(label('map.empty', 10));
+      expect(textOf(cell('map-empty').querySelector('[role="status"]'))).toBe(
+        label('map.empty', 10),
+      );
     });
   });
 

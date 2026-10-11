@@ -1,9 +1,57 @@
+@use 'breakpoints' as bp;
+
 .nearby-header {
   justify-content: space-between;
 }
 
-.nearby-empty {
-  text-align: center;
+.nearby-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-space-3);
+
+  @include bp.from(md) {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.nearby-toolbar__actions {
+  flex: none;
+}
+
+.nearby-toolbar__slot {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.nearby-status {
+  display: flex;
+  align-items: center;
+  min-height: var(--pw-control-height);
+}
+
+.nearby-body {
+  display: grid;
+  gap: var(--pw-stack-gap);
+
+  @include bp.from(lg) {
+    grid-template-columns: minmax(0, 1fr) var(--pw-map-aside-width);
+    align-items: start;
+  }
+}
+
+.nearby-legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-space-2);
+}
+
+.nearby-legend__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .nearby-selected__header {

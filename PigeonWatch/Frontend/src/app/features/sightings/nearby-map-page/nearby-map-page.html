@@ -1,73 +1,122 @@
 <section class="pw-stack">
   <header class="nearby-header pw-cluster">
-    <h1 class="pw-title">{{ 'map.title' | translate }}</h1>
+    <h1 class="pw-title">{{ title() | translate }}</h1>
     <a mat-flat-button routerLink="/sightings/new">{{ 'nav.reportSighting' | translate }}</a>
   </header>
-  @if (locating()) {
-    <p class="pw-text-muted pw-text-small" role="status">{{ 'map.locating' | translate }}</p>
-  }
-  @if (positionUnknown()) {
-    <app-alert kind="info">{{ 'map.hint' | translate }}</app-alert>
-  }
-  <app-map-view
-    [label]="'map.ariaLabel' | translate"
-    [center]="viewCentre()"
-    [zoom]="viewZoom()"
-    [markers]="markers()"
-    [selectedId]="selectedId()"
-    (centerChange)="trackCentre($event)"
-    (markerSelect)="select($event)"
-  />
-  <div class="pw-cluster">
-    <button mat-stroked-button type="button" (click)="searchThisArea()">
-      {{ 'map.searchArea' | translate }}
-    </button>
-  </div>
-  @switch (state().kind) {
-    @case ('loading') {
-      <app-loading-indicator [label]="'common.loading' | translate" />
-    }
-    @case ('error') {
-      <app-error-retry [retryLabel]="'map.retry' | translate" (retry)="retry()">
-        {{ 'map.error' | translate }}
-      </app-error-retry>
-    }
-    @case ('loaded') {
-      @if (sightings().length === 0) {
-        <p class="pw-text-muted nearby-empty" role="status">
-          {{ 'map.empty' | translate: radiusKm() }}
-        </p>
+  <div class="nearby-toolbar">
+    <div class="nearby-toolbar__actions pw-cluster">
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="searchDisabled()"
+        disabledInteractive
+        [attr.aria-describedby]="searchDisabled() ? statusId : null"
+        (click)="searchThisArea()"
+      >
+        {{ 'map.searchArea' | translate }}
+      </button>
+      @if (canRetryLocation()) {
+        <button mat-stroked-button type="button" [disabled]="locating()" (click)="useMyLocation()">
+          {{ 'map.useMyLocation' | translate }}
+        </button>
       }
-    }
-  }
-  @if (selected(); as sighting) {
-    <mat-card appearance="outlined" class="nearby-selected" aria-live="polite">
-      <mat-card-content class="pw-stack">
-        <header class="pw-stack nearby-selected__header">
-          <p class="pw-text-muted pw-text-small">{{ 'map.selected.title' | translate }}</p>
-          <h2 class="pw-subtitle nearby-selected__name">
-            {{ sighting.name ?? ('sighting.unnamed' | translate) }}
-          </h2>
-        </header>
-        <dl app-detail-list layout="inline">
-          <div app-detail-item [label]="'map.selected.status' | translate">
-            {{ statusLabel(sighting.status) | translate }}
-          </div>
-          <div app-detail-item [label]="'map.selected.criticality' | translate">
-            <app-criticality-badge [kind]="criticalityKind(sighting.criticality)">
-              {{ criticalityLabel(sighting.criticality) | translate }}
-            </app-criticality-badge>
-          </div>
-        </dl>
-        <div class="pw-cluster">
-          <a mat-flat-button [routerLink]="['/sightings', sighting.id]">
-            {{ 'map.selected.openDetails' | translate }}
-          </a>
-          <button mat-button type="button" (click)="clearSelection()">
-            {{ 'map.selected.close' | translate }}
-          </button>
-        </div>
-      </mat-card-content>
-    </mat-card>
-  }
+    </div>
+    <div class="nearby-toolbar__slot">
+      <div
+        class="nearby-status pw-text-muted pw-text-small"
+        role="status"
+        [id]="statusId"
+        [class.pw-visually-hidden]="status() === 'error'"
+      >
+        @switch (status()) {
+          @case ('locating') {
+            {{ 'map.locating' | translate }}
+          }
+          @case ('zoomToSearch') {
+            {{ 'map.zoomToSearch' | translate }}
+          }
+          @case ('hint') {
+            {{ 'map.hint' | translate }}
+          }
+          @case ('loading') {
+            <app-loading-indicator
+              layout="inline"
+              [live]="false"
+              [label]="'common.loading' | translate"
+            />
+          }
+          @case ('found') {
+            {{ 'map.found' | translate: sightings().length : radiusKm() }}
+          }
+          @case ('empty') {
+            {{ 'map.empty' | translate: radiusKm() }}
+          }
+        }
+      </div>
+      @if (status() === 'error') {
+        <app-error-retry [retryLabel]="'map.retry' | translate" (retry)="retry()">
+          {{ 'map.error' | translate }}
+        </app-error-retry>
+      }
+    </div>
+  </div>
+  <div class="nearby-body">
+    <app-map-view
+      #mapView
+      [label]="'map.ariaLabel' | translate"
+      [center]="viewCentre()"
+      [zoom]="viewZoom()"
+      [markers]="markers()"
+      [selectedId]="selectedId()"
+      (centerChange)="trackCentre($event)"
+      (zoomChange)="trackZoom($event)"
+      (markerSelect)="select($event)"
+    />
+    <aside class="pw-stack">
+      <section class="nearby-legend">
+        <h2 class="pw-text-small pw-text-muted">{{ 'map.legend.title' | translate }}</h2>
+        <ul class="nearby-legend__list pw-cluster" role="list">
+          @for (criticality of legend; track criticality) {
+            <li>
+              <app-criticality-badge [kind]="criticalityKind(criticality)">
+                {{ criticalityLabel(criticality) | translate }}
+              </app-criticality-badge>
+            </li>
+          }
+        </ul>
+      </section>
+      @if (selected(); as sighting) {
+        <mat-card appearance="outlined" class="nearby-selected">
+          <mat-card-content class="pw-stack">
+            <header class="pw-stack nearby-selected__header">
+              <p class="pw-text-muted pw-text-small">{{ 'map.selected.title' | translate }}</p>
+              <h2 #selectedHeading class="pw-subtitle nearby-selected__name" tabindex="-1">
+                {{ sighting.name ?? ('sighting.unnamed' | translate) }}
+              </h2>
+            </header>
+            <dl app-detail-list layout="inline">
+              <div app-detail-item [label]="'map.selected.status' | translate">
+                {{ statusLabel(sighting.status) | translate }}
+              </div>
+              <div app-detail-item [label]="'map.selected.criticality' | translate">
+                <app-criticality-badge [kind]="criticalityKind(sighting.criticality)">
+                  {{ criticalityLabel(sighting.criticality) | translate }}
+                </app-criticality-badge>
+              </div>
+            </dl>
+            <div class="pw-cluster">
+              <a mat-flat-button [routerLink]="['/sightings', sighting.id]">
+                {{ 'map.selected.openDetails' | translate }}
+              </a>
+              <button mat-button type="button" (click)="clearSelection()">
+                {{ 'map.selected.close' | translate }}
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      } @else {
+        <p class="pw-text-muted">{{ 'map.selectPrompt' | translate }}</p>
+      }
+    </aside>
+  </div>
 </section>

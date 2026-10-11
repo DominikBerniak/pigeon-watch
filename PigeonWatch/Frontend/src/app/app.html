@@ -20,7 +20,7 @@
   </header>
 }
 
-<main class="app-main" [class.app-main--guest]="!currentUser()">
+<main class="app-main" [class.app-main--guest]="!currentUser()" [class.app-main--wide]="wide()">
   @if (!currentUser()) {
     <app-brand size="lg" [name]="'common.appName' | translate" />
   }

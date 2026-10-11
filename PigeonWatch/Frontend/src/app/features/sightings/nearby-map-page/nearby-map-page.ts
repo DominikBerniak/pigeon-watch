@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -6,14 +16,16 @@ import { RouterLink } from '@angular/router';
 import { Subject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ConfigurationService } from '../../../core/configuration/configuration.service';
 import { GeoPoint } from '../../../core/geolocation/geo-point';
-import { GeolocationService } from '../../../core/geolocation/geolocation.service';
+import {
+  GeolocationOutcome,
+  GeolocationService,
+} from '../../../core/geolocation/geolocation.service';
 import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
-import { nearbyMapZoom, neutralMapView } from '../../../shared/map/map-config';
+import { minSearchZoom, nearbyMapZoom, neutralMapView } from '../../../shared/map/map-config';
 import { MapMarker } from '../../../shared/map/map-marker';
 import { MapView } from '../../../shared/map/map-view/map-view';
 import {
-  Alert,
   CriticalityBadge,
   DetailItem,
   DetailList,
@@ -22,6 +34,7 @@ import {
 } from '../../../shared/ui';
 import {
   Sighting,
+  SightingCriticality,
   fallbackSightingRules,
   sightingCriticalityLabel,
   sightingCriticalityMarker,
@@ -35,6 +48,25 @@ type NearbyState =
   | { readonly kind: 'error' }
   | { readonly kind: 'loaded'; readonly items: readonly Sighting[] };
 
+type NearbyStatus =
+  'none' | 'locating' | 'zoomToSearch' | 'hint' | 'loading' | 'found' | 'empty' | 'error';
+
+type LocationStatus = GeolocationOutcome['status'];
+
+const retryableLocationStatuses: ReadonlySet<LocationStatus> = new Set([
+  'denied',
+  'unavailable',
+  'timeout',
+]);
+
+const legendCriticalities: readonly SightingCriticality[] = [
+  SightingCriticality.monitor,
+  SightingCriticality.needsHelpSoon,
+  SightingCriticality.urgent,
+];
+
+let nextStatusId = 0;
+
 @Component({
   selector: 'app-nearby-map-page',
   imports: [
@@ -42,7 +74,6 @@ type NearbyState =
     MatCardModule,
     RouterLink,
     TranslatePipe,
-    Alert,
     CriticalityBadge,
     DetailItem,
     DetailList,
@@ -59,28 +90,58 @@ export class NearbyMapPage {
   private readonly geolocation = inject(GeolocationService);
   private readonly configuration = inject(ConfigurationService);
   private readonly resources = inject(ResourceService);
+  private readonly injector = inject(Injector);
   private readonly searches = new Subject<GeoPoint>();
+  private readonly locationRequests = new Subject<void>();
   private readonly mapCentre = signal<GeoPoint>(neutralMapView.centre);
+  private readonly mapZoom = signal<number>(neutralMapView.zoom);
+  private readonly awaitingSearch = signal(false);
+  private readonly locationStatus = signal<LocationStatus | null>(null);
+  private readonly mapView = viewChild<MapView>('mapView');
+  private readonly selectedHeading = viewChild<ElementRef<HTMLElement>>('selectedHeading');
   private lastSearchCentre: GeoPoint | null = null;
 
+  protected readonly statusId = `nearby-status-${nextStatusId++}`;
   protected readonly selectedId = signal<string | null>(null);
   protected readonly viewCentre = signal<GeoPoint>(neutralMapView.centre);
   protected readonly viewZoom = signal<number>(neutralMapView.zoom);
   protected readonly locating = signal(true);
   protected readonly positionUnknown = signal(false);
   protected readonly state = signal<NearbyState>({ kind: 'idle' });
+  protected readonly sightings = signal<readonly Sighting[]>([]);
   protected readonly statusLabel = sightingStatusLabel;
   protected readonly criticalityLabel = sightingCriticalityLabel;
   protected readonly criticalityKind = sightingCriticalityMarker;
+  protected readonly legend = legendCriticalities;
   protected readonly radiusKm = computed(
     () =>
       this.configuration.clientConfig()?.sightingRules?.nearbyRadiusKm ??
       fallbackSightingRules.nearbyRadiusKm,
   );
-  protected readonly sightings = computed(() => {
+  protected readonly title = computed(() =>
+    this.positionUnknown() ? 'map.titleArea' : 'map.title',
+  );
+  protected readonly zoomedOut = computed(() => this.mapZoom() < minSearchZoom);
+  protected readonly searchDisabled = computed(
+    () => this.zoomedOut() || this.state().kind === 'loading',
+  );
+  protected readonly canRetryLocation = computed(() => {
+    const status = this.locationStatus();
+
+    return status !== null && retryableLocationStatuses.has(status);
+  });
+  protected readonly status = computed<NearbyStatus>(() => {
+    if (this.locating()) return 'locating';
+
+    if (this.zoomedOut()) return 'zoomToSearch';
+
+    if (this.positionUnknown() && this.awaitingSearch()) return 'hint';
+
     const state = this.state();
 
-    return state.kind === 'loaded' ? state.items : [];
+    if (state.kind === 'loaded') return state.items.length > 0 ? 'found' : 'empty';
+
+    return state.kind === 'idle' ? 'none' : state.kind;
   });
   protected readonly markers = computed<readonly MapMarker[]>(() => {
     const unnamed = this.resources.translate('sighting.unnamed');
@@ -115,35 +176,34 @@ export class NearbyMapPage {
         ),
         takeUntilDestroyed(),
       )
-      .subscribe((state) => this.state.set(state));
+      .subscribe((state) => this.applyState(state));
 
-    this.geolocation
-      .currentPosition(false)
-      .pipe(takeUntilDestroyed())
-      .subscribe((outcome) => {
-        this.locating.set(false);
-
-        if (outcome.status !== 'ok') {
-          this.positionUnknown.set(true);
-
-          return;
-        }
-
-        const centre = { latitude: outcome.latitude, longitude: outcome.longitude };
-
-        this.viewCentre.set(centre);
-        this.viewZoom.set(nearbyMapZoom);
-        this.mapCentre.set(centre);
-        this.search(centre);
-      });
+    this.locationRequests
+      .pipe(
+        startWith(undefined),
+        switchMap(() => this.geolocation.currentPosition(false)),
+        takeUntilDestroyed(),
+      )
+      .subscribe((outcome) => this.applyLocation(outcome));
   }
 
   protected trackCentre(point: GeoPoint): void {
     this.mapCentre.set(point);
   }
 
+  protected trackZoom(zoom: number): void {
+    this.mapZoom.set(zoom);
+  }
+
   protected searchThisArea(): void {
+    if (this.searchDisabled()) return;
+
     this.search(this.mapCentre());
+  }
+
+  protected useMyLocation(): void {
+    this.locating.set(true);
+    this.locationRequests.next();
   }
 
   protected retry(): void {
@@ -152,14 +212,51 @@ export class NearbyMapPage {
 
   protected select(id: string): void {
     this.selectedId.set(id);
+    afterNextRender(() => this.selectedHeading()?.nativeElement.focus(), {
+      injector: this.injector,
+    });
   }
 
   protected clearSelection(): void {
+    const id = this.selectedId();
+
     this.selectedId.set(null);
+
+    if (id) this.mapView()?.focusMarker(id);
+  }
+
+  private applyState(state: NearbyState): void {
+    this.state.set(state);
+
+    if (state.kind === 'loaded') this.sightings.set(state.items);
+
+    if (state.kind === 'error') this.sightings.set([]);
+  }
+
+  private applyLocation(outcome: GeolocationOutcome): void {
+    this.locating.set(false);
+    this.locationStatus.set(outcome.status);
+
+    if (outcome.status !== 'ok') {
+      this.positionUnknown.set(true);
+      this.awaitingSearch.set(true);
+
+      return;
+    }
+
+    const centre = { latitude: outcome.latitude, longitude: outcome.longitude };
+
+    this.positionUnknown.set(false);
+    this.viewCentre.set(centre);
+    this.viewZoom.set(nearbyMapZoom);
+    this.mapCentre.set(centre);
+    this.mapZoom.set(nearbyMapZoom);
+    this.search(centre);
   }
 
   private search(centre: GeoPoint): void {
     this.lastSearchCentre = centre;
+    this.awaitingSearch.set(false);
     this.selectedId.set(null);
     this.searches.next(centre);
   }

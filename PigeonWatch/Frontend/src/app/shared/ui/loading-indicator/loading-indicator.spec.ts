@@ -36,15 +36,19 @@ describe('LoadingIndicator', () => {
     expect(host.textContent?.trim()).toBe('');
   });
 
-  it('shows a smaller spinner beside the label text when inline', async () => {
+  it('shows a smaller decorative spinner beside the exposed label text when inline', async () => {
     const block = await render('block');
     const blockSize = block.querySelector<HTMLElement>('mat-progress-spinner')?.style.width;
     const inline = await render('inline');
     const spinner = inline.querySelector<HTMLElement>('mat-progress-spinner');
+    const text = inline.querySelector('span');
 
     expect(inline.classList).toContain('loading-indicator--inline');
     expect(getComputedStyle(inline).display).toBe('inline-flex');
-    expect(spinner?.getAttribute('aria-label')).toBe('Loading…');
+    expect(spinner?.getAttribute('aria-hidden')).toBe('true');
+    expect(spinner?.hasAttribute('aria-label')).toBe(false);
+    expect(text?.textContent?.trim()).toBe('Loading…');
+    expect(text?.closest('[aria-hidden="true"]')).toBeNull();
     expect(inline.textContent?.trim()).toBe('Loading…');
     expect(Number.parseFloat(spinner?.style.width ?? '')).toBeLessThan(
       Number.parseFloat(blockSize ?? ''),

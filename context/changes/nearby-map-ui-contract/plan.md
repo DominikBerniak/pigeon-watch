@@ -462,29 +462,29 @@ None: no data or API contract changes. `UiLabels.resx` gains six keys (`map.mark
 
 #### Automated
 
-- [x] 3.1 Unit tests pass, including the new `map-view` keyboard, selected-state and zoom cases: `npm test -- --watch=false`
-- [x] 3.2 Production build passes within the bundle budgets: `npm run build`
-- [x] 3.3 Hardcoded-value scan returns 0 hits on the touched view and map files
+- [x] 3.1 Unit tests pass, including the new `map-view` keyboard, selected-state and zoom cases: `npm test -- --watch=false` — 0b6e9a6
+- [x] 3.2 Production build passes within the bundle budgets: `npm run build` — 0b6e9a6
+- [x] 3.3 Hardcoded-value scan returns 0 hits on the touched view and map files — 0b6e9a6
 
 #### Manual
 
-- [x] 3.4 In `/dev/kitchen-sink`, Tab reaches a marker, its focus is visible, Enter and Space each open the card, and the selected marker is visibly different from the others
-- [x] 3.5 The location picker on `/sightings/new` still places, drags and centres the pin as before
+- [x] 3.4 In `/dev/kitchen-sink`, Tab reaches a marker, its focus is visible, Enter and Space each open the card, and the selected marker is visibly different from the others — 0b6e9a6
+- [x] 3.5 The location picker on `/sightings/new` still places, drags and centres the pin as before — 0b6e9a6
 
 ### Phase 4: Map view layout (C4, C5)
 
 #### Automated
 
-- [ ] 4.1 Unit tests pass, including the new page and shell cases: `npm test -- --watch=false`
-- [ ] 4.2 Production build passes within the bundle budgets, initial bundle still under the 500 kB warning: `npm run build`
-- [ ] 4.3 Hardcoded-value scan returns 0 hits on the view files and `app.scss`
+- [x] 4.1 Unit tests pass, including the new page and shell cases: `npm test -- --watch=false`
+- [x] 4.2 Production build passes within the bundle budgets, initial bundle still under the 500 kB warning: `npm run build`
+- [x] 4.3 Hardcoded-value scan returns 0 hits on the view files and `app.scss`
 
 #### Manual
 
-- [ ] 4.4 At 375px: pressing "Search this area" shows loading and the result in the toolbar without scrolling; tapping a marker brings the card into view with focus on its heading; the map does not jump when geolocation resolves
-- [ ] 4.5 At `md` the page is wider than other routes with the aside below the map; at `lg` the aside sits beside the map and shows the legend and prompt when nothing is selected
-- [ ] 4.6 With location denied: the heading reads "Sightings in this area", the button is disabled at country zoom with the reason in the toolbar, and becomes enabled after zooming in to level 10
-- [ ] 4.7 After a location timeout, "Use my location" is in the toolbar; when the retry succeeds the map moves to the position, the heading reads "Sightings near you" and results appear; when it fails the hint returns and the button stays
+- [x] 4.4 At 375px: pressing "Search this area" shows loading and the result in the toolbar without scrolling; tapping a marker brings the card into view with focus on its heading; the map does not jump when geolocation resolves
+- [x] 4.5 At `md` the page is wider than other routes with the aside below the map; at `lg` the aside sits beside the map and shows the legend and prompt when nothing is selected
+- [x] 4.6 With location denied: the heading reads "Sightings in this area", the button is disabled at country zoom with the reason in the toolbar, and becomes enabled after zooming in to level 10
+- [x] 4.7 After a location timeout, "Use my location" is in the toolbar; when the retry succeeds the map moves to the position, the heading reads "Sightings near you" and results appear; when it fails the hint returns and the button stays
 
 ### Phase 5: States, gate and guard
 
