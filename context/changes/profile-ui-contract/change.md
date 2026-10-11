@@ -1,7 +1,7 @@
 ---
 change_id: profile-ui-contract
 title: Profile ui contract
-status: implementing
+status: implemented
 created: 2026-10-11
 updated: 2026-10-11
 archived_at: null

@@ -375,15 +375,15 @@ None: no data, API or resx changes. The `.pw-button-success` class is removed in
 
 #### Automated
 
-- [x] 4.1 Unit tests pass, including the extended `style-token-coverage.spec.ts` and the kitchen-sink spec: `npm test -- --watch=false`
-- [x] 4.2 Production build passes within the bundle budgets: `npm run build`
-- [x] 4.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink`
-- [x] 4.4 Hardcoded-value scan returns 0 hits (no higher than the Phase 1 count) on the Profile view files, the shared components and the kitchen-sink files
-- [x] 4.5 `Frontend/CLAUDE.md` names `kitchen-sink`, `tone` and `app-form-actions` (grep)
+- [x] 4.1 Unit tests pass, including the extended `style-token-coverage.spec.ts` and the kitchen-sink spec: `npm test -- --watch=false` — 3cf9873
+- [x] 4.2 Production build passes within the bundle budgets: `npm run build` — 3cf9873
+- [x] 4.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink` — 3cf9873
+- [x] 4.4 Hardcoded-value scan returns 0 hits (no higher than the Phase 1 count) on the Profile view files, the shared components and the kitchen-sink files — 3cf9873
+- [x] 4.5 `Frontend/CLAUDE.md` names `kitchen-sink`, `tone` and `app-form-actions` (grep) — 3cf9873
 
 #### Manual
 
-- [x] 4.6 Every cell of the 7-state matrix in `visual-notes.md` is shown on screen or marked N/A with a reason, at desktop and 375px
-- [x] 4.7 Keyboard pass: every control on the page and the dialog shows a visible focus ring, has an accessible name, and tabs in visual order
-- [x] 4.8 "After" screenshots compared with the baseline; every visual delta in `visual-notes.md` is labelled intended or fixed
+- [x] 4.6 Every cell of the 7-state matrix in `visual-notes.md` is shown on screen or marked N/A with a reason, at desktop and 375px — 3cf9873
+- [x] 4.7 Keyboard pass: every control on the page and the dialog shows a visible focus ring, has an accessible name, and tabs in visual order — 3cf9873
+- [x] 4.8 "After" screenshots compared with the baseline; every visual delta in `visual-notes.md` is labelled intended or fixed — 3cf9873
 - [ ] 4.9 The next step, `/10x-impl-review`, is run before archive; UI findings are triaged by user impact, not skipped as cosmetic
