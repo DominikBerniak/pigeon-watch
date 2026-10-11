@@ -505,27 +505,27 @@ The `AddSighting` migration is additive (new table and indexes only), applied by
 
 #### Automated
 
-- [x] 2.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
-- [x] 2.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`
-- [x] 2.3 Unit tests pass, including cooldown boundaries, radius filtering and controller mapping: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
-- [x] 2.4 No pending model changes: `dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj`
+- [x] 2.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 5ae461e
+- [x] 2.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — 5ae461e
+- [x] 2.3 Unit tests pass, including cooldown boundaries, radius filtering and controller mapping: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — 5ae461e
+- [x] 2.4 No pending model changes: `dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj` — 5ae461e
 
 #### Manual
 
-- [x] 2.5 With the API running on LocalDB and a bearer token from `POST auth/login` (use `curl.exe`), a create returns 201, fetching it by id returns 200, an unknown id returns 404, `nearby` returns it for a centre within 10 km and not for a centre 15 km away, and a second create within 60 seconds returns 400 with `retryAfterSeconds`
+- [x] 2.5 With the API running on LocalDB and a bearer token from `POST auth/login` (use `curl.exe`), a create returns 201, fetching it by id returns 200, an unknown id returns 404, `nearby` returns it for a centre within 10 km and not for a centre 15 km away, and a second create within 60 seconds returns 400 with `retryAfterSeconds` — 5ae461e
 
 ### Phase 3: Frontend foundation
 
 #### Automated
 
-- [ ] 3.1 Production build passes with no new budget warnings: `npm run build` (from `PigeonWatch/Frontend`)
-- [ ] 3.2 Tests pass, including style guard, label coverage and the new specs: `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
-- [ ] 3.3 Dependency audit shows no high or critical findings for production dependencies: `npm audit --omit=dev` (from `PigeonWatch/Frontend`)
+- [x] 3.1 Production build passes with no new budget warnings: `npm run build` (from `PigeonWatch/Frontend`)
+- [x] 3.2 Tests pass, including style guard, label coverage and the new specs: `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
+- [x] 3.3 Dependency audit shows no high or critical findings for production dependencies: `npm audit --omit=dev` (from `PigeonWatch/Frontend`)
 
 #### Manual
 
-- [ ] 3.4 The build output lists Leaflet only in lazy chunks, and the initial total stays under 500 kB
-- [ ] 3.5 The only CSP change in the diff is the single `img-src` tile host
+- [x] 3.4 The build output lists Leaflet only in lazy chunks, and the initial total stays under 500 kB
+- [x] 3.5 The only CSP change in the diff is the single `img-src` tile host
 
 ### Phase 4: Frontend views
 

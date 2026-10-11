@@ -1,0 +1,39 @@
+<fieldset class="location-picker">
+  <legend class="location-picker__legend">{{ 'sighting.form.locationLabel' | translate }}</legend>
+  <div class="pw-stack">
+    <p class="pw-text-muted pw-text-small">{{ 'sighting.form.locationHint' | translate }}</p>
+    <app-map-view
+      [label]="'sighting.form.locationLabel' | translate"
+      [center]="viewCentre()"
+      [zoom]="viewZoom()"
+      [pin]="value()"
+      (mapClick)="placePin($event)"
+      (pinMove)="placePin($event)"
+      (centerChange)="trackCentre($event)"
+    />
+    <div class="pw-cluster">
+      <button mat-stroked-button type="button" [disabled]="locating()" (click)="useMyLocation()">
+        {{ 'map.useMyLocation' | translate }}
+      </button>
+      <button mat-stroked-button type="button" (click)="placePinAtCentre()">
+        {{ 'map.placePinAtCentre' | translate }}
+      </button>
+    </div>
+    @if (locating()) {
+      <p class="pw-text-muted pw-text-small" role="status">{{ 'map.locating' | translate }}</p>
+    }
+    @if (locationFailed()) {
+      <app-alert kind="info">{{ 'map.locationUnavailable' | translate }}</app-alert>
+    }
+    <div>
+      <p class="location-picker__coordinates pw-text-small" aria-live="polite">
+        {{ coordinatesText() }}
+      </p>
+      @if (field(); as boundField) {
+        <p class="location-picker__error pw-text-small" aria-live="polite">
+          <app-field-errors [field]="boundField" [messages]="errorMessages()" />
+        </p>
+      }
+    </div>
+  </div>
+</fieldset>

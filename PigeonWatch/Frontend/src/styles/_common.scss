@@ -60,3 +60,33 @@
   white-space: nowrap;
   border: 0;
 }
+
+.pw-map-marker {
+  width: var(--pw-map-marker-size);
+  height: var(--pw-map-marker-size);
+  margin-block-start: calc(var(--pw-map-marker-size) / -2);
+  margin-inline-start: calc(var(--pw-map-marker-size) / -2);
+  border: var(--pw-map-marker-border-width) solid var(--pw-color-surface);
+  border-radius: var(--pw-radius-full);
+  box-shadow: var(--pw-shadow-md);
+}
+
+.pw-map-marker--monitor {
+  background-color: var(--pw-color-criticality-monitor);
+}
+
+.pw-map-marker--needs-help-soon {
+  background-color: var(--pw-color-criticality-needs-help-soon);
+}
+
+.pw-map-marker--urgent {
+  background-color: var(--pw-color-criticality-urgent);
+}
+
+.pw-map-marker--pin {
+  width: var(--pw-map-pin-size);
+  height: var(--pw-map-pin-size);
+  margin-block-start: calc(var(--pw-map-pin-size) / -2);
+  margin-inline-start: calc(var(--pw-map-pin-size) / -2);
+  background-color: var(--pw-color-primary);
+}

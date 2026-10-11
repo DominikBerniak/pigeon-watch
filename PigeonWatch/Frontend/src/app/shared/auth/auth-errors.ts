@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ResourceService } from '../../core/resources/resource.service';
+import { problemDetail, problemErrorCodes } from '../http/problem-details';
 
 export type AuthFormError =
   | 'invalidCredentials'
@@ -41,7 +42,7 @@ export function loginFailure(error: unknown): AuthFormError {
 export function registerFailure(error: unknown): RegisterFailure {
   if (!(error instanceof HttpErrorResponse)) return { formError: 'unexpected', fieldErrors: {} };
 
-  const codes = errorCodes(error);
+  const codes = problemErrorCodes(error);
 
   if (error.status !== 400 || codes.length === 0) {
     return { formError: transportFailure(error), fieldErrors: {} };
@@ -57,7 +58,7 @@ export function registerFailure(error: unknown): RegisterFailure {
 export function profileFailure(error: unknown): ProfileFailure {
   if (!(error instanceof HttpErrorResponse)) return { formError: 'unexpected', fieldErrors: {} };
 
-  const codes = errorCodes(error);
+  const codes = problemErrorCodes(error);
 
   if (error.status !== 400 || codes.length === 0) {
     return { formError: transportFailure(error), fieldErrors: {} };
@@ -73,7 +74,7 @@ export function profileFailure(error: unknown): ProfileFailure {
 export function passwordChangeFailure(error: unknown): PasswordChangeFailure {
   if (!(error instanceof HttpErrorResponse)) return { formError: 'unexpected', fieldErrors: {} };
 
-  const codes = errorCodes(error);
+  const codes = problemErrorCodes(error);
 
   if (error.status !== 400 || codes.length === 0) {
     return { formError: transportFailure(error), fieldErrors: {} };
@@ -136,24 +137,4 @@ function applyPasswordChangeCode(failure: PasswordChangeFailure, code: string): 
   if (normalized === 'passwordmismatch') fields.currentPassword = 'wrongCurrentPassword';
   else if (normalized.startsWith('password')) fields.newPassword ??= 'invalidPassword';
   else failure.formError ??= 'unexpected';
-}
-
-function problemDetail(error: HttpErrorResponse): string | null {
-  const body: unknown = error.error;
-
-  if (!isRecord(body) || typeof body['detail'] !== 'string') return null;
-
-  return body['detail'];
-}
-
-function errorCodes(error: HttpErrorResponse): string[] {
-  const body: unknown = error.error;
-
-  if (!isRecord(body) || !isRecord(body['errors'])) return [];
-
-  return Object.keys(body['errors']);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

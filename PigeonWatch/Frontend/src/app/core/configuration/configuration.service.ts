@@ -17,9 +17,18 @@ export interface DisplayNameRules {
   maxLength: number;
 }
 
+export interface SightingRules {
+  nameMaxLength: number;
+  descriptionMaxLength: number;
+  behaviourMaxLength: number;
+  cooldownSeconds: number;
+  nearbyRadiusKm: number;
+}
+
 export interface ClientConfiguration {
   passwordRules: PasswordRules;
   displayNameRules: DisplayNameRules;
+  sightingRules: SightingRules;
 }
 
 export interface CurrentUser {
