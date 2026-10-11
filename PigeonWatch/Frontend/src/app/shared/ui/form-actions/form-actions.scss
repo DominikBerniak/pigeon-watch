@@ -1,0 +1,19 @@
+@use 'breakpoints' as bp;
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--pw-space-3);
+}
+
+@include bp.from(sm) {
+  .form-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

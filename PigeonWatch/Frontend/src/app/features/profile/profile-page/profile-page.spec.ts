@@ -547,6 +547,37 @@ describe('ProfilePage', () => {
       ]);
     });
 
+    function dialogSubmitDisabled(): boolean {
+      return (
+        dialog()
+          .querySelector('app-submit-button button[type="submit"]')
+          ?.hasAttribute('disabled') ?? false
+      );
+    }
+
+    it('keeps the submit button disabled until all three fields are filled', async () => {
+      const root = await openReadOnly();
+      await openPasswordDialog(root);
+
+      expect(dialogSubmitDisabled()).toBe(true);
+
+      fillPasswords(['Old1!pass', '', '']);
+      await settle();
+      expect(dialogSubmitDisabled()).toBe(true);
+
+      fillPasswords(['Old1!pass', 'New1!passw', '']);
+      await settle();
+      expect(dialogSubmitDisabled()).toBe(true);
+
+      fillPasswords(validPasswords);
+      await settle();
+      expect(dialogSubmitDisabled()).toBe(false);
+
+      fillPasswords(['Old1!pass', 'New1!passw', '']);
+      await settle();
+      expect(dialogSubmitDisabled()).toBe(true);
+    });
+
     it('shows no errors before the first submit', async () => {
       const root = await openReadOnly();
       await openPasswordDialog(root);

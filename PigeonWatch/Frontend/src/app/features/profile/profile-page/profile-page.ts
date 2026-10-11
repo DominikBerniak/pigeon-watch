@@ -20,6 +20,7 @@ import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import {
   Alert,
   FieldErrors,
+  FormActions,
   FormSubmitState,
   PageCard,
   SubmitButton,
@@ -54,6 +55,7 @@ type ProfileField = 'displayName';
     TranslatePipe,
     Alert,
     FieldErrors,
+    FormActions,
     PageCard,
     SubmitButton,
   ],

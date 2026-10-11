@@ -334,29 +334,29 @@ None: no data, API or resx changes. The `.pw-button-success` class is removed in
 
 #### Automated
 
-- [x] 1.1 Unit tests pass, including the new kitchen-sink spec: `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
-- [x] 1.2 Production build passes within the bundle budgets: `npm run build`
-- [x] 1.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink`
-- [x] 1.4 Hardcoded-value scan from `/10x-ui` returns 0 hits on the 6 Profile view files and the kitchen-sink files
+- [x] 1.1 Unit tests pass, including the new kitchen-sink spec: `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — aa482fe
+- [x] 1.2 Production build passes within the bundle budgets: `npm run build` — aa482fe
+- [x] 1.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink` — aa482fe
+- [x] 1.4 Hardcoded-value scan from `/10x-ui` returns 0 hits on the 6 Profile view files and the kitchen-sink files — aa482fe
 
 #### Manual
 
-- [x] 1.5 With `npm start`, `/dev/kitchen-sink` renders every baseline cell of the unchanged view with no API running and no login, and the password dialog uses stub behaviour (no HTTP request to the API)
-- [x] 1.6 Baseline screenshots at desktop and 375px have been reviewed and the findings recorded in `visual-notes.md`, including whether button labels wrap at 375px
+- [x] 1.5 With `npm start`, `/dev/kitchen-sink` renders every baseline cell of the unchanged view with no API running and no login, and the password dialog uses stub behaviour (no HTTP request to the API) — aa482fe
+- [x] 1.6 Baseline screenshots at desktop and 375px have been reviewed and the findings recorded in `visual-notes.md`, including whether button labels wrap at 375px — aa482fe
 
 ### Phase 2: Shared components (C1, C2)
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass, including the `SubmitButton` tone, `FormActions` and `PageCard` empty-footer cases: `npm test -- --watch=false`
-- [ ] 2.2 No template uses `pw-button-success` and `_material-theme.scss` no longer defines it (grep returns nothing)
-- [ ] 2.3 Production build passes within the bundle budgets: `npm run build`
-- [ ] 2.4 Hardcoded-value scan returns 0 hits on the Profile view files, the new components and the kitchen-sink files
+- [x] 2.1 Unit tests pass, including the `SubmitButton` tone, `FormActions` and `PageCard` empty-footer cases: `npm test -- --watch=false`
+- [x] 2.2 No template uses `pw-button-success` and `_material-theme.scss` no longer defines it (grep returns nothing)
+- [x] 2.3 Production build passes within the bundle budgets: `npm run build`
+- [x] 2.4 Hardcoded-value scan returns 0 hits on the Profile view files, the new components and the kitchen-sink files
 
 #### Manual
 
-- [ ] 2.5 In `/dev/kitchen-sink` the Profile Save and the dialog Save are still green and the Cancel/Save pair looks like the baseline (or stacks as the 375px rule decided); login and register submit buttons are still blue
-- [ ] 2.6 Login, register and the warm-up panel still show their footer links exactly as before (page-card footer change has no regression)
+- [x] 2.5 In `/dev/kitchen-sink` the Profile Save and the dialog Save are still green and the Cancel/Save pair looks like the baseline (or stacks as the 375px rule decided); login and register submit buttons are still blue
+- [x] 2.6 Login, register and the warm-up panel still show their footer links exactly as before (page-card footer change has no regression)
 
 ### Phase 3: Profile view (C3, C4)
 

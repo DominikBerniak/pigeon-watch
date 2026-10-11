@@ -13,6 +13,7 @@ import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import {
   Alert,
   FieldErrors,
+  FormActions,
   FormSubmitState,
   SubmitButton,
   provideFormFieldDefaults,
@@ -53,10 +54,10 @@ const emptyModel: PasswordModel = { currentPassword: '', newPassword: '', confir
     TranslatePipe,
     Alert,
     FieldErrors,
+    FormActions,
     SubmitButton,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styleUrl: './password-dialog.scss',
   templateUrl: './password-dialog.html',
 })
 export class PasswordDialog {
@@ -87,6 +88,11 @@ export class PasswordDialog {
     validate(path.confirmPassword, confirmPasswordValidator(path.newPassword));
   });
   protected readonly busy = signal(false);
+  protected readonly allFieldsFilled = computed(() => {
+    const { currentPassword, newPassword, confirmPassword } = this.model();
+
+    return currentPassword !== '' && newPassword !== '' && confirmPassword !== '';
+  });
   protected readonly formErrorText = computed(() => {
     const error = this.formError();
 

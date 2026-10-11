@@ -31,6 +31,22 @@ describe('PageCard', () => {
     expect(element.querySelector('mat-card-actions .actions')).not.toBeNull();
   });
 
+  it('does not display the footer when nothing is projected into actions', async () => {
+    const fixture = TestBed.createComponent(SubtitledPageCardHost);
+    await fixture.whenStable();
+    const footer: HTMLElement = fixture.nativeElement.querySelector('mat-card-actions');
+
+    expect(getComputedStyle(footer).display).toBe('none');
+  });
+
+  it('displays the footer when actions are projected', async () => {
+    const fixture = TestBed.createComponent(PageCardHost);
+    await fixture.whenStable();
+    const footer: HTMLElement = fixture.nativeElement.querySelector('mat-card-actions');
+
+    expect(getComputedStyle(footer).display).not.toBe('none');
+  });
+
   it('renders the subtitle under the title only when one is given', async () => {
     const fixture = TestBed.createComponent(SubtitledPageCardHost);
     await fixture.whenStable();

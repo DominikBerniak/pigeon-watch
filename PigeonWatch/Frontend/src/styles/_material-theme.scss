@@ -81,7 +81,7 @@ html {
   );
 }
 
-.pw-button-success {
+app-submit-button[data-tone='success'] {
   @include mat.button-overrides(
     (
       filled-container-color: var(--pw-color-success),

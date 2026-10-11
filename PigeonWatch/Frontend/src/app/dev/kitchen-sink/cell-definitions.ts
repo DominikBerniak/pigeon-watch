@@ -100,7 +100,10 @@ const dialogCells: readonly CellDefinition[] = [
     save: 'success',
     password: 'success',
     steps: [],
-    dialog: { action: 'Open dialog', steps: [submitForm(), waitFor(fieldError)] },
+    dialog: {
+      action: 'Open dialog',
+      steps: [fill(passwordFields, ['Old1!pass', 'abc', 'xyz']), submitForm(), waitFor(fieldError)],
+    },
   },
   {
     id: 'dialog-wrong-current',

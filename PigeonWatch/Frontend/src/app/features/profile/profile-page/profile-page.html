@@ -36,7 +36,7 @@
             />
           </mat-error>
         </mat-form-field>
-        <div class="profile-actions">
+        <app-form-actions>
           <button
             mat-stroked-button
             type="button"
@@ -46,10 +46,10 @@
           >
             {{ 'profile.cancel' | translate }}
           </button>
-          <app-submit-button class="pw-button-success" [busy]="busy()" [disabled]="!changed()">
+          <app-submit-button tone="success" [busy]="busy()" [disabled]="!changed()">
             {{ 'profile.submit' | translate }}
           </app-submit-button>
-        </div>
+        </app-form-actions>
       </form>
     } @else {
       <div class="profile-field">
