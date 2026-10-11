@@ -1,14 +1,17 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
 import { Subject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
-import { Alert } from '../../../shared/ui';
-import { Sighting, sightingCriticalityLabel, sightingStatusLabel } from '../sighting.types';
+import { CriticalityBadge, ErrorRetry, LoadingIndicator } from '../../../shared/ui';
+import {
+  Sighting,
+  sightingCriticalityLabel,
+  sightingCriticalityMarker,
+  sightingStatusLabel,
+} from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
 
 type MySightingsState =
@@ -20,12 +23,12 @@ type MySightingsState =
   selector: 'app-my-sightings',
   imports: [
     DatePipe,
-    MatButtonModule,
     MatCardModule,
-    MatProgressSpinnerModule,
     RouterLink,
     TranslatePipe,
-    Alert,
+    CriticalityBadge,
+    ErrorRetry,
+    LoadingIndicator,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './my-sightings.html',
@@ -35,10 +38,10 @@ export class MySightings {
   private readonly sightingsApi = inject(SightingsApi);
   private readonly reloads = new Subject<void>();
 
-  protected readonly spinnerDiameter = 32;
   protected readonly state = signal<MySightingsState>({ kind: 'loading' });
   protected readonly statusLabel = sightingStatusLabel;
   protected readonly criticalityLabel = sightingCriticalityLabel;
+  protected readonly criticalityKind = sightingCriticalityMarker;
 
   constructor() {
     this.reloads

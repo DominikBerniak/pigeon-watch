@@ -1,0 +1,10 @@
+:host {
+  display: flex;
+  justify-content: center;
+}
+
+:host(.loading-indicator--inline) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pw-space-2);
+}

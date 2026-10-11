@@ -434,29 +434,29 @@ None: no data or API contract changes. `UiLabels.resx` gains six keys (`map.mark
 
 #### Automated
 
-- [x] 1.1 Unit tests pass, including the updated kitchen-sink spec: `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
-- [x] 1.2 Production build passes within the bundle budgets: `npm run build`
-- [x] 1.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink`
-- [x] 1.4 Hardcoded-value scan returns 0 hits on the 4 nearby map view files and the kitchen-sink files
+- [x] 1.1 Unit tests pass, including the updated kitchen-sink spec: `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — 049cc88
+- [x] 1.2 Production build passes within the bundle budgets: `npm run build` — 049cc88
+- [x] 1.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink` — 049cc88
+- [x] 1.4 Hardcoded-value scan returns 0 hits on the 4 nearby map view files and the kitchen-sink files — 049cc88
 
 #### Manual
 
-- [x] 1.5 With `npm start`, `/dev/kitchen-sink` renders every Profile cell as before and every baseline map cell, with no API, no login, and no request to `tile.openstreetmap.org` (or the recorded fallback)
-- [x] 1.6 Baseline findings at 375px, `md` and `lg` are recorded in `visual-notes.md`, including the four questions above
+- [x] 1.5 With `npm start`, `/dev/kitchen-sink` renders every Profile cell as before and every baseline map cell, with no API, no login, and no request to `tile.openstreetmap.org` (or the recorded fallback) — 049cc88
+- [x] 1.6 Baseline findings at 375px, `md` and `lg` are recorded in `visual-notes.md`, including the four questions above — 049cc88
 
 ### Phase 2: Shared components (C2, C3)
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass, including specs for the four new components: `npm test -- --watch=false`
-- [ ] 2.2 No feature or `shared/map` template contains `mat-progress-spinner`, and no `spinnerDiameter` remains under `src/app` (grep returns nothing)
-- [ ] 2.3 Production build passes within the bundle budgets: `npm run build`
-- [ ] 2.4 Hardcoded-value scan returns 0 hits on the touched view files, the new components and the kitchen-sink files
+- [x] 2.1 Unit tests pass, including specs for the four new components: `npm test -- --watch=false`
+- [x] 2.2 No feature or `shared/map` template contains `mat-progress-spinner`, and no `spinnerDiameter` remains under `src/app` (grep returns nothing)
+- [x] 2.3 Production build passes within the bundle budgets: `npm run build`
+- [x] 2.4 Hardcoded-value scan returns 0 hits on the touched view files, the new components and the kitchen-sink files
 
 #### Manual
 
-- [ ] 2.5 In `/dev/kitchen-sink` the map cells and Profile cells look like the baseline except for the badge on the map card and the natural-width retry buttons
-- [ ] 2.6 With `npm start` against the local API, the detail page (loaded, loading, error) and Profile with My sightings items show the shared list, badge, spinner and error+retry with no layout regression at 375px and desktop
+- [x] 2.5 In `/dev/kitchen-sink` the map cells and Profile cells look like the baseline except for the badge on the map card and the natural-width retry buttons
+- [x] 2.6 With `npm start` against the local API, the detail page (loaded, loading, error) and Profile with My sightings items show the shared list, badge, spinner and error+retry with no layout regression at 375px and desktop
 
 ### Phase 3: Map component (C1)
 

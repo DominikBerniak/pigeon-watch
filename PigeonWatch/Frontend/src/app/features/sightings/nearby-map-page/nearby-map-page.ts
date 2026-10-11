@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
 import { Subject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ConfigurationService } from '../../../core/configuration/configuration.service';
@@ -13,7 +12,14 @@ import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import { nearbyMapZoom, neutralMapView } from '../../../shared/map/map-config';
 import { MapMarker } from '../../../shared/map/map-marker';
 import { MapView } from '../../../shared/map/map-view/map-view';
-import { Alert } from '../../../shared/ui';
+import {
+  Alert,
+  CriticalityBadge,
+  DetailItem,
+  DetailList,
+  ErrorRetry,
+  LoadingIndicator,
+} from '../../../shared/ui';
 import {
   Sighting,
   fallbackSightingRules,
@@ -34,10 +40,14 @@ type NearbyState =
   imports: [
     MatButtonModule,
     MatCardModule,
-    MatProgressSpinnerModule,
     RouterLink,
     TranslatePipe,
     Alert,
+    CriticalityBadge,
+    DetailItem,
+    DetailList,
+    ErrorRetry,
+    LoadingIndicator,
     MapView,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,7 +64,6 @@ export class NearbyMapPage {
   private readonly selectedId = signal<string | null>(null);
   private lastSearchCentre: GeoPoint | null = null;
 
-  protected readonly spinnerDiameter = 32;
   protected readonly viewCentre = signal<GeoPoint>(neutralMapView.centre);
   protected readonly viewZoom = signal<number>(neutralMapView.zoom);
   protected readonly locating = signal(true);
@@ -62,6 +71,7 @@ export class NearbyMapPage {
   protected readonly state = signal<NearbyState>({ kind: 'idle' });
   protected readonly statusLabel = sightingStatusLabel;
   protected readonly criticalityLabel = sightingCriticalityLabel;
+  protected readonly criticalityKind = sightingCriticalityMarker;
   protected readonly radiusKm = computed(
     () =>
       this.configuration.clientConfig()?.sightingRules?.nearbyRadiusKm ??

@@ -16,13 +16,12 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
 import type * as Leaflet from 'leaflet';
 import { EMPTY, Observable, catchError, from } from 'rxjs';
 import { GeoPoint } from '../../../core/geolocation/geo-point';
 import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
-import { Alert } from '../../ui/alert/alert';
+import { ErrorRetry } from '../../ui/error-retry/error-retry';
 import { attributionHtml, mapTiles } from '../map-config';
 import { MapMarker, mapMarkerClassNames, mapPinClassName } from '../map-marker';
 
@@ -59,7 +58,7 @@ function addLeafletStylesheet(document: Document): void {
 
 @Component({
   selector: 'app-map-view',
-  imports: [MatButtonModule, TranslatePipe, Alert],
+  imports: [TranslatePipe, ErrorRetry],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './map-view.html',
   styleUrl: './map-view.scss',

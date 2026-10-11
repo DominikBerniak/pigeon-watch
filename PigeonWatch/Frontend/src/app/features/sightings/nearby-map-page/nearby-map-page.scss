@@ -2,11 +2,6 @@
   justify-content: space-between;
 }
 
-.nearby-spinner {
-  display: flex;
-  justify-content: center;
-}
-
 .nearby-empty {
   text-align: center;
 }
@@ -17,21 +12,4 @@
 
 .nearby-selected__name {
   overflow-wrap: anywhere;
-}
-
-.nearby-selected__details {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--pw-space-4);
-  margin: 0;
-}
-
-.nearby-selected__row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--pw-space-1);
-}
-
-.nearby-selected__value {
-  margin: 0;
 }
