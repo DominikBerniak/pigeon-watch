@@ -13,6 +13,11 @@ public class ClientConfigurationService : IClientConfigurationService
             AccountRules.PasswordRequiresUppercase,
             AccountRules.PasswordRequiresNonAlphanumeric,
             AccountRules.DisplayNameMinLength,
-            AccountRules.DisplayNameMaxLength));
+            AccountRules.DisplayNameMaxLength,
+            SightingRules.NameMaxLength,
+            SightingRules.DescriptionMaxLength,
+            SightingRules.BehaviourMaxLength,
+            SightingRules.CooldownSeconds,
+            SightingRules.NearbyRadiusKilometers));
     }
 }

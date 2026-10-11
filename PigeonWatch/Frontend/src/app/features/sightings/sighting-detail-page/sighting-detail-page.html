@@ -1,0 +1,106 @@
+<div class="pw-stack">
+  <div>
+    <a mat-button routerLink="/">{{ 'sighting.detail.back' | translate }}</a>
+  </div>
+  <app-page-card [title]="title()">
+    @switch (state().kind) {
+      @case ('loading') {
+        <div class="detail-spinner" role="status">
+          <mat-progress-spinner
+            mode="indeterminate"
+            [diameter]="spinnerDiameter"
+            [attr.aria-label]="'common.loading' | translate"
+          />
+        </div>
+      }
+      @case ('notFound') {
+        <app-alert kind="info">{{ 'sighting.errors.notFound' | translate }}</app-alert>
+      }
+      @case ('error') {
+        <div class="pw-stack">
+          <app-alert kind="error">{{ 'sighting.errors.generic' | translate }}</app-alert>
+          <button mat-stroked-button type="button" (click)="retry()">
+            {{ 'sighting.detail.retry' | translate }}
+          </button>
+        </div>
+      }
+    }
+    @if (sighting(); as sighting) {
+      <div class="pw-stack">
+        <dl class="detail-list">
+          <div class="detail-row">
+            <dt class="pw-text-muted pw-text-small">{{ 'sighting.detail.status' | translate }}</dt>
+            <dd class="detail-value">{{ statusLabel(sighting.status) | translate }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt class="pw-text-muted pw-text-small">
+              {{ 'sighting.detail.criticality' | translate }}
+            </dt>
+            <dd class="detail-value">{{ criticalityLabel(sighting.criticality) | translate }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt class="pw-text-muted pw-text-small">
+              {{ 'sighting.detail.description' | translate }}
+            </dt>
+            <dd class="detail-value detail-value--text">{{ sighting.description }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt class="pw-text-muted pw-text-small">
+              {{ 'sighting.detail.behaviour' | translate }}
+            </dt>
+            <dd class="detail-value detail-value--text">{{ sighting.behaviour }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt class="pw-text-muted pw-text-small">
+              {{ 'sighting.detail.reporter' | translate }}
+            </dt>
+            <dd class="detail-value">{{ sighting.reporterDisplayName }}</dd>
+          </div>
+          <div class="detail-row">
+            <dt class="pw-text-muted pw-text-small">
+              {{ 'sighting.detail.reportedAt' | translate }}
+            </dt>
+            <dd class="detail-value">
+              <time [attr.datetime]="sighting.createdAt">{{
+                sighting.createdAt | date: 'medium'
+              }}</time>
+            </dd>
+          </div>
+          <div class="detail-row">
+            <dt class="pw-text-muted pw-text-small">
+              {{ 'sighting.detail.location' | translate }}
+            </dt>
+            <dd class="detail-value detail-value--numeric">{{ coordinatesText() }}</dd>
+          </div>
+        </dl>
+        <div>
+          <button
+            mat-stroked-button
+            type="button"
+            aria-controls="sighting-detail-map"
+            [attr.aria-expanded]="mapShown()"
+            (click)="toggleMap()"
+          >
+            @if (mapShown()) {
+              {{ 'sighting.detail.hideMap' | translate }}
+            } @else {
+              {{ 'sighting.detail.showMap' | translate }}
+            }
+          </button>
+        </div>
+        <div id="sighting-detail-map">
+          @if (mapShown()) {
+            @if (position(); as centre) {
+              <app-map-view
+                [label]="'map.ariaLabel' | translate"
+                [center]="centre"
+                [zoom]="mapZoom"
+                [markers]="markers()"
+              />
+            }
+          }
+        </div>
+      </div>
+    }
+  </app-page-card>
+</div>

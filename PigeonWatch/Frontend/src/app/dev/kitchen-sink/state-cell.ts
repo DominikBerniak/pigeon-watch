@@ -24,6 +24,7 @@ import { ConfigurationService } from '../../core/configuration/configuration.ser
 import { ResourceService } from '../../core/resources/resource.service';
 import { ProfileApi } from '../../features/profile/profile-api';
 import { ProfilePage } from '../../features/profile/profile-page/profile-page';
+import { SightingsApi } from '../../features/sightings/sightings-api';
 import { CellDefinition } from './cell-definitions';
 import { CellContext, press, runSteps, until, waitLimitMilliseconds } from './cell-driver';
 import { CellStubs } from './cell-stubs';
@@ -36,6 +37,7 @@ import { CellStubs } from './cell-stubs';
     { provide: SessionService, useFactory: () => inject(CellStubs).session },
     { provide: ConfigurationService, useFactory: () => inject(CellStubs).configuration },
     { provide: ProfileApi, useFactory: () => inject(CellStubs).profileApi },
+    { provide: SightingsApi, useFactory: () => inject(CellStubs).sightingsApi },
     MatDialog,
     {
       provide: MAT_DIALOG_DEFAULT_OPTIONS,

@@ -1,0 +1,11 @@
+<div class="pw-stack">
+  <div #canvas class="map-view__canvas" role="region" [attr.aria-label]="label()"></div>
+  @if (loadFailed()) {
+    <app-alert kind="error">{{ 'map.loadFailed' | translate }}</app-alert>
+    <div>
+      <button mat-stroked-button type="button" (click)="retry()">
+        {{ 'map.retry' | translate }}
+      </button>
+    </div>
+  }
+</div>

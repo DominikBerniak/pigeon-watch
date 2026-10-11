@@ -1,0 +1,12 @@
+:host {
+  display: block;
+}
+
+.map-view__canvas {
+  height: var(--pw-map-height);
+  overflow: hidden;
+  border: var(--pw-border-width) solid var(--pw-color-border-subtle);
+  border-radius: var(--pw-radius-md);
+  background-color: var(--pw-color-border-subtle);
+  isolation: isolate;
+}

@@ -34,6 +34,7 @@ import {
   serverErrorFor,
 } from '../../../shared/validation/account-validation';
 import { AuthFormError, authErrorMessage, profileFailure } from '../../../shared/auth/auth-errors';
+import { MySightings } from '../../sightings/my-sightings/my-sightings';
 import { PasswordDialog } from '../password-dialog/password-dialog';
 import { ProfileApi } from '../profile-api';
 
@@ -61,6 +62,7 @@ type ProfileNotice =
     Alert,
     FieldErrors,
     FormActions,
+    MySightings,
     PageCard,
     SubmitButton,
   ],

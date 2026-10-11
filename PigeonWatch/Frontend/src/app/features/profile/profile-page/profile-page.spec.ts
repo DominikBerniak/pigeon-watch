@@ -12,6 +12,7 @@ import {
   CurrentUser,
   GeneralConfiguration,
 } from '../../../core/configuration/configuration.service';
+import { SightingsApi } from '../../sightings/sightings-api';
 import { ProfileApi, UpdatedProfile } from '../profile-api';
 import { ProfilePage } from './profile-page';
 
@@ -49,6 +50,7 @@ describe('ProfilePage', () => {
           useValue: { clientConfig: signal<ClientConfiguration | null>(null), loadGeneral },
         },
         { provide: ProfileApi, useValue: { updateDisplayName } },
+        { provide: SightingsApi, useValue: { mine: () => of({ items: [] }) } },
       ],
     });
     harness = await RouterTestingHarness.create();

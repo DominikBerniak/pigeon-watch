@@ -7,7 +7,8 @@ export const routes: Routes = [
     path: '',
     pathMatch: 'full',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/home/home-page/home-page').then((m) => m.HomePage),
+    loadComponent: () =>
+      import('./features/sightings/nearby-map-page/nearby-map-page').then((m) => m.NearbyMapPage),
   },
   {
     path: 'login',
@@ -25,6 +26,22 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/profile/profile-page/profile-page').then((m) => m.ProfilePage),
+  },
+  {
+    path: 'sightings/new',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/sightings/report-sighting-page/report-sighting-page').then(
+        (m) => m.ReportSightingPage,
+      ),
+  },
+  {
+    path: 'sightings/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/sightings/sighting-detail-page/sighting-detail-page').then(
+        (m) => m.SightingDetailPage,
+      ),
   },
   ...devRoutes,
   {

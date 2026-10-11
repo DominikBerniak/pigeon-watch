@@ -18,6 +18,9 @@
   --pw-color-success-surface: #e4f3e9;
   --pw-color-info: #1e5a92;
   --pw-color-info-surface: #e5eef8;
+  --pw-color-criticality-monitor: #2b8a3e;
+  --pw-color-criticality-needs-help-soon: #e8890c;
+  --pw-color-criticality-urgent: #c92a2a;
 
   --pw-gradient-brand: linear-gradient(135deg, #3b5bdb 0%, #8b5cf6 55%, #14b8a6 100%);
   --pw-gradient-backdrop:
@@ -71,6 +74,10 @@
   --pw-control-height: 3rem;
   --pw-brand-mark-size-md: 2rem;
   --pw-brand-mark-size-lg: 3rem;
+  --pw-map-height: 24rem;
+  --pw-map-marker-size: 1.5rem;
+  --pw-map-pin-size: 2rem;
+  --pw-map-marker-border-width: 3px;
 
   --pw-duration-fast: 150ms;
   --pw-duration-normal: 300ms;

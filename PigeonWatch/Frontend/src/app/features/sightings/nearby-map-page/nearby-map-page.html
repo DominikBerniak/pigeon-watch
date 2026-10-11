@@ -1,0 +1,87 @@
+<section class="pw-stack">
+  <header class="nearby-header pw-cluster">
+    <h1 class="pw-title">{{ 'map.title' | translate }}</h1>
+    <a mat-flat-button routerLink="/sightings/new">{{ 'nav.reportSighting' | translate }}</a>
+  </header>
+  @if (locating()) {
+    <p class="pw-text-muted pw-text-small" role="status">{{ 'map.locating' | translate }}</p>
+  }
+  @if (positionUnknown()) {
+    <app-alert kind="info">{{ 'map.hint' | translate }}</app-alert>
+  }
+  <app-map-view
+    [label]="'map.ariaLabel' | translate"
+    [center]="viewCentre()"
+    [zoom]="viewZoom()"
+    [markers]="markers()"
+    (centerChange)="trackCentre($event)"
+    (markerSelect)="select($event)"
+  />
+  <div class="pw-cluster">
+    <button mat-stroked-button type="button" (click)="searchThisArea()">
+      {{ 'map.searchArea' | translate }}
+    </button>
+  </div>
+  @switch (state().kind) {
+    @case ('loading') {
+      <div class="nearby-spinner" role="status">
+        <mat-progress-spinner
+          mode="indeterminate"
+          [diameter]="spinnerDiameter"
+          [attr.aria-label]="'common.loading' | translate"
+        />
+      </div>
+    }
+    @case ('error') {
+      <div class="pw-stack">
+        <app-alert kind="error">{{ 'map.error' | translate }}</app-alert>
+        <button mat-stroked-button type="button" (click)="retry()">
+          {{ 'map.retry' | translate }}
+        </button>
+      </div>
+    }
+    @case ('loaded') {
+      @if (sightings().length === 0) {
+        <p class="pw-text-muted nearby-empty" role="status">
+          {{ 'map.empty' | translate: radiusKm() }}
+        </p>
+      }
+    }
+  }
+  @if (selected(); as sighting) {
+    <mat-card appearance="outlined" class="nearby-selected" aria-live="polite">
+      <mat-card-content class="pw-stack">
+        <header class="pw-stack nearby-selected__header">
+          <p class="pw-text-muted pw-text-small">{{ 'map.selected.title' | translate }}</p>
+          <h2 class="pw-subtitle nearby-selected__name">
+            {{ sighting.name ?? ('sighting.unnamed' | translate) }}
+          </h2>
+        </header>
+        <dl class="nearby-selected__details">
+          <div class="nearby-selected__row">
+            <dt class="pw-text-muted pw-text-small">{{ 'map.selected.status' | translate }}</dt>
+            <dd class="nearby-selected__value">
+              {{ statusLabel(sighting.status) | translate }}
+            </dd>
+          </div>
+          <div class="nearby-selected__row">
+            <dt class="pw-text-muted pw-text-small">
+              {{ 'map.selected.criticality' | translate }}
+            </dt>
+            <dd class="nearby-selected__value">
+              {{ criticalityLabel(sighting.criticality) | translate }}
+            </dd>
+          </div>
+        </dl>
+        <div class="pw-cluster">
+          <a mat-flat-button [routerLink]="['/sightings', sighting.id]">
+            {{ 'map.selected.openDetails' | translate }}
+          </a>
+          <button mat-button type="button" (click)="clearSelection()">
+            {{ 'map.selected.close' | translate }}
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+</section>

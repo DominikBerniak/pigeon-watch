@@ -9,6 +9,7 @@
           {{ user.displayName }}
         </button>
         <mat-menu #userMenu="matMenu" xPosition="before">
+          <a mat-menu-item routerLink="/sightings/new">{{ 'nav.reportSighting' | translate }}</a>
           <a mat-menu-item routerLink="/profile">{{ 'header.profile' | translate }}</a>
           <button mat-menu-item type="button" (click)="logout()">
             {{ 'header.logout' | translate }}

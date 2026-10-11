@@ -22,6 +22,82 @@ namespace PigeonWatch.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("PigeonWatch.Data.Entities.SightingEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ID");
+
+                    b.Property<string>("Behaviour")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("BEHAVIOUR");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CREATE_DATE");
+
+                    b.Property<string>("CreateUser")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("CREATE_USER");
+
+                    b.Property<int>("Criticality")
+                        .HasColumnType("int")
+                        .HasColumnName("CRITICALITY");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("DESCRIPTION");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("float")
+                        .HasColumnName("LATITUDE");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("float")
+                        .HasColumnName("LONGITUDE");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)")
+                        .HasColumnName("NAME");
+
+                    b.Property<Guid>("ReporterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("REPORTER_ID");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int")
+                        .HasColumnName("STATUS");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("UPDATE_DATE");
+
+                    b.Property<string>("UpdateUser")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("UPDATE_USER");
+
+                    b.HasKey("Id")
+                        .HasName("PK_SIGHTING");
+
+                    b.HasIndex("Latitude", "Longitude")
+                        .HasDatabaseName("IX_SIGHTING_LATITUDE_LONGITUDE");
+
+                    b.HasIndex("ReporterId", "CreateDate")
+                        .HasDatabaseName("IX_SIGHTING_REPORTER_ID_CREATE_DATE");
+
+                    b.ToTable("SIGHTING", (string)null);
+                });
+
             modelBuilder.Entity("PigeonWatch.Data.Entities.UserAccountEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -129,6 +205,18 @@ namespace PigeonWatch.Data.Migrations
                         .HasDatabaseName("IX_USER_ACCOUNT_NORMALIZED_USER_NAME");
 
                     b.ToTable("USER_ACCOUNT", (string)null);
+                });
+
+            modelBuilder.Entity("PigeonWatch.Data.Entities.SightingEntity", b =>
+                {
+                    b.HasOne("PigeonWatch.Data.Entities.UserAccountEntity", "Reporter")
+                        .WithMany()
+                        .HasForeignKey("ReporterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_SIGHTING_USER_ACCOUNT_REPORTER_ID");
+
+                    b.Navigation("Reporter");
                 });
 #pragma warning restore 612, 618
         }

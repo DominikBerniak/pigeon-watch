@@ -33,6 +33,9 @@
   <data name="nav.mainNavigation" xml:space="preserve">
     <value>Main navigation</value>
   </data>
+  <data name="nav.reportSighting" xml:space="preserve">
+    <value>Report sighting</value>
+  </data>
   <data name="header.logout" xml:space="preserve">
     <value>Log out</value>
   </data>
@@ -77,12 +80,6 @@
   </data>
   <data name="profile.password.errors.wrongCurrent" xml:space="preserve">
     <value>The current password is incorrect.</value>
-  </data>
-  <data name="home.title" xml:space="preserve">
-    <value>Welcome to PigeonWatch</value>
-  </data>
-  <data name="home.placeholder" xml:space="preserve">
-    <value>Bird sightings near you will appear here soon.</value>
   </data>
   <data name="auth.fields.email" xml:space="preserve">
     <value>Email</value>
@@ -218,5 +215,236 @@
   </data>
   <data name="warmup.failed.retry" xml:space="preserve">
     <value>Try again</value>
+  </data>
+  <data name="sighting.form.title" xml:space="preserve">
+    <value>Report a sighting</value>
+  </data>
+  <data name="sighting.form.subtitle" xml:space="preserve">
+    <value>Tell other rescuers where a bird needs help.</value>
+  </data>
+  <data name="sighting.form.nameLabel" xml:space="preserve">
+    <value>Name (optional)</value>
+  </data>
+  <data name="sighting.form.nameHint" xml:space="preserve">
+    <value>A nickname helps others refer to this bird. Up to {0} characters.</value>
+  </data>
+  <data name="sighting.form.namePlaceholder" xml:space="preserve">
+    <value>e.g. Limpy</value>
+  </data>
+  <data name="sighting.form.descriptionLabel" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="sighting.form.descriptionHint" xml:space="preserve">
+    <value>What does the bird look like? Up to {0} characters.</value>
+  </data>
+  <data name="sighting.form.descriptionPlaceholder" xml:space="preserve">
+    <value>Colour, markings, visible injuries…</value>
+  </data>
+  <data name="sighting.form.behaviourLabel" xml:space="preserve">
+    <value>Behaviour</value>
+  </data>
+  <data name="sighting.form.behaviourHint" xml:space="preserve">
+    <value>How is the bird acting? Up to {0} characters.</value>
+  </data>
+  <data name="sighting.form.behaviourPlaceholder" xml:space="preserve">
+    <value>Can it fly or walk? Is it eating?</value>
+  </data>
+  <data name="sighting.form.statusLabel" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="sighting.form.statusHint" xml:space="preserve">
+    <value>Spotted if the bird is still loose, Caught if someone has it.</value>
+  </data>
+  <data name="sighting.form.statusPlaceholder" xml:space="preserve">
+    <value>Choose a status</value>
+  </data>
+  <data name="sighting.form.criticalityLabel" xml:space="preserve">
+    <value>Criticality</value>
+  </data>
+  <data name="sighting.form.criticalityHint" xml:space="preserve">
+    <value>How soon does the bird need help?</value>
+  </data>
+  <data name="sighting.form.criticalityPlaceholder" xml:space="preserve">
+    <value>Choose a criticality</value>
+  </data>
+  <data name="sighting.form.locationLabel" xml:space="preserve">
+    <value>Location</value>
+  </data>
+  <data name="sighting.form.locationHint" xml:space="preserve">
+    <value>Tap the map to drop a pin, then drag it to adjust.</value>
+  </data>
+  <data name="sighting.form.locationSelected" xml:space="preserve">
+    <value>Pin at {0}, {1}</value>
+  </data>
+  <data name="sighting.form.locationNotSet" xml:space="preserve">
+    <value>No location chosen yet.</value>
+  </data>
+  <data name="sighting.form.locationRequired" xml:space="preserve">
+    <value>Choose a location on the map.</value>
+  </data>
+  <data name="sighting.form.maxLength" xml:space="preserve">
+    <value>Use at most {0} characters.</value>
+  </data>
+  <data name="sighting.form.submit" xml:space="preserve">
+    <value>Report sighting</value>
+  </data>
+  <data name="sighting.form.cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="sighting.status.spotted" xml:space="preserve">
+    <value>Spotted</value>
+  </data>
+  <data name="sighting.status.caught" xml:space="preserve">
+    <value>Caught</value>
+  </data>
+  <data name="sighting.status.atTheVet" xml:space="preserve">
+    <value>At the vet</value>
+  </data>
+  <data name="sighting.status.inHomeCare" xml:space="preserve">
+    <value>In home care</value>
+  </data>
+  <data name="sighting.status.awaitingAdoption" xml:space="preserve">
+    <value>Awaiting adoption</value>
+  </data>
+  <data name="sighting.status.adopted" xml:space="preserve">
+    <value>Adopted</value>
+  </data>
+  <data name="sighting.status.released" xml:space="preserve">
+    <value>Released</value>
+  </data>
+  <data name="sighting.status.passedAway" xml:space="preserve">
+    <value>Passed away</value>
+  </data>
+  <data name="sighting.status.notFound" xml:space="preserve">
+    <value>Not found</value>
+  </data>
+  <data name="sighting.criticality.monitor" xml:space="preserve">
+    <value>Monitor</value>
+  </data>
+  <data name="sighting.criticality.needsHelpSoon" xml:space="preserve">
+    <value>Needs help soon</value>
+  </data>
+  <data name="sighting.criticality.urgent" xml:space="preserve">
+    <value>Urgent</value>
+  </data>
+  <data name="sighting.detail.title" xml:space="preserve">
+    <value>Sighting</value>
+  </data>
+  <data name="sighting.detail.status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="sighting.detail.criticality" xml:space="preserve">
+    <value>Criticality</value>
+  </data>
+  <data name="sighting.detail.description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="sighting.detail.behaviour" xml:space="preserve">
+    <value>Behaviour</value>
+  </data>
+  <data name="sighting.detail.reporter" xml:space="preserve">
+    <value>Reported by</value>
+  </data>
+  <data name="sighting.detail.reportedAt" xml:space="preserve">
+    <value>Reported</value>
+  </data>
+  <data name="sighting.detail.location" xml:space="preserve">
+    <value>Location</value>
+  </data>
+  <data name="sighting.detail.coordinates" xml:space="preserve">
+    <value>{0}, {1}</value>
+  </data>
+  <data name="sighting.detail.showMap" xml:space="preserve">
+    <value>Show map</value>
+  </data>
+  <data name="sighting.detail.hideMap" xml:space="preserve">
+    <value>Hide map</value>
+  </data>
+  <data name="sighting.detail.back" xml:space="preserve">
+    <value>Back to map</value>
+  </data>
+  <data name="sighting.detail.retry" xml:space="preserve">
+    <value>Try again</value>
+  </data>
+  <data name="sighting.mine.title" xml:space="preserve">
+    <value>My sightings</value>
+  </data>
+  <data name="sighting.mine.empty" xml:space="preserve">
+    <value>You haven't reported any sightings yet.</value>
+  </data>
+  <data name="sighting.mine.error" xml:space="preserve">
+    <value>We couldn't load your sightings.</value>
+  </data>
+  <data name="sighting.mine.retry" xml:space="preserve">
+    <value>Try again</value>
+  </data>
+  <data name="sighting.errors.cooldown" xml:space="preserve">
+    <value>You can report another sighting in {0} seconds.</value>
+  </data>
+  <data name="sighting.errors.generic" xml:space="preserve">
+    <value>We couldn't reach the sightings right now. Try again.</value>
+  </data>
+  <data name="sighting.errors.notFound" xml:space="preserve">
+    <value>This sighting doesn't exist or is no longer available.</value>
+  </data>
+  <data name="sighting.unnamed" xml:space="preserve">
+    <value>Unnamed bird</value>
+  </data>
+  <data name="sighting.unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="map.title" xml:space="preserve">
+    <value>Sightings near you</value>
+  </data>
+  <data name="map.ariaLabel" xml:space="preserve">
+    <value>Map of sightings</value>
+  </data>
+  <data name="map.locating" xml:space="preserve">
+    <value>Finding your location…</value>
+  </data>
+  <data name="map.hint" xml:space="preserve">
+    <value>We couldn't get your location. Move the map to your area and tap "Search this area".</value>
+  </data>
+  <data name="map.searchArea" xml:space="preserve">
+    <value>Search this area</value>
+  </data>
+  <data name="map.useMyLocation" xml:space="preserve">
+    <value>Use my location</value>
+  </data>
+  <data name="map.placePinAtCentre" xml:space="preserve">
+    <value>Place pin at map centre</value>
+  </data>
+  <data name="map.locationUnavailable" xml:space="preserve">
+    <value>We couldn't get your location. Place the pin on the map instead.</value>
+  </data>
+  <data name="map.attribution" xml:space="preserve">
+    <value>© OpenStreetMap contributors</value>
+  </data>
+  <data name="map.empty" xml:space="preserve">
+    <value>No open sightings within {0} km of this area.</value>
+  </data>
+  <data name="map.error" xml:space="preserve">
+    <value>We couldn't load sightings for this area.</value>
+  </data>
+  <data name="map.loadFailed" xml:space="preserve">
+    <value>The map couldn't be loaded. Check your connection and try again.</value>
+  </data>
+  <data name="map.retry" xml:space="preserve">
+    <value>Try again</value>
+  </data>
+  <data name="map.selected.title" xml:space="preserve">
+    <value>Selected sighting</value>
+  </data>
+  <data name="map.selected.status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="map.selected.criticality" xml:space="preserve">
+    <value>Criticality</value>
+  </data>
+  <data name="map.selected.openDetails" xml:space="preserve">
+    <value>View details</value>
+  </data>
+  <data name="map.selected.close" xml:space="preserve">
+    <value>Close</value>
   </data>
 </root>

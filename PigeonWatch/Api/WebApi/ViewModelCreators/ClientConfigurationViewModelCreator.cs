@@ -21,6 +21,14 @@ public class ClientConfigurationViewModelCreator : IClientConfigurationViewModel
             {
                 MinLength = configuration.DisplayNameMinLength,
                 MaxLength = configuration.DisplayNameMaxLength
+            },
+            SightingRules = new SightingRulesModel
+            {
+                NameMaxLength = configuration.SightingNameMaxLength,
+                DescriptionMaxLength = configuration.SightingDescriptionMaxLength,
+                BehaviourMaxLength = configuration.SightingBehaviourMaxLength,
+                CooldownSeconds = configuration.SightingCooldownSeconds,
+                NearbyRadiusKm = configuration.SightingNearbyRadiusKilometers
             }
         };
     }

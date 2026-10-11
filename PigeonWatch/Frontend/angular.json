@@ -45,6 +45,9 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
+            "allowedCommonJsDependencies": [
+              "leaflet"
+            ],
             "inlineStyleLanguage": "scss",
             "assets": [
               {
@@ -53,6 +56,11 @@
               }
             ],
             "styles": [
+              {
+                "input": "node_modules/leaflet/dist/leaflet.css",
+                "bundleName": "leaflet",
+                "inject": false
+              },
               "src/styles.scss"
             ],
             "stylePreprocessorOptions": {
