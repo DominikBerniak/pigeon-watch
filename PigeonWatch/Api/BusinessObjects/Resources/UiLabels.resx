@@ -81,12 +81,6 @@
   <data name="profile.password.errors.wrongCurrent" xml:space="preserve">
     <value>The current password is incorrect.</value>
   </data>
-  <data name="home.title" xml:space="preserve">
-    <value>Welcome to PigeonWatch</value>
-  </data>
-  <data name="home.placeholder" xml:space="preserve">
-    <value>Bird sightings near you will appear here soon.</value>
-  </data>
   <data name="auth.fields.email" xml:space="preserve">
     <value>Email</value>
   </data>

@@ -13,6 +13,9 @@ import {
 import { RouterTestingHarness } from '@angular/router/testing';
 import { Observable, firstValueFrom, isObservable, of } from 'rxjs';
 import { routes } from '../../app.routes';
+import { NearbyMapPage } from '../../features/sightings/nearby-map-page/nearby-map-page';
+import { MapView } from '../../shared/map/map-view/map-view';
+import { MapViewStub } from '../../shared/map/testing/map-view-stub';
 import { authGuard, guestGuard } from './auth.guards';
 import { SessionService } from './session.service';
 
@@ -34,6 +37,10 @@ describe('auth guards', () => {
           },
         },
       ],
+    });
+    TestBed.overrideComponent(NearbyMapPage, {
+      remove: { imports: [MapView] },
+      add: { imports: [MapViewStub] },
     });
   });
 
@@ -97,6 +104,8 @@ describe('auth guards', () => {
     await harness.navigateByUrl('/anything');
 
     expect(TestBed.inject(Router).url).toBe('/');
+    expect(harness.routeNativeElement?.querySelector('app-map-view')).not.toBeNull();
+    expect(harness.routeNativeElement?.querySelector('.leaflet-container')).toBeNull();
   });
 
   it('routes a logged-out visit to the home page to login', async () => {

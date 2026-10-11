@@ -1,0 +1,48 @@
+<mat-card appearance="outlined" class="my-sightings">
+  <mat-card-content class="pw-stack">
+    <h2 class="pw-subtitle">{{ 'sighting.mine.title' | translate }}</h2>
+    @switch (state().kind) {
+      @case ('loading') {
+        <div class="my-sightings__spinner" role="status">
+          <mat-progress-spinner
+            mode="indeterminate"
+            [diameter]="spinnerDiameter"
+            [attr.aria-label]="'common.loading' | translate"
+          />
+        </div>
+      }
+      @case ('error') {
+        <div class="pw-stack">
+          <app-alert kind="error">{{ 'sighting.mine.error' | translate }}</app-alert>
+          <button mat-stroked-button type="button" (click)="retry()">
+            {{ 'sighting.mine.retry' | translate }}
+          </button>
+        </div>
+      }
+    }
+    @if (state(); as current) {
+      @if (current.kind === 'loaded') {
+        @if (current.items.length === 0) {
+          <p class="pw-text-muted">{{ 'sighting.mine.empty' | translate }}</p>
+        } @else {
+          <ul class="my-sightings__list">
+            @for (sighting of current.items; track sighting.id) {
+              <li class="my-sightings__item">
+                <a class="my-sightings__link" [routerLink]="['/sightings', sighting.id]">
+                  {{ sighting.name ?? ('sighting.unnamed' | translate) }}
+                </a>
+                <p class="pw-text-muted pw-text-small">
+                  {{ statusLabels[sighting.status] | translate }} ·
+                  {{ criticalityLabels[sighting.criticality] | translate }} ·
+                  <time [attr.datetime]="sighting.createdAt">{{
+                    sighting.createdAt | date: 'medium'
+                  }}</time>
+                </p>
+              </li>
+            }
+          </ul>
+        }
+      }
+    }
+  </mat-card-content>
+</mat-card>

@@ -518,31 +518,31 @@ The `AddSighting` migration is additive (new table and indexes only), applied by
 
 #### Automated
 
-- [x] 3.1 Production build passes with no new budget warnings: `npm run build` (from `PigeonWatch/Frontend`)
-- [x] 3.2 Tests pass, including style guard, label coverage and the new specs: `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
-- [x] 3.3 Dependency audit shows no high or critical findings for production dependencies: `npm audit --omit=dev` (from `PigeonWatch/Frontend`)
+- [x] 3.1 Production build passes with no new budget warnings: `npm run build` (from `PigeonWatch/Frontend`) — ccf30ff
+- [x] 3.2 Tests pass, including style guard, label coverage and the new specs: `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — ccf30ff
+- [x] 3.3 Dependency audit shows no high or critical findings for production dependencies: `npm audit --omit=dev` (from `PigeonWatch/Frontend`) — ccf30ff
 
 #### Manual
 
-- [x] 3.4 The build output lists Leaflet only in lazy chunks, and the initial total stays under 500 kB
-- [x] 3.5 The only CSP change in the diff is the single `img-src` tile host
+- [x] 3.4 The build output lists Leaflet only in lazy chunks, and the initial total stays under 500 kB — ccf30ff
+- [x] 3.5 The only CSP change in the diff is the single `img-src` tile host — ccf30ff
 
 ### Phase 4: Frontend views
 
 #### Automated
 
-- [ ] 4.1 Production build passes with no new budget warnings: `npm run build` (from `PigeonWatch/Frontend`)
-- [ ] 4.2 Tests pass, including the new view specs, the updated guard spec and the kitchen-sink spec: `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
+- [x] 4.1 Production build passes with no new budget warnings: `npm run build` (from `PigeonWatch/Frontend`)
+- [x] 4.2 Tests pass, including the new view specs, the updated guard spec and the kitchen-sink spec: `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
 
 #### Manual
 
-- [ ] 4.3 On the dev server against LocalDB, reporting a sighting via a tapped pin, via "Use my location" and via "Place pin at map centre" each submits and lands on the detail page
-- [ ] 4.4 At 375 px, submitting the empty report form shows required errors for description, behaviour, status, criticality and location
-- [ ] 4.5 A second submission within 60 seconds shows the message with the remaining seconds
-- [ ] 4.6 Map home with location allowed centres on the position and shows pins; with location denied it shows the Poland view and hint, and "Search this area" loads pins
-- [ ] 4.7 Detail page shows coordinates without loading tiles, "Show map" then shows the single marker, and an unknown id shows the not-found state
-- [ ] 4.8 Profile page shows the user's own sightings, and its empty, loading and error states render
-- [ ] 4.9 `visual-notes.md` holds desktop and 375 px screenshots of all four views
+- [x] 4.3 On the dev server against LocalDB, reporting a sighting via a tapped pin, via "Use my location" and via "Place pin at map centre" each submits and lands on the detail page
+- [x] 4.4 At 375 px, submitting the empty report form shows required errors for description, behaviour, status, criticality and location
+- [x] 4.5 A second submission within 60 seconds shows the message with the remaining seconds
+- [x] 4.6 Map home with location allowed centres on the position and shows pins; with location denied it shows the Poland view and hint, and "Search this area" loads pins
+- [x] 4.7 Detail page shows coordinates without loading tiles, "Show map" then shows the single marker, and an unknown id shows the not-found state
+- [x] 4.8 Profile page shows the user's own sightings, and its empty, loading and error states render
+- [x] 4.9 `visual-notes.md` holds desktop and 375 px screenshots of all four views
 
 ### Phase 5: Verification and docs
 

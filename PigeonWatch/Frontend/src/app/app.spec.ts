@@ -74,19 +74,24 @@ describe('App', () => {
     expect(menuItems()).toEqual([]);
   });
 
-  it('opens a menu with Profile and Log out', async () => {
+  it('opens a menu with Report sighting, Profile and Log out', async () => {
     await openUserMenu();
 
     const items = menuItems();
 
-    expect(items.map((item) => item.textContent?.trim())).toEqual(['Profile', 'Log out']);
-    expect(items[0].getAttribute('href')).toBe('/profile');
+    expect(items.map((item) => item.textContent?.trim())).toEqual([
+      'Report sighting',
+      'Profile',
+      'Log out',
+    ]);
+    expect(items[0].getAttribute('href')).toBe('/sightings/new');
+    expect(items[1].getAttribute('href')).toBe('/profile');
   });
 
   it('logs out from the menu', async () => {
     await openUserMenu();
 
-    menuItems()[1].click();
+    menuItems()[2].click();
 
     expect(logout).toHaveBeenCalledOnce();
   });

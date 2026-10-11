@@ -8,6 +8,7 @@ import {
   GeneralConfiguration,
 } from '../../core/configuration/configuration.service';
 import { UpdatedProfile } from '../../features/profile/profile-api';
+import { SightingList } from '../../features/sightings/sighting.types';
 
 export type SaveMode = 'success' | 'duplicate' | 'failure' | 'pending';
 export type PasswordMode = 'success' | 'wrongCurrent' | 'pending';
@@ -46,6 +47,9 @@ export class CellStubs {
   readonly profileApi = {
     updateDisplayName: (displayName: string): Observable<UpdatedProfile> =>
       this.saveResult(displayName),
+  };
+  readonly sightingsApi = {
+    mine: (): Observable<SightingList> => of({ items: [] }),
   };
 
   follow(modes: () => StubModes): void {
