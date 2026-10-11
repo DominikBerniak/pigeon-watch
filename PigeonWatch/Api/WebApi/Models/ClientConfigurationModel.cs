@@ -5,4 +5,6 @@ public sealed class ClientConfigurationModel
     public required PasswordRulesModel PasswordRules { get; init; }
 
     public required DisplayNameRulesModel DisplayNameRules { get; init; }
+
+    public required SightingRulesModel SightingRules { get; init; }
 }

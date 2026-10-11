@@ -492,27 +492,27 @@ The `AddSighting` migration is additive (new table and indexes only), applied by
 
 #### Automated
 
-- [x] 1.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
-- [x] 1.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`
-- [x] 1.3 Unit tests pass, including the transition table and repository tests: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
-- [x] 1.4 No pending model changes: `dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj`
+- [x] 1.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — d771c16
+- [x] 1.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — d771c16
+- [x] 1.3 Unit tests pass, including the transition table and repository tests: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — d771c16
+- [x] 1.4 No pending model changes: `dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj` — d771c16
 
 #### Manual
 
-- [x] 1.5 `dotnet ef database update` (command in `Api/CLAUDE.md`) applies the migration to LocalDB and the `SIGHTING` table shows the FK and both indexes
+- [x] 1.5 `dotnet ef database update` (command in `Api/CLAUDE.md`) applies the migration to LocalDB and the `SIGHTING` table shows the FK and both indexes — d771c16
 
 ### Phase 2: Service and API
 
 #### Automated
 
-- [ ] 2.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
-- [ ] 2.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`
-- [ ] 2.3 Unit tests pass, including cooldown boundaries, radius filtering and controller mapping: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
-- [ ] 2.4 No pending model changes: `dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj`
+- [x] 2.1 Solution builds: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
+- [x] 2.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`
+- [x] 2.3 Unit tests pass, including cooldown boundaries, radius filtering and controller mapping: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
+- [x] 2.4 No pending model changes: `dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj`
 
 #### Manual
 
-- [ ] 2.5 With the API running on LocalDB and a bearer token from `POST auth/login` (use `curl.exe`), a create returns 201, fetching it by id returns 200, an unknown id returns 404, `nearby` returns it for a centre within 10 km and not for a centre 15 km away, and a second create within 60 seconds returns 400 with `retryAfterSeconds`
+- [x] 2.5 With the API running on LocalDB and a bearer token from `POST auth/login` (use `curl.exe`), a create returns 201, fetching it by id returns 200, an unknown id returns 404, `nearby` returns it for a centre within 10 km and not for a centre 15 km away, and a second create within 60 seconds returns 400 with `retryAfterSeconds`
 
 ### Phase 3: Frontend foundation
 

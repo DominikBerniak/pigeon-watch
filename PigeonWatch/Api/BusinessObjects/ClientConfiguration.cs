@@ -7,4 +7,9 @@ public sealed record ClientConfiguration(
     bool PasswordRequiresUppercase,
     bool PasswordRequiresNonAlphanumeric,
     int DisplayNameMinLength,
-    int DisplayNameMaxLength);
+    int DisplayNameMaxLength,
+    int SightingNameMaxLength,
+    int SightingDescriptionMaxLength,
+    int SightingBehaviourMaxLength,
+    int SightingCooldownSeconds,
+    int SightingNearbyRadiusKilometers);

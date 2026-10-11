@@ -32,6 +32,20 @@ public class ConfigurationTests
     }
 
     [Fact]
+    public async Task Client_configuration_matches_sighting_rules()
+    {
+        ClientConfiguration configuration = await new ClientConfigurationService().GetAsync(TestContext.Current.CancellationToken);
+
+        ClientConfigurationModel model = new ClientConfigurationViewModelCreator().Create(configuration);
+
+        Assert.Equal(SightingRules.NameMaxLength, model.SightingRules.NameMaxLength);
+        Assert.Equal(SightingRules.DescriptionMaxLength, model.SightingRules.DescriptionMaxLength);
+        Assert.Equal(SightingRules.BehaviourMaxLength, model.SightingRules.BehaviourMaxLength);
+        Assert.Equal(SightingRules.CooldownSeconds, model.SightingRules.CooldownSeconds);
+        Assert.Equal(SightingRules.NearbyRadiusKilometers, model.SightingRules.NearbyRadiusKm);
+    }
+
+    [Fact]
     public async Task General_configuration_service_returns_null_for_an_unknown_id()
     {
         Guid unknownId = Guid.NewGuid();

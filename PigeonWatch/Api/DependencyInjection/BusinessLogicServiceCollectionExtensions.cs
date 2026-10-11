@@ -9,7 +9,9 @@ public static class BusinessLogicServiceCollectionExtensions
     {
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IClientConfigurationService, ClientConfigurationService>();
+        services.AddScoped<IGeoDistanceCalculator, GeoDistanceCalculator>();
         services.AddScoped<IGeneralConfigurationService, GeneralConfigurationService>();
+        services.AddScoped<ISightingService, SightingService>();
         services.AddScoped<ISightingStatusTransitionProvider, SightingStatusTransitionProvider>();
         services.AddScoped<IUiResourceService, UiResourceService>();
 
