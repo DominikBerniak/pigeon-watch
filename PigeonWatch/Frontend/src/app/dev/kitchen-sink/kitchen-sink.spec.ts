@@ -72,6 +72,27 @@ describe('KitchenSink', () => {
     return element?.textContent?.trim() ?? '';
   }
 
+  function buttonOf(id: string, key: string): HTMLButtonElement | null {
+    return (
+      [...cell(id).querySelectorAll<HTMLButtonElement>('button')].find(
+        (button) => textOf(button) === label(key),
+      ) ?? null
+    );
+  }
+
+  function statusOf(id: string): string {
+    return textOf(cell(id).querySelector('[role="status"]'));
+  }
+
+  function chooseNextLocation(id: string, mode: string): void {
+    const select = cell(id).querySelector<HTMLSelectElement>('header select');
+
+    if (!select) throw new Error(`No next-location control in ${id}`);
+
+    select.value = mode;
+    select.dispatchEvent(new Event('change'));
+  }
+
   it('hides the global warm-up panel while it is shown and restores it on destroy', () => {
     const panel = document.createElement('app-warmup-panel');
     document.body.appendChild(panel);
@@ -121,13 +142,62 @@ describe('KitchenSink', () => {
     });
   });
 
-  it('asks to zoom in when the position is unknown at the country view', async () => {
+  it('asks to zoom in and disables Search when the position is unknown at the country view', async () => {
     await eventually(() => {
-      expect(textOf(cell('map-position-unknown').querySelector('[role="status"]'))).toBe(
-        label('map.zoomToSearch'),
+      expect(statusOf('map-zoomed-out')).toBe(label('map.zoomToSearch'));
+      expect(textOf(cell('map-zoomed-out').querySelector('h1'))).toBe(label('map.titleArea'));
+      expect(mapOf('map-zoomed-out').markers()).toEqual([]);
+      expect(buttonOf('map-zoomed-out', 'map.searchArea')?.getAttribute('aria-disabled')).toBe(
+        'true',
       );
-      expect(textOf(cell('map-position-unknown').querySelector('h1'))).toBe(label('map.titleArea'));
-      expect(mapOf('map-position-unknown').markers()).toEqual([]);
+      expect(buttonOf('map-zoomed-out', 'map.useMyLocation')).not.toBeNull();
+    });
+  });
+
+  it('shows the hint and enables Search once an unknown position is zoomed to level 10', async () => {
+    mapOf('map-hint').zoomChange.emit(10);
+
+    await eventually(() => {
+      expect(statusOf('map-hint')).toBe(label('map.hint'));
+      expect(buttonOf('map-hint', 'map.searchArea')?.hasAttribute('aria-disabled')).toBe(false);
+    });
+  });
+
+  it('keeps "Use my location" and the zoom reason when the next answer times out again', async () => {
+    await eventually(() =>
+      expect(buttonOf('map-use-my-location', 'map.useMyLocation')).not.toBeNull(),
+    );
+
+    chooseNextLocation('map-use-my-location', 'timeout');
+    buttonOf('map-use-my-location', 'map.useMyLocation')?.click();
+
+    await eventually(() => {
+      expect(statusOf('map-use-my-location')).toBe(label('map.zoomToSearch'));
+      expect(buttonOf('map-use-my-location', 'map.useMyLocation')?.disabled).toBe(false);
+      expect(textOf(cell('map-use-my-location').querySelector('h1'))).toBe(label('map.titleArea'));
+    });
+  });
+
+  it('recentres and searches when the next "Use my location" answer finds the position', async () => {
+    await eventually(() =>
+      expect(buttonOf('map-use-my-location', 'map.useMyLocation')).not.toBeNull(),
+    );
+
+    chooseNextLocation('map-use-my-location', 'ok');
+    buttonOf('map-use-my-location', 'map.useMyLocation')?.click();
+
+    await eventually(() => {
+      expect(textOf(cell('map-use-my-location').querySelector('h1'))).toBe(label('map.title'));
+      expect(mapOf('map-use-my-location').center()).toEqual(sinkPosition);
+      expect(mapOf('map-use-my-location').markers()).toHaveLength(sinkSightings.length);
+      expect(buttonOf('map-use-my-location', 'map.useMyLocation')).toBeNull();
+    });
+  });
+
+  it('disables "Use my location" while a repeated location request is pending', async () => {
+    await eventually(() => {
+      expect(statusOf('map-retry-locating')).toBe(label('map.locating'));
+      expect(buttonOf('map-retry-locating', 'map.useMyLocation')?.disabled).toBe(true);
     });
   });
 
@@ -137,6 +207,18 @@ describe('KitchenSink', () => {
         cell('map-loading').querySelector('[role="status"] mat-progress-spinner'),
       ).not.toBeNull();
       expect(mapOf('map-loading').center()).toEqual(sinkPosition);
+    });
+  });
+
+  it('keeps the previous markers and disables Search while a repeated search loads', async () => {
+    await eventually(() => {
+      expect(
+        cell('map-loading-kept').querySelector('[role="status"] app-loading-indicator'),
+      ).not.toBeNull();
+      expect(mapOf('map-loading-kept').markers()).toHaveLength(sinkSightings.length);
+      expect(buttonOf('map-loading-kept', 'map.searchArea')?.getAttribute('aria-disabled')).toBe(
+        'true',
+      );
     });
   });
 
@@ -164,6 +246,26 @@ describe('KitchenSink', () => {
     await eventually(() => {
       expect(textOf(cell('map-selected').querySelector('mat-card h2'))).toBe('Limpy');
       expect(mapOf('map-selected').selectedId()).toBe('sink-urgent');
+    });
+  });
+
+  it('offers the selection as a header action so no cell takes focus on load', () => {
+    for (const id of ['map-selected', 'map-selected-keyboard']) {
+      const action = cell(id).querySelector('header button');
+
+      expect(textOf(action)).not.toBe('');
+      expect(cell(id).querySelector('mat-card')).toBeNull();
+    }
+  });
+
+  it('shows the card of the marker selected with the keyboard', async () => {
+    await eventually(() => expect(mapOf('map-selected-keyboard').markers()).toHaveLength(4));
+
+    mapOf('map-selected-keyboard').markerSelect.emit('sink-needs-help-soon');
+
+    await eventually(() => {
+      expect(textOf(cell('map-selected-keyboard').querySelector('mat-card h2'))).toBe('Limpy');
+      expect(mapOf('map-selected-keyboard').selectedId()).toBe('sink-needs-help-soon');
     });
   });
 
@@ -224,6 +326,15 @@ describe('KitchenSink', () => {
     expect(element.querySelector('input')).toBeNull();
     expect(element.textContent).toContain('jan@example.com');
     expect(element.textContent).toContain('Jan K');
+  });
+
+  it('shows My sightings items with a criticality badge in each meta line', async () => {
+    await eventually(() => {
+      const items = cell('read-only-my-sightings').querySelectorAll('app-my-sightings li');
+
+      expect(items).toHaveLength(sinkSightings.length);
+      items.forEach((item) => expect(item.querySelector('app-criticality-badge')).not.toBeNull());
+    });
   });
 
   it('shows email and name as description list rows with Change password in the footer', () => {

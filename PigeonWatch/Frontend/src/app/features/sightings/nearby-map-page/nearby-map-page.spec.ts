@@ -352,16 +352,20 @@ describe('NearbyMapPage', () => {
     expect(map().markers()).toEqual([]);
   });
 
-  it('shows an error with a retry beside the status that repeats the last query', async () => {
+  it('shows the error under the toolbar and a retry beside Search that repeats the last query', async () => {
     await render(
       { status: 'ok', ...warsaw },
       throwError(() => new HttpErrorResponse({ status: 500 })),
     );
 
-    const alert = root().querySelector('app-error-retry app-alert[role="alert"]');
+    const toolbar = root().querySelector('.nearby-toolbar')!;
+    const alert = root().querySelector('app-alert[role="alert"]');
 
     expect(alert?.textContent?.trim()).toBe("We couldn't load sightings for this area.");
-    expect(statusElement().contains(alert)).toBe(false);
+    expect(toolbar.nextElementSibling).toBe(alert);
+    expect(toolbar.querySelector('.nearby-toolbar__actions')?.contains(button('Try again'))).toBe(
+      true,
+    );
     expect(status()).toBe('');
     expect(statusElement().classList).toContain('pw-visually-hidden');
 
@@ -371,7 +375,8 @@ describe('NearbyMapPage', () => {
 
     expect(nearby).toHaveBeenCalledTimes(2);
     expect(nearby).toHaveBeenLastCalledWith(warsaw);
-    expect(root().querySelector('app-error-retry')).toBeNull();
+    expect(root().querySelector('app-alert[role="alert"]')).toBeNull();
+    expect(findButton('Try again')).toBeUndefined();
     expect(statusElement().classList).not.toContain('pw-visually-hidden');
     expect(map().markers().length).toBe(1);
   });

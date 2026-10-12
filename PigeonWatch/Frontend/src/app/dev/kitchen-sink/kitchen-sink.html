@@ -8,7 +8,7 @@
     </p>
   </header>
   @for (group of groups; track group.title) {
-    <section class="sink__group">
+    <section class="sink__group" [class.sink__group--narrow]="!group.wide">
       <h2 class="pw-subtitle">{{ group.title }}</h2>
       @for (cell of group.cells; track cell.id) {
         <app-state-cell [definition]="cell" />

@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type * as Leaflet from 'leaflet';
 import { NEVER, Observable, map, of, throwError, timer } from 'rxjs';
@@ -20,14 +20,17 @@ import {
 
 export type SaveMode = 'success' | 'duplicate' | 'failure' | 'pending';
 export type PasswordMode = 'success' | 'wrongCurrent' | 'pending';
-export type NearbyMode = 'items' | 'empty' | 'failure' | 'pending';
-export type GeolocationMode = 'ok' | 'denied' | 'timeout' | 'pending';
+export type MineMode = 'empty' | 'items';
+export type NearbyMode = 'items' | 'empty' | 'failure' | 'pending' | 'itemsThenPending';
+export type NextLocationMode = 'ok' | 'timeout' | 'pending';
+export type GeolocationMode = 'ok' | 'denied' | 'timeoutThenNext' | NextLocationMode;
 export type LeafletMode = 'tileless' | 'failure';
 
 export interface ProfileModes {
   readonly group: 'profile';
   readonly save: SaveMode;
   readonly password: PasswordMode;
+  readonly mine?: MineMode;
 }
 
 export interface NearbyMapModes {
@@ -35,6 +38,7 @@ export interface NearbyMapModes {
   readonly nearby: NearbyMode;
   readonly geolocation: GeolocationMode;
   readonly leaflet: LeafletMode;
+  readonly nextLocation?: NextLocationMode;
 }
 
 export type StubModes = ProfileModes | NearbyMapModes;
@@ -97,14 +101,35 @@ function badRequest(errors: Record<string, string[]>): HttpErrorResponse {
   return new HttpErrorResponse({ status: 400, error: { status: 400, errors } });
 }
 
+function outcomeOf(
+  mode: Exclude<GeolocationMode, 'timeoutThenNext'>,
+): Observable<GeolocationOutcome> {
+  switch (mode) {
+    case 'ok':
+      return of({ status: 'ok', ...sinkPosition });
+    case 'timeout':
+      return of({ status: 'timeout' });
+    case 'pending':
+      return NEVER;
+    default:
+      return of({ status: 'denied' });
+  }
+}
+
 export function tilelessLeaflet(
   module: LeafletModule & { default?: LeafletModule },
 ): LeafletModule {
   const leaflet = module.default ?? module;
   const tileLayer = (_urlTemplate: string, options?: Leaflet.TileLayerOptions): Leaflet.TileLayer =>
     leaflet.gridLayer(options) as Leaflet.TileLayer;
+  const stillMap = (element: string | HTMLElement, options?: Leaflet.MapOptions): Leaflet.Map =>
+    leaflet.map(element, { ...options, zoomAnimation: false });
 
-  return { ...leaflet, tileLayer: Object.assign(tileLayer, { wms: leaflet.tileLayer.wms }) };
+  return {
+    ...leaflet,
+    map: stillMap,
+    tileLayer: Object.assign(tileLayer, { wms: leaflet.tileLayer.wms }),
+  };
 }
 
 @Injectable()
@@ -115,6 +140,9 @@ export class CellStubs {
     save: 'success',
     password: 'success',
   });
+  private readonly chosenNextLocation = signal<NextLocationMode | null>(null);
+  private nearbyRequests = 0;
+  private locationRequests = 0;
 
   readonly session = {
     currentUser: signal<CurrentUser | null>(sinkUser).asReadonly(),
@@ -129,15 +157,27 @@ export class CellStubs {
       this.saveResult(displayName),
   };
   readonly sightingsApi = {
-    mine: (): Observable<SightingList> => of({ items: [] }),
+    mine: (): Observable<SightingList> => this.mineResult(),
     nearby: (): Observable<SightingList> => this.nearbyResult(),
   };
   readonly geolocation = {
     currentPosition: (): Observable<GeolocationOutcome> => this.positionResult(),
   };
 
+  readonly nextLocation = computed<NextLocationMode>(() => {
+    const modes = this.modes();
+
+    return (
+      this.chosenNextLocation() ?? (modes.group === 'nearbyMap' ? modes.nextLocation : null) ?? 'ok'
+    );
+  });
+
   follow(modes: () => StubModes): void {
     this.modes = modes;
+  }
+
+  chooseNextLocation(mode: NextLocationMode): void {
+    this.chosenNextLocation.set(mode);
   }
 
   leafletLoader(load: LeafletLoader): LeafletLoader {
@@ -182,12 +222,22 @@ export class CellStubs {
     }
   }
 
+  private mineResult(): Observable<SightingList> {
+    const modes = this.modes();
+    const withItems = modes.group === 'profile' && modes.mine === 'items';
+
+    return of({ items: withItems ? [...sinkSightings] : [] });
+  }
+
   private nearbyResult(): Observable<SightingList> {
     const modes = this.modes();
+    const firstRequest = this.nearbyRequests++ === 0;
 
     switch (modes.group === 'nearbyMap' ? modes.nearby : 'empty') {
       case 'items':
         return of({ items: [...sinkSightings] });
+      case 'itemsThenPending':
+        return firstRequest ? of({ items: [...sinkSightings] }) : NEVER;
       case 'failure':
         return throwError(() => new HttpErrorResponse({ status: 500 }));
       case 'pending':
@@ -199,16 +249,11 @@ export class CellStubs {
 
   private positionResult(): Observable<GeolocationOutcome> {
     const modes = this.modes();
+    const mode = modes.group === 'nearbyMap' ? modes.geolocation : 'denied';
+    const firstRequest = this.locationRequests++ === 0;
 
-    switch (modes.group === 'nearbyMap' ? modes.geolocation : 'denied') {
-      case 'ok':
-        return of({ status: 'ok', ...sinkPosition });
-      case 'timeout':
-        return of({ status: 'timeout' });
-      case 'pending':
-        return NEVER;
-      default:
-        return of({ status: 'denied' });
-    }
+    if (mode !== 'timeoutThenNext') return outcomeOf(mode);
+
+    return outcomeOf(firstRequest ? 'timeout' : this.nextLocation());
   }
 }

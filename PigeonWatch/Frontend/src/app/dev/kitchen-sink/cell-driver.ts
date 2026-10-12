@@ -33,6 +33,22 @@ export function click(selector: string): CellStep {
     until(() => root.querySelector<HTMLElement>(selector)).pipe(tap((element) => element.click()));
 }
 
+export function keydown(selector: string, key: string): CellStep {
+  return ({ root }) =>
+    until(() => root.querySelector<HTMLElement>(selector)).pipe(
+      tap((element) => {
+        element.focus();
+        element.dispatchEvent(
+          new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+        );
+      }),
+    );
+}
+
+export function repeat(times: number, ...steps: CellStep[]): CellStep[] {
+  return Array.from({ length: times }, () => steps).flat();
+}
+
 export function fill(selector: string, values: readonly string[]): CellStep {
   return ({ root }) =>
     until(() => {
@@ -51,6 +67,15 @@ export function submitForm(): CellStep {
 
 export function waitFor(selector: string): CellStep {
   return ({ root }) => until(() => root.querySelector(selector));
+}
+
+export function waitForText(selector: string, labelKey: string): CellStep {
+  return ({ root, text }) =>
+    until(() => {
+      const element = root.querySelector(selector);
+
+      return element?.textContent?.trim() === text(labelKey) ? element : null;
+    });
 }
 
 function buttonWithText(root: HTMLElement, label: string): HTMLButtonElement | null {

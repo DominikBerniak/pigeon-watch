@@ -5,6 +5,7 @@ import {
   ElementRef,
   Injector,
   afterNextRender,
+  computed,
   inject,
   input,
   signal,
@@ -30,7 +31,12 @@ import { SightingsApi } from '../../features/sightings/sightings-api';
 import { LEAFLET_LOADER } from '../../shared/map/map-view/map-view';
 import { CellDefinition } from './cell-definitions';
 import { CellContext, press, runSteps, until, waitLimitMilliseconds } from './cell-driver';
-import { CellStubs } from './cell-stubs';
+import { CellStubs, NextLocationMode } from './cell-stubs';
+
+interface NextLocationOption {
+  readonly mode: NextLocationMode;
+  readonly label: string;
+}
 
 @Component({
   selector: 'app-state-cell',
@@ -66,6 +72,17 @@ export class StateCell {
   readonly definition = input.required<CellDefinition>();
 
   protected readonly running = signal(false);
+  protected readonly nextLocation = this.stubs.nextLocation;
+  protected readonly nextLocationOptions: readonly NextLocationOption[] = [
+    { mode: 'ok', label: 'Position found' },
+    { mode: 'timeout', label: 'Timed out' },
+    { mode: 'pending', label: 'Never answers' },
+  ];
+  protected readonly asksForLocationAgain = computed(() => {
+    const definition = this.definition();
+
+    return definition.group === 'nearbyMap' && definition.geolocation === 'timeoutThenNext';
+  });
 
   private openRef: MatDialogRef<unknown> | null = null;
 
@@ -79,6 +96,24 @@ export class StateCell {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({ error: (error: unknown) => this.report(error) }),
     );
+  }
+
+  protected chooseNextLocation(event: Event): void {
+    this.stubs.chooseNextLocation((event.target as HTMLSelectElement).value as NextLocationMode);
+  }
+
+  protected runManual(): void {
+    const scenario = this.definition().manual;
+
+    if (!scenario) return;
+
+    this.running.set(true);
+    runSteps(scenario.steps, this.context(this.host.nativeElement))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.running.set(false)),
+      )
+      .subscribe({ error: (error: unknown) => this.report(error) });
   }
 
   protected openDialog(): void {

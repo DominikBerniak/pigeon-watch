@@ -26,10 +26,10 @@ import { minSearchZoom, nearbyMapZoom, neutralMapView } from '../../../shared/ma
 import { MapMarker } from '../../../shared/map/map-marker';
 import { MapView } from '../../../shared/map/map-view/map-view';
 import {
+  Alert,
   CriticalityBadge,
   DetailItem,
   DetailList,
-  ErrorRetry,
   LoadingIndicator,
 } from '../../../shared/ui';
 import {
@@ -77,7 +77,7 @@ let nextStatusId = 0;
     CriticalityBadge,
     DetailItem,
     DetailList,
-    ErrorRetry,
+    Alert,
     LoadingIndicator,
     MapView,
   ],

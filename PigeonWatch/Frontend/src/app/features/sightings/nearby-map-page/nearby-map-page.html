@@ -15,6 +15,11 @@
       >
         {{ 'map.searchArea' | translate }}
       </button>
+      @if (status() === 'error') {
+        <button mat-stroked-button type="button" (click)="retry()">
+          {{ 'map.retry' | translate }}
+        </button>
+      }
       @if (canRetryLocation()) {
         <button mat-stroked-button type="button" [disabled]="locating()" (click)="useMyLocation()">
           {{ 'map.useMyLocation' | translate }}
@@ -53,13 +58,11 @@
           }
         }
       </div>
-      @if (status() === 'error') {
-        <app-error-retry [retryLabel]="'map.retry' | translate" (retry)="retry()">
-          {{ 'map.error' | translate }}
-        </app-error-retry>
-      }
     </div>
   </div>
+  @if (status() === 'error') {
+    <app-alert kind="error">{{ 'map.error' | translate }}</app-alert>
+  }
   <div class="nearby-body">
     <app-map-view
       #mapView

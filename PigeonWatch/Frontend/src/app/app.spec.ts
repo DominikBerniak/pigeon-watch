@@ -7,6 +7,7 @@ import { App } from './app';
 import { routes } from './app.routes';
 import { SessionService } from './core/auth/session.service';
 import { CurrentUser } from './core/configuration/configuration.service';
+import { devRoutes } from './dev/dev-routes';
 
 @Component({ template: '' })
 class BlankPage {}
@@ -122,8 +123,10 @@ describe('App', () => {
     expect(main.classList).not.toContain('app-main--wide');
   });
 
-  it('declares the wide layout on the home route only', () => {
-    const wide = routes.filter((route) => route.data?.['layout'] === 'wide');
+  it('declares the wide layout on the home route only among product routes', () => {
+    const wide = routes
+      .filter((route) => !devRoutes.includes(route))
+      .filter((route) => route.data?.['layout'] === 'wide');
 
     expect(wide.map((route) => route.path)).toEqual(['']);
   });

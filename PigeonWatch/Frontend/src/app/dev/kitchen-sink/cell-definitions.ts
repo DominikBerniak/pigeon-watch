@@ -1,7 +1,17 @@
-import { CellStep, click, fill, press, submitForm, waitFor } from './cell-driver';
+import {
+  CellStep,
+  click,
+  fill,
+  keydown,
+  press,
+  repeat,
+  submitForm,
+  waitFor,
+  waitForText,
+} from './cell-driver';
 import { NearbyMapModes, ProfileModes, StubModes } from './cell-stubs';
 
-export interface DialogScenario {
+export interface CellScenario {
   readonly action: string;
   readonly steps: readonly CellStep[];
 }
@@ -10,7 +20,8 @@ interface CellBase {
   readonly id: string;
   readonly label: string;
   readonly steps: readonly CellStep[];
-  readonly dialog?: DialogScenario;
+  readonly dialog?: CellScenario;
+  readonly manual?: CellScenario;
 }
 
 export type ProfileCell = CellBase & ProfileModes;
@@ -19,6 +30,7 @@ export type CellDefinition = CellBase & StubModes;
 
 export interface CellGroup {
   readonly title: string;
+  readonly wide: boolean;
   readonly cells: readonly CellDefinition[];
 }
 
@@ -39,6 +51,15 @@ const profileCells: readonly ProfileCell[] = [
     group: 'profile',
     save: 'success',
     password: 'success',
+    steps: [],
+  },
+  {
+    id: 'read-only-my-sightings',
+    label: 'Read-only, My sightings with items (criticality badges)',
+    group: 'profile',
+    save: 'success',
+    password: 'success',
+    mine: 'items',
     steps: [],
   },
   {
@@ -164,6 +185,9 @@ const dialogCells: readonly ProfileCell[] = [
 ];
 
 const marker = '.pw-map-marker--urgent';
+const status = '[role="status"]';
+const zoomIn = '.leaflet-control-zoom-in';
+const countryToSearchZoomSteps = 4;
 
 const nearbyMapCells: readonly NearbyMapCell[] = [
   {
@@ -176,8 +200,8 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
     steps: [],
   },
   {
-    id: 'map-position-unknown',
-    label: 'Position unknown (location denied)',
+    id: 'map-zoomed-out',
+    label: 'Position unknown at country zoom (location denied, Search disabled)',
     group: 'nearbyMap',
     geolocation: 'denied',
     nearby: 'items',
@@ -185,8 +209,37 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
     steps: [],
   },
   {
+    id: 'map-hint',
+    label: 'Position unknown, zoomed in to level 10 (hint, Search enabled)',
+    group: 'nearbyMap',
+    geolocation: 'denied',
+    nearby: 'items',
+    leaflet: 'tileless',
+    steps: [...repeat(countryToSearchZoomSteps, click(zoomIn)), waitForText(status, 'map.hint')],
+  },
+  {
+    id: 'map-use-my-location',
+    label: 'Location timed out ("Use my location", next answer chosen in the header)',
+    group: 'nearbyMap',
+    geolocation: 'timeoutThenNext',
+    nextLocation: 'ok',
+    nearby: 'items',
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'map-retry-locating',
+    label: 'Retrying location ("Use my location" disabled while locating)',
+    group: 'nearbyMap',
+    geolocation: 'timeoutThenNext',
+    nextLocation: 'pending',
+    nearby: 'items',
+    leaflet: 'tileless',
+    steps: [press('map.useMyLocation'), waitForText(status, 'map.locating')],
+  },
+  {
     id: 'map-loading',
-    label: 'Loading (nearby request never completes)',
+    label: 'Loading, first search (nearby request never completes)',
     group: 'nearbyMap',
     geolocation: 'ok',
     nearby: 'pending',
@@ -194,8 +247,17 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
     steps: [],
   },
   {
+    id: 'map-loading-kept',
+    label: 'Loading again (previous markers kept, Search disabled)',
+    group: 'nearbyMap',
+    geolocation: 'ok',
+    nearby: 'itemsThenPending',
+    leaflet: 'tileless',
+    steps: [press('map.searchArea'), waitFor(`${status} app-loading-indicator`)],
+  },
+  {
     id: 'map-loaded',
-    label: 'Loaded with markers',
+    label: 'Found (default: legend and prompt in the aside)',
     group: 'nearbyMap',
     geolocation: 'ok',
     nearby: 'items',
@@ -204,12 +266,26 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
   },
   {
     id: 'map-selected',
-    label: 'Selected (marker clicked)',
+    label: 'Selected by pointer (marker clicked)',
     group: 'nearbyMap',
     geolocation: 'ok',
     nearby: 'items',
     leaflet: 'tileless',
-    steps: [click(marker), waitFor('mat-card')],
+    steps: [],
+    manual: { action: 'Click a marker', steps: [click(marker), waitFor('mat-card')] },
+  },
+  {
+    id: 'map-selected-keyboard',
+    label: 'Selected with the keyboard (Enter on a focused marker)',
+    group: 'nearbyMap',
+    geolocation: 'ok',
+    nearby: 'items',
+    leaflet: 'tileless',
+    steps: [],
+    manual: {
+      action: 'Press Enter on a marker',
+      steps: [keydown(marker, 'Enter'), waitFor('mat-card')],
+    },
   },
   {
     id: 'map-empty',
@@ -241,6 +317,6 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
 ];
 
 export const cellGroups: readonly CellGroup[] = [
-  { title: 'Profile', cells: [...profileCells, ...dialogCells] },
-  { title: 'Nearby map', cells: nearbyMapCells },
+  { title: 'Profile', wide: false, cells: [...profileCells, ...dialogCells] },
+  { title: 'Nearby map', wide: true, cells: nearbyMapCells },
 ];
