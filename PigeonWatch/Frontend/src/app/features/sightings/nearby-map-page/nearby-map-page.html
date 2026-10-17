@@ -29,7 +29,7 @@
           disabledInteractive
           (click)="useMyLocation()"
         >
-          {{ 'map.useMyLocation' | translate }}
+          {{ 'map.locateMe' | translate }}
         </button>
       }
     </div>
@@ -65,11 +65,11 @@
           }
         }
       </div>
+      @if (status() === 'error') {
+        <app-alert kind="error">{{ 'map.error' | translate }}</app-alert>
+      }
     </div>
   </div>
-  @if (status() === 'error') {
-    <app-alert kind="error">{{ 'map.error' | translate }}</app-alert>
-  }
   <div class="nearby-body">
     <app-map-view
       #mapView

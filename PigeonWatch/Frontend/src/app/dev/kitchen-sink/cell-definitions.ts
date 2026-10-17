@@ -219,7 +219,7 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
   },
   {
     id: 'map-use-my-location',
-    label: 'Location timed out ("Use my location", next answer chosen in the header)',
+    label: 'Location timed out ("Locate me", next answer chosen in the header)',
     group: 'nearbyMap',
     geolocation: 'timeoutThenNext',
     nextLocation: 'ok',
@@ -229,13 +229,13 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
   },
   {
     id: 'map-retry-locating',
-    label: 'Retrying location ("Use my location" disabled while locating)',
+    label: 'Retrying location ("Locate me" disabled while locating)',
     group: 'nearbyMap',
     geolocation: 'timeoutThenNext',
     nextLocation: 'pending',
     nearby: 'items',
     leaflet: 'tileless',
-    steps: [press('map.useMyLocation'), waitForText(status, 'map.locating')],
+    steps: [press('map.locateMe'), waitForText(status, 'map.locating')],
   },
   {
     id: 'map-loading',
@@ -304,6 +304,20 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
     nearby: 'failure',
     leaflet: 'tileless',
     steps: [],
+  },
+  {
+    id: 'map-nearby-error-after-denied',
+    label: 'Nearby error after a denied location (Search, Try again and "Locate me" together)',
+    group: 'nearbyMap',
+    geolocation: 'denied',
+    nearby: 'failure',
+    leaflet: 'tileless',
+    steps: [
+      ...repeat(countryToSearchZoomSteps, click(zoomIn)),
+      waitForText(status, 'map.hint'),
+      press('map.searchArea'),
+      waitFor('app-alert[role="alert"]'),
+    ],
   },
   {
     id: 'map-load-failed',

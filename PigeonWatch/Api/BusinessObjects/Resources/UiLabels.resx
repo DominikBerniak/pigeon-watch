@@ -420,6 +420,9 @@
   <data name="map.useMyLocation" xml:space="preserve">
     <value>Use my location</value>
   </data>
+  <data name="map.locateMe" xml:space="preserve">
+    <value>Locate me</value>
+  </data>
   <data name="map.placePinAtCentre" xml:space="preserve">
     <value>Place pin at map centre</value>
   </data>

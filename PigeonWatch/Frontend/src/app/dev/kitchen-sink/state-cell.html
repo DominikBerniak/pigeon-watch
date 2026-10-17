@@ -13,7 +13,7 @@
     }
     @if (asksForLocationAgain()) {
       <label class="pw-cluster pw-text-small">
-        Next "Use my location" answer
+        Next "Locate me" answer
         <select (change)="chooseNextLocation($event)">
           @for (option of nextLocationOptions; track option.mode) {
             <option [value]="option.mode" [selected]="option.mode === nextLocation()">

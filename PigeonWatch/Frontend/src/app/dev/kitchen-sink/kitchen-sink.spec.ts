@@ -150,7 +150,7 @@ describe('KitchenSink', () => {
       expect(buttonOf('map-zoomed-out', 'map.searchArea')?.getAttribute('aria-disabled')).toBe(
         'true',
       );
-      expect(buttonOf('map-zoomed-out', 'map.useMyLocation')).not.toBeNull();
+      expect(buttonOf('map-zoomed-out', 'map.locateMe')).not.toBeNull();
     });
   });
 
@@ -163,43 +163,39 @@ describe('KitchenSink', () => {
     });
   });
 
-  it('keeps "Use my location" and the zoom reason when the next answer times out again', async () => {
-    await eventually(() =>
-      expect(buttonOf('map-use-my-location', 'map.useMyLocation')).not.toBeNull(),
-    );
+  it('keeps "Locate me" and the zoom reason when the next answer times out again', async () => {
+    await eventually(() => expect(buttonOf('map-use-my-location', 'map.locateMe')).not.toBeNull());
 
     chooseNextLocation('map-use-my-location', 'timeout');
-    buttonOf('map-use-my-location', 'map.useMyLocation')?.click();
+    buttonOf('map-use-my-location', 'map.locateMe')?.click();
 
     await eventually(() => {
       expect(statusOf('map-use-my-location')).toBe(label('map.zoomToSearch'));
-      expect(buttonOf('map-use-my-location', 'map.useMyLocation')?.disabled).toBe(false);
+      expect(buttonOf('map-use-my-location', 'map.locateMe')?.disabled).toBe(false);
       expect(textOf(cell('map-use-my-location').querySelector('h1'))).toBe(label('map.titleArea'));
     });
   });
 
-  it('recentres and searches when the next "Use my location" answer finds the position', async () => {
-    await eventually(() =>
-      expect(buttonOf('map-use-my-location', 'map.useMyLocation')).not.toBeNull(),
-    );
+  it('recentres and searches when the next "Locate me" answer finds the position', async () => {
+    await eventually(() => expect(buttonOf('map-use-my-location', 'map.locateMe')).not.toBeNull());
 
     chooseNextLocation('map-use-my-location', 'ok');
-    buttonOf('map-use-my-location', 'map.useMyLocation')?.click();
+    buttonOf('map-use-my-location', 'map.locateMe')?.click();
 
     await eventually(() => {
       expect(textOf(cell('map-use-my-location').querySelector('h1'))).toBe(label('map.title'));
       expect(mapOf('map-use-my-location').center()).toEqual(sinkPosition);
       expect(mapOf('map-use-my-location').markers()).toHaveLength(sinkSightings.length);
-      expect(buttonOf('map-use-my-location', 'map.useMyLocation')).toBeNull();
+      expect(buttonOf('map-use-my-location', 'map.locateMe')).toBeNull();
     });
   });
 
-  it('disables "Use my location" while a repeated location request is pending', async () => {
+  it('disables "Locate me" while a repeated location request is pending', async () => {
     await eventually(() => {
       expect(statusOf('map-retry-locating')).toBe(label('map.locating'));
-      expect(
-        buttonOf('map-retry-locating', 'map.useMyLocation')?.getAttribute('aria-disabled'),
-      ).toBe('true');
+      expect(buttonOf('map-retry-locating', 'map.locateMe')?.getAttribute('aria-disabled')).toBe(
+        'true',
+      );
       expect(buttonOf('map-retry-locating', 'map.searchArea')?.getAttribute('aria-disabled')).toBe(
         'true',
       );
@@ -288,6 +284,27 @@ describe('KitchenSink', () => {
         label('map.error'),
       );
     });
+  });
+
+  it('shows Search, Try again and Locate me together with the alert in the slot after a denied location', async () => {
+    const id = 'map-nearby-error-after-denied';
+
+    mapOf(id).zoomChange.emit(10);
+    await eventually(() => expect(statusOf(id)).toBe(label('map.hint')));
+
+    buttonOf(id, 'map.searchArea')?.click();
+
+    await eventually(() => {
+      expect(textOf(cell(id).querySelector('app-alert[role="alert"]'))).toBe(label('map.error'));
+    });
+
+    const slot = cell(id).querySelector('.nearby-toolbar__slot');
+
+    expect(buttonOf(id, 'map.searchArea')).not.toBeNull();
+    expect(buttonOf(id, 'map.retry')).not.toBeNull();
+    expect(buttonOf(id, 'map.locateMe')).not.toBeNull();
+    expect(slot?.contains(cell(id).querySelector('app-alert[role="alert"]'))).toBe(true);
+    expect(cell(id).querySelectorAll('[role="status"]')).toHaveLength(1);
   });
 
   it('gives the map-library cell a loader that fails', async () => {
