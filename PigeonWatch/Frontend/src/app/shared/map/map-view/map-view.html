@@ -1,6 +1,6 @@
 <div class="pw-stack">
   <div #canvas class="map-view__canvas" role="region" [attr.aria-label]="label()"></div>
-  @if (loadFailed()) {
+  @if (failed()) {
     <app-error-retry [retryLabel]="'map.retry' | translate" (retry)="retry()">
       {{ 'map.loadFailed' | translate }}
     </app-error-retry>

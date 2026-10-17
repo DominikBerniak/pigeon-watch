@@ -20,6 +20,7 @@ export class MapViewStub {
   readonly markerSelect = output<string>();
   readonly pinMove = output<GeoPoint>();
   readonly mapReady = output<void>();
+  readonly loadFailed = output<boolean>();
   readonly focusedMarkers: string[] = [];
 
   focusMarker(id: string): void {

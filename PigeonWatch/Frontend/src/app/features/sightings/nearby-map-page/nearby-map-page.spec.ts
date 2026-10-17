@@ -89,6 +89,11 @@ describe('NearbyMapPage', () => {
     await settle();
   }
 
+  async function failMap(failed: boolean): Promise<void> {
+    map().loadFailed.emit(failed);
+    await settle();
+  }
+
   function root(): HTMLElement {
     return fixture.nativeElement as HTMLElement;
   }
@@ -193,7 +198,7 @@ describe('NearbyMapPage', () => {
 
     expect(heading()).toBe('Sightings near you');
     expect(status()).toBe('Finding your location…');
-    expect(findButton('Use my location')).toBeUndefined();
+    expect(findButton('Locate me')).toBeUndefined();
   });
 
   it('keeps the user-position heading once the position is known', async () => {
@@ -263,14 +268,14 @@ describe('NearbyMapPage', () => {
     expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow);
   });
 
-  it('disables "Search this area" while "Use my location" is pending', async () => {
+  it('disables "Search this area" while "Locate me" is pending', async () => {
     await render({ status: 'denied' });
     map().centerChange.emit(krakow);
     await zoomTo(10);
     const pending = new Subject<GeolocationOutcome>();
     currentPosition.mockReturnValue(pending);
 
-    button('Use my location').click();
+    button('Locate me').click();
     await settle();
 
     const search = button('Search this area');
@@ -385,20 +390,25 @@ describe('NearbyMapPage', () => {
     expect(map().markers()).toEqual([]);
   });
 
-  it('shows the error under the toolbar and a retry beside Search that repeats the last query', async () => {
+  it('shows the error in the toolbar status slot and a retry beside Search that repeats the last query', async () => {
     await render(
       { status: 'ok', ...warsaw },
       throwError(() => new HttpErrorResponse({ status: 500 })),
     );
 
     const toolbar = root().querySelector('.nearby-toolbar')!;
+    const slot = toolbar.querySelector('.nearby-toolbar__slot')!;
     const alert = root().querySelector('app-alert[role="alert"]');
 
     expect(alert?.textContent?.trim()).toBe("We couldn't load sightings for this area.");
-    expect(toolbar.nextElementSibling).toBe(alert);
+    expect(slot.contains(alert)).toBe(true);
+    expect(alert?.parentElement).toBe(slot);
+    expect(statusElement().contains(alert)).toBe(false);
+    expect(toolbar.nextElementSibling).not.toBe(alert);
     expect(toolbar.querySelector('.nearby-toolbar__actions')?.contains(button('Try again'))).toBe(
       true,
     );
+    expect(root().querySelectorAll('[role="status"]')).toHaveLength(1);
     expect(status()).toBe('');
     expect(statusElement().classList).toContain('pw-visually-hidden');
 
@@ -504,13 +514,14 @@ describe('NearbyMapPage', () => {
   });
 
   it.each(['denied', 'unavailable', 'timeout'] as const)(
-    'offers "Use my location" after "Search this area" when the position is %s',
+    'offers "Locate me" after "Search this area" when the position is %s',
     async (outcome) => {
       await render({ status: outcome });
 
       const search = button('Search this area');
-      const locate = button('Use my location');
+      const locate = button('Locate me');
 
+      expect(findButton('Use my location')).toBeUndefined();
       expect(
         search.compareDocumentPosition(locate) & Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy();
@@ -519,20 +530,21 @@ describe('NearbyMapPage', () => {
   );
 
   it.each([{ status: 'ok', ...warsaw }, { status: 'unsupported' }] as const)(
-    'does not offer "Use my location" when the position is $status',
+    'does not offer "Locate me" when the position is $status',
     async (outcome) => {
       await render(outcome);
 
+      expect(findButton('Locate me')).toBeUndefined();
       expect(findButton('Use my location')).toBeUndefined();
     },
   );
 
-  it('recentres, switches the heading and searches when "Use my location" succeeds', async () => {
+  it('recentres, switches the heading and searches when "Locate me" succeeds', async () => {
     await render({ status: 'timeout' });
     const pending = new Subject<GeolocationOutcome>();
     currentPosition.mockReturnValue(pending);
 
-    const locate = button('Use my location');
+    const locate = button('Locate me');
 
     locate.focus();
     locate.click();
@@ -551,29 +563,29 @@ describe('NearbyMapPage', () => {
     expect(map().center()).toEqual(krakow);
     expect(map().zoom()).toBe(nearbyMapZoom);
     expect(heading()).toBe('Sightings near you');
-    expect(findButton('Use my location')).toBeUndefined();
+    expect(findButton('Locate me')).toBeUndefined();
     expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow);
     expect(status()).toBe('2 open sightings within 10 km');
     expect(document.activeElement).toBe(button('Search this area'));
   });
 
-  it('keeps the button and the hint when "Use my location" fails again', async () => {
+  it('keeps the button and the hint when "Locate me" fails again', async () => {
     await render({ status: 'denied' });
     await zoomTo(10);
     currentPosition.mockReturnValue(of({ status: 'timeout' }));
 
-    button('Use my location').click();
+    button('Locate me').click();
     await settle();
 
     expect(currentPosition).toHaveBeenCalledTimes(2);
-    expect(button('Use my location').disabled).toBe(false);
+    expect(button('Locate me').disabled).toBe(false);
     expect(status()).toBe(hint);
     expect(heading()).toBe('Sightings in this area');
     expect(map().center()).toEqual(neutralMapView.centre);
     expect(nearby).not.toHaveBeenCalled();
   });
 
-  it('keeps the search result when "Use my location" fails after a search', async () => {
+  it('keeps the search result when "Locate me" fails after a search', async () => {
     await render({ status: 'denied' });
     map().centerChange.emit(krakow);
     await zoomTo(10);
@@ -581,22 +593,22 @@ describe('NearbyMapPage', () => {
     await settle();
     currentPosition.mockReturnValue(of({ status: 'timeout' }));
 
-    button('Use my location').click();
+    button('Locate me').click();
     await settle();
 
     expect(status()).toBe('2 open sightings within 10 km');
     expect(map().markers().length).toBe(2);
-    expect(findButton('Use my location')).toBeDefined();
+    expect(findButton('Locate me')).toBeDefined();
   });
 
-  it('ignores a second "Use my location" press while the first request is pending', async () => {
+  it('ignores a second "Locate me" press while the first request is pending', async () => {
     await render({ status: 'denied' });
     const pending = new Subject<GeolocationOutcome>();
     currentPosition.mockReturnValue(pending);
 
-    buttonDebug('Use my location').triggerEventHandler('click');
+    buttonDebug('Locate me').triggerEventHandler('click');
     await settle();
-    buttonDebug('Use my location').triggerEventHandler('click');
+    buttonDebug('Locate me').triggerEventHandler('click');
     await settle();
 
     expect(currentPosition).toHaveBeenCalledTimes(2);
@@ -608,5 +620,99 @@ describe('NearbyMapPage', () => {
 
     expect(map().center()).toEqual(krakow);
     expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow);
+  });
+
+  it('drops the result status and disables Search while the map failed, and restores them on recovery', async () => {
+    await render({ status: 'ok', ...warsaw });
+
+    expect(status()).toBe('2 open sightings within 10 km');
+
+    await failMap(true);
+
+    const search = button('Search this area');
+
+    expect(status()).toBe('');
+    expect(status()).not.toContain('2');
+    expect(search.getAttribute('aria-disabled')).toBe('true');
+    expect(search.hasAttribute('aria-describedby')).toBe(false);
+
+    await failMap(false);
+
+    expect(status()).toBe('2 open sightings within 10 km');
+    expect(search.getAttribute('aria-disabled')).toBeNull();
+    expect(map().markers().length).toBe(2);
+  });
+
+  it('drops the empty status while the map failed', async () => {
+    await render({ status: 'ok', ...warsaw }, of({ items: [] }));
+
+    await failMap(true);
+
+    expect(status()).toBe('');
+
+    await failMap(false);
+
+    expect(status()).toBe('No open sightings within 10 km of this area.');
+  });
+
+  it('drops the zoom-in text while the map failed and an unknown position is zoomed out', async () => {
+    await render({ status: 'denied' });
+
+    expect(status()).toBe('Zoom in to search an area');
+
+    await failMap(true);
+
+    expect(status()).toBe('');
+    expect(button('Search this area').getAttribute('aria-disabled')).toBe('true');
+    expect(button('Search this area').hasAttribute('aria-describedby')).toBe(false);
+
+    await failMap(false);
+
+    expect(status()).toBe('Zoom in to search an area');
+    expect(button('Search this area').getAttribute('aria-describedby')).toBe(statusElement().id);
+  });
+
+  it('drops the hint at zoom 10 while the map failed', async () => {
+    await render({ status: 'denied' });
+    await zoomTo(10);
+
+    expect(status()).toBe(hint);
+
+    await failMap(true);
+
+    expect(status()).toBe('');
+    expect(button('Search this area').getAttribute('aria-disabled')).toBe('true');
+
+    await failMap(false);
+
+    expect(status()).toBe(hint);
+    expect(button('Search this area').getAttribute('aria-disabled')).toBeNull();
+  });
+
+  it('keeps the loading indicator while the map failed', async () => {
+    const pending = new Subject<SightingList>();
+    await render({ status: 'ok', ...warsaw }, pending);
+
+    await failMap(true);
+
+    expect(statusElement().querySelector('app-loading-indicator')).not.toBeNull();
+    expect(status()).toBe('Loading…');
+    expect(button('Search this area').getAttribute('aria-describedby')).toBe(statusElement().id);
+  });
+
+  it('keeps the nearby error alert and its retry while the map failed', async () => {
+    await render(
+      { status: 'ok', ...warsaw },
+      throwError(() => new HttpErrorResponse({ status: 500 })),
+    );
+
+    await failMap(true);
+
+    expect(root().querySelector('app-alert[role="alert"]')?.textContent?.trim()).toBe(
+      "We couldn't load sightings for this area.",
+    );
+    expect(findButton('Try again')).toBeDefined();
+    expect(status()).toBe('');
+    expect(button('Search this area').hasAttribute('aria-describedby')).toBe(false);
   });
 });

@@ -268,17 +268,20 @@ describe('MapView', () => {
 
   it('emits mapReady once the map is created', async () => {
     let readyCount = 0;
+    const failures: boolean[] = [];
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
     fixture = TestBed.createComponent(MapView);
     fixture.componentInstance.mapReady.subscribe(() => readyCount++);
+    fixture.componentInstance.loadFailed.subscribe((failed) => failures.push(failed));
     fixture.componentRef.setInput('label', 'Map of sightings');
     fixture.componentRef.setInput('center', centre);
     fixture.componentRef.setInput('zoom', 6);
     await fixture.whenStable();
 
     await vi.waitFor(() => expect(readyCount).toBe(1));
+    expect(failures).toEqual([]);
   });
 
   it('shows an error with a retry when Leaflet fails to load, then loads on retry', async () => {
@@ -287,6 +290,7 @@ describe('MapView', () => {
       .mockReturnValueOnce(throwError(() => new Error('chunk failed')))
       .mockImplementation(() => from(import('leaflet')));
     let readyCount = 0;
+    const failures: boolean[] = [];
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -296,6 +300,7 @@ describe('MapView', () => {
     });
     fixture = TestBed.createComponent(MapView);
     fixture.componentInstance.mapReady.subscribe(() => readyCount++);
+    fixture.componentInstance.loadFailed.subscribe((failed) => failures.push(failed));
     fixture.componentRef.setInput('label', 'Map of sightings');
     fixture.componentRef.setInput('center', centre);
     fixture.componentRef.setInput('zoom', 6);
@@ -307,6 +312,7 @@ describe('MapView', () => {
       "The map couldn't be loaded. Check your connection and try again.",
     );
     expect(readyCount).toBe(0);
+    expect(failures).toEqual([true]);
 
     root.querySelector<HTMLButtonElement>('button')?.click();
     await vi.waitFor(() => expect(root.querySelector('.leaflet-container')).not.toBeNull());
@@ -314,6 +320,34 @@ describe('MapView', () => {
 
     expect(root.querySelector('app-alert')).toBeNull();
     expect(readyCount).toBe(1);
+    expect(failures).toEqual([true, false]);
+    expect(loader).toHaveBeenCalledTimes(2);
+  });
+
+  it('emits true again when the retry fails too', async () => {
+    const loader = vi.fn().mockImplementation(() => throwError(() => new Error('chunk failed')));
+    const failures: boolean[] = [];
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: LEAFLET_LOADER, useValue: loader },
+      ],
+    });
+    fixture = TestBed.createComponent(MapView);
+    fixture.componentInstance.loadFailed.subscribe((failed) => failures.push(failed));
+    fixture.componentRef.setInput('label', 'Map of sightings');
+    fixture.componentRef.setInput('center', centre);
+    fixture.componentRef.setInput('zoom', 6);
+    await fixture.whenStable();
+
+    const root = fixture.nativeElement as HTMLElement;
+
+    root.querySelector<HTMLButtonElement>('button')?.click();
+    await vi.waitFor(() => expect(failures).toEqual([true, false, true]));
+    await fixture.whenStable();
+
+    expect(root.querySelector('app-alert')).not.toBeNull();
     expect(loader).toHaveBeenCalledTimes(2);
   });
 });

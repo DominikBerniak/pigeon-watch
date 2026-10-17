@@ -24,6 +24,7 @@
   flex: 1 1 auto;
   flex-direction: column;
   min-width: 0;
+  min-height: var(--pw-control-height);
 }
 
 .nearby-status {

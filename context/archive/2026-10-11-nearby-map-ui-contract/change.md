@@ -1,10 +1,10 @@
 ---
 change_id: nearby-map-ui-contract
 title: Nearby map ui contract
-status: impl_reviewed
+status: archived
 created: 2026-10-11
 updated: 2026-10-17
-archived_at: null
+archived_at: 2026-10-17T17:45:25Z
 ---
 
 ## Notes

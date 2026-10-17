@@ -11,7 +11,7 @@
         type="button"
         [disabled]="searchDisabled()"
         disabledInteractive
-        [attr.aria-describedby]="searchDisabled() ? statusId : null"
+        [attr.aria-describedby]="describesSearch() ? statusId : null"
         (click)="searchThisArea()"
       >
         {{ 'map.searchArea' | translate }}
@@ -29,7 +29,7 @@
           disabledInteractive
           (click)="useMyLocation()"
         >
-          {{ 'map.useMyLocation' | translate }}
+          {{ 'map.locateMe' | translate }}
         </button>
       }
     </div>
@@ -65,11 +65,11 @@
           }
         }
       </div>
+      @if (status() === 'error') {
+        <app-alert kind="error">{{ 'map.error' | translate }}</app-alert>
+      }
     </div>
   </div>
-  @if (status() === 'error') {
-    <app-alert kind="error">{{ 'map.error' | translate }}</app-alert>
-  }
   <div class="nearby-body">
     <app-map-view
       #mapView
@@ -81,6 +81,7 @@
       (centerChange)="trackCentre($event)"
       (zoomChange)="trackZoom($event)"
       (markerSelect)="select($event)"
+      (loadFailed)="trackLoadFailed($event)"
     />
     <aside class="pw-stack">
       <section class="nearby-legend">
