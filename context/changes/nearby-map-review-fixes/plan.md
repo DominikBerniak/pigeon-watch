@@ -289,29 +289,29 @@ None. A new resx key; the neutral English file is the only culture today, and a 
 
 #### Automated
 
-- [x] 2.1 Frontend unit tests pass: `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
-- [x] 2.2 Production build passes within the bundle budget: `npm run build` (from `PigeonWatch/Frontend`)
-- [x] 2.3 API builds with the new resource key: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` (from the repo root)
-- [x] 2.4 The page spec finds "Locate me" (not "Use my location") after denied, unavailable and timeout and still not after unsupported; the picker spec keeps "Use my location"
-- [x] 2.5 The page spec asserts the error alert is inside `.nearby-toolbar__slot`, Try again is in `.nearby-toolbar__actions` and there is exactly one `[role="status"]` element
-- [x] 2.6 The sink spec asserts the `map-nearby-error-after-denied` cell shows Search, Try again and Locate me together with the alert in the slot
+- [x] 2.1 Frontend unit tests pass: `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — 21ceaaf
+- [x] 2.2 Production build passes within the bundle budget: `npm run build` (from `PigeonWatch/Frontend`) — 21ceaaf
+- [x] 2.3 API builds with the new resource key: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` (from the repo root) — 21ceaaf
+- [x] 2.4 The page spec finds "Locate me" (not "Use my location") after denied, unavailable and timeout and still not after unsupported; the picker spec keeps "Use my location" — 21ceaaf
+- [x] 2.5 The page spec asserts the error alert is inside `.nearby-toolbar__slot`, Try again is in `.nearby-toolbar__actions` and there is exactly one `[role="status"]` element — 21ceaaf
+- [x] 2.6 The sink spec asserts the `map-nearby-error-after-denied` cell shows Search, Try again and Locate me together with the alert in the slot — 21ceaaf
 
 #### Manual
 
-- [x] 2.7 At 375 px in the sink, the "Location timed out" cell keeps Search and Locate me on one row and the map starts at the same offset as the "Found" cell
-- [x] 2.8 At 375 px and `md` in the sink, the "Nearby error" cell starts the map at the same offset as the "Found" cell
-- [x] 2.9 The new `map-nearby-error-after-denied` cell shows no worse than the recorded residuals (third button wraps at 375 px, about +18 px at `md`)
+- [x] 2.7 At 375 px in the sink, the "Location timed out" cell keeps Search and Locate me on one row and the map starts at the same offset as the "Found" cell — 21ceaaf
+- [x] 2.8 At 375 px and `md` in the sink, the "Nearby error" cell starts the map at the same offset as the "Found" cell — 21ceaaf
+- [x] 2.9 The new `map-nearby-error-after-denied` cell shows no worse than the recorded residuals (third button wraps at 375 px, about +18 px at `md`) — 21ceaaf
 
 ### Phase 3: Measure and record
 
 #### Automated
 
-- [ ] 3.1 Frontend unit tests pass: `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
-- [ ] 3.2 Production build passes within the bundle budget: `npm run build` (from `PigeonWatch/Frontend`)
+- [x] 3.1 Frontend unit tests pass: `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
+- [x] 3.2 Production build passes within the bundle budget: `npm run build` (from `PigeonWatch/Frontend`)
 
 #### Manual
 
-- [ ] 3.3 `visual-notes.md` records the map offsets at 375 px, `md` and `lg` for "Found", "Nearby error" and "Location timed out"; the "Nearby error" and "Location timed out" cells equal "Found" at each width
-- [ ] 3.4 The keyboard Tab pass at 375 px and `md` reaches Search, Try again, Locate me and the map in a sensible order, with a visible focus ring each time
-- [ ] 3.5 A screen reader announces the status text changes and the in-slot error alert once each, and focus lands where the page code puts it after select, Close, Try again and a successful "Locate me"
-- [ ] 3.6 The sink at 375 px and `md` shows no overlap or clipped text in the new cells
+- [x] 3.3 `visual-notes.md` records the map offsets at 375 px, `md` and `lg` for "Found", "Nearby error" and "Location timed out"; the "Nearby error" and "Location timed out" cells equal "Found" at each width
+- [x] 3.4 The keyboard Tab pass at 375 px and `md` reaches Search, Try again, Locate me and the map in a sensible order, with a visible focus ring each time
+- [x] 3.5 A screen reader announces the status text changes and the in-slot error alert once each, and focus lands where the page code puts it after select, Close, Try again and a successful "Locate me"
+- [x] 3.6 The sink at 375 px and `md` shows no overlap or clipped text in the new cells
