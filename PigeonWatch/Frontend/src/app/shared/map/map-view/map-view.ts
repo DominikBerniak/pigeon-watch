@@ -100,8 +100,9 @@ export class MapView {
   readonly markerSelect = output<string>();
   readonly pinMove = output<GeoPoint>();
   readonly mapReady = output<void>();
+  readonly loadFailed = output<boolean>();
 
-  protected readonly loadFailed = signal(false);
+  protected readonly failed = signal(false);
 
   constructor() {
     afterNextRender(() => this.load());
@@ -122,11 +123,14 @@ export class MapView {
   }
 
   private load(): void {
-    this.loadFailed.set(false);
+    if (this.failed()) this.loadFailed.emit(false);
+
+    this.failed.set(false);
     this.loadLeaflet()
       .pipe(
         catchError(() => {
-          this.loadFailed.set(true);
+          this.failed.set(true);
+          this.loadFailed.emit(true);
 
           return EMPTY;
         }),

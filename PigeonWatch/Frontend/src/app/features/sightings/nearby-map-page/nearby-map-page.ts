@@ -109,6 +109,7 @@ export class NearbyMapPage {
   protected readonly viewCentre = signal<GeoPoint>(neutralMapView.centre);
   protected readonly viewZoom = signal<number>(neutralMapView.zoom);
   protected readonly locating = signal(true);
+  protected readonly mapFailed = signal(false);
   protected readonly positionUnknown = signal(false);
   protected readonly state = signal<NearbyState>({ kind: 'idle' });
   protected readonly sightings = signal<readonly Sighting[]>([]);
@@ -126,7 +127,11 @@ export class NearbyMapPage {
   );
   protected readonly zoomedOut = computed(() => this.mapZoom() < minSearchZoom);
   protected readonly searchDisabled = computed(
-    () => this.zoomedOut() || this.locating() || this.state().kind === 'loading',
+    () =>
+      this.zoomedOut() ||
+      this.locating() ||
+      this.mapFailed() ||
+      this.state().kind === 'loading',
   );
   protected readonly canRetryLocation = computed(() => {
     const status = this.locationStatus();
@@ -135,6 +140,12 @@ export class NearbyMapPage {
   });
   protected readonly status = computed<NearbyStatus>(() => {
     if (this.locating()) return 'locating';
+
+    if (this.mapFailed()) {
+      const kind = this.state().kind;
+
+      return kind === 'loading' || kind === 'error' ? kind : 'none';
+    }
 
     if (this.zoomedOut()) return 'zoomToSearch';
 
@@ -196,6 +207,10 @@ export class NearbyMapPage {
 
   protected trackZoom(zoom: number): void {
     this.mapZoom.set(zoom);
+  }
+
+  protected trackLoadFailed(failed: boolean): void {
+    this.mapFailed.set(failed);
   }
 
   protected searchThisArea(): void {

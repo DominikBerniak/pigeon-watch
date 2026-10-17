@@ -296,6 +296,12 @@ describe('KitchenSink', () => {
     await expect(firstValueFrom(loader())).rejects.toThrow();
   });
 
+  it('gives the failed-map cell with an unknown position a loader that fails', async () => {
+    const loader = cellDebug('map-load-failed-unknown-position').injector.get(LEAFLET_LOADER);
+
+    await expect(firstValueFrom(loader())).rejects.toThrow();
+  });
+
   it('draws focusable markers with no tile images through a map cell loader', async () => {
     const appRef = TestBed.inject(ApplicationRef);
     const host = document.createElement('div');

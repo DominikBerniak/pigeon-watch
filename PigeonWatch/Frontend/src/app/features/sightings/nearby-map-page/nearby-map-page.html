@@ -11,7 +11,7 @@
         type="button"
         [disabled]="searchDisabled()"
         disabledInteractive
-        [attr.aria-describedby]="searchDisabled() ? statusId : null"
+        [attr.aria-describedby]="searchDisabled() && status() !== 'none' ? statusId : null"
         (click)="searchThisArea()"
       >
         {{ 'map.searchArea' | translate }}
@@ -81,6 +81,7 @@
       (centerChange)="trackCentre($event)"
       (zoomChange)="trackZoom($event)"
       (markerSelect)="select($event)"
+      (loadFailed)="trackLoadFailed($event)"
     />
     <aside class="pw-stack">
       <section class="nearby-legend">

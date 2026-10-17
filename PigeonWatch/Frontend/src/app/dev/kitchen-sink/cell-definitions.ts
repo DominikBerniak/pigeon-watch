@@ -314,6 +314,15 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
     leaflet: 'failure',
     steps: [],
   },
+  {
+    id: 'map-load-failed-unknown-position',
+    label: 'Map library failed to load, position unknown (status and Search suppressed)',
+    group: 'nearbyMap',
+    geolocation: 'denied',
+    nearby: 'items',
+    leaflet: 'failure',
+    steps: [],
+  },
 ];
 
 export const cellGroups: readonly CellGroup[] = [

@@ -89,6 +89,11 @@ describe('NearbyMapPage', () => {
     await settle();
   }
 
+  async function failMap(failed: boolean): Promise<void> {
+    map().loadFailed.emit(failed);
+    await settle();
+  }
+
   function root(): HTMLElement {
     return fixture.nativeElement as HTMLElement;
   }
@@ -608,5 +613,98 @@ describe('NearbyMapPage', () => {
 
     expect(map().center()).toEqual(krakow);
     expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow);
+  });
+
+  it('drops the result status and disables Search while the map failed, and restores them on recovery', async () => {
+    await render({ status: 'ok', ...warsaw });
+
+    expect(status()).toBe('2 open sightings within 10 km');
+
+    await failMap(true);
+
+    const search = button('Search this area');
+
+    expect(status()).toBe('');
+    expect(status()).not.toContain('2');
+    expect(search.getAttribute('aria-disabled')).toBe('true');
+    expect(search.hasAttribute('aria-describedby')).toBe(false);
+
+    await failMap(false);
+
+    expect(status()).toBe('2 open sightings within 10 km');
+    expect(search.getAttribute('aria-disabled')).toBeNull();
+    expect(map().markers().length).toBe(2);
+  });
+
+  it('drops the empty status while the map failed', async () => {
+    await render({ status: 'ok', ...warsaw }, of({ items: [] }));
+
+    await failMap(true);
+
+    expect(status()).toBe('');
+
+    await failMap(false);
+
+    expect(status()).toBe('No open sightings within 10 km of this area.');
+  });
+
+  it('drops the zoom-in text while the map failed and an unknown position is zoomed out', async () => {
+    await render({ status: 'denied' });
+
+    expect(status()).toBe('Zoom in to search an area');
+
+    await failMap(true);
+
+    expect(status()).toBe('');
+    expect(button('Search this area').getAttribute('aria-disabled')).toBe('true');
+    expect(button('Search this area').hasAttribute('aria-describedby')).toBe(false);
+
+    await failMap(false);
+
+    expect(status()).toBe('Zoom in to search an area');
+    expect(button('Search this area').getAttribute('aria-describedby')).toBe(statusElement().id);
+  });
+
+  it('drops the hint at zoom 10 while the map failed', async () => {
+    await render({ status: 'denied' });
+    await zoomTo(10);
+
+    expect(status()).toBe(hint);
+
+    await failMap(true);
+
+    expect(status()).toBe('');
+    expect(button('Search this area').getAttribute('aria-disabled')).toBe('true');
+
+    await failMap(false);
+
+    expect(status()).toBe(hint);
+    expect(button('Search this area').getAttribute('aria-disabled')).toBeNull();
+  });
+
+  it('keeps the loading indicator while the map failed', async () => {
+    const pending = new Subject<SightingList>();
+    await render({ status: 'ok', ...warsaw }, pending);
+
+    await failMap(true);
+
+    expect(statusElement().querySelector('app-loading-indicator')).not.toBeNull();
+    expect(status()).toBe('Loading…');
+    expect(button('Search this area').getAttribute('aria-describedby')).toBe(statusElement().id);
+  });
+
+  it('keeps the nearby error alert and its retry while the map failed', async () => {
+    await render(
+      { status: 'ok', ...warsaw },
+      throwError(() => new HttpErrorResponse({ status: 500 })),
+    );
+
+    await failMap(true);
+
+    expect(root().querySelector('app-alert[role="alert"]')?.textContent?.trim()).toBe(
+      "We couldn't load sightings for this area.",
+    );
+    expect(findButton('Try again')).toBeDefined();
+    expect(status()).toBe('');
   });
 });
