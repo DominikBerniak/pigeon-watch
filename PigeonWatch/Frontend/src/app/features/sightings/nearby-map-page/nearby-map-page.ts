@@ -99,6 +99,9 @@ export class NearbyMapPage {
   private readonly locationStatus = signal<LocationStatus | null>(null);
   private readonly mapView = viewChild<MapView>('mapView');
   private readonly selectedHeading = viewChild<ElementRef<HTMLElement>>('selectedHeading');
+  private readonly searchButton = viewChild('searchButton', {
+    read: ElementRef<HTMLButtonElement>,
+  });
   private lastSearchCentre: GeoPoint | null = null;
 
   protected readonly statusId = `nearby-status-${nextStatusId++}`;
@@ -123,7 +126,7 @@ export class NearbyMapPage {
   );
   protected readonly zoomedOut = computed(() => this.mapZoom() < minSearchZoom);
   protected readonly searchDisabled = computed(
-    () => this.zoomedOut() || this.state().kind === 'loading',
+    () => this.zoomedOut() || this.locating() || this.state().kind === 'loading',
   );
   protected readonly canRetryLocation = computed(() => {
     const status = this.locationStatus();
@@ -202,12 +205,17 @@ export class NearbyMapPage {
   }
 
   protected useMyLocation(): void {
+    if (this.locating()) return;
+
     this.locating.set(true);
     this.locationRequests.next();
   }
 
   protected retry(): void {
-    if (this.lastSearchCentre) this.search(this.lastSearchCentre);
+    if (!this.lastSearchCentre) return;
+
+    this.search(this.lastSearchCentre);
+    this.focusSearch();
   }
 
   protected select(id: string): void {
@@ -234,12 +242,14 @@ export class NearbyMapPage {
   }
 
   private applyLocation(outcome: GeolocationOutcome): void {
+    const retried = this.canRetryLocation();
+
     this.locating.set(false);
     this.locationStatus.set(outcome.status);
 
     if (outcome.status !== 'ok') {
       this.positionUnknown.set(true);
-      this.awaitingSearch.set(true);
+      this.awaitingSearch.set(this.state().kind === 'idle');
 
       return;
     }
@@ -252,6 +262,14 @@ export class NearbyMapPage {
     this.mapCentre.set(centre);
     this.mapZoom.set(nearbyMapZoom);
     this.search(centre);
+
+    if (retried) this.focusSearch();
+  }
+
+  private focusSearch(): void {
+    afterNextRender(() => this.searchButton()?.nativeElement.focus(), {
+      injector: this.injector,
+    });
   }
 
   private search(centre: GeoPoint): void {

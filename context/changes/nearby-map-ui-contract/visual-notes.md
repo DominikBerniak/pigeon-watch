@@ -44,7 +44,7 @@ At 375 the h1 and Report button wrap onto two lines, so the map starts at 116 ra
 
 ## After (Phase 5)
 
-State of the code: commit `ea06fbc` (Phases 1-4) plus the Phase 5 working tree (sink cells, stubs and driver, the spinner check in `style-token-coverage.spec.ts`, the rule in `Frontend/CLAUDE.md`). No production view file changed in this phase.
+State of the code: commit `ea06fbc` (Phases 1-4) plus the Phase 5 working tree (sink cells, stubs and driver, the spinner check in `style-token-coverage.spec.ts`, the rule in `Frontend/CLAUDE.md`). The only production view change in this phase is the map error layout (`nearby-map-page.{html,ts,spec.ts}`, see the Nearby error row below).
 
 Captured 2026-10-11 on `/dev/kitchen-sink` from the `ng serve` already running on port 4200 (it serves the working tree with hot reload), in the Claude browser pane with viewport emulation at 375×812, 768×1024 (`md`) and 1280×900 (`lg`). "Measured" means read from the DOM (`getBoundingClientRect`, computed styles, `document.activeElement`); "seen" means looked at in a screenshot. Offsets are in px from the top of `app-nearby-map-page`, as in the Baseline. Method limits:
 

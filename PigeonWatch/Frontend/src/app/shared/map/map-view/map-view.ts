@@ -208,6 +208,9 @@ export class MapView {
     if (!selectKeys.has(event.originalEvent.key)) return;
 
     event.originalEvent.preventDefault();
+
+    if (event.originalEvent.repeat) return;
+
     this.markerSelect.emit(id);
   }
 

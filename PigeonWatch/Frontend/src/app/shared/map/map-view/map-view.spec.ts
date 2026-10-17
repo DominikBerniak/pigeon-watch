@@ -51,8 +51,8 @@ describe('MapView', () => {
     return element;
   }
 
-  function press(element: HTMLElement, key: string): KeyboardEvent {
-    const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+  function press(element: HTMLElement, key: string, repeat = false): KeyboardEvent {
+    const event = new KeyboardEvent('keydown', { key, repeat, bubbles: true, cancelable: true });
 
     element.dispatchEvent(event);
 
@@ -134,6 +134,21 @@ describe('MapView', () => {
 
       expect(selected).toEqual([marker.id]);
       expect(event.defaultPrevented).toBe(true);
+    },
+  );
+
+  it.each(['Enter', ' '])(
+    'emits once for a held %j and still prevents the default key action',
+    async (key) => {
+      const root = await render();
+      const selected: string[] = [];
+      fixture.componentInstance.markerSelect.subscribe((id) => selected.push(id));
+
+      press(icon(root, 'urgent'), key);
+      const repeated = press(icon(root, 'urgent'), key, true);
+
+      expect(selected).toEqual([marker.id]);
+      expect(repeated.defaultPrevented).toBe(true);
     },
   );
 

@@ -197,7 +197,12 @@ describe('KitchenSink', () => {
   it('disables "Use my location" while a repeated location request is pending', async () => {
     await eventually(() => {
       expect(statusOf('map-retry-locating')).toBe(label('map.locating'));
-      expect(buttonOf('map-retry-locating', 'map.useMyLocation')?.disabled).toBe(true);
+      expect(
+        buttonOf('map-retry-locating', 'map.useMyLocation')?.getAttribute('aria-disabled'),
+      ).toBe('true');
+      expect(buttonOf('map-retry-locating', 'map.searchArea')?.getAttribute('aria-disabled')).toBe(
+        'true',
+      );
     });
   });
 

@@ -263,6 +263,39 @@ describe('NearbyMapPage', () => {
     expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow);
   });
 
+  it('disables "Search this area" while "Use my location" is pending', async () => {
+    await render({ status: 'denied' });
+    map().centerChange.emit(krakow);
+    await zoomTo(10);
+    const pending = new Subject<GeolocationOutcome>();
+    currentPosition.mockReturnValue(pending);
+
+    button('Use my location').click();
+    await settle();
+
+    const search = button('Search this area');
+
+    expect(search.getAttribute('aria-disabled')).toBe('true');
+    expect(search.getAttribute('aria-describedby')).toBe(statusElement().id);
+    expect(status()).toBe('Finding your location…');
+
+    search.click();
+    await settle();
+
+    expect(nearby).not.toHaveBeenCalled();
+
+    pending.next({ status: 'timeout' });
+    pending.complete();
+    await settle();
+
+    expect(search.getAttribute('aria-disabled')).toBeNull();
+
+    search.click();
+    await settle();
+
+    expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow);
+  });
+
   it('queries the current map centre when "Search this area" is pressed', async () => {
     await render({ status: 'denied' });
     map().centerChange.emit(krakow);
@@ -379,6 +412,7 @@ describe('NearbyMapPage', () => {
     expect(findButton('Try again')).toBeUndefined();
     expect(statusElement().classList).not.toContain('pw-visually-hidden');
     expect(map().markers().length).toBe(1);
+    expect(document.activeElement).toBe(button('Search this area'));
   });
 
   it('shows the legend and a prompt in the aside when nothing is selected', async () => {
@@ -498,12 +532,17 @@ describe('NearbyMapPage', () => {
     const pending = new Subject<GeolocationOutcome>();
     currentPosition.mockReturnValue(pending);
 
-    button('Use my location').click();
+    const locate = button('Use my location');
+
+    locate.focus();
+    locate.click();
     await settle();
 
     expect(currentPosition).toHaveBeenLastCalledWith(false);
     expect(status()).toBe('Finding your location…');
-    expect(button('Use my location').disabled).toBe(true);
+    expect(locate.getAttribute('aria-disabled')).toBe('true');
+    expect(locate.disabled).toBe(false);
+    expect(document.activeElement).toBe(locate);
 
     pending.next({ status: 'ok', ...krakow });
     pending.complete();
@@ -515,6 +554,7 @@ describe('NearbyMapPage', () => {
     expect(findButton('Use my location')).toBeUndefined();
     expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow);
     expect(status()).toBe('2 open sightings within 10 km');
+    expect(document.activeElement).toBe(button('Search this area'));
   });
 
   it('keeps the button and the hint when "Use my location" fails again', async () => {
@@ -533,27 +573,37 @@ describe('NearbyMapPage', () => {
     expect(nearby).not.toHaveBeenCalled();
   });
 
-  it('lets only the latest "Use my location" request move the map', async () => {
+  it('keeps the search result when "Use my location" fails after a search', async () => {
     await render({ status: 'denied' });
-    const first = new Subject<GeolocationOutcome>();
-    const second = new Subject<GeolocationOutcome>();
-    currentPosition.mockReturnValueOnce(first).mockReturnValueOnce(second);
+    map().centerChange.emit(krakow);
+    await zoomTo(10);
+    button('Search this area').click();
+    await settle();
+    currentPosition.mockReturnValue(of({ status: 'timeout' }));
+
+    button('Use my location').click();
+    await settle();
+
+    expect(status()).toBe('2 open sightings within 10 km');
+    expect(map().markers().length).toBe(2);
+    expect(findButton('Use my location')).toBeDefined();
+  });
+
+  it('ignores a second "Use my location" press while the first request is pending', async () => {
+    await render({ status: 'denied' });
+    const pending = new Subject<GeolocationOutcome>();
+    currentPosition.mockReturnValue(pending);
 
     buttonDebug('Use my location').triggerEventHandler('click');
     await settle();
     buttonDebug('Use my location').triggerEventHandler('click');
     await settle();
 
-    first.next({ status: 'ok', ...warsaw });
-    first.complete();
-    await settle();
-
-    expect(map().center()).toEqual(neutralMapView.centre);
-    expect(nearby).not.toHaveBeenCalled();
+    expect(currentPosition).toHaveBeenCalledTimes(2);
     expect(status()).toBe('Finding your location…');
 
-    second.next({ status: 'ok', ...krakow });
-    second.complete();
+    pending.next({ status: 'ok', ...krakow });
+    pending.complete();
     await settle();
 
     expect(map().center()).toEqual(krakow);

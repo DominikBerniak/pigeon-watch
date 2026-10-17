@@ -426,6 +426,13 @@ None: no data or API contract changes. `UiLabels.resx` gains six keys (`map.mark
 - Shared map component: `PigeonWatch/Frontend/src/app/shared/map/map-view/map-view.ts`
 - Follow-up: `sighting-detail-ui-contract` (detail page kitchen-sink cells and any remaining layout work)
 
+## Addendum (impl-review 2026-10-17)
+
+- **Map error layout (Phase 5, 39af1f5).** After manual review the map home no longer renders `app-error-retry` in the status slot. Try again is a stroked button in the toolbar beside "Search this area", and the error is an `app-alert kind="error"` on its own row under the toolbar; the status element stays and is visually hidden in the error state. One component cannot span both rows, so this is the one accepted exception to "`app-error-retry` is the only error+retry implementation", recorded in `Frontend/CLAUDE.md`. The detail page, My sightings and `app-map-view` still use `app-error-retry`.
+- **Status precedence with an error.** Below `minSearchZoom` the zoom reason wins over the error: zooming out after a failed search hides the alert and Try again, and they come back on zooming in to 10. Intended: below zoom 10 the only action the toolbar asks for is zooming in, and `retry()` still repeats the last search centre once it is shown again.
+- **Criterion 2.2 scope.** "No `spinnerDiameter` remains under `src/app`" means feature and `shared/map` code. `shared/ui/submit-button` keeps its own `spinnerDiameter = 18` (the inline spinner inside the busy button), which predates this change and is in `shared/ui`, where spinner sizes are allowed.
+- **Unplanned additions.** `dev/dev-routes.ts` declares `data: { layout: 'wide' }` on the kitchen-sink route so map cells render at the map home's width (dev only; production swaps in an empty route list), with the Profile group kept at `--pw-content-max-width`. `shared/map/map-marker.ts` gains `mapMarkerSelectedClassName` next to the other marker class names. The sink's tile-less loader also creates the map with `zoomAnimation: false`, because the hidden browser pane never finished a zoom animation. The selected cells (pointer and keyboard) run from a `manual` button in the cell header instead of on load, so the sink never takes focus or scrolls on load.
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
@@ -490,15 +497,15 @@ None: no data or API contract changes. `UiLabels.resx` gains six keys (`map.mark
 
 #### Automated
 
-- [x] 5.1 Unit tests pass, including the extended `style-token-coverage.spec.ts` and the kitchen-sink spec: `npm test -- --watch=false`
-- [x] 5.2 Production build passes within the bundle budgets: `npm run build`
-- [x] 5.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink`
-- [x] 5.4 Hardcoded-value scan returns 0 hits (no higher than the Phase 1 count) on the view files, the touched features, the shared components and the kitchen-sink files
-- [x] 5.5 `Frontend/CLAUDE.md` names `app-loading-indicator`, `app-error-retry`, `app-criticality-badge`, `selectedId` and `minSearchZoom`, and no longer references `context/changes/profile-ui-contract/` (grep)
+- [x] 5.1 Unit tests pass, including the extended `style-token-coverage.spec.ts` and the kitchen-sink spec: `npm test -- --watch=false` — 39af1f5
+- [x] 5.2 Production build passes within the bundle budgets: `npm run build` — 39af1f5
+- [x] 5.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink` — 39af1f5
+- [x] 5.4 Hardcoded-value scan returns 0 hits (no higher than the Phase 1 count) on the view files, the touched features, the shared components and the kitchen-sink files — 39af1f5
+- [x] 5.5 `Frontend/CLAUDE.md` names `app-loading-indicator`, `app-error-retry`, `app-criticality-badge`, `selectedId` and `minSearchZoom`, and no longer references `context/changes/profile-ui-contract/` (grep) — 39af1f5
 
 #### Manual
 
-- [x] 5.6 Every cell of the 7-state matrix in `visual-notes.md` is shown on screen or marked N/A with a reason, at 375px, `md` and `lg`
-- [x] 5.7 Keyboard pass: every control and marker shows a visible focus ring, has an accessible name, tabs in visual order, and Close returns focus to the marker
-- [x] 5.8 After screenshots compared with the baseline; every visual delta in `visual-notes.md` is labelled intended or fixed
-- [x] 5.9 The next step, `/10x-impl-review`, is run before archive; UI findings are triaged by user impact, not skipped as cosmetic
+- [x] 5.6 Every cell of the 7-state matrix in `visual-notes.md` is shown on screen or marked N/A with a reason, at 375px, `md` and `lg` — 39af1f5
+- [x] 5.7 Keyboard pass: every control and marker shows a visible focus ring, has an accessible name, tabs in visual order, and Close returns focus to the marker — 39af1f5
+- [x] 5.8 After screenshots compared with the baseline; every visual delta in `visual-notes.md` is labelled intended or fixed — 39af1f5
+- [x] 5.9 The next step, `/10x-impl-review`, is run before archive; UI findings are triaged by user impact, not skipped as cosmetic — 39af1f5

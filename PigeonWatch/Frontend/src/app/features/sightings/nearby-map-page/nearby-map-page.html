@@ -6,6 +6,7 @@
   <div class="nearby-toolbar">
     <div class="nearby-toolbar__actions pw-cluster">
       <button
+        #searchButton
         mat-stroked-button
         type="button"
         [disabled]="searchDisabled()"
@@ -21,7 +22,13 @@
         </button>
       }
       @if (canRetryLocation()) {
-        <button mat-stroked-button type="button" [disabled]="locating()" (click)="useMyLocation()">
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="locating()"
+          disabledInteractive
+          (click)="useMyLocation()"
+        >
           {{ 'map.useMyLocation' | translate }}
         </button>
       }
