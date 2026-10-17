@@ -441,71 +441,71 @@ None: no data or API contract changes. `UiLabels.resx` gains six keys (`map.mark
 
 #### Automated
 
-- [x] 1.1 Unit tests pass, including the updated kitchen-sink spec: `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — 049cc88
-- [x] 1.2 Production build passes within the bundle budgets: `npm run build` — 049cc88
-- [x] 1.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink` — 049cc88
-- [x] 1.4 Hardcoded-value scan returns 0 hits on the 4 nearby map view files and the kitchen-sink files — 049cc88
+- [x] 1.1 Unit tests pass, including the updated kitchen-sink spec: `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — f0a9c8e
+- [x] 1.2 Production build passes within the bundle budgets: `npm run build` — f0a9c8e
+- [x] 1.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink` — f0a9c8e
+- [x] 1.4 Hardcoded-value scan returns 0 hits on the 4 nearby map view files and the kitchen-sink files — f0a9c8e
 
 #### Manual
 
-- [x] 1.5 With `npm start`, `/dev/kitchen-sink` renders every Profile cell as before and every baseline map cell, with no API, no login, and no request to `tile.openstreetmap.org` (or the recorded fallback) — 049cc88
-- [x] 1.6 Baseline findings at 375px, `md` and `lg` are recorded in `visual-notes.md`, including the four questions above — 049cc88
+- [x] 1.5 With `npm start`, `/dev/kitchen-sink` renders every Profile cell as before and every baseline map cell, with no API, no login, and no request to `tile.openstreetmap.org` (or the recorded fallback) — f0a9c8e
+- [x] 1.6 Baseline findings at 375px, `md` and `lg` are recorded in `visual-notes.md`, including the four questions above — f0a9c8e
 
 ### Phase 2: Shared components (C2, C3)
 
 #### Automated
 
-- [x] 2.1 Unit tests pass, including specs for the four new components: `npm test -- --watch=false` — 7f6cc22
-- [x] 2.2 No feature or `shared/map` template contains `mat-progress-spinner`, and no `spinnerDiameter` remains under `src/app` (grep returns nothing) — 7f6cc22
-- [x] 2.3 Production build passes within the bundle budgets: `npm run build` — 7f6cc22
-- [x] 2.4 Hardcoded-value scan returns 0 hits on the touched view files, the new components and the kitchen-sink files — 7f6cc22
+- [x] 2.1 Unit tests pass, including specs for the four new components: `npm test -- --watch=false` — f0a9c8e
+- [x] 2.2 No feature or `shared/map` template contains `mat-progress-spinner`, and no `spinnerDiameter` remains under `src/app` (grep returns nothing) — f0a9c8e
+- [x] 2.3 Production build passes within the bundle budgets: `npm run build` — f0a9c8e
+- [x] 2.4 Hardcoded-value scan returns 0 hits on the touched view files, the new components and the kitchen-sink files — f0a9c8e
 
 #### Manual
 
-- [x] 2.5 In `/dev/kitchen-sink` the map cells and Profile cells look like the baseline except for the badge on the map card and the natural-width retry buttons — 7f6cc22
-- [x] 2.6 With `npm start` against the local API, the detail page (loaded, loading, error) and Profile with My sightings items show the shared list, badge, spinner and error+retry with no layout regression at 375px and desktop — 7f6cc22
+- [x] 2.5 In `/dev/kitchen-sink` the map cells and Profile cells look like the baseline except for the badge on the map card and the natural-width retry buttons — f0a9c8e
+- [x] 2.6 With `npm start` against the local API, the detail page (loaded, loading, error) and Profile with My sightings items show the shared list, badge, spinner and error+retry with no layout regression at 375px and desktop — f0a9c8e
 
 ### Phase 3: Map component (C1)
 
 #### Automated
 
-- [x] 3.1 Unit tests pass, including the new `map-view` keyboard, selected-state and zoom cases: `npm test -- --watch=false` — 0b6e9a6
-- [x] 3.2 Production build passes within the bundle budgets: `npm run build` — 0b6e9a6
-- [x] 3.3 Hardcoded-value scan returns 0 hits on the touched view and map files — 0b6e9a6
+- [x] 3.1 Unit tests pass, including the new `map-view` keyboard, selected-state and zoom cases: `npm test -- --watch=false` — f0a9c8e
+- [x] 3.2 Production build passes within the bundle budgets: `npm run build` — f0a9c8e
+- [x] 3.3 Hardcoded-value scan returns 0 hits on the touched view and map files — f0a9c8e
 
 #### Manual
 
-- [x] 3.4 In `/dev/kitchen-sink`, Tab reaches a marker, its focus is visible, Enter and Space each open the card, and the selected marker is visibly different from the others — 0b6e9a6
-- [x] 3.5 The location picker on `/sightings/new` still places, drags and centres the pin as before — 0b6e9a6
+- [x] 3.4 In `/dev/kitchen-sink`, Tab reaches a marker, its focus is visible, Enter and Space each open the card, and the selected marker is visibly different from the others — f0a9c8e
+- [x] 3.5 The location picker on `/sightings/new` still places, drags and centres the pin as before — f0a9c8e
 
 ### Phase 4: Map view layout (C4, C5)
 
 #### Automated
 
-- [x] 4.1 Unit tests pass, including the new page and shell cases: `npm test -- --watch=false` — ea06fbc
-- [x] 4.2 Production build passes within the bundle budgets, initial bundle still under the 500 kB warning: `npm run build` — ea06fbc
-- [x] 4.3 Hardcoded-value scan returns 0 hits on the view files and `app.scss` — ea06fbc
+- [x] 4.1 Unit tests pass, including the new page and shell cases: `npm test -- --watch=false` — f0a9c8e
+- [x] 4.2 Production build passes within the bundle budgets, initial bundle still under the 500 kB warning: `npm run build` — f0a9c8e
+- [x] 4.3 Hardcoded-value scan returns 0 hits on the view files and `app.scss` — f0a9c8e
 
 #### Manual
 
-- [x] 4.4 At 375px: pressing "Search this area" shows loading and the result in the toolbar without scrolling; tapping a marker brings the card into view with focus on its heading; the map does not jump when geolocation resolves — ea06fbc
-- [x] 4.5 At `md` the page is wider than other routes with the aside below the map; at `lg` the aside sits beside the map and shows the legend and prompt when nothing is selected — ea06fbc
-- [x] 4.6 With location denied: the heading reads "Sightings in this area", the button is disabled at country zoom with the reason in the toolbar, and becomes enabled after zooming in to level 10 — ea06fbc
-- [x] 4.7 After a location timeout, "Use my location" is in the toolbar; when the retry succeeds the map moves to the position, the heading reads "Sightings near you" and results appear; when it fails the hint returns and the button stays — ea06fbc
+- [x] 4.4 At 375px: pressing "Search this area" shows loading and the result in the toolbar without scrolling; tapping a marker brings the card into view with focus on its heading; the map does not jump when geolocation resolves — f0a9c8e
+- [x] 4.5 At `md` the page is wider than other routes with the aside below the map; at `lg` the aside sits beside the map and shows the legend and prompt when nothing is selected — f0a9c8e
+- [x] 4.6 With location denied: the heading reads "Sightings in this area", the button is disabled at country zoom with the reason in the toolbar, and becomes enabled after zooming in to level 10 — f0a9c8e
+- [x] 4.7 After a location timeout, "Use my location" is in the toolbar; when the retry succeeds the map moves to the position, the heading reads "Sightings near you" and results appear; when it fails the hint returns and the button stays — f0a9c8e
 
 ### Phase 5: States, gate and guard
 
 #### Automated
 
-- [x] 5.1 Unit tests pass, including the extended `style-token-coverage.spec.ts` and the kitchen-sink spec: `npm test -- --watch=false` — 39af1f5
-- [x] 5.2 Production build passes within the bundle budgets: `npm run build` — 39af1f5
-- [x] 5.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink` — 39af1f5
-- [x] 5.4 Hardcoded-value scan returns 0 hits (no higher than the Phase 1 count) on the view files, the touched features, the shared components and the kitchen-sink files — 39af1f5
-- [x] 5.5 `Frontend/CLAUDE.md` names `app-loading-indicator`, `app-error-retry`, `app-criticality-badge`, `selectedId` and `minSearchZoom`, and no longer references `context/changes/profile-ui-contract/` (grep) — 39af1f5
+- [x] 5.1 Unit tests pass, including the extended `style-token-coverage.spec.ts` and the kitchen-sink spec: `npm test -- --watch=false` — f0a9c8e
+- [x] 5.2 Production build passes within the bundle budgets: `npm run build` — f0a9c8e
+- [x] 5.3 Production output has no trace of the sink: no file under `dist/` contains `dev/kitchen-sink` — f0a9c8e
+- [x] 5.4 Hardcoded-value scan returns 0 hits (no higher than the Phase 1 count) on the view files, the touched features, the shared components and the kitchen-sink files — f0a9c8e
+- [x] 5.5 `Frontend/CLAUDE.md` names `app-loading-indicator`, `app-error-retry`, `app-criticality-badge`, `selectedId` and `minSearchZoom`, and no longer references `context/changes/profile-ui-contract/` (grep) — f0a9c8e
 
 #### Manual
 
-- [x] 5.6 Every cell of the 7-state matrix in `visual-notes.md` is shown on screen or marked N/A with a reason, at 375px, `md` and `lg` — 39af1f5
-- [x] 5.7 Keyboard pass: every control and marker shows a visible focus ring, has an accessible name, tabs in visual order, and Close returns focus to the marker — 39af1f5
-- [x] 5.8 After screenshots compared with the baseline; every visual delta in `visual-notes.md` is labelled intended or fixed — 39af1f5
-- [x] 5.9 The next step, `/10x-impl-review`, is run before archive; UI findings are triaged by user impact, not skipped as cosmetic — 39af1f5
+- [x] 5.6 Every cell of the 7-state matrix in `visual-notes.md` is shown on screen or marked N/A with a reason, at 375px, `md` and `lg` — f0a9c8e
+- [x] 5.7 Keyboard pass: every control and marker shows a visible focus ring, has an accessible name, tabs in visual order, and Close returns focus to the marker — f0a9c8e
+- [x] 5.8 After screenshots compared with the baseline; every visual delta in `visual-notes.md` is labelled intended or fixed — f0a9c8e
+- [x] 5.9 The next step, `/10x-impl-review`, is run before archive; UI findings are triaged by user impact, not skipped as cosmetic — f0a9c8e
