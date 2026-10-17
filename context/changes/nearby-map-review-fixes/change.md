@@ -1,7 +1,7 @@
 ---
 change_id: nearby-map-review-fixes
 title: Nearby map review fixes
-status: implementing
+status: implemented
 created: 2026-10-17
 updated: 2026-10-17
 archived_at: null

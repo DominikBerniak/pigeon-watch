@@ -306,12 +306,12 @@ None. A new resx key; the neutral English file is the only culture today, and a 
 
 #### Automated
 
-- [x] 3.1 Frontend unit tests pass: `npm test -- --watch=false` (from `PigeonWatch/Frontend`)
-- [x] 3.2 Production build passes within the bundle budget: `npm run build` (from `PigeonWatch/Frontend`)
+- [x] 3.1 Frontend unit tests pass: `npm test -- --watch=false` (from `PigeonWatch/Frontend`) — 28e6477
+- [x] 3.2 Production build passes within the bundle budget: `npm run build` (from `PigeonWatch/Frontend`) — 28e6477
 
 #### Manual
 
-- [x] 3.3 `visual-notes.md` records the map offsets at 375 px, `md` and `lg` for "Found", "Nearby error" and "Location timed out"; the "Nearby error" and "Location timed out" cells equal "Found" at each width
-- [x] 3.4 The keyboard Tab pass at 375 px and `md` reaches Search, Try again, Locate me and the map in a sensible order, with a visible focus ring each time
-- [x] 3.5 A screen reader announces the status text changes and the in-slot error alert once each, and focus lands where the page code puts it after select, Close, Try again and a successful "Locate me"
-- [x] 3.6 The sink at 375 px and `md` shows no overlap or clipped text in the new cells
+- [x] 3.3 `visual-notes.md` records the map offsets at 375 px, `md` and `lg` for "Found", "Nearby error" and "Location timed out"; the "Nearby error" and "Location timed out" cells equal "Found" at each width — 28e6477
+- [x] 3.4 The keyboard Tab pass at 375 px and `md` reaches Search, Try again, Locate me and the map in a sensible order, with a visible focus ring each time — 28e6477
+- [x] 3.5 A screen reader announces the status text changes and the in-slot error alert once each, and focus lands where the page code puts it after select, Close, Try again and a successful "Locate me" — 28e6477
+- [x] 3.6 The sink at 375 px and `md` shows no overlap or clipped text in the new cells — 28e6477
