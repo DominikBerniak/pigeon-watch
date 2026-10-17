@@ -4,7 +4,7 @@
 
 Captured 2026-10-17 on `/dev/kitchen-sink` from the `ng serve` already running on port 4200 (serves the working tree after Phase 2: commit `21ceaaf`), in the Claude browser pane with viewport emulation at 375×812, 768×1024 (`md`) and 1280×900 (`lg`). "Measured" means read from the DOM (`getBoundingClientRect`, computed styles, `document.activeElement`) in a fresh page load; Tab and Return were real key presses in the pane. Offsets are px from the top of `app-nearby-map-page`, as in the archived `visual-notes.md`. The map height is fixed (24rem), so a changed offset is a layout shift.
 
-Limits: the sink cell is 34 px narrower than the real page at 375 (cell padding and border, `state-cell.scss`), so a 375 claim from the sink is conservative. No screen reader was run (see "Not verified").
+Limits: the sink cell is 34 px narrower than the real page at 375 (cell padding and border, `state-cell.scss`), so a 375 claim from the sink is conservative. No screen reader was run by the agent. The screen-reader pass (checklist below) was confirmed by the user on 2026-10-17 without a logged transcript.
 
 ## Map offsets
 
@@ -55,7 +55,7 @@ Run in a real screen reader (NVDA or VoiceOver) on `/dev/kitchen-sink` at 375 px
 
 ## Not verified
 
-- Screen-reader announcements (checklist above).
+- Screen-reader announcements: no agent run and no logged transcript; confirmed by the user on 2026-10-17 (checklist above).
 - The map home against the local API with real data (the `authGuard` route needs login).
 - The real page at 375 px (width derived as 343 px, not rendered).
 - The Polish culture: only the neutral English `UiLabels.resx` exists today, and a longer label could wrap again.

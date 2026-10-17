@@ -713,5 +713,6 @@ describe('NearbyMapPage', () => {
     );
     expect(findButton('Try again')).toBeDefined();
     expect(status()).toBe('');
+    expect(button('Search this area').hasAttribute('aria-describedby')).toBe(false);
   });
 });

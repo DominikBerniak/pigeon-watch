@@ -323,4 +323,31 @@ describe('MapView', () => {
     expect(failures).toEqual([true, false]);
     expect(loader).toHaveBeenCalledTimes(2);
   });
+
+  it('emits true again when the retry fails too', async () => {
+    const loader = vi.fn().mockImplementation(() => throwError(() => new Error('chunk failed')));
+    const failures: boolean[] = [];
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: LEAFLET_LOADER, useValue: loader },
+      ],
+    });
+    fixture = TestBed.createComponent(MapView);
+    fixture.componentInstance.loadFailed.subscribe((failed) => failures.push(failed));
+    fixture.componentRef.setInput('label', 'Map of sightings');
+    fixture.componentRef.setInput('center', centre);
+    fixture.componentRef.setInput('zoom', 6);
+    await fixture.whenStable();
+
+    const root = fixture.nativeElement as HTMLElement;
+
+    root.querySelector<HTMLButtonElement>('button')?.click();
+    await vi.waitFor(() => expect(failures).toEqual([true, false, true]));
+    await fixture.whenStable();
+
+    expect(root.querySelector('app-alert')).not.toBeNull();
+    expect(loader).toHaveBeenCalledTimes(2);
+  });
 });

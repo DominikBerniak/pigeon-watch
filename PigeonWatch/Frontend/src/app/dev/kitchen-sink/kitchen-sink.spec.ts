@@ -319,6 +319,20 @@ describe('KitchenSink', () => {
     await expect(firstValueFrom(loader())).rejects.toThrow();
   });
 
+  it('drops the zoom status and keeps Search disabled when the map fails with an unknown position', async () => {
+    const id = 'map-load-failed-unknown-position';
+
+    await eventually(() => expect(statusOf(id)).toBe(label('map.zoomToSearch')));
+
+    mapOf(id).loadFailed.emit(true);
+
+    await eventually(() => {
+      expect(statusOf(id)).toBe('');
+      expect(buttonOf(id, 'map.searchArea')?.getAttribute('aria-disabled')).toBe('true');
+      expect(buttonOf(id, 'map.searchArea')?.hasAttribute('aria-describedby')).toBe(false);
+    });
+  });
+
   it('draws focusable markers with no tile images through a map cell loader', async () => {
     const appRef = TestBed.inject(ApplicationRef);
     const host = document.createElement('div');

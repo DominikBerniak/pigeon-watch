@@ -11,7 +11,7 @@
         type="button"
         [disabled]="searchDisabled()"
         disabledInteractive
-        [attr.aria-describedby]="searchDisabled() && status() !== 'none' ? statusId : null"
+        [attr.aria-describedby]="describesSearch() ? statusId : null"
         (click)="searchThisArea()"
       >
         {{ 'map.searchArea' | translate }}

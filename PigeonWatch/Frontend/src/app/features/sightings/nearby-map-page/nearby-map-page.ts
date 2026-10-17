@@ -128,10 +128,7 @@ export class NearbyMapPage {
   protected readonly zoomedOut = computed(() => this.mapZoom() < minSearchZoom);
   protected readonly searchDisabled = computed(
     () =>
-      this.zoomedOut() ||
-      this.locating() ||
-      this.mapFailed() ||
-      this.state().kind === 'loading',
+      this.zoomedOut() || this.locating() || this.mapFailed() || this.state().kind === 'loading',
   );
   protected readonly canRetryLocation = computed(() => {
     const status = this.locationStatus();
@@ -157,6 +154,9 @@ export class NearbyMapPage {
 
     return state.kind === 'idle' ? 'none' : state.kind;
   });
+  protected readonly describesSearch = computed(
+    () => this.searchDisabled() && this.status() !== 'none' && this.status() !== 'error',
+  );
   protected readonly markers = computed<readonly MapMarker[]>(() => {
     const unnamed = this.resources.translate('sighting.unnamed');
 
