@@ -396,14 +396,23 @@
   <data name="map.title" xml:space="preserve">
     <value>Sightings near you</value>
   </data>
+  <data name="map.titleArea" xml:space="preserve">
+    <value>Sightings in this area</value>
+  </data>
   <data name="map.ariaLabel" xml:space="preserve">
     <value>Map of sightings</value>
+  </data>
+  <data name="map.markerLabel" xml:space="preserve">
+    <value>{0}, {1}</value>
   </data>
   <data name="map.locating" xml:space="preserve">
     <value>Finding your location…</value>
   </data>
   <data name="map.hint" xml:space="preserve">
     <value>We couldn't get your location. Move the map to your area and tap "Search this area".</value>
+  </data>
+  <data name="map.zoomToSearch" xml:space="preserve">
+    <value>Zoom in to search an area</value>
   </data>
   <data name="map.searchArea" xml:space="preserve">
     <value>Search this area</value>
@@ -422,6 +431,9 @@
   </data>
   <data name="map.empty" xml:space="preserve">
     <value>No open sightings within {0} km of this area.</value>
+  </data>
+  <data name="map.found" xml:space="preserve">
+    <value>{0} open sightings within {1} km</value>
   </data>
   <data name="map.error" xml:space="preserve">
     <value>We couldn't load sightings for this area.</value>
@@ -446,5 +458,11 @@
   </data>
   <data name="map.selected.close" xml:space="preserve">
     <value>Close</value>
+  </data>
+  <data name="map.selectPrompt" xml:space="preserve">
+    <value>Select a marker to see details</value>
+  </data>
+  <data name="map.legend.title" xml:space="preserve">
+    <value>Criticality</value>
   </data>
 </root>

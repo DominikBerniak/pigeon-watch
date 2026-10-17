@@ -3,21 +3,12 @@
     <h2 class="pw-subtitle">{{ 'sighting.mine.title' | translate }}</h2>
     @switch (state().kind) {
       @case ('loading') {
-        <div class="my-sightings__spinner" role="status">
-          <mat-progress-spinner
-            mode="indeterminate"
-            [diameter]="spinnerDiameter"
-            [attr.aria-label]="'common.loading' | translate"
-          />
-        </div>
+        <app-loading-indicator [label]="'common.loading' | translate" />
       }
       @case ('error') {
-        <div class="pw-stack">
-          <app-alert kind="error">{{ 'sighting.mine.error' | translate }}</app-alert>
-          <button mat-stroked-button type="button" (click)="retry()">
-            {{ 'sighting.mine.retry' | translate }}
-          </button>
-        </div>
+        <app-error-retry [retryLabel]="'sighting.mine.retry' | translate" (retry)="retry()">
+          {{ 'sighting.mine.error' | translate }}
+        </app-error-retry>
       }
     }
     @if (state(); as current) {
@@ -33,7 +24,10 @@
                 </a>
                 <p class="pw-text-muted pw-text-small">
                   {{ statusLabel(sighting.status) | translate }} ·
-                  {{ criticalityLabel(sighting.criticality) | translate }} ·
+                  <app-criticality-badge [kind]="criticalityKind(sighting.criticality)">{{
+                    criticalityLabel(sighting.criticality) | translate
+                  }}</app-criticality-badge>
+                  ·
                   <time [attr.datetime]="sighting.createdAt">{{
                     sighting.createdAt | date: 'medium'
                   }}</time>

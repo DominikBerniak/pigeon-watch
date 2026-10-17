@@ -6,6 +6,30 @@
         {{ dialog.action }}
       </button>
     }
+    @if (definition().manual; as manual) {
+      <button mat-stroked-button type="button" [disabled]="running()" (click)="runManual()">
+        {{ manual.action }}
+      </button>
+    }
+    @if (asksForLocationAgain()) {
+      <label class="pw-cluster pw-text-small">
+        Next "Use my location" answer
+        <select (change)="chooseNextLocation($event)">
+          @for (option of nextLocationOptions; track option.mode) {
+            <option [value]="option.mode" [selected]="option.mode === nextLocation()">
+              {{ option.label }}
+            </option>
+          }
+        </select>
+      </label>
+    }
   </header>
-  <app-profile-page />
+  @switch (definition().group) {
+    @case ('profile') {
+      <app-profile-page />
+    }
+    @case ('nearbyMap') {
+      <app-nearby-map-page />
+    }
+  }
 </section>

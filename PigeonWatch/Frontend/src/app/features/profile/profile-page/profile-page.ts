@@ -19,6 +19,8 @@ import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import {
   Alert,
+  DetailItem,
+  DetailList,
   FieldErrors,
   FormActions,
   FormSubmitState,
@@ -60,6 +62,8 @@ type ProfileNotice =
     MatInputModule,
     TranslatePipe,
     Alert,
+    DetailItem,
+    DetailList,
     FieldErrors,
     FormActions,
     MySightings,

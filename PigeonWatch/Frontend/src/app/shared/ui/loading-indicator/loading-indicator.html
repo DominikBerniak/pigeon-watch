@@ -1,0 +1,6 @@
+@if (layout() === 'inline') {
+  <mat-progress-spinner mode="indeterminate" [diameter]="diameter()" aria-hidden="true" />
+  <span>{{ label() }}</span>
+} @else {
+  <mat-progress-spinner mode="indeterminate" [diameter]="diameter()" [attr.aria-label]="label()" />
+}

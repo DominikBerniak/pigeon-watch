@@ -1,3 +1,5 @@
+@use 'breakpoints' as bp;
+
 .app-header {
   position: sticky;
   top: 0;
@@ -21,6 +23,12 @@
   max-width: var(--pw-content-max-width);
   margin: var(--pw-space-6) auto;
   padding: 0 var(--pw-space-4);
+}
+
+.app-main--wide {
+  @include bp.from(md) {
+    max-width: var(--pw-content-wide-max-width);
+  }
 }
 
 .app-main--guest {

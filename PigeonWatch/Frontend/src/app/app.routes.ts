@@ -7,6 +7,7 @@ export const routes: Routes = [
     path: '',
     pathMatch: 'full',
     canActivate: [authGuard],
+    data: { layout: 'wide' },
     loadComponent: () =>
       import('./features/sightings/nearby-map-page/nearby-map-page').then((m) => m.NearbyMapPage),
   },

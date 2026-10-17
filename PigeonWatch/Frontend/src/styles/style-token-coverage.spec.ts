@@ -19,6 +19,8 @@ const tokenDeclaration = /^\s*(--pw-[\w-]+)\s*:/gm;
 const commonClassDeclaration = /\.(pw-[a-z][\w-]*)/g;
 const templateClassUsage = /(?<![\w-])pw-[a-z][\w-]*/g;
 const templateReference = /(?<=\s)#[\w-]+(?=[\s=>/])/g;
+const spinnerElement = /<mat-progress-spinner\b/;
+const sharedUiPrefix = 'src/app/shared/ui/';
 
 function filesUnder(directory: string, extension: string): string[] {
   return readdirSync(directory, { recursive: true, withFileTypes: true })
@@ -146,6 +148,24 @@ describe('style token coverage', () => {
     expect(
       matchesOf(colorLiteral, withoutTemplateReferences(`<input #face [style.color]="'#abc'" />`)),
     ).toEqual(['#abc']);
+  });
+
+  it('finds the spinner it guards against inside shared/ui', () => {
+    expect(
+      filesUnder(appDir, '.html')
+        .filter((file) => displayPath(file).startsWith(sharedUiPrefix))
+        .filter((file) => spinnerElement.test(readFileSync(file, 'utf8')))
+        .map(displayPath),
+    ).toContain('src/app/shared/ui/loading-indicator/loading-indicator.html');
+  });
+
+  it('templates outside shared/ui use app-loading-indicator instead of mat-progress-spinner', () => {
+    const offenders = filesUnder(appDir, '.html')
+      .filter((file) => !displayPath(file).startsWith(sharedUiPrefix))
+      .filter((file) => spinnerElement.test(readFileSync(file, 'utf8')))
+      .map(displayPath);
+
+    expect(offenders).toEqual([]);
   });
 
   it('templates have no inline style attributes', () => {

@@ -4,28 +4,13 @@
   gap: var(--pw-stack-gap);
 }
 
-.profile-details {
-  display: flex;
-  flex-direction: column;
-  gap: var(--pw-space-4);
-  margin: 0;
-}
-
-.profile-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--pw-space-1);
-}
-
-.profile-value {
+.profile-name {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--pw-space-3);
-  margin: 0;
-  overflow-wrap: anywhere;
 }
 
-.profile-value__text {
+.profile-name__text {
   min-width: 0;
 }

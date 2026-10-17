@@ -2,7 +2,6 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subject, catchError, combineLatest, map, of, startWith, switchMap, tap } from 'rxjs';
 import { GeoPoint } from '../../../core/geolocation/geo-point';
@@ -11,7 +10,15 @@ import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import { pickerMapZoom } from '../../../shared/map/map-config';
 import { MapMarker } from '../../../shared/map/map-marker';
 import { MapView } from '../../../shared/map/map-view/map-view';
-import { Alert, PageCard } from '../../../shared/ui';
+import {
+  Alert,
+  CriticalityBadge,
+  DetailItem,
+  DetailList,
+  ErrorRetry,
+  LoadingIndicator,
+  PageCard,
+} from '../../../shared/ui';
 import { sightingFailure } from '../sighting-errors';
 import {
   Sighting,
@@ -34,16 +41,19 @@ const coordinateDecimals = 5;
   imports: [
     DatePipe,
     MatButtonModule,
-    MatProgressSpinnerModule,
     RouterLink,
     TranslatePipe,
     Alert,
+    CriticalityBadge,
+    DetailItem,
+    DetailList,
+    ErrorRetry,
+    LoadingIndicator,
     MapView,
     PageCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sighting-detail-page.html',
-  styleUrl: './sighting-detail-page.scss',
 })
 export class SightingDetailPage {
   private readonly route = inject(ActivatedRoute);
@@ -51,12 +61,12 @@ export class SightingDetailPage {
   private readonly resources = inject(ResourceService);
   private readonly reloads = new Subject<void>();
 
-  protected readonly spinnerDiameter = 32;
   protected readonly mapZoom = pickerMapZoom;
   protected readonly state = signal<DetailState>({ kind: 'loading' });
   protected readonly mapShown = signal(false);
   protected readonly statusLabel = sightingStatusLabel;
   protected readonly criticalityLabel = sightingCriticalityLabel;
+  protected readonly criticalityKind = sightingCriticalityMarker;
   protected readonly sighting = computed(() => {
     const state = this.state();
 

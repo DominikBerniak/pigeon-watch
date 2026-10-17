@@ -5,72 +5,44 @@
   <app-page-card [title]="title()">
     @switch (state().kind) {
       @case ('loading') {
-        <div class="detail-spinner" role="status">
-          <mat-progress-spinner
-            mode="indeterminate"
-            [diameter]="spinnerDiameter"
-            [attr.aria-label]="'common.loading' | translate"
-          />
-        </div>
+        <app-loading-indicator [label]="'common.loading' | translate" />
       }
       @case ('notFound') {
         <app-alert kind="info">{{ 'sighting.errors.notFound' | translate }}</app-alert>
       }
       @case ('error') {
-        <div class="pw-stack">
-          <app-alert kind="error">{{ 'sighting.errors.generic' | translate }}</app-alert>
-          <button mat-stroked-button type="button" (click)="retry()">
-            {{ 'sighting.detail.retry' | translate }}
-          </button>
-        </div>
+        <app-error-retry [retryLabel]="'sighting.detail.retry' | translate" (retry)="retry()">
+          {{ 'sighting.errors.generic' | translate }}
+        </app-error-retry>
       }
     }
     @if (sighting(); as sighting) {
       <div class="pw-stack">
-        <dl class="detail-list">
-          <div class="detail-row">
-            <dt class="pw-text-muted pw-text-small">{{ 'sighting.detail.status' | translate }}</dt>
-            <dd class="detail-value">{{ statusLabel(sighting.status) | translate }}</dd>
+        <dl app-detail-list>
+          <div app-detail-item [label]="'sighting.detail.status' | translate">
+            {{ statusLabel(sighting.status) | translate }}
           </div>
-          <div class="detail-row">
-            <dt class="pw-text-muted pw-text-small">
-              {{ 'sighting.detail.criticality' | translate }}
-            </dt>
-            <dd class="detail-value">{{ criticalityLabel(sighting.criticality) | translate }}</dd>
+          <div app-detail-item [label]="'sighting.detail.criticality' | translate">
+            <app-criticality-badge [kind]="criticalityKind(sighting.criticality)">
+              {{ criticalityLabel(sighting.criticality) | translate }}
+            </app-criticality-badge>
           </div>
-          <div class="detail-row">
-            <dt class="pw-text-muted pw-text-small">
-              {{ 'sighting.detail.description' | translate }}
-            </dt>
-            <dd class="detail-value detail-value--text">{{ sighting.description }}</dd>
+          <div app-detail-item value="text" [label]="'sighting.detail.description' | translate">
+            {{ sighting.description }}
           </div>
-          <div class="detail-row">
-            <dt class="pw-text-muted pw-text-small">
-              {{ 'sighting.detail.behaviour' | translate }}
-            </dt>
-            <dd class="detail-value detail-value--text">{{ sighting.behaviour }}</dd>
+          <div app-detail-item value="text" [label]="'sighting.detail.behaviour' | translate">
+            {{ sighting.behaviour }}
           </div>
-          <div class="detail-row">
-            <dt class="pw-text-muted pw-text-small">
-              {{ 'sighting.detail.reporter' | translate }}
-            </dt>
-            <dd class="detail-value">{{ sighting.reporterDisplayName }}</dd>
+          <div app-detail-item [label]="'sighting.detail.reporter' | translate">
+            {{ sighting.reporterDisplayName }}
           </div>
-          <div class="detail-row">
-            <dt class="pw-text-muted pw-text-small">
-              {{ 'sighting.detail.reportedAt' | translate }}
-            </dt>
-            <dd class="detail-value">
-              <time [attr.datetime]="sighting.createdAt">{{
-                sighting.createdAt | date: 'medium'
-              }}</time>
-            </dd>
+          <div app-detail-item [label]="'sighting.detail.reportedAt' | translate">
+            <time [attr.datetime]="sighting.createdAt">{{
+              sighting.createdAt | date: 'medium'
+            }}</time>
           </div>
-          <div class="detail-row">
-            <dt class="pw-text-muted pw-text-small">
-              {{ 'sighting.detail.location' | translate }}
-            </dt>
-            <dd class="detail-value detail-value--numeric">{{ coordinatesText() }}</dd>
+          <div app-detail-item value="numeric" [label]="'sighting.detail.location' | translate">
+            {{ coordinatesText() }}
           </div>
         </dl>
         <div>

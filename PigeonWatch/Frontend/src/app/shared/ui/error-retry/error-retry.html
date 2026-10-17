@@ -1,0 +1,4 @@
+<app-alert kind="error"><ng-content /></app-alert>
+<button mat-stroked-button type="button" class="error-retry__action" (click)="retry.emit()">
+  {{ retryLabel() }}
+</button>

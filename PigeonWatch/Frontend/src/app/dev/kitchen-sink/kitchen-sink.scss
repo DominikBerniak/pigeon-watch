@@ -7,3 +7,7 @@
   flex-direction: column;
   gap: var(--pw-space-5);
 }
+
+.sink__group--narrow {
+  max-width: var(--pw-content-max-width);
+}

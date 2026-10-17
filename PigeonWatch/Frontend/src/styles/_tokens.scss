@@ -68,6 +68,7 @@
   --pw-blur-md: 12px;
 
   --pw-content-max-width: 40rem;
+  --pw-content-wide-max-width: 64rem;
   --pw-viewport-min-height: 100vh;
   --pw-viewport-min-height-dynamic: 100dvh;
   --pw-form-max-width: 28rem;
@@ -75,9 +76,12 @@
   --pw-brand-mark-size-md: 2rem;
   --pw-brand-mark-size-lg: 3rem;
   --pw-map-height: 24rem;
+  --pw-map-aside-width: 18rem;
   --pw-map-marker-size: 1.5rem;
+  --pw-map-marker-size-selected: 2rem;
   --pw-map-pin-size: 2rem;
   --pw-map-marker-border-width: 3px;
+  --pw-criticality-dot-size: 0.75rem;
 
   --pw-duration-fast: 150ms;
   --pw-duration-normal: 300ms;

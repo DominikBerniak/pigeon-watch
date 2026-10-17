@@ -3,22 +3,18 @@
     @if (successText(); as text) {
       <app-alert kind="success">{{ text }}</app-alert>
     }
-    <dl class="profile-details">
+    <dl app-detail-list>
       @if (currentUser(); as user) {
-        <div class="profile-row">
-          <dt class="pw-text-muted pw-text-small">{{ 'profile.email.label' | translate }}</dt>
-          <dd class="profile-value">{{ user.email }}</dd>
-        </div>
+        <div app-detail-item [label]="'profile.email.label' | translate">{{ user.email }}</div>
       }
       @if (!editing()) {
-        <div class="profile-row">
-          <dt class="pw-text-muted pw-text-small">{{ 'auth.fields.displayName' | translate }}</dt>
-          <dd class="profile-value">
-            <span class="profile-value__text">{{ displayName() }}</span>
+        <div app-detail-item [label]="'auth.fields.displayName' | translate">
+          <div class="profile-name">
+            <span class="profile-name__text">{{ displayName() }}</span>
             <button mat-button type="button" (click)="startEditing()">
               {{ 'profile.edit' | translate }}
             </button>
-          </dd>
+          </div>
         </div>
       }
     </dl>

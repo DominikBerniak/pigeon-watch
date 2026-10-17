@@ -1,0 +1,25 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pw-space-2);
+  color: var(--pw-color-text);
+}
+
+.criticality-badge__dot {
+  flex-shrink: 0;
+  width: var(--pw-criticality-dot-size);
+  height: var(--pw-criticality-dot-size);
+  border-radius: var(--pw-radius-full);
+}
+
+:host(.criticality-badge--monitor) .criticality-badge__dot {
+  background-color: var(--pw-color-criticality-monitor);
+}
+
+:host(.criticality-badge--needs-help-soon) .criticality-badge__dot {
+  background-color: var(--pw-color-criticality-needs-help-soon);
+}
+
+:host(.criticality-badge--urgent) .criticality-badge__dot {
+  background-color: var(--pw-color-criticality-urgent);
+}
