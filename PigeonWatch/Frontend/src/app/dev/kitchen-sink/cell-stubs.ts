@@ -25,6 +25,14 @@ export type NearbyMode = 'items' | 'empty' | 'failure' | 'pending' | 'itemsThenP
 export type NextLocationMode = 'ok' | 'timeout' | 'pending';
 export type GeolocationMode = 'ok' | 'denied' | 'timeoutThenNext' | NextLocationMode;
 export type LeafletMode = 'tileless' | 'failure';
+export type DetailMode =
+  | 'loaded'
+  | 'loadedUnnamed'
+  | 'loadedLongName'
+  | 'notFound'
+  | 'failure'
+  | 'pending'
+  | 'failureThenLoaded';
 
 export interface ProfileModes {
   readonly group: 'profile';
@@ -41,7 +49,13 @@ export interface NearbyMapModes {
   readonly nextLocation?: NextLocationMode;
 }
 
-export type StubModes = ProfileModes | NearbyMapModes;
+export interface SightingDetailModes {
+  readonly group: 'sightingDetail';
+  readonly detail: DetailMode;
+  readonly leaflet: LeafletMode;
+}
+
+export type StubModes = ProfileModes | NearbyMapModes | SightingDetailModes;
 
 type LeafletModule = typeof Leaflet;
 
@@ -95,6 +109,13 @@ export const sinkSightings: readonly Sighting[] = [
   }),
 ];
 
+export const sinkLongNameSighting: Sighting = sinkSighting(
+  'sink-long-name',
+  'Grey pigeon with a ruffled left wing from the bus stop on Marszalkowska Street',
+  SightingCriticality.urgent,
+  { latitude: 0.004, longitude: -0.006 },
+);
+
 const busyHoldMilliseconds = 30000;
 
 function badRequest(errors: Record<string, string[]>): HttpErrorResponse {
@@ -143,6 +164,7 @@ export class CellStubs {
   private readonly chosenNextLocation = signal<NextLocationMode | null>(null);
   private nearbyRequests = 0;
   private locationRequests = 0;
+  private detailRequests = 0;
 
   readonly session = {
     currentUser: signal<CurrentUser | null>(sinkUser).asReadonly(),
@@ -159,6 +181,7 @@ export class CellStubs {
   readonly sightingsApi = {
     mine: (): Observable<SightingList> => this.mineResult(),
     nearby: (): Observable<SightingList> => this.nearbyResult(),
+    get: (): Observable<Sighting> => this.detailResult(),
   };
   readonly geolocation = {
     currentPosition: (): Observable<GeolocationOutcome> => this.positionResult(),
@@ -183,7 +206,7 @@ export class CellStubs {
   leafletLoader(load: LeafletLoader): LeafletLoader {
     return () => {
       const modes = this.modes();
-      const failing = modes.group === 'nearbyMap' && modes.leaflet === 'failure';
+      const failing = modes.group !== 'profile' && modes.leaflet === 'failure';
 
       if (failing) return throwError(() => new Error('Leaflet stubbed to fail'));
 
@@ -244,6 +267,30 @@ export class CellStubs {
         return NEVER;
       default:
         return of({ items: [] });
+    }
+  }
+
+  private detailResult(): Observable<Sighting> {
+    const modes = this.modes();
+    const firstRequest = this.detailRequests++ === 0;
+
+    switch (modes.group === 'sightingDetail' ? modes.detail : 'loaded') {
+      case 'loadedUnnamed':
+        return of(sinkSightings[3]);
+      case 'loadedLongName':
+        return of(sinkLongNameSighting);
+      case 'notFound':
+        return throwError(() => new HttpErrorResponse({ status: 404 }));
+      case 'failure':
+        return throwError(() => new HttpErrorResponse({ status: 500 }));
+      case 'pending':
+        return NEVER;
+      case 'failureThenLoaded':
+        return firstRequest
+          ? throwError(() => new HttpErrorResponse({ status: 500 }))
+          : of(sinkSightings[0]);
+      default:
+        return of(sinkSightings[0]);
     }
   }
 

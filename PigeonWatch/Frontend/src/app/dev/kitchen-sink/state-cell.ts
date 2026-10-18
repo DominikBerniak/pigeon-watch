@@ -27,6 +27,7 @@ import { ResourceService } from '../../core/resources/resource.service';
 import { ProfileApi } from '../../features/profile/profile-api';
 import { ProfilePage } from '../../features/profile/profile-page/profile-page';
 import { NearbyMapPage } from '../../features/sightings/nearby-map-page/nearby-map-page';
+import { SightingDetailPage } from '../../features/sightings/sighting-detail-page/sighting-detail-page';
 import { SightingsApi } from '../../features/sightings/sightings-api';
 import { LEAFLET_LOADER } from '../../shared/map/map-view/map-view';
 import { CellDefinition } from './cell-definitions';
@@ -40,7 +41,7 @@ interface NextLocationOption {
 
 @Component({
   selector: 'app-state-cell',
-  imports: [MatButtonModule, ProfilePage, NearbyMapPage],
+  imports: [MatButtonModule, ProfilePage, NearbyMapPage, SightingDetailPage],
   providers: [
     CellStubs,
     { provide: SessionService, useFactory: () => inject(CellStubs).session },

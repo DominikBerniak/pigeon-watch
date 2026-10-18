@@ -351,38 +351,38 @@ None. No data, API or route change; two new UI-label keys are served by the exis
 
 #### Automated
 
-- [x] 2.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`)
-- [x] 2.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`)
-- [x] 2.3 UI resource tests pass with the two new keys: `dotnet test PigeonWatch/Api/UnitTests --filter UiResourceTests`
-- [x] 2.4 Hardcoded-value scan on the detail page files returns 0 hits: `grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(' PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.html PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.ts`
-- [x] 2.5 Detail spec asserts the Back link is inside the card actions footer with `href="/"`, and the loading state shows the heading "Sighting" and a loading indicator
-- [x] 2.6 Detail spec asserts the tab title in the loaded, loading, not-found and error states and its reset to "PigeonWatch" on destroy
-- [x] 2.7 Detail spec asserts the heading takes focus after a navigation-entered load and after a successful retry
-- [x] 2.8 Detail spec asserts the map stub gets `interactiveMarkers` false, the new region label and a marker label with the criticality, that a retry hides a shown map, and that no `app-map-view` exists before "Show map"
-- [x] 2.9 Page-card spec asserts `focusHeading()` focuses the `h1` and the `h1` is not a Tab stop
+- [x] 2.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — 00b08ac
+- [x] 2.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`) — 00b08ac
+- [x] 2.3 UI resource tests pass with the two new keys: `dotnet test PigeonWatch/Api/UnitTests --filter UiResourceTests` — 00b08ac
+- [x] 2.4 Hardcoded-value scan on the detail page files returns 0 hits: `grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(' PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.html PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.ts` — 00b08ac
+- [x] 2.5 Detail spec asserts the Back link is inside the card actions footer with `href="/"`, and the loading state shows the heading "Sighting" and a loading indicator — 00b08ac
+- [x] 2.6 Detail spec asserts the tab title in the loaded, loading, not-found and error states and its reset to "PigeonWatch" on destroy — 00b08ac
+- [x] 2.7 Detail spec asserts the heading takes focus after a navigation-entered load and after a successful retry — 00b08ac
+- [x] 2.8 Detail spec asserts the map stub gets `interactiveMarkers` false, the new region label and a marker label with the criticality, that a retry hides a shown map, and that no `app-map-view` exists before "Show map" — 00b08ac
+- [x] 2.9 Page-card spec asserts `focusHeading()` focuses the `h1` and the `h1` is not a Tab stop — 00b08ac
 
 #### Manual
 
-- [x] 2.10 With the API running and logged in, "View details" on the nearby map opens the page with focus on the heading and the tab title showing the sighting name; Tab goes to "Show map" and then to the Back link
-- [x] 2.11 After "Show map", Tab does not stop on the marker and hovering the marker shows its name and criticality
-- [x] 2.12 The browser network panel shows no `tile.openstreetmap.org` request until "Show map" is pressed
-- [x] 2.13 Leaving the page with the Back link returns the tab title to "PigeonWatch"
+- [x] 2.10 With the API running and logged in, "View details" on the nearby map opens the page with focus on the heading and the tab title showing the sighting name; Tab goes to "Show map" and then to the Back link — 00b08ac
+- [x] 2.11 After "Show map", Tab does not stop on the marker and hovering the marker shows its name and criticality — 00b08ac
+- [x] 2.12 The browser network panel shows no `tile.openstreetmap.org` request until "Show map" is pressed — 00b08ac
+- [x] 2.13 Leaving the page with the Back link returns the tab title to "PigeonWatch" — 00b08ac
 
 ### Phase 3: States and visual gate
 
 #### Automated
 
-- [ ] 3.1 Frontend unit tests pass, including the kitchen-sink spec with the detail group: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`)
-- [ ] 3.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`)
-- [ ] 3.3 Sink spec renders each detail cell once with its label and the detail page, and asserts the loaded, unnamed, long-name, map-shown, not-found, error, loading and retry states
-- [ ] 3.4 Sink spec asserts the map-shown cell's map has `interactiveMarkers` false and one marker, and the error cell offers Try again while the not-found cell does not
+- [x] 3.1 Frontend unit tests pass, including the kitchen-sink spec with the detail group: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`)
+- [x] 3.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`)
+- [x] 3.3 Sink spec renders each detail cell once with its label and the detail page, and asserts the loaded, unnamed, long-name, map-shown, not-found, error, loading and retry states
+- [x] 3.4 Sink spec asserts the map-shown cell's map has `interactiveMarkers` false and one marker, and the error cell offers Try again while the not-found cell does not
 
 #### Manual
 
-- [ ] 3.5 `npm start`, open `/dev/kitchen-sink`: the "Sighting detail" group renders every cell, and the page does not scroll or take focus on load
-- [ ] 3.6 visual-notes.md records heading wrap, card height and Back-link placement at 375 px, `md` and `lg`, and a desktop and a 375 px screenshot of the group were reviewed
-- [ ] 3.7 visual-notes.md records the 7-state matrix with cell ids and N/A reasons for disabled and empty
-- [ ] 3.8 visual-notes.md records the Tab pass and the manual retry cell moving focus to the heading
+- [x] 3.5 `npm start`, open `/dev/kitchen-sink`: the "Sighting detail" group renders every cell, and the page does not scroll or take focus on load
+- [x] 3.6 visual-notes.md records heading wrap, card height and Back-link placement at 375 px, `md` and `lg`, and a desktop and a 375 px screenshot of the group were reviewed
+- [x] 3.7 visual-notes.md records the 7-state matrix with cell ids and N/A reasons for disabled and empty
+- [x] 3.8 visual-notes.md records the Tab pass and the manual retry cell moving focus to the heading
 
 ### Phase 4: Rule and guard
 
