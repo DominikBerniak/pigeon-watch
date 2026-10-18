@@ -9,7 +9,7 @@ import {
   waitFor,
   waitForText,
 } from './cell-driver';
-import { NearbyMapModes, ProfileModes, StubModes } from './cell-stubs';
+import { NearbyMapModes, ProfileModes, SightingDetailModes, StubModes } from './cell-stubs';
 
 export interface CellScenario {
   readonly action: string;
@@ -26,6 +26,7 @@ interface CellBase {
 
 export type ProfileCell = CellBase & ProfileModes;
 export type NearbyMapCell = CellBase & NearbyMapModes;
+export type SightingDetailCell = CellBase & SightingDetailModes;
 export type CellDefinition = CellBase & StubModes;
 
 export interface CellGroup {
@@ -339,7 +340,89 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
   },
 ];
 
+const detailMap = '#sighting-detail-map app-map-view';
+
+const detailCells: readonly SightingDetailCell[] = [
+  {
+    id: 'detail-loaded',
+    label: 'Loaded (default)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'detail-unnamed',
+    label: 'Loaded, unnamed sighting',
+    group: 'sightingDetail',
+    detail: 'loadedUnnamed',
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'detail-long-name',
+    label: 'Loaded, long name (heading wraps)',
+    group: 'sightingDetail',
+    detail: 'loadedLongName',
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'detail-map-shown',
+    label: 'Map shown ("Show map" pressed)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    leaflet: 'tileless',
+    steps: [press('sighting.detail.showMap'), waitFor(detailMap)],
+  },
+  {
+    id: 'detail-not-found',
+    label: 'Not found (404)',
+    group: 'sightingDetail',
+    detail: 'notFound',
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'detail-error',
+    label: 'Error (500, Try again)',
+    group: 'sightingDetail',
+    detail: 'failure',
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'detail-loading',
+    label: 'Loading (request never completes)',
+    group: 'sightingDetail',
+    detail: 'pending',
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'detail-error-then-loaded',
+    label: 'Error, then loaded (Try again runs from the header, focus moves to the heading)',
+    group: 'sightingDetail',
+    detail: 'failureThenLoaded',
+    leaflet: 'tileless',
+    steps: [],
+    manual: {
+      action: 'Press Try again',
+      steps: [press('sighting.detail.retry'), waitFor('dl')],
+    },
+  },
+  {
+    id: 'detail-map-load-failed',
+    label: 'Map library failed to load after "Show map"',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    leaflet: 'failure',
+    steps: [press('sighting.detail.showMap'), waitFor(detailMap)],
+  },
+];
+
 export const cellGroups: readonly CellGroup[] = [
   { title: 'Profile', wide: false, cells: [...profileCells, ...dialogCells] },
   { title: 'Nearby map', wide: true, cells: nearbyMapCells },
+  { title: 'Sighting detail', wide: false, cells: detailCells },
 ];

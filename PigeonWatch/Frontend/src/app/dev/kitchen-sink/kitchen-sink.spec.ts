@@ -7,10 +7,11 @@ import { provideRouter } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ResourceService } from '../../core/resources/resource.service';
 import { NearbyMapPage } from '../../features/sightings/nearby-map-page/nearby-map-page';
+import { SightingDetailPage } from '../../features/sightings/sighting-detail-page/sighting-detail-page';
 import { LEAFLET_LOADER, MapView } from '../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../shared/map/testing/map-view-stub';
 import { CellDefinition, cellGroups } from './cell-definitions';
-import { sinkPosition, sinkSightings } from './cell-stubs';
+import { sinkLongNameSighting, sinkPosition, sinkSightings } from './cell-stubs';
 import { KitchenSink } from './kitchen-sink';
 
 const patience = { timeout: 2000, interval: 25 };
@@ -24,6 +25,10 @@ describe('KitchenSink', () => {
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     });
     TestBed.overrideComponent(NearbyMapPage, {
+      remove: { imports: [MapView] },
+      add: { imports: [MapViewStub] },
+    });
+    TestBed.overrideComponent(SightingDetailPage, {
       remove: { imports: [MapView] },
       add: { imports: [MapViewStub] },
     });
@@ -112,6 +117,7 @@ describe('KitchenSink', () => {
     const pageOf: Record<CellDefinition['group'], string> = {
       profile: 'app-profile-page',
       nearbyMap: 'app-nearby-map-page',
+      sightingDetail: 'app-sighting-detail-page',
     };
 
     expect(root.querySelectorAll('app-state-cell').length).toBe(definitions.length);
@@ -121,7 +127,9 @@ describe('KitchenSink', () => {
       const element = cell(definition.id);
 
       expect(textOf(element.querySelector('h3'))).toBe(definition.label);
-      expect(element.querySelectorAll('app-profile-page, app-nearby-map-page')).toHaveLength(1);
+      expect(
+        element.querySelectorAll('app-profile-page, app-nearby-map-page, app-sighting-detail-page'),
+      ).toHaveLength(1);
       expect(element.querySelector(pageOf[definition.group])).not.toBeNull();
     }
   });
@@ -360,6 +368,105 @@ describe('KitchenSink', () => {
       map.destroy();
       host.remove();
     }
+  });
+
+  function headingOf(id: string): string {
+    return textOf(cell(id).querySelector('app-page-card h1'));
+  }
+
+  it('shows the loaded sighting with its heading and seven rows', async () => {
+    await eventually(() => {
+      expect(headingOf('detail-loaded')).toBe('Limpy');
+      expect(cell('detail-loaded').querySelectorAll('dl > div')).toHaveLength(7);
+      expect(cell('detail-loaded').querySelector('app-criticality-badge')).not.toBeNull();
+      expect(cell('detail-loaded').querySelector('app-map-view')).toBeNull();
+      expect(buttonOf('detail-loaded', 'sighting.detail.showMap')).not.toBeNull();
+    });
+  });
+
+  it('shows the unnamed label as the heading of an unnamed sighting', async () => {
+    await eventually(() => expect(headingOf('detail-unnamed')).toBe(label('sighting.unnamed')));
+  });
+
+  it('shows a long sighting name in the heading', async () => {
+    await eventually(() => {
+      expect(headingOf('detail-long-name')).toBe(sinkLongNameSighting.name);
+      expect(cell('detail-long-name').querySelectorAll('dl > div')).toHaveLength(7);
+    });
+  });
+
+  it('shows one display-only map with a single marker once "Show map" is pressed', async () => {
+    await eventually(() => {
+      expect(cell('detail-map-shown').querySelectorAll('app-map-view')).toHaveLength(1);
+      expect(mapOf('detail-map-shown').interactiveMarkers()).toBe(false);
+      expect(mapOf('detail-map-shown').markers()).toHaveLength(1);
+      expect(buttonOf('detail-map-shown', 'sighting.detail.hideMap')).not.toBeNull();
+    });
+  });
+
+  it('shows the not-found state as an info alert without Try again', async () => {
+    await eventually(() => {
+      const alert = cell('detail-not-found').querySelector('app-alert');
+
+      expect(textOf(alert)).toBe(label('sighting.errors.notFound'));
+      expect(alert?.getAttribute('kind')).toBe('info');
+      expect(cell('detail-not-found').querySelector('app-alert[role="alert"]')).toBeNull();
+      expect(buttonOf('detail-not-found', 'sighting.detail.retry')).toBeNull();
+      expect(cell('detail-not-found').querySelector('dl')).toBeNull();
+    });
+  });
+
+  it('shows the error state as an alert with Try again', async () => {
+    await eventually(() => {
+      expect(textOf(cell('detail-error').querySelector('app-alert[role="alert"]'))).toBe(
+        label('sighting.errors.generic'),
+      );
+      expect(buttonOf('detail-error', 'sighting.detail.retry')).not.toBeNull();
+      expect(cell('detail-error').querySelector('dl')).toBeNull();
+    });
+  });
+
+  it('shows the loading indicator under the Sighting heading while the request is pending', async () => {
+    await eventually(() => {
+      expect(cell('detail-loading').querySelector('app-loading-indicator')).not.toBeNull();
+      expect(headingOf('detail-loading')).toBe(label('sighting.detail.title'));
+      expect(cell('detail-loading').querySelector('dl')).toBeNull();
+    });
+  });
+
+  it('recovers after Try again is pressed from the cell header and moves focus to the heading', async () => {
+    const id = 'detail-error-then-loaded';
+
+    await eventually(() => expect(buttonOf(id, 'sighting.detail.retry')).not.toBeNull());
+
+    expect(cell(id).querySelector('header button')).not.toBeNull();
+    expect(cell(id).querySelector('dl')).toBeNull();
+
+    for (const heading of root.querySelectorAll('[data-cell^="detail-"] app-page-card h1')) {
+      expect(document.activeElement).not.toBe(heading);
+    }
+
+    cell(id).querySelector<HTMLButtonElement>('header button')?.click();
+
+    await eventually(() => {
+      expect(headingOf(id)).toBe('Limpy');
+      expect(cell(id).querySelector('app-alert')).toBeNull();
+      expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
+      expect(document.activeElement).toBe(cell(id).querySelector('app-page-card h1'));
+    });
+  });
+
+  it('gives the map-library cell a loader that fails and renders the page with the toggle', async () => {
+    const id = 'detail-map-load-failed';
+    const loader = cellDebug(id).injector.get(LEAFLET_LOADER);
+
+    await expect(firstValueFrom(loader())).rejects.toThrow();
+
+    await eventually(() => {
+      expect(headingOf(id)).toBe('Limpy');
+      expect(buttonOf(id, 'sighting.detail.hideMap')).not.toBeNull();
+      expect(cell(id).querySelectorAll('app-map-view')).toHaveLength(1);
+    });
   });
 
   it('shows the read-only state', () => {

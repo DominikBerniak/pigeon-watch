@@ -1,7 +1,7 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-content class="page-card__body">
     <header class="page-card__header">
-      <h1 class="pw-title page-card__title">{{ title() }}</h1>
+      <h1 #heading tabindex="-1" class="pw-title page-card__title">{{ title() }}</h1>
       @if (subtitle(); as text) {
         <p class="pw-text-muted">{{ text }}</p>
       }

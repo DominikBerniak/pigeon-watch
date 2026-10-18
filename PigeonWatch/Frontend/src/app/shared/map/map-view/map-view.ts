@@ -27,6 +27,7 @@ import {
   MapMarker,
   mapMarkerClassNames,
   mapMarkerSelectedClassName,
+  mapMarkerStaticClassName,
   mapPinClassName,
 } from '../map-marker';
 
@@ -94,6 +95,7 @@ export class MapView {
   readonly markers = input<readonly MapMarker[]>([]);
   readonly pin = input<GeoPoint | null>(null);
   readonly selectedId = input<string | null>(null);
+  readonly interactiveMarkers = input(true);
   readonly mapClick = output<GeoPoint>();
   readonly centerChange = output<GeoPoint>();
   readonly zoomChange = output<number>();
@@ -180,6 +182,7 @@ export class MapView {
     if (!this.ready()) return;
 
     const markers = this.markers();
+    const interactive = this.interactiveMarkers();
     const leaflet = this.leaflet;
     const layer = this.markerLayer;
 
@@ -192,15 +195,23 @@ export class MapView {
       const shown = leaflet
         .marker([marker.latitude, marker.longitude], {
           icon: leaflet.divIcon({
-            className: mapMarkerClassNames[marker.kind],
+            className: interactive
+              ? mapMarkerClassNames[marker.kind]
+              : `${mapMarkerClassNames[marker.kind]} ${mapMarkerStaticClassName}`,
             iconSize: undefined,
           }),
           title: marker.label ?? '',
-          keyboard: true,
+          keyboard: interactive,
         })
-        .on('click', () => this.markerSelect.emit(marker.id))
-        .on('keydown', (event: Leaflet.LeafletKeyboardEvent) => this.onMarkerKey(event, marker.id))
         .addTo(layer);
+
+      if (interactive) {
+        shown
+          .on('click', () => this.markerSelect.emit(marker.id))
+          .on('keydown', (event: Leaflet.LeafletKeyboardEvent) =>
+            this.onMarkerKey(event, marker.id),
+          );
+      }
 
       this.shownMarkers.set(marker.id, shown);
     }
@@ -219,12 +230,15 @@ export class MapView {
   }
 
   private applySelection(selectedId: string | null): void {
+    const interactive = untracked(this.interactiveMarkers);
+
     for (const [id, marker] of this.shownMarkers) {
       const selected = id === selectedId;
       const element = marker.getElement();
 
       element?.classList.toggle(mapMarkerSelectedClassName, selected);
-      element?.setAttribute('aria-pressed', String(selected));
+
+      if (interactive) element?.setAttribute('aria-pressed', String(selected));
       marker.setZIndexOffset(selected ? raisedZIndexOffset : 0);
     }
   }

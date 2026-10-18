@@ -83,6 +83,10 @@
   background-color: var(--pw-color-criticality-urgent);
 }
 
+.leaflet-marker-icon.pw-map-marker--static {
+  cursor: default;
+}
+
 .pw-map-marker--selected {
   width: var(--pw-map-marker-size-selected);
   height: var(--pw-map-marker-size-selected);
