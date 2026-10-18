@@ -31,8 +31,8 @@ Card width is 309 px at 375 and 448 px (28rem) at `md` and `lg`. No cell has hor
 | State | Applies | Evidence |
 | --- | --- | --- |
 | default | yes | `detail-loaded`: seven rows, token-coloured criticality badge, Show map |
-| hover | yes | Not confirmed visually: a synthetic hover on "Try again" (`:hover` true) showed no visible tint in the pane. Material state layer, no page-specific code; deferred |
-| focus-visible | yes | Tab pass below; visible ring on the Back link (screenshot), 2 px solid outline on the map region, zoom controls and attribution link |
+| hover | yes | `detail-error`: not confirmed visually: a synthetic hover on "Try again" (`:hover` true) showed no visible tint in the pane. Material state layer, no page-specific code; deferred |
+| focus-visible | yes | `detail-map-shown` (Tab pass below): visible ring on the Back link (screenshot), 2 px solid outline on the map region, zoom controls and attribution link. The Show map toggle and Try again were not measured (see Not verified) |
 | disabled | N/A | No control on this page is ever disabled: the toggle and the retry button are always enabled and there is no form |
 | error | yes | `detail-not-found` (info alert, no retry) and `detail-error` (alert plus Try again, 280 px); field error N/A |
 | empty | N/A | No list on this page; an unnamed sighting is a loaded variant, shown in `detail-unnamed` ("Unnamed bird") |
@@ -53,7 +53,10 @@ After a fresh load of `/dev/kitchen-sink` with all nine detail cells, `document.
 ## Not verified
 
 - A visible hover state on Material buttons (see the matrix).
+- The focus ring on the Show map toggle and on Try again: the Tab pass started in `detail-map-shown`, so it began at "Hide map", not at "Show map", and no cell with Try again was tabbed to.
 - A keyboard-initiated retry: the heading's focus ring after programmatic focus.
+- Entering the sink by an in-app navigation (a link, not a reload): the "takes no focus on load" check above covers a fresh load only, and the sink spec has no router, so `currentNavigation()` is always null there.
+- A full-group screenshot at desktop and 375 px: only screenshots of single cells were looked at.
 - The map-library failure cell against the real map: the sink spec renders the page over `MapViewStub`, which never fails. The cell `detail-map-load-failed` showed the page, the map failure message and Try again inside the card in the browser (`mapErr` and `retry` true, 1295 px cell height).
 - A screen reader.
 - The real page at 375 px (the sink card is 309 px wide).

@@ -40,6 +40,7 @@ Verified by `npm test -- --watch=false` and `npm run build` from `PigeonWatch/Fr
 - **Material state-layer hover styling, the date format locale, and the unread label keys behind `statusLabel()` and `criticalityLabel()`.** Deferred: no page-specific code behind them.
 - **A new shared Back-link component or width-matching `pw-*` class.** Declined: the "promote on second use" rule has not triggered (one template).
 - No new design tokens, no new UI library, no `ng add`.
+- **Addendum (impl-review F5, 2026-10-18):** the 28rem card width on large screens is deferred to the separate change `app-wide-large-screen-layout`; the "Show map" / "Hide map" label flip together with `aria-expanded` is left as is.
 
 ## Implementation Approach
 

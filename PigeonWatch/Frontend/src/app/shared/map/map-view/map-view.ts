@@ -27,6 +27,7 @@ import {
   MapMarker,
   mapMarkerClassNames,
   mapMarkerSelectedClassName,
+  mapMarkerStaticClassName,
   mapPinClassName,
 } from '../map-marker';
 
@@ -194,7 +195,9 @@ export class MapView {
       const shown = leaflet
         .marker([marker.latitude, marker.longitude], {
           icon: leaflet.divIcon({
-            className: mapMarkerClassNames[marker.kind],
+            className: interactive
+              ? mapMarkerClassNames[marker.kind]
+              : `${mapMarkerClassNames[marker.kind]} ${mapMarkerStaticClassName}`,
             iconSize: undefined,
           }),
           title: marker.label ?? '',

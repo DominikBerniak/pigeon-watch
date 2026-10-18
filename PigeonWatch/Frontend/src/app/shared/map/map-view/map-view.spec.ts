@@ -16,7 +16,7 @@ describe('MapView', () => {
   async function render(
     pin: GeoPoint | null = null,
     markers: readonly MapMarker[] = [marker],
-    interactiveMarkers = true,
+    interactiveMarkers?: boolean,
   ): Promise<HTMLElement> {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -27,7 +27,11 @@ describe('MapView', () => {
     fixture.componentRef.setInput('zoom', 6);
     fixture.componentRef.setInput('markers', markers);
     fixture.componentRef.setInput('pin', pin);
-    fixture.componentRef.setInput('interactiveMarkers', interactiveMarkers);
+
+    if (interactiveMarkers !== undefined) {
+      fixture.componentRef.setInput('interactiveMarkers', interactiveMarkers);
+    }
+
     await fixture.whenStable();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -166,17 +170,22 @@ describe('MapView', () => {
   });
 
   it('makes interactive markers a labelled tab stop with a pressed state by default', async () => {
-    const root = await render();
+    const root = await render(null, [{ ...marker, label: 'Limpy, Urgent' }]);
 
     expect(icon(root, 'urgent').getAttribute('tabindex')).toBe('0');
     expect(icon(root, 'urgent').getAttribute('role')).toBe('button');
+    expect(icon(root, 'urgent').getAttribute('title')).toBe('Limpy, Urgent');
     expect(icon(root, 'urgent').getAttribute('aria-pressed')).toBe('false');
+    expect(icon(root, 'urgent').classList).not.toContain('pw-map-marker--static');
   });
 
   it('draws display-only markers with no tab stop, no button role and no pressed state', async () => {
-    const root = await render(null, [marker, other], false);
+    const root = await render(null, [{ ...marker, label: 'Limpy, Urgent' }, other], false);
+
+    expect(icon(root, 'urgent').getAttribute('title')).toBe('Limpy, Urgent');
 
     for (const kind of ['urgent', 'monitor'] as const) {
+      expect(icon(root, kind).classList).toContain('pw-map-marker--static');
       expect(icon(root, kind).hasAttribute('tabindex')).toBe(false);
       expect(icon(root, kind).hasAttribute('role')).toBe(false);
       expect(icon(root, kind).hasAttribute('aria-pressed')).toBe(false);
@@ -210,6 +219,7 @@ describe('MapView', () => {
 
     expect(icon(root, 'urgent').hasAttribute('tabindex')).toBe(false);
     expect(icon(root, 'urgent').hasAttribute('aria-pressed')).toBe(false);
+    expect(icon(root, 'urgent').classList).toContain('pw-map-marker--static');
   });
 
   it('marks no marker as selected by default', async () => {

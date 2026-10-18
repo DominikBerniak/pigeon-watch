@@ -229,10 +229,18 @@ describe('SightingDetailPage', () => {
     expect(document.activeElement).toBe(root.querySelector('app-page-card h1'));
   });
 
-  it('focuses the heading in the not-found and error states', async () => {
+  it('focuses the heading in the not-found state', async () => {
     get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
 
     const root = await open('missing');
+
+    expect(document.activeElement).toBe(root.querySelector('app-page-card h1'));
+  });
+
+  it('focuses the heading in the error state', async () => {
+    get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+    const root = await open();
 
     expect(document.activeElement).toBe(root.querySelector('app-page-card h1'));
   });
@@ -286,7 +294,7 @@ describe('SightingDetailPage', () => {
     expect(labels).toEqual(['Limpy, Needs help soon']);
   });
 
-  it('hides a shown map when Try again reloads the sighting', async () => {
+  it('hides a shown map and follows the title when the sighting reloads after a failure', async () => {
     const first = new Subject<Sighting>();
 
     get.mockReturnValueOnce(first);
@@ -299,9 +307,12 @@ describe('SightingDetailPage', () => {
     await settle();
 
     expect(root.querySelectorAll('app-map-view').length).toBe(1);
+    expect(document.title).toBe('Limpy – PigeonWatch');
 
     first.error(new HttpErrorResponse({ status: 500 }));
     await settle();
+
+    expect(document.title).toBe('Sighting – PigeonWatch');
 
     get.mockReturnValue(of(sighting));
     button(root, 'Try again').click();
@@ -309,5 +320,59 @@ describe('SightingDetailPage', () => {
 
     expect(root.querySelector('app-map-view')).toBeNull();
     expect(button(root, 'Show map').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('starts over when the route moves to another sighting: loading, hidden map, new title, heading focus', async () => {
+    const second = new Subject<Sighting>();
+
+    get.mockImplementation((id) =>
+      id === 'a' ? of({ ...sighting, id: 'a', name: 'First' }) : second,
+    );
+
+    const root = await open('a');
+
+    button(root, 'Show map').click();
+    await settle();
+
+    expect(root.querySelectorAll('app-map-view').length).toBe(1);
+    expect(document.title).toBe('First – PigeonWatch');
+
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    await harness.navigateByUrl('/sightings/b');
+    await settle();
+
+    expect(get).toHaveBeenLastCalledWith('b');
+    expect(root.querySelector('app-map-view')).toBeNull();
+    expect(root.querySelector('app-page-card h1')?.textContent?.trim()).toBe('Sighting');
+    expect(root.querySelector('app-loading-indicator')).not.toBeNull();
+    expect(document.title).toBe('Sighting – PigeonWatch');
+    expect(document.activeElement).not.toBe(root.querySelector('app-page-card h1'));
+
+    second.next({ ...sighting, id: 'b', name: 'Second' });
+    await settle();
+
+    expect(root.querySelector('app-page-card h1')?.textContent?.trim()).toBe('Second');
+    expect(document.title).toBe('Second – PigeonWatch');
+    expect(document.activeElement).toBe(root.querySelector('app-page-card h1'));
+  });
+
+  it('ignores a slow answer for the sighting the route has already left', async () => {
+    const slow = new Subject<Sighting>();
+
+    get.mockImplementation((id) =>
+      id === 'a' ? slow : of({ ...sighting, id: 'b', name: 'Second' }),
+    );
+
+    const root = await open('a');
+
+    await harness.navigateByUrl('/sightings/b');
+    await settle();
+
+    slow.next({ ...sighting, id: 'a', name: 'First' });
+    await settle();
+
+    expect(root.querySelector('app-page-card h1')?.textContent?.trim()).toBe('Second');
+    expect(document.title).toBe('Second – PigeonWatch');
   });
 });

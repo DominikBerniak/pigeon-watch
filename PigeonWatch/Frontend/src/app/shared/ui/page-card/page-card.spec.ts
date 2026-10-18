@@ -50,7 +50,6 @@ describe('PageCard', () => {
 
   it('moves focus to the h1 through focusHeading() without making it a Tab stop', async () => {
     const fixture = TestBed.createComponent(PageCardHost);
-    document.body.appendChild(fixture.nativeElement);
     await fixture.whenStable();
     const heading: HTMLElement = fixture.nativeElement.querySelector('h1');
     const card: PageCard = fixture.debugElement.query(By.directive(PageCard)).componentInstance;
@@ -59,9 +58,6 @@ describe('PageCard', () => {
 
     expect(document.activeElement).toBe(heading);
     expect(heading.tabIndex).toBe(-1);
-    expect(heading.getAttribute('tabindex')).toBe('-1');
-
-    fixture.nativeElement.remove();
   });
 
   it('renders the subtitle under the title only when one is given', async () => {

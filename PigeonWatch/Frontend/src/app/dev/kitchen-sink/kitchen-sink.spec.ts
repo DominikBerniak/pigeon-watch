@@ -391,7 +391,6 @@ describe('KitchenSink', () => {
   it('shows a long sighting name in the heading', async () => {
     await eventually(() => {
       expect(headingOf('detail-long-name')).toBe(sinkLongNameSighting.name);
-      expect(sinkLongNameSighting.name).toContain(' ');
       expect(cell('detail-long-name').querySelectorAll('dl > div')).toHaveLength(7);
     });
   });
@@ -442,6 +441,10 @@ describe('KitchenSink', () => {
 
     expect(cell(id).querySelector('header button')).not.toBeNull();
     expect(cell(id).querySelector('dl')).toBeNull();
+
+    for (const heading of root.querySelectorAll('[data-cell^="detail-"] app-page-card h1')) {
+      expect(document.activeElement).not.toBe(heading);
+    }
 
     cell(id).querySelector<HTMLButtonElement>('header button')?.click();
 

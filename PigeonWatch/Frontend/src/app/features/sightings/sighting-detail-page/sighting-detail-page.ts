@@ -73,10 +73,11 @@ export class SightingDetailPage {
   private readonly resources = inject(ResourceService);
   private readonly pageTitle = inject(Title);
   private readonly injector = inject(Injector);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly reloads = new Subject<void>();
   private readonly card = viewChild(PageCard);
-  private focusOnSettle = inject(Router).currentNavigation() !== null;
-  private loadsStarted = 0;
+  private focusOnSettle = this.router.currentNavigation() !== null;
 
   protected readonly mapZoom = pickerMapZoom;
   protected readonly state = signal<DetailState>({ kind: 'loading' });
@@ -143,7 +144,7 @@ export class SightingDetailPage {
       ),
     );
 
-    inject(DestroyRef).onDestroy(() =>
+    this.destroyRef.onDestroy(() =>
       this.pageTitle.setTitle(this.resources.translate('common.appName')),
     );
 
@@ -174,12 +175,12 @@ export class SightingDetailPage {
   }
 
   private applyState(state: DetailState): void {
+    const previous = this.state();
+
     this.state.set(state);
 
     if (state.kind === 'loading') {
-      if (this.loadsStarted > 0) this.focusOnSettle = true;
-
-      this.loadsStarted++;
+      if (previous.kind !== 'loading') this.focusOnSettle = true;
 
       return;
     }
