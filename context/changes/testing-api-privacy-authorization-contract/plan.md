@@ -590,12 +590,12 @@ No data migration. The API and SPA deploy from one merge; the only visible effec
 
 #### Automated
 
-- [x] 7.1 The §6.4 placeholder is gone: `grep -c "TBD — see §3 Phase 2" context/foundation/test-plan.md` prints 0
-- [x] 7.2 §6.3 names the new harness seams: `grep -c "TestUser" context/foundation/test-plan.md` prints a count of at least 1
-- [x] 7.3 All three API test projects pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj && dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj && dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
-- [x] 7.4 No touched file has LF-only line endings: `git ls-files --eol -m -o --exclude-standard | grep -c "w/lf"` prints 0
+- [x] 7.1 The §6.4 placeholder is gone: `grep -c "TBD — see §3 Phase 2" context/foundation/test-plan.md` prints 0 — bdf0d7f
+- [x] 7.2 §6.3 names the new harness seams: `grep -c "TestUser" context/foundation/test-plan.md` prints a count of at least 1 — bdf0d7f
+- [x] 7.3 All three API test projects pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj && dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj && dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — bdf0d7f
+- [x] 7.4 No touched file has LF-only line endings: `git ls-files --eol -m -o --exclude-standard | grep -c "w/lf"` prints 0 — bdf0d7f
 
 #### Manual
 
-- [x] 7.5 A reader unfamiliar with the suite can follow §6.4 to add a test for a hypothetical new endpoint (fixture or exemption, anonymous list, sweep run)
-- [x] 7.6 The §2 backport diff is wording and sources only, with no file or line anchors
+- [x] 7.5 A reader unfamiliar with the suite can follow §6.4 to add a test for a hypothetical new endpoint (fixture or exemption, anonymous list, sweep run) — bdf0d7f
+- [x] 7.6 The §2 backport diff is wording and sources only, with no file or line anchors — bdf0d7f

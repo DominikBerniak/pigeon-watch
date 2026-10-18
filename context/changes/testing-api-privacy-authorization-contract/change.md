@@ -1,7 +1,7 @@
 ---
 change_id: testing-api-privacy-authorization-contract
 title: API privacy and authorization contract tests
-status: implementing
+status: implemented
 created: 2026-10-18
 updated: 2026-10-18
 archived_at: null
