@@ -340,61 +340,61 @@ None. No data, API or route change; two new UI-label keys are served by the exis
 
 #### Automated
 
-- [x] 1.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — 010700c
-- [x] 1.2 Map-view spec asserts display-only markers have no tab stop, no `role="button"`, no `aria-pressed` and emit no `markerSelect`, and interactive markers behave as before — 010700c
-- [x] 1.3 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`) — 010700c
+- [x] 1.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — acba304
+- [x] 1.2 Map-view spec asserts display-only markers have no tab stop, no `role="button"`, no `aria-pressed` and emit no `markerSelect`, and interactive markers behave as before — acba304
+- [x] 1.3 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`) — acba304
 
 #### Manual
 
-- [x] 1.4 On the nearby map (dev server, logged in), markers still receive focus with Tab and Enter selects one — 010700c
+- [x] 1.4 On the nearby map (dev server, logged in), markers still receive focus with Tab and Enter selects one — acba304
 
 ### Phase 2: Detail view contract
 
 #### Automated
 
-- [x] 2.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — 00b08ac
-- [x] 2.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`) — 00b08ac
-- [x] 2.3 UI resource tests pass with the two new keys: `dotnet test PigeonWatch/Api/UnitTests --filter UiResourceTests` — 00b08ac
-- [x] 2.4 Hardcoded-value scan on the detail page files returns 0 hits: `grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(' PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.html PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.ts` — 00b08ac
-- [x] 2.5 Detail spec asserts the Back link is inside the card actions footer with `href="/"`, and the loading state shows the heading "Sighting" and a loading indicator — 00b08ac
-- [x] 2.6 Detail spec asserts the tab title in the loaded, loading, not-found and error states and its reset to "PigeonWatch" on destroy — 00b08ac
-- [x] 2.7 Detail spec asserts the heading takes focus after a navigation-entered load and after a successful retry — 00b08ac
-- [x] 2.8 Detail spec asserts the map stub gets `interactiveMarkers` false, the new region label and a marker label with the criticality, that a retry hides a shown map, and that no `app-map-view` exists before "Show map" — 00b08ac
-- [x] 2.9 Page-card spec asserts `focusHeading()` focuses the `h1` and the `h1` is not a Tab stop — 00b08ac
+- [x] 2.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — acba304
+- [x] 2.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`) — acba304
+- [x] 2.3 UI resource tests pass with the two new keys: `dotnet test PigeonWatch/Api/UnitTests --filter UiResourceTests` — acba304
+- [x] 2.4 Hardcoded-value scan on the detail page files returns 0 hits: `grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(' PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.html PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.ts` — acba304
+- [x] 2.5 Detail spec asserts the Back link is inside the card actions footer with `href="/"`, and the loading state shows the heading "Sighting" and a loading indicator — acba304
+- [x] 2.6 Detail spec asserts the tab title in the loaded, loading, not-found and error states and its reset to "PigeonWatch" on destroy — acba304
+- [x] 2.7 Detail spec asserts the heading takes focus after a navigation-entered load and after a successful retry — acba304
+- [x] 2.8 Detail spec asserts the map stub gets `interactiveMarkers` false, the new region label and a marker label with the criticality, that a retry hides a shown map, and that no `app-map-view` exists before "Show map" — acba304
+- [x] 2.9 Page-card spec asserts `focusHeading()` focuses the `h1` and the `h1` is not a Tab stop — acba304
 
 #### Manual
 
-- [x] 2.10 With the API running and logged in, "View details" on the nearby map opens the page with focus on the heading and the tab title showing the sighting name; Tab goes to "Show map" and then to the Back link — 00b08ac
-- [x] 2.11 After "Show map", Tab does not stop on the marker and hovering the marker shows its name and criticality — 00b08ac
-- [x] 2.12 The browser network panel shows no `tile.openstreetmap.org` request until "Show map" is pressed — 00b08ac
-- [x] 2.13 Leaving the page with the Back link returns the tab title to "PigeonWatch" — 00b08ac
+- [x] 2.10 With the API running and logged in, "View details" on the nearby map opens the page with focus on the heading and the tab title showing the sighting name; Tab goes to "Show map" and then to the Back link — acba304
+- [x] 2.11 After "Show map", Tab does not stop on the marker and hovering the marker shows its name and criticality — acba304
+- [x] 2.12 The browser network panel shows no `tile.openstreetmap.org` request until "Show map" is pressed — acba304
+- [x] 2.13 Leaving the page with the Back link returns the tab title to "PigeonWatch" — acba304
 
 ### Phase 3: States and visual gate
 
 #### Automated
 
-- [x] 3.1 Frontend unit tests pass, including the kitchen-sink spec with the detail group: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — a7bfc13
-- [x] 3.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`) — a7bfc13
-- [x] 3.3 Sink spec renders each detail cell once with its label and the detail page, and asserts the loaded, unnamed, long-name, map-shown, not-found, error, loading and retry states — a7bfc13
-- [x] 3.4 Sink spec asserts the map-shown cell's map has `interactiveMarkers` false and one marker, and the error cell offers Try again while the not-found cell does not — a7bfc13
+- [x] 3.1 Frontend unit tests pass, including the kitchen-sink spec with the detail group: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — acba304
+- [x] 3.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`) — acba304
+- [x] 3.3 Sink spec renders each detail cell once with its label and the detail page, and asserts the loaded, unnamed, long-name, map-shown, not-found, error, loading and retry states — acba304
+- [x] 3.4 Sink spec asserts the map-shown cell's map has `interactiveMarkers` false and one marker, and the error cell offers Try again while the not-found cell does not — acba304
 
 #### Manual
 
-- [x] 3.5 `npm start`, open `/dev/kitchen-sink`: the "Sighting detail" group renders every cell, and the page does not scroll or take focus on load — a7bfc13
-- [x] 3.6 visual-notes.md records heading wrap, card height and Back-link placement at 375 px, `md` and `lg`, and a desktop and a 375 px screenshot of the group were reviewed — a7bfc13
-- [x] 3.7 visual-notes.md records the 7-state matrix with cell ids and N/A reasons for disabled and empty — a7bfc13
-- [x] 3.8 visual-notes.md records the Tab pass and the manual retry cell moving focus to the heading — a7bfc13
+- [x] 3.5 `npm start`, open `/dev/kitchen-sink`: the "Sighting detail" group renders every cell, and the page does not scroll or take focus on load — acba304
+- [x] 3.6 visual-notes.md records heading wrap, card height and Back-link placement at 375 px, `md` and `lg`, and a desktop and a 375 px screenshot of the group were reviewed — acba304
+- [x] 3.7 visual-notes.md records the 7-state matrix with cell ids and N/A reasons for disabled and empty — acba304
+- [x] 3.8 visual-notes.md records the Tab pass and the manual retry cell moving focus to the heading — acba304
 
 ### Phase 4: Rule and guard
 
 #### Automated
 
-- [x] 4.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — 20546a2
-- [x] 4.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`) — 20546a2
-- [x] 4.3 Hardcoded-value scan on the detail page, page-card and kitchen-sink files returns 0 new hits: `grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(' PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.html PigeonWatch/Frontend/src/app/shared/ui/page-card/page-card.html PigeonWatch/Frontend/src/app/dev/kitchen-sink/state-cell.html` — 20546a2
-- [x] 4.4 Frontend rules file names the new input and the sink group: `grep -nE 'interactiveMarkers|Sighting detail' PigeonWatch/Frontend/CLAUDE.md` — 20546a2
+- [x] 4.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — acba304
+- [x] 4.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`) — acba304
+- [x] 4.3 Hardcoded-value scan on the detail page, page-card and kitchen-sink files returns 0 new hits: `grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(' PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.html PigeonWatch/Frontend/src/app/shared/ui/page-card/page-card.html PigeonWatch/Frontend/src/app/dev/kitchen-sink/state-cell.html` — acba304
+- [x] 4.4 Frontend rules file names the new input and the sink group: `grep -nE 'interactiveMarkers|Sighting detail' PigeonWatch/Frontend/CLAUDE.md` — acba304
 
 #### Manual
 
-- [x] 4.5 PigeonWatch/Frontend/CLAUDE.md reads correctly: the map-view, kitchen-sink and arrival-pattern entries match what was built and nothing contradicts them — 20546a2
-- [x] 4.6 research.md `## Charges` marks charge 4 and every deferred candidate as deferred with a reason, and points charges 1, 2, 3 and 5 to their phases — 20546a2
+- [x] 4.5 PigeonWatch/Frontend/CLAUDE.md reads correctly: the map-view, kitchen-sink and arrival-pattern entries match what was built and nothing contradicts them — acba304
+- [x] 4.6 research.md `## Charges` marks charge 4 and every deferred candidate as deferred with a reason, and points charges 1, 2, 3 and 5 to their phases — acba304

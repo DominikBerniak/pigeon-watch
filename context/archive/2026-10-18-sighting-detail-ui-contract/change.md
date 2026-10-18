@@ -1,10 +1,10 @@
 ---
 change_id: sighting-detail-ui-contract
 title: Sighting detail ui contract
-status: impl_reviewed
+status: archived
 created: 2026-10-18
 updated: 2026-10-18
-archived_at: null
+archived_at: 2026-10-18T11:39:25Z
 ---
 
 ## Notes
