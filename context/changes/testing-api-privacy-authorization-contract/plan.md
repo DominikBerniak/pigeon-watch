@@ -494,31 +494,31 @@ No data migration. The API and SPA deploy from one merge; the only visible effec
 
 #### Automated
 
-- [x] 1.1 Solution builds with the new harness helpers: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
-- [x] 1.2 Existing integration tests still pass: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
-- [x] 1.3 research.md records an entry for each of the six framework questions: `grep -c "^### FW[1-6]" context/changes/testing-api-privacy-authorization-contract/research.md` prints 6
-- [x] 1.4 The probe class is gone: `test ! -e PigeonWatch/Api/IntegrationTests/ProbeScratch.cs`
+- [x] 1.1 Solution builds with the new harness helpers: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 8009738
+- [x] 1.2 Existing integration tests still pass: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — 8009738
+- [x] 1.3 research.md records an entry for each of the six framework questions: `grep -c "^### FW[1-6]" context/changes/testing-api-privacy-authorization-contract/research.md` prints 6 — 8009738
+- [x] 1.4 The probe class is gone: `test ! -e PigeonWatch/Api/IntegrationTests/ProbeScratch.cs` — 8009738
 
 #### Manual
 
-- [x] 1.5 The clock decision (which of the four branches, and what the Phase 4 expiry test will use) is read and agreed before Phase 4 depends on it
+- [x] 1.5 The clock decision (which of the four branches, and what the Phase 4 expiry test will use) is read and agreed before Phase 4 depends on it — 8009738
 
 ### Phase 2: Risk #2 leak sweep
 
 #### Automated
 
-- [ ] 2.1 Scanner self-tests find the seeded email raw, JSON-escaped, in a header and in Set-Cookie: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~ResponseLeakScanner"`
-- [ ] 2.2 Positive control finds A's own email in A's configuration response: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Scanner_finds_the_own_email"`
-- [ ] 2.3 Coverage guard passes (every route has a fixture or exemption, no stale entries): `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Every_"`
-- [ ] 2.4 Sweep as anonymous, as B and as A finds no other user's email and no 429 or unexpected 5xx: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Sweep_as_"`
-- [ ] 2.5 Stubbed Identity routes behave as stubs with no body: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Stubbed_identity_routes"`
-- [ ] 2.6 Audit columns hold user ids or SYSTEM, never an email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Audit_columns"`
-- [ ] 2.7 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
+- [x] 2.1 Scanner self-tests find the seeded email raw, JSON-escaped, in a header and in Set-Cookie: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~ResponseLeakScanner"`
+- [x] 2.2 Positive control finds A's own email in A's configuration response: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Scanner_finds_the_own_email"`
+- [x] 2.3 Coverage guard passes (every route has a fixture or exemption, no stale entries): `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Every_"`
+- [x] 2.4 Sweep as anonymous, as B and as A finds no other user's email and no 429 or unexpected 5xx: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Sweep_as_"`
+- [x] 2.5 Stubbed Identity routes behave as stubs with no body: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Stubbed_identity_routes"`
+- [x] 2.6 Audit columns hold user ids or SYSTEM, never an email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Audit_columns"`
+- [x] 2.7 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
 
 #### Manual
 
-- [ ] 2.8 Mutation check one: temporarily add the reporter's email to the sighting response; the sweep fails on `nearby`; revert and confirm `git diff` shows no production change
-- [ ] 2.9 Mutation check two: temporarily delete one fixture; the coverage guard fails; restore it
+- [x] 2.8 Mutation check one: temporarily add the reporter's email to the sighting response; the sweep fails on `nearby`; revert and confirm `git diff` shows no production change
+- [x] 2.9 Mutation check two: temporarily delete one fixture; the coverage guard fails; restore it
 
 ### Phase 3: Risk #3 ownership and endpoint protection
 

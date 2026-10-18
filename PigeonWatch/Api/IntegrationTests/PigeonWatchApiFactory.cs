@@ -82,6 +82,11 @@ public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null) : W
         return count;
     }
 
+    public void CloseDatabase()
+    {
+        connection.Close();
+    }
+
     public IReadOnlyList<AuditUsers> ReadUserAccountAuditUsers()
     {
         return ReadAuditUsers("USER_ACCOUNT");
