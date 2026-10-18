@@ -16,3 +16,5 @@
 *.woff2 binary
 *.ttf binary
 *.pdf binary
+
+.githooks/pre-commit text eol=lf
