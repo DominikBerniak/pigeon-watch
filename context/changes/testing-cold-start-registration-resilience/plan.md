@@ -325,8 +325,8 @@ None. No schema, API contract or stored data changes. The remembered email lives
 #### Manual
 
 - [x] 1.8 Temporarily break the contract (for example make the duplicate mapping return success on a repeat) and confirm the repeat-register test fails, then revert. — 9adf35d
-- [ ] 1.9 The first PR's checks show the new integration step running and green.
-- [ ] 1.10 A reader can follow the §6.3 entry and add a trivial extra test that runs without touching the factory.
+- [x] 1.9 The first PR's checks show the new integration step running and green. — b57b24c
+- [x] 1.10 A reader can follow the §6.3 entry and add a trivial extra test that runs without touching the factory. — b57b24c
 
 ### Phase 2: Scoped recovery after an inconclusive register (frontend)
 
