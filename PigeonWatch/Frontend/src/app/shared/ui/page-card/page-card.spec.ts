@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { PageCard } from './page-card';
 
 @Component({
@@ -45,6 +46,22 @@ describe('PageCard', () => {
     const footer: HTMLElement = fixture.nativeElement.querySelector('mat-card-actions');
 
     expect(getComputedStyle(footer).display).not.toBe('none');
+  });
+
+  it('moves focus to the h1 through focusHeading() without making it a Tab stop', async () => {
+    const fixture = TestBed.createComponent(PageCardHost);
+    document.body.appendChild(fixture.nativeElement);
+    await fixture.whenStable();
+    const heading: HTMLElement = fixture.nativeElement.querySelector('h1');
+    const card: PageCard = fixture.debugElement.query(By.directive(PageCard)).componentInstance;
+
+    card.focusHeading();
+
+    expect(document.activeElement).toBe(heading);
+    expect(heading.tabIndex).toBe(-1);
+    expect(heading.getAttribute('tabindex')).toBe('-1');
+
+    fixture.nativeElement.remove();
   });
 
   it('renders the subtitle under the title only when one is given', async () => {

@@ -339,34 +339,34 @@ None. No data, API or route change; two new UI-label keys are served by the exis
 
 #### Automated
 
-- [x] 1.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`)
-- [x] 1.2 Map-view spec asserts display-only markers have no tab stop, no `role="button"`, no `aria-pressed` and emit no `markerSelect`, and interactive markers behave as before
-- [x] 1.3 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`)
+- [x] 1.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — 010700c
+- [x] 1.2 Map-view spec asserts display-only markers have no tab stop, no `role="button"`, no `aria-pressed` and emit no `markerSelect`, and interactive markers behave as before — 010700c
+- [x] 1.3 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`) — 010700c
 
 #### Manual
 
-- [x] 1.4 On the nearby map (dev server, logged in), markers still receive focus with Tab and Enter selects one
+- [x] 1.4 On the nearby map (dev server, logged in), markers still receive focus with Tab and Enter selects one — 010700c
 
 ### Phase 2: Detail view contract
 
 #### Automated
 
-- [ ] 2.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`)
-- [ ] 2.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`)
-- [ ] 2.3 UI resource tests pass with the two new keys: `dotnet test PigeonWatch/Api/UnitTests --filter UiResourceTests`
-- [ ] 2.4 Hardcoded-value scan on the detail page files returns 0 hits: `grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(' PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.html PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.ts`
-- [ ] 2.5 Detail spec asserts the Back link is inside the card actions footer with `href="/"`, and the loading state shows the heading "Sighting" and a loading indicator
-- [ ] 2.6 Detail spec asserts the tab title in the loaded, loading, not-found and error states and its reset to "PigeonWatch" on destroy
-- [ ] 2.7 Detail spec asserts the heading takes focus after a navigation-entered load and after a successful retry
-- [ ] 2.8 Detail spec asserts the map stub gets `interactiveMarkers` false, the new region label and a marker label with the criticality, that a retry hides a shown map, and that no `app-map-view` exists before "Show map"
-- [ ] 2.9 Page-card spec asserts `focusHeading()` focuses the `h1` and the `h1` is not a Tab stop
+- [x] 2.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`)
+- [x] 2.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`)
+- [x] 2.3 UI resource tests pass with the two new keys: `dotnet test PigeonWatch/Api/UnitTests --filter UiResourceTests`
+- [x] 2.4 Hardcoded-value scan on the detail page files returns 0 hits: `grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(' PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.html PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.ts`
+- [x] 2.5 Detail spec asserts the Back link is inside the card actions footer with `href="/"`, and the loading state shows the heading "Sighting" and a loading indicator
+- [x] 2.6 Detail spec asserts the tab title in the loaded, loading, not-found and error states and its reset to "PigeonWatch" on destroy
+- [x] 2.7 Detail spec asserts the heading takes focus after a navigation-entered load and after a successful retry
+- [x] 2.8 Detail spec asserts the map stub gets `interactiveMarkers` false, the new region label and a marker label with the criticality, that a retry hides a shown map, and that no `app-map-view` exists before "Show map"
+- [x] 2.9 Page-card spec asserts `focusHeading()` focuses the `h1` and the `h1` is not a Tab stop
 
 #### Manual
 
-- [ ] 2.10 With the API running and logged in, "View details" on the nearby map opens the page with focus on the heading and the tab title showing the sighting name; Tab goes to "Show map" and then to the Back link
-- [ ] 2.11 After "Show map", Tab does not stop on the marker and hovering the marker shows its name and criticality
-- [ ] 2.12 The browser network panel shows no `tile.openstreetmap.org` request until "Show map" is pressed
-- [ ] 2.13 Leaving the page with the Back link returns the tab title to "PigeonWatch"
+- [x] 2.10 With the API running and logged in, "View details" on the nearby map opens the page with focus on the heading and the tab title showing the sighting name; Tab goes to "Show map" and then to the Back link
+- [x] 2.11 After "Show map", Tab does not stop on the marker and hovering the marker shows its name and criticality
+- [x] 2.12 The browser network panel shows no `tile.openstreetmap.org` request until "Show map" is pressed
+- [x] 2.13 Leaving the page with the Back link returns the tab title to "PigeonWatch"
 
 ### Phase 3: States and visual gate
 

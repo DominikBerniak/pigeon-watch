@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { Observable, of, throwError } from 'rxjs';
+import { NEVER, Observable, Subject, of, throwError } from 'rxjs';
 import { MapView } from '../../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../../shared/map/testing/map-view-stub';
 import { Sighting, SightingCriticality, SightingStatus } from '../sighting.types';
@@ -123,7 +123,7 @@ describe('SightingDetailPage', () => {
         latitude: 52.2297,
         longitude: 21.0122,
         kind: 'needsHelpSoon',
-        label: 'Limpy',
+        label: 'Limpy, Needs help soon',
       },
     ]);
     expect(button(root, 'Hide map').getAttribute('aria-expanded')).toBe('true');
@@ -166,12 +166,148 @@ describe('SightingDetailPage', () => {
     expect(root.querySelector('app-page-card h1')?.textContent?.trim()).toBe('Limpy');
   });
 
-  it('links back to the map', async () => {
+  it('links back to the map from the card actions footer', async () => {
     const root = await open();
-    const back = [...root.querySelectorAll('a')].find(
-      (anchor) => anchor.textContent?.trim() === 'Back to map',
-    );
+    const back = root.querySelector<HTMLAnchorElement>('mat-card-actions a');
 
+    expect(back?.textContent?.trim()).toBe('Back to map');
     expect(back?.getAttribute('href')).toBe('/');
+    expect(root.querySelectorAll('a').length).toBe(1);
+  });
+
+  it('shows the Sighting heading and a loading indicator while the sighting loads', async () => {
+    get.mockReturnValue(NEVER);
+
+    const root = await open();
+
+    expect(root.querySelector('app-page-card h1')?.textContent?.trim()).toBe('Sighting');
+    expect(root.querySelector('app-loading-indicator')).not.toBeNull();
+    expect(root.querySelector('dl')).toBeNull();
+  });
+
+  it('sets the tab title from the sighting name once it has loaded', async () => {
+    await open();
+
+    expect(document.title).toBe('Limpy – PigeonWatch');
+  });
+
+  it('uses the Sighting tab title while loading', async () => {
+    get.mockReturnValue(NEVER);
+
+    await open();
+
+    expect(document.title).toBe('Sighting – PigeonWatch');
+  });
+
+  it('uses the Sighting tab title in the not-found state', async () => {
+    get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+
+    await open('missing');
+
+    expect(document.title).toBe('Sighting – PigeonWatch');
+  });
+
+  it('uses the Sighting tab title in the error state', async () => {
+    get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+    await open();
+
+    expect(document.title).toBe('Sighting – PigeonWatch');
+  });
+
+  it('resets the tab title to the app name when the page is destroyed', async () => {
+    await open();
+
+    harness.fixture.destroy();
+
+    expect(document.title).toBe('PigeonWatch');
+  });
+
+  it('focuses the heading once the sighting has loaded by navigation', async () => {
+    const root = await open();
+
+    expect(document.activeElement).toBe(root.querySelector('app-page-card h1'));
+  });
+
+  it('focuses the heading in the not-found and error states', async () => {
+    get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+
+    const root = await open('missing');
+
+    expect(document.activeElement).toBe(root.querySelector('app-page-card h1'));
+  });
+
+  it('does not focus the heading while the sighting is still loading', async () => {
+    get.mockReturnValue(NEVER);
+
+    const root = await open();
+
+    expect(document.activeElement).not.toBe(root.querySelector('app-page-card h1'));
+  });
+
+  it('focuses the heading again after a retry that succeeds', async () => {
+    get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+    const root = await open();
+
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    expect(document.activeElement).not.toBe(root.querySelector('app-page-card h1'));
+
+    get.mockReturnValue(of(sighting));
+    button(root, 'Try again').click();
+    await settle();
+
+    expect(document.activeElement).toBe(root.querySelector('app-page-card h1'));
+  });
+
+  it('does not take focus on first load when the page is not created by a navigation', async () => {
+    const fixture = TestBed.createComponent(SightingDetailPage);
+
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('app-page-card h1')?.textContent?.trim()).toBe(
+      'Limpy',
+    );
+    expect(document.activeElement).not.toBe(fixture.nativeElement.querySelector('h1'));
+  });
+
+  it('gives the map a one-sighting label, display-only markers and the criticality in the marker label', async () => {
+    const root = await open();
+
+    button(root, 'Show map').click();
+    await settle();
+
+    expect(mapStub()?.interactiveMarkers()).toBe(false);
+    expect(mapStub()?.label()).toBe('Map showing where this sighting was reported');
+    const labels = (mapStub()?.markers() ?? []).map((marker) => marker.label);
+
+    expect(labels).toEqual(['Limpy, Needs help soon']);
+  });
+
+  it('hides a shown map when Try again reloads the sighting', async () => {
+    const first = new Subject<Sighting>();
+
+    get.mockReturnValueOnce(first);
+
+    const root = await open();
+
+    first.next(sighting);
+    await settle();
+    button(root, 'Show map').click();
+    await settle();
+
+    expect(root.querySelectorAll('app-map-view').length).toBe(1);
+
+    first.error(new HttpErrorResponse({ status: 500 }));
+    await settle();
+
+    get.mockReturnValue(of(sighting));
+    button(root, 'Try again').click();
+    await settle();
+
+    expect(root.querySelector('app-map-view')).toBeNull();
+    expect(button(root, 'Show map').getAttribute('aria-expanded')).toBe('false');
   });
 });

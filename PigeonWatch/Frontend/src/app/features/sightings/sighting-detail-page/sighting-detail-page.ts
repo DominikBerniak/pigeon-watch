@@ -1,8 +1,20 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Title } from '@angular/platform-browser';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, catchError, combineLatest, map, of, startWith, switchMap, tap } from 'rxjs';
 import { GeoPoint } from '../../../core/geolocation/geo-point';
 import { ResourceService } from '../../../core/resources/resource.service';
@@ -59,7 +71,12 @@ export class SightingDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly sightingsApi = inject(SightingsApi);
   private readonly resources = inject(ResourceService);
+  private readonly pageTitle = inject(Title);
+  private readonly injector = inject(Injector);
   private readonly reloads = new Subject<void>();
+  private readonly card = viewChild(PageCard);
+  private focusOnSettle = inject(Router).currentNavigation() !== null;
+  private loadsStarted = 0;
 
   protected readonly mapZoom = pickerMapZoom;
   protected readonly state = signal<DetailState>({ kind: 'loading' });
@@ -106,12 +123,30 @@ export class SightingDetailPage {
         latitude: sighting.latitude,
         longitude: sighting.longitude,
         kind: sightingCriticalityMarker(sighting.criticality),
-        label: this.title(),
+        label: this.resources.translate(
+          'map.markerLabel',
+          this.title(),
+          this.resources.translate(sightingCriticalityLabel(sighting.criticality)),
+        ),
       },
     ];
   });
 
   constructor() {
+    effect(() =>
+      this.pageTitle.setTitle(
+        this.resources.translate(
+          'sighting.detail.pageTitle',
+          this.title(),
+          this.resources.translate('common.appName'),
+        ),
+      ),
+    );
+
+    inject(DestroyRef).onDestroy(() =>
+      this.pageTitle.setTitle(this.resources.translate('common.appName')),
+    );
+
     combineLatest([
       this.route.paramMap.pipe(map((params) => params.get('id') ?? '')),
       this.reloads.pipe(startWith(undefined)),
@@ -127,7 +162,7 @@ export class SightingDetailPage {
         ),
         takeUntilDestroyed(),
       )
-      .subscribe((state) => this.state.set(state));
+      .subscribe((state) => this.applyState(state));
   }
 
   protected retry(): void {
@@ -136,6 +171,26 @@ export class SightingDetailPage {
 
   protected toggleMap(): void {
     this.mapShown.update((shown) => !shown);
+  }
+
+  private applyState(state: DetailState): void {
+    this.state.set(state);
+
+    if (state.kind === 'loading') {
+      if (this.loadsStarted > 0) this.focusOnSettle = true;
+
+      this.loadsStarted++;
+
+      return;
+    }
+
+    if (!this.focusOnSettle) {
+      this.focusOnSettle = true;
+
+      return;
+    }
+
+    afterNextRender(() => this.card()?.focusHeading(), { injector: this.injector });
   }
 }
 

@@ -1,78 +1,75 @@
-<div class="pw-stack">
-  <div>
-    <a mat-button routerLink="/">{{ 'sighting.detail.back' | translate }}</a>
-  </div>
-  <app-page-card [title]="title()">
-    @switch (state().kind) {
-      @case ('loading') {
-        <app-loading-indicator [label]="'common.loading' | translate" />
-      }
-      @case ('notFound') {
-        <app-alert kind="info">{{ 'sighting.errors.notFound' | translate }}</app-alert>
-      }
-      @case ('error') {
-        <app-error-retry [retryLabel]="'sighting.detail.retry' | translate" (retry)="retry()">
-          {{ 'sighting.errors.generic' | translate }}
-        </app-error-retry>
-      }
+<app-page-card [title]="title()">
+  <a actions mat-button routerLink="/">{{ 'sighting.detail.back' | translate }}</a>
+  @switch (state().kind) {
+    @case ('loading') {
+      <app-loading-indicator [label]="'common.loading' | translate" />
     }
-    @if (sighting(); as sighting) {
-      <div class="pw-stack">
-        <dl app-detail-list>
-          <div app-detail-item [label]="'sighting.detail.status' | translate">
-            {{ statusLabel(sighting.status) | translate }}
-          </div>
-          <div app-detail-item [label]="'sighting.detail.criticality' | translate">
-            <app-criticality-badge [kind]="criticalityKind(sighting.criticality)">
-              {{ criticalityLabel(sighting.criticality) | translate }}
-            </app-criticality-badge>
-          </div>
-          <div app-detail-item value="text" [label]="'sighting.detail.description' | translate">
-            {{ sighting.description }}
-          </div>
-          <div app-detail-item value="text" [label]="'sighting.detail.behaviour' | translate">
-            {{ sighting.behaviour }}
-          </div>
-          <div app-detail-item [label]="'sighting.detail.reporter' | translate">
-            {{ sighting.reporterDisplayName }}
-          </div>
-          <div app-detail-item [label]="'sighting.detail.reportedAt' | translate">
-            <time [attr.datetime]="sighting.createdAt">{{
-              sighting.createdAt | date: 'medium'
-            }}</time>
-          </div>
-          <div app-detail-item value="numeric" [label]="'sighting.detail.location' | translate">
-            {{ coordinatesText() }}
-          </div>
-        </dl>
-        <div>
-          <button
-            mat-stroked-button
-            type="button"
-            aria-controls="sighting-detail-map"
-            [attr.aria-expanded]="mapShown()"
-            (click)="toggleMap()"
-          >
-            @if (mapShown()) {
-              {{ 'sighting.detail.hideMap' | translate }}
-            } @else {
-              {{ 'sighting.detail.showMap' | translate }}
-            }
-          </button>
+    @case ('notFound') {
+      <app-alert kind="info">{{ 'sighting.errors.notFound' | translate }}</app-alert>
+    }
+    @case ('error') {
+      <app-error-retry [retryLabel]="'sighting.detail.retry' | translate" (retry)="retry()">
+        {{ 'sighting.errors.generic' | translate }}
+      </app-error-retry>
+    }
+  }
+  @if (sighting(); as sighting) {
+    <div class="pw-stack">
+      <dl app-detail-list>
+        <div app-detail-item [label]="'sighting.detail.status' | translate">
+          {{ statusLabel(sighting.status) | translate }}
         </div>
-        <div id="sighting-detail-map">
+        <div app-detail-item [label]="'sighting.detail.criticality' | translate">
+          <app-criticality-badge [kind]="criticalityKind(sighting.criticality)">
+            {{ criticalityLabel(sighting.criticality) | translate }}
+          </app-criticality-badge>
+        </div>
+        <div app-detail-item value="text" [label]="'sighting.detail.description' | translate">
+          {{ sighting.description }}
+        </div>
+        <div app-detail-item value="text" [label]="'sighting.detail.behaviour' | translate">
+          {{ sighting.behaviour }}
+        </div>
+        <div app-detail-item [label]="'sighting.detail.reporter' | translate">
+          {{ sighting.reporterDisplayName }}
+        </div>
+        <div app-detail-item [label]="'sighting.detail.reportedAt' | translate">
+          <time [attr.datetime]="sighting.createdAt">{{
+            sighting.createdAt | date: 'medium'
+          }}</time>
+        </div>
+        <div app-detail-item value="numeric" [label]="'sighting.detail.location' | translate">
+          {{ coordinatesText() }}
+        </div>
+      </dl>
+      <div class="pw-cluster">
+        <button
+          mat-stroked-button
+          type="button"
+          aria-controls="sighting-detail-map"
+          [attr.aria-expanded]="mapShown()"
+          (click)="toggleMap()"
+        >
           @if (mapShown()) {
-            @if (position(); as centre) {
-              <app-map-view
-                [label]="'map.ariaLabel' | translate"
-                [center]="centre"
-                [zoom]="mapZoom"
-                [markers]="markers()"
-              />
-            }
+            {{ 'sighting.detail.hideMap' | translate }}
+          } @else {
+            {{ 'sighting.detail.showMap' | translate }}
           }
-        </div>
+        </button>
       </div>
-    }
-  </app-page-card>
-</div>
+      <div id="sighting-detail-map">
+        @if (mapShown()) {
+          @if (position(); as centre) {
+            <app-map-view
+              [label]="'sighting.detail.mapLabel' | translate"
+              [center]="centre"
+              [zoom]="mapZoom"
+              [markers]="markers()"
+              [interactiveMarkers]="false"
+            />
+          }
+        }
+      </div>
+    </div>
+  }
+</app-page-card>
