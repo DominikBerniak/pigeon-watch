@@ -137,7 +137,6 @@ export class RegisterPage {
       'auth.validation.displayNameInvalidCharacter',
       forbiddenDisplayNameCharacter,
     ),
-    duplicateDisplayName: this.resources.translate('auth.errors.duplicateDisplayName'),
     invalidDisplayName: this.resources.translate('auth.errors.invalidDisplayName'),
   }));
   protected readonly passwordMessages = computed(() => ({

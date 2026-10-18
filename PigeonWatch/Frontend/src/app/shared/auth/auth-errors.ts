@@ -125,7 +125,6 @@ function applyErrorCode(failure: RegisterFailure, code: string): void {
   const fields = failure.fieldErrors;
 
   if (normalized === 'registrationfailed') failure.formError = 'registrationFailed';
-  else if (normalized === 'duplicatedisplayname') fields.displayName = 'duplicateDisplayName';
   else if (normalized.startsWith('displayname')) fields.displayName ??= 'invalidDisplayName';
   else if (normalized.startsWith('password')) fields.password ??= 'invalidPassword';
   else if (normalized === 'invalidemail') fields.email ??= 'invalidEmail';

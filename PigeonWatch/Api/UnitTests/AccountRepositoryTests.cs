@@ -80,15 +80,35 @@ public class AccountRepositoryTests
         Assert.Equal([AccountErrorCodes.InvalidEmail], result.Errors.Select(error => error.Code));
     }
 
+    [Fact]
+    public async Task A_duplicate_display_name_on_creation_becomes_the_generic_registration_failure()
+    {
+        AccountCreationResult result = await CreateWithErrors(AccountErrorCodes.DuplicateDisplayName);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(
+            [new AccountError(AccountErrorCodes.RegistrationFailed, "The account could not be created.")],
+            result.Errors);
+    }
+
     [Theory]
-    [InlineData(AccountErrorCodes.DuplicateUserName, AccountErrorCodes.RegistrationFailed)]
-    [InlineData(AccountErrorCodes.DuplicateEmail, AccountErrorCodes.RegistrationFailed)]
-    [InlineData(AccountErrorCodes.InvalidUserName, AccountErrorCodes.InvalidEmail)]
-    public async Task Email_and_user_name_errors_keep_the_display_name_error_beside_them(string identityCode, string expectedCode)
+    [InlineData(AccountErrorCodes.DuplicateUserName)]
+    [InlineData(AccountErrorCodes.DuplicateEmail)]
+    public async Task A_duplicate_display_name_beside_an_email_duplicate_collapses_into_one_registration_failure(string identityCode)
     {
         AccountCreationResult result = await CreateWithErrors(identityCode, AccountErrorCodes.DuplicateDisplayName);
 
-        Assert.Equal([expectedCode, AccountErrorCodes.DuplicateDisplayName], result.Errors.Select(error => error.Code));
+        Assert.Equal(
+            [new AccountError(AccountErrorCodes.RegistrationFailed, "The account could not be created.")],
+            result.Errors);
+    }
+
+    [Fact]
+    public async Task Invalid_user_name_still_maps_to_invalid_email_on_creation()
+    {
+        AccountCreationResult result = await CreateWithErrors(AccountErrorCodes.InvalidUserName);
+
+        Assert.Equal([AccountErrorCodes.InvalidEmail], result.Errors.Select(error => error.Code));
     }
 
     [Fact]

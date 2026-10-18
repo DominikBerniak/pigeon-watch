@@ -314,17 +314,17 @@ None. No schema, API contract or stored data changes. The remembered email lives
 
 #### Automated
 
-- [x] 1.1 Solution builds with style enforcement: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 9adf35d
-- [x] 1.2 Integration tests pass: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — 9adf35d
-- [x] 1.3 Integration tests pass again on an immediate second run, inside the same minute: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --no-build` — 9adf35d
-- [x] 1.4 Architecture tests still pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj --no-build` — 9adf35d
-- [x] 1.5 Unit tests still pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj --no-build` — 9adf35d
-- [x] 1.6 New project has no vulnerable packages: `dotnet list PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj package --vulnerable --include-transitive` — 9adf35d
-- [x] 1.7 The workflow names the new project: `Select-String -Path .github/workflows/api-pr-checks.yml -Pattern "IntegrationTests"` — 9adf35d
+- [x] 1.1 Solution builds with style enforcement: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — b57b24c
+- [x] 1.2 Integration tests pass: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — b57b24c
+- [x] 1.3 Integration tests pass again on an immediate second run, inside the same minute: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --no-build` — b57b24c
+- [x] 1.4 Architecture tests still pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj --no-build` — b57b24c
+- [x] 1.5 Unit tests still pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj --no-build` — b57b24c
+- [x] 1.6 New project has no vulnerable packages: `dotnet list PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj package --vulnerable --include-transitive` — b57b24c
+- [x] 1.7 The workflow names the new project: `Select-String -Path .github/workflows/api-pr-checks.yml -Pattern "IntegrationTests"` — b57b24c
 
 #### Manual
 
-- [x] 1.8 Temporarily break the contract (for example make the duplicate mapping return success on a repeat) and confirm the repeat-register test fails, then revert. — 9adf35d
+- [x] 1.8 Temporarily break the contract (for example make the duplicate mapping return success on a repeat) and confirm the repeat-register test fails, then revert. — b57b24c
 - [x] 1.9 The first PR's checks show the new integration step running and green. — b57b24c
 - [x] 1.10 A reader can follow the §6.3 entry and add a trivial extra test that runs without touching the factory. — b57b24c
 
@@ -332,29 +332,29 @@ None. No schema, API contract or stored data changes. The remembered email lives
 
 #### Automated
 
-- [x] 2.1 Before the implementation edits, the recovery scenarios of the new spec fail: `npm test -- --watch=false` from `PigeonWatch/Frontend` — 53a04cb
-- [x] 2.2 After the implementation, the whole frontend suite passes: `npm test -- --watch=false` from `PigeonWatch/Frontend` — 53a04cb
-- [x] 2.3 Production build stays within the bundle budget: `npm run build` from `PigeonWatch/Frontend` — 53a04cb
-- [x] 2.4 The pre-existing interceptor and session specs pass without edits to their existing cases. — 53a04cb
+- [x] 2.1 Before the implementation edits, the recovery scenarios of the new spec fail: `npm test -- --watch=false` from `PigeonWatch/Frontend` — b57b24c
+- [x] 2.2 After the implementation, the whole frontend suite passes: `npm test -- --watch=false` from `PigeonWatch/Frontend` — b57b24c
+- [x] 2.3 Production build stays within the bundle budget: `npm run build` from `PigeonWatch/Frontend` — b57b24c
+- [x] 2.4 The pre-existing interceptor and session specs pass without edits to their existing cases. — b57b24c
 
 #### Manual
 
-- [x] 2.5 With the local API and `npm start` running, a normal registration lands signed in on the home page. — 53a04cb
-- [x] 2.6 Registering an already-used email shows the generic "couldn't create" message and the browser Network panel shows no `/auth/login` call after the register request. — 53a04cb
-- [x] 2.7 With the API running, a valid registration after a short API stop and restart (warm-up panel shown, then recovered) still ends with exactly one account and a signed-in user. — 53a04cb
+- [x] 2.5 With the local API and `npm start` running, a normal registration lands signed in on the home page. — b57b24c
+- [x] 2.6 Registering an already-used email shows the generic "couldn't create" message and the browser Network panel shows no `/auth/login` call after the register request. — b57b24c
+- [x] 2.7 With the API running, a valid registration after a short API stop and restart (warm-up panel shown, then recovered) still ends with exactly one account and a signed-in user. — b57b24c
 
 ### Phase 3: Honest unconfirmed message and close-out
 
 #### Automated
 
-- [x] 3.1 The label exists: `Select-String -Path PigeonWatch/Api/BusinessObjects/Resources/UiLabels.resx -Pattern "auth.errors.registrationUnconfirmed"` — 2ee6dc5
-- [x] 3.2 Frontend suite passes: `npm test -- --watch=false` from `PigeonWatch/Frontend` — 2ee6dc5
-- [x] 3.3 Production build stays within the budget: `npm run build` from `PigeonWatch/Frontend` — 2ee6dc5
-- [x] 3.4 The API still builds with the new label embedded: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 2ee6dc5
-- [x] 3.5 §6.2 and §6.3 are no longer placeholders: `Select-String -Path context/foundation/test-plan.md -Pattern "TBD — see §3 Phase 1"` returns no match — 2ee6dc5
+- [x] 3.1 The label exists: `Select-String -Path PigeonWatch/Api/BusinessObjects/Resources/UiLabels.resx -Pattern "auth.errors.registrationUnconfirmed"` — b57b24c
+- [x] 3.2 Frontend suite passes: `npm test -- --watch=false` from `PigeonWatch/Frontend` — b57b24c
+- [x] 3.3 Production build stays within the budget: `npm run build` from `PigeonWatch/Frontend` — b57b24c
+- [x] 3.4 The API still builds with the new label embedded: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — b57b24c
+- [x] 3.5 §6.2 and §6.3 are no longer placeholders: `Select-String -Path context/foundation/test-plan.md -Pattern "TBD — see §3 Phase 1"` returns no match — b57b24c
 
 #### Manual
 
-- [x] 3.6 With the API stopped and `npm start` running, submit a valid registration; after the warm-up panel ends (about 2 minutes) the form shows the unconfirmed text and keeps the typed values. — 2ee6dc5
-- [x] 3.7 Start the API and submit the same form again: the account is created and the user lands signed in. — 2ee6dc5
-- [x] 3.8 The login page still shows the original warm-up text when the API is stopped. — 2ee6dc5
+- [x] 3.6 With the API stopped and `npm start` running, submit a valid registration; after the warm-up panel ends (about 2 minutes) the form shows the unconfirmed text and keeps the typed values. — b57b24c
+- [x] 3.7 Start the API and submit the same form again: the account is created and the user lands signed in. — b57b24c
+- [x] 3.8 The login page still shows the original warm-up text when the API is stopped. — b57b24c

@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace PigeonWatch.IntegrationTests;
 
@@ -36,5 +37,23 @@ public sealed class AccountApiClient(HttpClient client)
             .ToArray();
 
         return codes;
+    }
+
+    public static async Task<string> ReadBodyWithoutTraceIdAsync(HttpResponseMessage response, CancellationToken cancellationToken = default)
+    {
+        string body = await response.Content.ReadAsStringAsync(cancellationToken);
+        JsonObject problem = JsonNode.Parse(body)!.AsObject();
+        problem.Remove("traceId");
+
+        return problem.ToJsonString();
+    }
+
+    public static async Task<string> ReadDetailAsync(HttpResponseMessage response, CancellationToken cancellationToken = default)
+    {
+        string body = await response.Content.ReadAsStringAsync(cancellationToken);
+        using JsonDocument document = JsonDocument.Parse(body);
+        string detail = document.RootElement.GetProperty("detail").GetString()!;
+
+        return detail;
     }
 }
