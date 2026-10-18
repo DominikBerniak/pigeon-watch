@@ -372,28 +372,28 @@ None. No data, API or route change; two new UI-label keys are served by the exis
 
 #### Automated
 
-- [x] 3.1 Frontend unit tests pass, including the kitchen-sink spec with the detail group: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`)
-- [x] 3.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`)
-- [x] 3.3 Sink spec renders each detail cell once with its label and the detail page, and asserts the loaded, unnamed, long-name, map-shown, not-found, error, loading and retry states
-- [x] 3.4 Sink spec asserts the map-shown cell's map has `interactiveMarkers` false and one marker, and the error cell offers Try again while the not-found cell does not
+- [x] 3.1 Frontend unit tests pass, including the kitchen-sink spec with the detail group: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — a7bfc13
+- [x] 3.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`) — a7bfc13
+- [x] 3.3 Sink spec renders each detail cell once with its label and the detail page, and asserts the loaded, unnamed, long-name, map-shown, not-found, error, loading and retry states — a7bfc13
+- [x] 3.4 Sink spec asserts the map-shown cell's map has `interactiveMarkers` false and one marker, and the error cell offers Try again while the not-found cell does not — a7bfc13
 
 #### Manual
 
-- [x] 3.5 `npm start`, open `/dev/kitchen-sink`: the "Sighting detail" group renders every cell, and the page does not scroll or take focus on load
-- [x] 3.6 visual-notes.md records heading wrap, card height and Back-link placement at 375 px, `md` and `lg`, and a desktop and a 375 px screenshot of the group were reviewed
-- [x] 3.7 visual-notes.md records the 7-state matrix with cell ids and N/A reasons for disabled and empty
-- [x] 3.8 visual-notes.md records the Tab pass and the manual retry cell moving focus to the heading
+- [x] 3.5 `npm start`, open `/dev/kitchen-sink`: the "Sighting detail" group renders every cell, and the page does not scroll or take focus on load — a7bfc13
+- [x] 3.6 visual-notes.md records heading wrap, card height and Back-link placement at 375 px, `md` and `lg`, and a desktop and a 375 px screenshot of the group were reviewed — a7bfc13
+- [x] 3.7 visual-notes.md records the 7-state matrix with cell ids and N/A reasons for disabled and empty — a7bfc13
+- [x] 3.8 visual-notes.md records the Tab pass and the manual retry cell moving focus to the heading — a7bfc13
 
 ### Phase 4: Rule and guard
 
 #### Automated
 
-- [ ] 4.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`)
-- [ ] 4.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`)
-- [ ] 4.3 Hardcoded-value scan on the detail page, page-card and kitchen-sink files returns 0 new hits: `grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(' PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.html PigeonWatch/Frontend/src/app/shared/ui/page-card/page-card.html PigeonWatch/Frontend/src/app/dev/kitchen-sink/state-cell.html`
-- [ ] 4.4 Frontend rules file names the new input and the sink group: `grep -nE 'interactiveMarkers|Sighting detail' PigeonWatch/Frontend/CLAUDE.md`
+- [x] 4.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`)
+- [x] 4.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`)
+- [x] 4.3 Hardcoded-value scan on the detail page, page-card and kitchen-sink files returns 0 new hits: `grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(' PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.html PigeonWatch/Frontend/src/app/shared/ui/page-card/page-card.html PigeonWatch/Frontend/src/app/dev/kitchen-sink/state-cell.html`
+- [x] 4.4 Frontend rules file names the new input and the sink group: `grep -nE 'interactiveMarkers|Sighting detail' PigeonWatch/Frontend/CLAUDE.md`
 
 #### Manual
 
-- [ ] 4.5 PigeonWatch/Frontend/CLAUDE.md reads correctly: the map-view, kitchen-sink and arrival-pattern entries match what was built and nothing contradicts them
-- [ ] 4.6 research.md `## Charges` marks charge 4 and every deferred candidate as deferred with a reason, and points charges 1, 2, 3 and 5 to their phases
+- [x] 4.5 PigeonWatch/Frontend/CLAUDE.md reads correctly: the map-view, kitchen-sink and arrival-pattern entries match what was built and nothing contradicts them
+- [x] 4.6 research.md `## Charges` marks charge 4 and every deferred candidate as deferred with a reason, and points charges 1, 2, 3 and 5 to their phases
