@@ -2,7 +2,7 @@ import { HttpClient, HttpContext, provideHttpClient, withInterceptors } from '@a
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { environment } from '../../../environments/environment';
-import { SKIP_WARMUP } from '../http/http-context-tokens';
+import { REQUEST_RESENT, SKIP_WARMUP } from '../http/http-context-tokens';
 import { WarmupState } from './warmup-state';
 import { warmupInterceptor } from './warmup.interceptor';
 
@@ -168,6 +168,37 @@ describe('warmupInterceptor', () => {
     httpMock.expectNone(url);
     expect(errors.length).toBe(1);
     expect(state.status()).toBe('idle');
+  });
+
+  it('marks the request context once the request is resent', () => {
+    const context = new HttpContext();
+    http.post(url, {}, { context }).subscribe();
+
+    unavailable('5');
+    expect(context.get(REQUEST_RESENT)).toBe(true);
+    vi.advanceTimersByTime(5_000);
+    httpMock.expectOne(url).flush({});
+
+    expect(context.get(REQUEST_RESENT)).toBe(true);
+  });
+
+  it('leaves the request context untouched when the first attempt answers', () => {
+    const context = new HttpContext();
+    http.post(url, {}, { context }).subscribe();
+
+    httpMock.expectOne(url).flush({});
+    expect(context.get(REQUEST_RESENT)).toBe(false);
+  });
+
+  it('leaves the request context untouched when the first attempt fails without a resend', () => {
+    const context = new HttpContext();
+    http.post(url, {}, { context }).subscribe({ error: () => undefined });
+
+    httpMock.expectOne(url).flush(null, { status: 400, statusText: 'Bad Request' });
+    vi.advanceTimersByTime(60_000);
+
+    httpMock.expectNone(url);
+    expect(context.get(REQUEST_RESENT)).toBe(false);
   });
 
   it('records whether the warm-up began during startup', () => {

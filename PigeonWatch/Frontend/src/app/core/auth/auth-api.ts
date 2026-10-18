@@ -40,9 +40,9 @@ export class AuthApi {
     );
   }
 
-  register(request: RegisterRequest): Observable<RegisteredAccount> {
+  register(request: RegisterRequest, context?: HttpContext): Observable<RegisteredAccount> {
     return this.http.post<RegisteredAccount>(`${environment.apiUrl}/account/register`, request, {
-      context: skipAuth(),
+      context: skipAuth(context),
     });
   }
 
@@ -54,6 +54,6 @@ export class AuthApi {
   }
 }
 
-function skipAuth(): HttpContext {
-  return new HttpContext().set(SKIP_AUTH, true);
+function skipAuth(context: HttpContext = new HttpContext()): HttpContext {
+  return context.set(SKIP_AUTH, true);
 }

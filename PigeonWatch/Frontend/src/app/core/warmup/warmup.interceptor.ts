@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpEvent, HttpInterceptorFn } from '@angular/common
 import { inject } from '@angular/core';
 import { Observable, Subscription } from 'rxjs';
 import { isApiUrl } from '../http/api-url';
-import { SKIP_WARMUP } from '../http/http-context-tokens';
+import { REQUEST_RESENT, SKIP_WARMUP } from '../http/http-context-tokens';
 import { WarmupState } from './warmup-state';
 
 export const warmupPendingThresholdMs = 3_000;
@@ -61,6 +61,7 @@ export const warmupInterceptor: HttpInterceptorFn = (request, next) => {
             return;
           }
 
+          request.context.set(REQUEST_RESENT, true);
           retryHandle = setTimeout(attempt, retryDelayMs(error));
         },
         complete: () => {

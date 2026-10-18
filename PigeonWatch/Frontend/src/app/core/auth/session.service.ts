@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import {
@@ -16,7 +16,9 @@ import {
   tap,
   throwError,
 } from 'rxjs';
+import { problemErrorCodes } from '../../shared/http/problem-details';
 import { ConfigurationService } from '../configuration/configuration.service';
+import { REQUEST_RESENT } from '../http/http-context-tokens';
 import { WarmupState } from '../warmup/warmup-state';
 import { AuthApi, RegisterRequest } from './auth-api';
 import { AccessTokenResponse, TokenStore, refreshTokenStorageKey } from './token-store';
@@ -46,6 +48,7 @@ export class SessionService {
   private refreshInFlight: Observable<AccessTokenResponse> | null = null;
   private sessionGeneration = 0;
   private initialized = false;
+  private unansweredEmail: string | null = null;
 
   readonly currentUser = computed(() => this.configuration.generalConfig()?.currentUser ?? null);
   readonly isAuthenticated = computed(() => this.currentUser() !== null);
@@ -87,15 +90,15 @@ export class SessionService {
   }
 
   register(request: RegisterRequest): Observable<void> {
-    return this.authApi
-      .register(request)
-      .pipe(
-        switchMap(() =>
-          this.login(request.email, request.password).pipe(
-            catchError((error: unknown) => throwError(() => new AutoLoginError(error))),
-          ),
-        ),
-      );
+    const context = new HttpContext();
+
+    return this.authApi.register(request, context).pipe(
+      map(() => true),
+      catchError((error: unknown) =>
+        this.recoverRegistration(request, context, error).pipe(map(() => false)),
+      ),
+      switchMap((created) => (created ? this.signInAfterRegistration(request) : of(undefined))),
+    );
   }
 
   changePassword(currentPassword: string, newPassword: string): Observable<void> {
@@ -155,6 +158,51 @@ export class SessionService {
     return inFlight;
   }
 
+  private signInAfterRegistration(request: RegisterRequest): Observable<void> {
+    this.forgetUnansweredEmail(request.email);
+
+    return this.login(request.email, request.password).pipe(
+      catchError((error: unknown) => throwError(() => new AutoLoginError(error))),
+    );
+  }
+
+  private recoverRegistration(
+    request: RegisterRequest,
+    context: HttpContext,
+    error: unknown,
+  ): Observable<void> {
+    if (isTransportFailure(error)) {
+      this.unansweredEmail = normalizeEmail(request.email);
+
+      return throwError(() => error);
+    }
+
+    const inconclusive =
+      context.get(REQUEST_RESENT) || this.unansweredEmail === normalizeEmail(request.email);
+
+    if (!isRegistrationFailed(error) || !inconclusive) return throwError(() => error);
+
+    return this.login(request.email, request.password).pipe(
+      tap(() => this.forgetUnansweredEmail(request.email)),
+      catchError((loginError: unknown) => {
+        if (isTransportFailure(loginError)) {
+          this.unansweredEmail = normalizeEmail(request.email);
+
+          return throwError(() => loginError);
+        }
+
+        if (loginError instanceof HttpErrorResponse && loginError.status === 401)
+          this.forgetUnansweredEmail(request.email);
+
+        return throwError(() => error);
+      }),
+    );
+  }
+
+  private forgetUnansweredEmail(email: string): void {
+    if (this.unansweredEmail === normalizeEmail(email)) this.unansweredEmail = null;
+  }
+
   private restore(): Observable<void> {
     return this.refreshTokens().pipe(
       switchMap(() => this.configuration.loadGeneral()),
@@ -193,4 +241,18 @@ export class SessionService {
 
 function isSessionRejected(error: unknown): boolean {
   return error instanceof HttpErrorResponse && (error.status === 400 || error.status === 401);
+}
+
+function isTransportFailure(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && (error.status === 0 || error.status === 503);
+}
+
+function isRegistrationFailed(error: unknown): boolean {
+  if (!(error instanceof HttpErrorResponse) || error.status !== 400) return false;
+
+  return problemErrorCodes(error).some((code) => code.toLowerCase() === 'registrationfailed');
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
 }
