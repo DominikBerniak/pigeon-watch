@@ -144,6 +144,9 @@
   <data name="auth.errors.registrationFailed" xml:space="preserve">
     <value>We couldn't create an account with these details.</value>
   </data>
+  <data name="auth.errors.registrationUnconfirmed" xml:space="preserve">
+    <value>We couldn't confirm whether your account was created. Submit again, or log in if you registered a moment ago.</value>
+  </data>
   <data name="auth.errors.duplicateDisplayName" xml:space="preserve">
     <value>This name is already taken.</value>
   </data>

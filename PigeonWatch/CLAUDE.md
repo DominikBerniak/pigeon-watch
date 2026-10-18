@@ -7,7 +7,7 @@ This directory holds the actual PigeonWatch product code (backend + frontend). T
 ## Hard rules
 
 - A user's contact info must never be exposed directly to another user — messaging/contact flows must proxy through the product, not leak raw contact details (PRD guardrail; messaging does not exist yet). The public display name is what other users see: it rejects `@` so it cannot carry an email address, the email is returned only to its owner (`GET /configuration/general`), sighting responses carry the reporter's display name only (no reporter id, no email), and audit columns record the user id, not the email.
-- The API never confirms that an email is registered. `POST /account/register` turns Identity's `DuplicateEmail`/`DuplicateUserName` into one generic `RegistrationFailed` error whose description does not name the email, and the SPA shows a generic form-level message for it. Display names are public, so `DuplicateDisplayName` stays specific. Without email confirmation, a registration that fails for no visible reason can still hint at an existing account, so the per-IP rate limit and per-account lockout remain what makes probing slow. Login keeps the `LockedOut` detail (accepted).
+- The API never confirms that an email is registered. `POST /account/register` turns Identity's `DuplicateEmail`/`DuplicateUserName` into one generic `RegistrationFailed` error whose description does not name the email, and the SPA shows a generic form-level message for it. Display names are public, so `DuplicateDisplayName` stays specific. Without email confirmation, a registration that fails for no visible reason can still hint at an existing account, so the per-IP rate limit and per-account lockout remain what makes probing slow. Login keeps the `LockedOut` detail (accepted). A recovery login with the credentials the submitter just typed, after a register that may have been resent or left unanswered, is allowed: it succeeds only when the typed password matches the account, so it reveals nothing the submitter did not already prove, and a failed recovery returns the same generic error.
 
 ## What this project is
 
@@ -17,7 +17,7 @@ Slices S-01 (register and log in), S-02 (edit profile name) and S-03 (report a s
 
 ## Layout
 
-- `Api/` — ASP.NET Core Web API (.NET 10), solution `Api/PigeonWatchApi.slnx` with six layered projects plus architecture and unit tests:
+- `Api/` — ASP.NET Core Web API (.NET 10), solution `Api/PigeonWatchApi.slnx` with six layered projects plus architecture, unit and integration tests:
   - `WebApi.Host/` — the deployed host and EF startup project (`Program.cs`, appsettings, pipeline, rate limiter); calls only `AddPigeonWatch` and `MapPigeonWatch` for application code.
   - `WebApi/` — controllers, API models, view model creators, mappers.
   - `DependencyInjection/` — the only place services are registered.
@@ -26,6 +26,7 @@ Slices S-01 (register and log in), S-02 (edit profile name) and S-03 (report a s
   - `BusinessObjects/` — plain domain and result types.
   - `ArchitectureTests/` — tests that enforce the layer and coding rules.
   - `UnitTests/` — xUnit unit tests (NSubstitute mocks, SQLite in-memory for the user store).
+  - `IntegrationTests/` — xUnit tests that drive the real HTTP pipeline through `WebApplicationFactory<Program>` on SQLite in-memory.
 
   The layer rules, reference direction, coding rules and commands live in `@PigeonWatch/Api/CLAUDE.md`; read it before changing anything under `Api/`.
 - `Frontend/` — Angular 22 app on Angular Material, styled through `--pw-*` design tokens, `pw-*` common classes and reusable `shared/ui` components. See `@PigeonWatch/Frontend/CLAUDE.md` for the UI rules, commands and specifics.

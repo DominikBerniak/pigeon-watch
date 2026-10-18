@@ -7,6 +7,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { Observable, of, throwError } from 'rxjs';
 import { RegisterRequest } from '../../../core/auth/auth-api';
 import { AutoLoginError, SessionService } from '../../../core/auth/session.service';
+import { ResourceService } from '../../../core/resources/resource.service';
 import { LoginPage } from '../login-page/login-page';
 import { RegisterPage } from './register-page';
 
@@ -158,6 +159,31 @@ describe('RegisterPage', () => {
     );
     expect(fieldError(root, 0)).toBeUndefined();
     expect(root.textContent).not.toContain('taken');
+  });
+
+  it('shows the unconfirmed message for a 503, keeps the values and allows submitting again', async () => {
+    register.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 503 })));
+    const root = await open();
+
+    await submit(root);
+
+    const text = TestBed.inject(ResourceService).translate('auth.errors.registrationUnconfirmed');
+    expect(root.querySelector('app-alert[role="alert"]')?.textContent?.trim()).toBe(text);
+    expect(text).not.toBe(TestBed.inject(ResourceService).translate('auth.errors.warmupFailed'));
+    expect(fields(root).map((field) => field.querySelector('input')?.value)).toEqual([
+      validInput.email,
+      validInput.displayName,
+      validInput.password,
+      validInput.confirmPassword,
+    ]);
+    expect(root.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
+
+    register.mockReturnValue(of(undefined));
+    root.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true }));
+    await settle();
+
+    expect(register).toHaveBeenCalledTimes(2);
+    expect(TestBed.inject(Router).url).toBe('/');
   });
 
   it('maps DuplicateDisplayName to the display-name field until it changes', async () => {
