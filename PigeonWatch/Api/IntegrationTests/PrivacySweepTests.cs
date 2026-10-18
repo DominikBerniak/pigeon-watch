@@ -13,11 +13,17 @@ public sealed class PrivacySweepTests : IDisposable
     private const string newPassword = "Passw0rd!sweep2";
     private const string systemUser = "SYSTEM";
 
-    private readonly PigeonWatchApiFactory factory = new(new ManualTimeProvider(DateTimeOffset.UtcNow));
+    private readonly ManualTimeProvider clock = new(DateTimeOffset.UtcNow);
+    private readonly PigeonWatchApiFactory factory;
     private readonly EndpointFixtureRegistry registry = new();
     private readonly ResponseLeakScanner scanner = new();
     private readonly List<TestUser> users = [];
     private readonly CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+
+    public PrivacySweepTests()
+    {
+        factory = new PigeonWatchApiFactory(clock);
+    }
 
     [Fact]
     public async Task Scanner_finds_the_own_email_in_the_own_general_configuration_response()
@@ -69,6 +75,7 @@ public sealed class PrivacySweepTests : IDisposable
     public async Task Sweep_as_alice_finds_no_other_users_email_in_any_response()
     {
         SweepWorld world = await SeedWorldAsync();
+        clock.Advance(TimeSpan.FromMinutes(2));
 
         IReadOnlyList<string> failures = await CreateSweep().RunAsync(
             "alice",

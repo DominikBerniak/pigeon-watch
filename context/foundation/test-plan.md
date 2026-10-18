@@ -74,7 +74,7 @@ orchestrator updates Status as artifacts appear on disk.
 | # | Phase name | Goal (one line) | Risks covered | Test types | Status | Change folder |
 |---|------------|-----------------|---------------|------------|--------|---------------|
 | 1 | Cold-start registration resilience | Prove one usable account and an honest message when registration is slow or retried; bootstrap the API integration harness | #1 | unit (fake HTTP) + integration | complete | testing-cold-start-registration-resilience |
-| 2 | API privacy and authorization contract | Prove no email leak, ownership enforced, sessions invalidated, no email enumeration | #2, #3, #6 | integration (contract) | change opened | testing-api-privacy-authorization-contract |
+| 2 | API privacy and authorization contract | Prove no email leak, ownership enforced, sessions invalidated, no email enumeration | #2, #3, #6 | integration (contract) | complete | testing-api-privacy-authorization-contract |
 | 3 | Report-to-map flow | Prove a reported sighting lands on the nearby map under the PRD rules, plus one critical-path e2e | #4 | integration + 1 e2e | not started | — |
 | 4 | Shared UI behaviour guard | Prove shared components keep behaviour and accessibility; add a selective multimodal review on 1–3 screens | #5 | component spec, accessibility, multimodal review (selective) | not started | — |
 | 5 | Quality-gates wiring | Wire the suites added after Phase 1 into PR checks (the API integration step is already wired) and make the post-deploy smoke touch the database | cross-cutting | gates | not started | — |
@@ -92,16 +92,17 @@ the suites exist.
 The classic test base for this project. AI-native tools carry a `checked:`
 date so future readers can see which lines need re-verification.
 
-Test-base profile: **meaningful** — 43 Angular spec files and 21 xUnit files
-(unit and architecture tests), all run in PR checks. No API integration
-harness, e2e, lint step or accessibility tooling yet.
+Test-base profile: **meaningful** — 44 Angular spec files, 24 xUnit files
+(unit and architecture tests) and an API integration suite on the real HTTP
+pipeline (9 test classes), all run in PR checks. No e2e, lint step or
+accessibility tooling yet.
 
 | Layer | Tool | Version | Notes |
 |-------|------|---------|-------|
 | frontend unit + component | Vitest via `ng test` | ^5.0.3 (Angular 22.2) | Wired in PR checks; runs with `--watch=false` in CI |
 | backend unit | xUnit + NSubstitute, SQLite in-memory for the user store | .NET 10 | Wired in PR checks |
 | backend architecture | xUnit architecture tests | .NET 10 | Enforces layer and coding rules; do not extend for behaviour |
-| API integration (real HTTP pipeline) | none yet — see Phase 1 | — | Phase 1 chooses and bootstraps the harness |
+| API integration (real HTTP pipeline) | xUnit v3 + `WebApplicationFactory<Program>` on SQLite in-memory | .NET 10 | Wired in PR checks; bootstrapped in Phase 1, grown in Phase 2; see §6.3 and §6.4 |
 | API mocking (frontend) | none yet — fake HTTP at the Angular HTTP boundary | — | Decided in Phase 1 research |
 | e2e | none yet — see Phase 3 | — | One critical-path flow only |
 | accessibility | none yet — see Phase 4 | — | Chosen in Phase 4 research |
@@ -171,7 +172,7 @@ the relevant rollout phase ships; before that, the sub-section reads
 
 - **Where**: `PigeonWatch/Api/IntegrationTests/`, on the harness from §6.3 (one `PigeonWatchApiFactory` per test, real tokens from `CreateUserAsync`). One class per contract (`OwnershipContractTests`, `EnumerationContractTests`, `TokenLifecycleContractTests`).
 - **Naming**: `Subject_behavior` written as the observable outcome, for example `Sighting_is_attributed_to_bob_when_the_body_carries_forged_ownership_fields`. Accepted behaviour is named as accepted, never as a defect: `Old_access_token_survives_a_password_change_until_its_own_expiry_by_design` ties to decision D1 (no server-side logout, tokens expire on their own).
-- **Three guards fail until you act**, and that is the point: `EndpointCoverageTests` (every routed endpoint has a fixture or an exemption, no stale or duplicate keys), `EndpointProtectionTests` (every endpoint without authorization metadata is on the anonymous list, no stale entries, and every protected endpoint answers an anonymous caller 401 with no email in the response) and the three `PrivacySweepTests.Sweep_as_*` tests (anonymous, Bob, Alice: no other user's email in any status line, header, `Set-Cookie`, raw body or decoded JSON name and value, no 429, no 5xx).
+- **Three guards fail until you act**, and that is the point: `EndpointCoverageTests` (every routed endpoint has a fixture or an exemption, no stale or duplicate keys), `EndpointProtectionTests` (every endpoint without authorization metadata is on the anonymous list, no stale entries, and every protected endpoint answers an anonymous caller 401 with no email in the response) and the `PrivacySweepTests.Sweep_as_*` tests (the anonymous, Bob and Alice sweeps: no other user's email in any status line, header, `Set-Cookie`, raw body or decoded JSON name and value, no 429, no 5xx, and no 401 from a protected endpoint for a signed-in caller; a closed-database variant also matches the filter and scans the 500 body of one forced server error).
 - **Steps for a new endpoint**:
   1. Add a fixture to `EndpointFixtureRegistry.Fixtures`. The key is `"<METHOD> <pattern>"` exactly as routed, with no leading slash (`GET sightings/{id:guid}`). The builder takes a `FixtureContext` (registered emails, display names, Alice's sighting id) and returns `FixtureRequest`s: one valid request plus the error variants that exercise error bodies (invalid values, an unknown id, and `AddMalformed` for bodies that answer 400). Only when no request can be built for an unprotected endpoint, add an `EndpointExemption(key, reason)` to `Exemptions` with a written reason; the sweep and the coverage guard then skip the key (`Exemptions` is empty today). A protected endpoint needs a fixture, because the anonymous-calls test looks it up.
   2. Protect it or list it. A protected endpoint needs nothing more: the anonymous-calls test sends your fixture requests without a token and expects 401. A deliberately public endpoint gets an `EndpointExemption(key, reason)` in the `anonymousEndpoints` list of `EndpointProtectionTests`; the guard fails if an unprotected route is missing from the list or an entry is stale.
@@ -179,6 +180,7 @@ the relevant rollout phase ships; before that, the sub-section reads
   4. If the endpoint takes an id or acts on a user's data, add an ownership test in the shape of `OwnershipContractTests`: seed Alice and Bob with `CreateUserAsync`, let Bob act (send forged ownership fields in the body too), then read Alice's state back through Alice's own `Client` rather than trusting Bob's response. Reads that are open by design (sighting by id and nearby) are asserted as open, with a display name and no email.
   5. If it adds a registration or login failure answer, compare answers rather than code paths: parse the ProblemDetails, remove only `traceId` and assert the existing-email variants equal the new-email answer (`EnumerationContractTests`).
 - **Rate-limit budget**: the real limiter stays on. Give every request its own address (`SendFromFreshAddressAsync` or a fresh `CreateApiClient()`); one address sends at most 10 `auth`-group requests (register, login, password change) in a test. Only the limiter tests (`Eleventh_login_request_from_one_address_is_limited_while_another_address_still_reaches_lockout`, `Password_guessing_with_a_stolen_access_token_is_limited_on_the_eleventh_attempt`) reuse one address on purpose, and they observe the 11th answer, not an option value. No test reads limiter or lockout options, and none asserts timing or forwarded-header spoofing.
+- **Scanner limits**: `ResponseLeakScanner` searches decoded text for the full address (raw, upper-case, two URL-encoded forms) and for the local part when it has at least 8 characters. It does not look for base64, HTML entities, double percent-encoding, split fields or trailing headers; keep seeded emails distinctive and do not read "no hit" as "no encoding of the email".
 - **Time**: tests that move the clock build the factory with a `ManualTimeProvider` (`TokenLifecycleContractTests`); everything else leaves it out.
 - **Reference tests**: `PrivacySweepTests.Sweep_as_bob_finds_no_other_users_email_in_any_response` (privacy) and `OwnershipContractTests.Sighting_is_attributed_to_bob_when_the_body_carries_forged_ownership_fields` (ownership). Expected values are the documented contract (PRD Access Control, `PigeonWatch/CLAUDE.md`, `Api/CLAUDE.md`), never production constants.
 - **Run**: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`; narrow with `--filter "FullyQualifiedName~Sweep_as_"`, `~Every_`, `~Anonymous_list`, `~Anonymous_calls` or the class name. After adding a fixture, run the sweep and both guards; before closing, run the whole project.
@@ -215,6 +217,8 @@ contributors should respect these unless the underlying assumption changes.
 - **A deleted user's token and sighting write-ownership** — no account-delete endpoint exists, so a deleted user's token cannot be reached through the API, and no sighting edit, status or admin endpoint exists, so only account data can be changed by another user today. Re-evaluate when S-09 to S-11 land; the coverage guard forces a fixture the day those endpoints are routed. (Source: `testing-api-privacy-authorization-contract` plan.)
 - **Malformed bodies to the login and refresh routes** — the sweep sends well-formed bodies there because an unparseable body answers 500 instead of 400 (pre-existing framework behaviour, no data in the body, flagged as a candidate product fix). Re-evaluate if the answer becomes a 400; the malformed variants can then join the sweep. (Source: `testing-api-privacy-authorization-contract` research, probe outcome FW4.)
 
+- **Exotic encodings of an email in a response** — the leak scanner does not search for base64, HTML entities, double percent-encoding, an email split across fields or trailing headers, because no endpoint produces them and each needle adds self-tests for nothing real. Re-evaluate if a response ever carries encoded or composed user data. (Source: `testing-api-privacy-authorization-contract` implementation review, F2.)
+
 ## 8. Freshness Ledger
 
 - Strategy (§1–§5) last reviewed: 2026-10-18
@@ -223,6 +227,7 @@ contributors should respect these unless the underlying assumption changes.
 - 2026-10-18: §3 Phase 1 marked `complete` (all Progress items `[x]`, manual rows 1.9 and 1.10 ticked).
 - 2026-10-18: §3 Phase 5 goal reworded so it no longer claims to wire the API integration suite (Phase 1 wired it; §5 already said so); §6.2, §6.7 and §7 filled by `testing-cold-start-registration-resilience`.
 - 2026-10-18: cookbook §6.3 (harness seams and probe outcomes), §6.4 and §6.7, six §7 exclusions and the approved §2 wording backport (Risks #2, #3, #6) filled by `testing-api-privacy-authorization-contract` Phase 7; the §3 Phase 2 row stays `change opened` until the human confirms the phase.
+- 2026-10-18: §3 Phase 2 marked `complete` (all Progress items `[x]`, manual rows 7.5 and 7.6 confirmed); the implementation review added a signed-in 401 guard to the sweep, a local-part needle to the leak scanner, an exemption guard, and refreshed §4 and §6.4.
 
 Refresh (`/10x-test-plan --refresh`) when:
 

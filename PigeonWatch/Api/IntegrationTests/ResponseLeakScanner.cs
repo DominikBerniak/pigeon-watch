@@ -5,6 +5,8 @@ namespace PigeonWatch.IntegrationTests;
 
 public sealed class ResponseLeakScanner
 {
+    private const int minimumLocalPartLength = 8;
+
     public static IReadOnlyList<string> NeedlesFor(string email)
     {
         List<string> needles = new[]
@@ -16,6 +18,10 @@ public sealed class ResponseLeakScanner
             }
             .Distinct(StringComparer.Ordinal)
             .ToList();
+        int atIndex = email.IndexOf('@', StringComparison.Ordinal);
+
+        if (atIndex >= minimumLocalPartLength)
+            needles.Add(email[..atIndex]);
 
         return needles;
     }

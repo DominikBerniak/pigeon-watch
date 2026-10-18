@@ -48,6 +48,23 @@ public sealed class EndpointCoverageTests : IDisposable
         Assert.All(registry.Exemptions, exemption => Assert.False(string.IsNullOrWhiteSpace(exemption.Reason)));
     }
 
+    [Fact]
+    public void Every_exemption_is_an_unprotected_endpoint()
+    {
+        HashSet<string> protectedKeys = new EndpointCatalog(factory.Services).GetEndpoints()
+            .Where(endpoint => endpoint.RequiresAuthorization)
+            .Select(endpoint => endpoint.Key)
+            .ToHashSet();
+        List<string> hidden = registry.Exemptions
+            .Select(exemption => exemption.Key)
+            .Where(key => protectedKeys.Contains(key))
+            .ToList();
+
+        Assert.True(
+            hidden.Count == 0,
+            $"Protected endpoints exempted from the sweep:{Environment.NewLine}{string.Join(Environment.NewLine, hidden)}");
+    }
+
     public void Dispose()
     {
         factory.Dispose();

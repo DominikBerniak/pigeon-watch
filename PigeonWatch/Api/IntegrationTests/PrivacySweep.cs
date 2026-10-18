@@ -15,6 +15,11 @@ public sealed class PrivacySweep(
         List<string> needles = foreignEmails.SelectMany(email => ResponseLeakScanner.NeedlesFor(email)).ToList();
         List<string> failures = [];
         HashSet<string> requestedKeys = [];
+        IReadOnlyList<RoutedEndpoint> endpoints = new EndpointCatalog(factory.Services).GetEndpoints();
+        HashSet<string> protectedKeys = endpoints
+            .Where(endpoint => endpoint.RequiresAuthorization)
+            .Select(endpoint => endpoint.Key)
+            .ToHashSet();
 
         foreach (EndpointFixture fixture in registry.Fixtures)
         {
@@ -32,6 +37,9 @@ public sealed class PrivacySweep(
                 if (status >= 500)
                     failures.Add($"{label} answered {status}, so the check would be vacuous");
 
+                if (accessToken is not null && status == 401 && protectedKeys.Contains(request.Key))
+                    failures.Add($"{label} answered 401 to a signed-in caller, so the check would be vacuous");
+
                 IReadOnlyList<LeakHit> hits = await scanner.ScanAsync(response, needles, cancellationToken);
 
                 foreach (LeakHit hit in hits)
@@ -41,7 +49,6 @@ public sealed class PrivacySweep(
             }
         }
 
-        IReadOnlyList<RoutedEndpoint> endpoints = new EndpointCatalog(factory.Services).GetEndpoints();
         HashSet<string> exempt = registry.Exemptions.Select(exemption => exemption.Key).ToHashSet();
 
         foreach (RoutedEndpoint endpoint in endpoints)

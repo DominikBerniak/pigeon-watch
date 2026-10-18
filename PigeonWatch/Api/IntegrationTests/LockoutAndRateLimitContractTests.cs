@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace PigeonWatch.IntegrationTests;
 
@@ -26,7 +25,7 @@ public sealed class LockoutAndRateLimitContractTests : IDisposable
         using HttpResponseMessage correct = await LoginFromFreshAddressAsync(password);
 
         Assert.Equal(HttpStatusCode.Unauthorized, correct.StatusCode);
-        Assert.Equal("LockedOut", await ReadDetailAsync(correct));
+        Assert.Equal("LockedOut", await AccountApiClient.ReadDetailAsync(correct, cancellationToken));
     }
 
     [Fact]
@@ -40,7 +39,7 @@ public sealed class LockoutAndRateLimitContractTests : IDisposable
         using HttpResponseMessage afterExpiry = await LoginFromFreshAddressAsync(password);
 
         Assert.Equal(HttpStatusCode.Unauthorized, locked.StatusCode);
-        Assert.Equal("LockedOut", await ReadDetailAsync(locked));
+        Assert.Equal("LockedOut", await AccountApiClient.ReadDetailAsync(locked, cancellationToken));
         Assert.Equal(1, expired);
         Assert.Equal(HttpStatusCode.OK, afterExpiry.StatusCode);
     }
@@ -66,7 +65,7 @@ public sealed class LockoutAndRateLimitContractTests : IDisposable
         Assert.Equal(HttpStatusCode.TooManyRequests, eleventh.StatusCode);
         Assert.Equal(string.Empty, eleventhBody);
         Assert.Equal(HttpStatusCode.Unauthorized, otherAddress.StatusCode);
-        Assert.Equal("LockedOut", await ReadDetailAsync(otherAddress));
+        Assert.Equal("LockedOut", await AccountApiClient.ReadDetailAsync(otherAddress, cancellationToken));
     }
 
     [Fact]
@@ -139,14 +138,5 @@ public sealed class LockoutAndRateLimitContractTests : IDisposable
             cancellationToken);
 
         return response;
-    }
-
-    private async Task<string> ReadDetailAsync(HttpResponseMessage response)
-    {
-        string body = await response.Content.ReadAsStringAsync(cancellationToken);
-        using JsonDocument document = JsonDocument.Parse(body);
-        string detail = document.RootElement.GetProperty("detail").GetString()!;
-
-        return detail;
     }
 }

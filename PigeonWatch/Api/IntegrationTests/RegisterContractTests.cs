@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text.Json.Nodes;
 
 namespace PigeonWatch.IntegrationTests;
 
@@ -77,8 +76,8 @@ public sealed class RegisterContractTests : IDisposable
         HttpResponseMessage existingEmail = await accounts.RegisterAsync(email, password, displayName, cancellationToken);
         string[] newEmailCodes = await accounts.ReadErrorCodesAsync(newEmail, cancellationToken);
         string[] existingEmailCodes = await accounts.ReadErrorCodesAsync(existingEmail, cancellationToken);
-        string newEmailBody = await ReadBodyWithoutTraceIdAsync(newEmail);
-        string existingEmailBody = await ReadBodyWithoutTraceIdAsync(existingEmail);
+        string newEmailBody = await AccountApiClient.ReadBodyWithoutTraceIdAsync(newEmail, cancellationToken);
+        string existingEmailBody = await AccountApiClient.ReadBodyWithoutTraceIdAsync(existingEmail, cancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, newEmail.StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, existingEmail.StatusCode);
@@ -111,14 +110,5 @@ public sealed class RegisterContractTests : IDisposable
     {
         httpClient.Dispose();
         factory.Dispose();
-    }
-
-    private async Task<string> ReadBodyWithoutTraceIdAsync(HttpResponseMessage response)
-    {
-        string body = await response.Content.ReadAsStringAsync(cancellationToken);
-        JsonObject problem = JsonNode.Parse(body)!.AsObject();
-        problem.Remove("traceId");
-
-        return problem.ToJsonString();
     }
 }

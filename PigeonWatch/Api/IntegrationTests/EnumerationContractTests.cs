@@ -32,8 +32,8 @@ public sealed class EnumerationContractTests : IDisposable
 
         using HttpResponseMessage baseline = await RegisterFromFreshAddressAsync(newEmail, password, displayName);
         using HttpResponseMessage attempt = await RegisterFromFreshAddressAsync(attemptEmail, attemptPassword, attemptDisplayName);
-        string baselineBody = await ReadBodyWithoutTraceIdAsync(baseline);
-        string attemptBody = await ReadBodyWithoutTraceIdAsync(attempt);
+        string baselineBody = await AccountApiClient.ReadBodyWithoutTraceIdAsync(baseline, cancellationToken);
+        string attemptBody = await AccountApiClient.ReadBodyWithoutTraceIdAsync(attempt, cancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, baseline.StatusCode);
         Assert.Equal(["RegistrationFailed"], ReadErrorCodes(baselineBody));
@@ -58,7 +58,7 @@ public sealed class EnumerationContractTests : IDisposable
 
         using HttpResponseMessage attempt = await RegisterFromFreshAddressAsync(attemptEmail, attemptPassword, attemptDisplayName);
         string body = await attempt.Content.ReadAsStringAsync(cancellationToken);
-        string normalizedBody = await ReadBodyWithoutTraceIdAsync(attempt);
+        string normalizedBody = await AccountApiClient.ReadBodyWithoutTraceIdAsync(attempt, cancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, attempt.StatusCode);
         Assert.Equal(["RegistrationFailed"], ReadErrorCodes(normalizedBody));
@@ -75,8 +75,8 @@ public sealed class EnumerationContractTests : IDisposable
 
         using HttpResponseMessage wrongPasswordLogin = await LoginFromFreshAddressAsync(email, wrongPassword);
         using HttpResponseMessage unknownEmailLogin = await LoginFromFreshAddressAsync(unknownEmail, wrongPassword);
-        string wrongPasswordBody = await ReadBodyWithoutTraceIdAsync(wrongPasswordLogin);
-        string unknownEmailBody = await ReadBodyWithoutTraceIdAsync(unknownEmailLogin);
+        string wrongPasswordBody = await AccountApiClient.ReadBodyWithoutTraceIdAsync(wrongPasswordLogin, cancellationToken);
+        string unknownEmailBody = await AccountApiClient.ReadBodyWithoutTraceIdAsync(unknownEmailLogin, cancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, wrongPasswordLogin.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, unknownEmailLogin.StatusCode);
@@ -94,7 +94,7 @@ public sealed class EnumerationContractTests : IDisposable
         for (int attemptNumber = 0; attemptNumber < 6; attemptNumber++)
         {
             using HttpResponseMessage login = await LoginFromFreshAddressAsync(unknownEmail, wrongPassword);
-            string body = await ReadBodyWithoutTraceIdAsync(login);
+            string body = await AccountApiClient.ReadBodyWithoutTraceIdAsync(login, cancellationToken);
 
             Assert.Equal(HttpStatusCode.Unauthorized, login.StatusCode);
             details.Add(ReadDetail(body));
@@ -129,15 +129,6 @@ public sealed class EnumerationContractTests : IDisposable
         HttpResponseMessage response = await new AccountApiClient(client).LoginAsync(attemptEmail, attemptPassword, cancellationToken);
 
         return response;
-    }
-
-    private async Task<string> ReadBodyWithoutTraceIdAsync(HttpResponseMessage response)
-    {
-        string body = await response.Content.ReadAsStringAsync(cancellationToken);
-        JsonObject problem = JsonNode.Parse(body)!.AsObject();
-        problem.Remove("traceId");
-
-        return problem.ToJsonString();
     }
 
     private string[] ReadErrorCodes(string normalizedBody)

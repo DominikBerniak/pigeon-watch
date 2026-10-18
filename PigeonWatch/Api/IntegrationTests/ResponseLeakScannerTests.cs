@@ -6,7 +6,7 @@ namespace PigeonWatch.IntegrationTests;
 public sealed class ResponseLeakScannerTests
 {
     private const string email = "Alice.Tester+pw@Example.com";
-    private static readonly string jsonPlus = (char)92 + "u002B";
+    private const string jsonPlus = "\\u002B";
     private static readonly string jsonEscapedEmail = email.Replace("+", jsonPlus, StringComparison.Ordinal);
     private static readonly string jsonEscapedUpperEmail = email.ToUpperInvariant().Replace("+", jsonPlus, StringComparison.Ordinal);
 
@@ -133,6 +133,24 @@ public sealed class ResponseLeakScannerTests
         Assert.Contains(email, needles);
         Assert.Contains(email.ToUpperInvariant(), needles, StringComparer.Ordinal);
         Assert.Contains("Alice.Tester%2Bpw%40Example.com", needles, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Scanner_reports_the_local_part_leaked_without_the_domain()
+    {
+        using HttpResponseMessage response = JsonResponse("""{"owner":"alice.tester+pw"}""");
+
+        IReadOnlyList<LeakHit> hits = await scanner.ScanAsync(response, ResponseLeakScanner.NeedlesFor(email), cancellationToken);
+
+        Assert.NotEmpty(hits);
+    }
+
+    [Fact]
+    public void Scanner_skips_a_local_part_that_is_too_short_to_be_unique()
+    {
+        IReadOnlyList<string> needles = ResponseLeakScanner.NeedlesFor("al@example.com");
+
+        Assert.DoesNotContain("al", needles);
     }
 
     private static HttpResponseMessage JsonResponse(string body)
