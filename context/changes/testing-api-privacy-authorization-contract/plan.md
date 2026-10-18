@@ -573,29 +573,29 @@ No data migration. The API and SPA deploy from one merge; the only visible effec
 
 #### Automated
 
-- [x] 6.1 Every existing-email register failure variant matches the taken-display-name answer exactly: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_failure_variants"`
-- [x] 6.2 Failed registrations create no extra account and echo neither email nor display name: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_failures_keep"`
-- [x] 6.3 Login answers are identical for an unknown email and a wrong password, and never LockedOut for an unknown email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Login_failure"`
-- [x] 6.4 Five wrong logins from five addresses lock the account and the correct password is then refused: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Lockout_holds_across"`
-- [x] 6.5 A lockout moved into the past lets the correct password in again, or the row is closed with an n/a note when FW5 showed it cannot be driven: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Lockout_expiry"`
-- [x] 6.6 The 11th login request from one address gets 429 while another address still gets LockedOut: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Eleventh_login_request"`
-- [x] 6.7 A stolen access token guessing the current password gets 429 on the 11th attempt from one address: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_guessing"`
-- [x] 6.8 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
+- [x] 6.1 Every existing-email register failure variant matches the taken-display-name answer exactly: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_failure_variants"` — 53d6510
+- [x] 6.2 Failed registrations create no extra account and echo neither email nor display name: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_failures_keep"` — 53d6510
+- [x] 6.3 Login answers are identical for an unknown email and a wrong password, and never LockedOut for an unknown email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Login_failure"` — 53d6510
+- [x] 6.4 Five wrong logins from five addresses lock the account and the correct password is then refused: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Lockout_holds_across"` — 53d6510
+- [x] 6.5 A lockout moved into the past lets the correct password in again, or the row is closed with an n/a note when FW5 showed it cannot be driven: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Lockout_expiry"` — 53d6510
+- [x] 6.6 The 11th login request from one address gets 429 while another address still gets LockedOut: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Eleventh_login_request"` — 53d6510
+- [x] 6.7 A stolen access token guessing the current password gets 429 on the 11th attempt from one address: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_guessing"` — 53d6510
+- [x] 6.8 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — 53d6510
 
 #### Manual
 
-- [x] 6.9 Mutation check: temporarily raise the limiter's permit limit to 100; the 11th-request and password-guessing tests fail; revert and confirm `git diff` shows no production change
+- [x] 6.9 Mutation check: temporarily raise the limiter's permit limit to 100; the 11th-request and password-guessing tests fail; revert and confirm `git diff` shows no production change — 53d6510
 
 ### Phase 7: Cookbook update
 
 #### Automated
 
-- [ ] 7.1 The §6.4 placeholder is gone: `grep -c "TBD — see §3 Phase 2" context/foundation/test-plan.md` prints 0
-- [ ] 7.2 §6.3 names the new harness seams: `grep -c "TestUser" context/foundation/test-plan.md` prints a count of at least 1
-- [ ] 7.3 All three API test projects pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj && dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj && dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
-- [ ] 7.4 No touched file has LF-only line endings: `git ls-files --eol -m -o --exclude-standard | grep -c "w/lf"` prints 0
+- [x] 7.1 The §6.4 placeholder is gone: `grep -c "TBD — see §3 Phase 2" context/foundation/test-plan.md` prints 0
+- [x] 7.2 §6.3 names the new harness seams: `grep -c "TestUser" context/foundation/test-plan.md` prints a count of at least 1
+- [x] 7.3 All three API test projects pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj && dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj && dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
+- [x] 7.4 No touched file has LF-only line endings: `git ls-files --eol -m -o --exclude-standard | grep -c "w/lf"` prints 0
 
 #### Manual
 
-- [ ] 7.5 A reader unfamiliar with the suite can follow §6.4 to add a test for a hypothetical new endpoint (fixture or exemption, anonymous list, sweep run)
-- [ ] 7.6 The §2 backport diff is wording and sources only, with no file or line anchors
+- [x] 7.5 A reader unfamiliar with the suite can follow §6.4 to add a test for a hypothetical new endpoint (fixture or exemption, anonymous list, sweep run)
+- [x] 7.6 The §2 backport diff is wording and sources only, with no file or line anchors
