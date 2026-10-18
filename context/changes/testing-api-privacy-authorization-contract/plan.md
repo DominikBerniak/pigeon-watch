@@ -541,33 +541,33 @@ No data migration. The API and SPA deploy from one merge; the only visible effec
 
 #### Automated
 
-- [x] 4.1 A refresh with an unrevoked refresh token returns working tokens: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Refresh_without_a_password_change"`
-- [x] 4.2 A rename does not end other sessions: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Rename_keeps"`
-- [x] 4.3 After a password change the old refresh token gets 401 and the new password logs in: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_change_rejects_the_old_refresh_token"`
-- [x] 4.4 After a password change the old access token still gets 200: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Old_access_token_survives"`
-- [x] 4.5 After the clock passes the access lifetime the old access token gets 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Old_access_token_is_rejected_after_expiry"`
-- [x] 4.6 The lifecycle tests pass three runs in a row: `for i in 1 2 3; do dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~TokenLifecycleContractTests" || break; done`
+- [x] 4.1 A refresh with an unrevoked refresh token returns working tokens: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Refresh_without_a_password_change"` — 3d35f22
+- [x] 4.2 A rename does not end other sessions: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Rename_keeps"` — 3d35f22
+- [x] 4.3 After a password change the old refresh token gets 401 and the new password logs in: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_change_rejects_the_old_refresh_token"` — 3d35f22
+- [x] 4.4 After a password change the old access token still gets 200: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Old_access_token_survives"` — 3d35f22
+- [x] 4.5 After the clock passes the access lifetime the old access token gets 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Old_access_token_is_rejected_after_expiry"` — 3d35f22
+- [x] 4.6 The lifecycle tests pass three runs in a row: `for i in 1 2 3; do dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~TokenLifecycleContractTests" || break; done` — 3d35f22
 
 #### Manual
 
-- [x] 4.7 Test names and the Phase 7 cookbook wording present "old access token survives until expiry" as accepted behaviour tied to D1, not as a defect
+- [x] 4.7 Test names and the Phase 7 cookbook wording present "old access token survives until expiry" as accepted behaviour tied to D1, not as a defect — 3d35f22
 
 ### Phase 5: Close the display-name oracle
 
 #### Automated
 
-- [ ] 5.1 Register with a taken display name answers 400 RegistrationFailed only, for a new and for an existing email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_with_a_taken_display_name"`
-- [ ] 5.2 Rename to a taken display name still returns DuplicateDisplayName: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj --filter "FullyQualifiedName~AccountRepositoryTests"`
-- [ ] 5.3 Unit tests pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
-- [ ] 5.4 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`
-- [ ] 5.5 Frontend tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`)
-- [ ] 5.6 Production frontend build stays within budget: `npm run build` (run from `PigeonWatch/Frontend`)
-- [ ] 5.7 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
+- [x] 5.1 Register with a taken display name answers 400 RegistrationFailed only, for a new and for an existing email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_with_a_taken_display_name"`
+- [x] 5.2 Rename to a taken display name still returns DuplicateDisplayName: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj --filter "FullyQualifiedName~AccountRepositoryTests"`
+- [x] 5.3 Unit tests pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
+- [x] 5.4 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`
+- [x] 5.5 Frontend tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`)
+- [x] 5.6 Production frontend build stays within budget: `npm run build` (run from `PigeonWatch/Frontend`)
+- [x] 5.7 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
 
 #### Manual
 
-- [ ] 5.8 The new contract test was run red against the unfixed code and failed because the two answers differed (`DuplicateDisplayName` versus `RegistrationFailed`), before the fix was written
-- [ ] 5.9 In the running SPA, registering with a taken display name shows the generic form message and keeps the typed values, and renaming to a taken name on the profile page still shows "This name is already taken."
+- [x] 5.8 The new contract test was run red against the unfixed code and failed because the two answers differed (`DuplicateDisplayName` versus `RegistrationFailed`), before the fix was written
+- [x] 5.9 In the running SPA, registering with a taken display name shows the generic form message and keeps the typed values, and renaming to a taken name on the profile page still shows "This name is already taken."
 
 ### Phase 6: Risk #6 enumeration, lockout and limiter
 

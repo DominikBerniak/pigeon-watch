@@ -186,23 +186,28 @@ describe('RegisterPage', () => {
     expect(TestBed.inject(Router).url).toBe('/');
   });
 
-  it('maps DuplicateDisplayName to the display-name field until it changes', async () => {
-    failWith({ DuplicateDisplayName: ['Display name is already taken.'] });
+  it('shows the generic form message for a taken display name, keeps the typed values and allows submitting again', async () => {
+    failWith({ RegistrationFailed: ['The account could not be created.'] });
     const root = await open();
 
     await submit(root);
 
-    expect(fieldError(root, 1)).toBe('This name is already taken.');
-    expect(root.querySelector('app-alert[role="alert"]')).toBeNull();
-
-    register.mockClear();
-    root.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true }));
-    await settle();
-    expect(register).not.toHaveBeenCalled();
+    expect(root.querySelector('app-alert[role="alert"]')?.textContent?.trim()).toBe(
+      "We couldn't create an account with these details.",
+    );
+    expect(fieldError(root, 1)).toBeUndefined();
+    expect(root.textContent).not.toContain('already taken');
+    expect(fields(root).map((field) => field.querySelector('input')?.value)).toEqual([
+      validInput.email,
+      validInput.displayName,
+      validInput.password,
+      validInput.confirmPassword,
+    ]);
+    expect(root.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
 
     register.mockReturnValue(of(undefined));
     await submit(root, { ...validInput, displayName: 'Jan K2' });
-    expect(register).toHaveBeenCalledOnce();
+    expect(register).toHaveBeenCalledTimes(2);
   });
 
   it.each([

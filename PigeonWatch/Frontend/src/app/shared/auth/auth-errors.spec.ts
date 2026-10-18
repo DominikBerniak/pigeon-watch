@@ -67,13 +67,6 @@ describe('auth errors', () => {
       });
     });
 
-    it('maps DuplicateDisplayName to the display name field', () => {
-      expect(registerFailure(badRequest('DuplicateDisplayName'))).toEqual({
-        formError: null,
-        fieldErrors: { displayName: 'duplicateDisplayName' },
-      });
-    });
-
     it.each([
       [0, 'registrationUnconfirmed'],
       [503, 'registrationUnconfirmed'],

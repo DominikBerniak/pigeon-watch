@@ -26,7 +26,7 @@ public class AccountRepository(UserManager<ApplicationUser> userManager, IUserAc
         if (result.Succeeded)
             return AccountCreationResult.Success(userAccountMapper.ToRegisteredAccount(user));
 
-        return AccountCreationResult.Failure(ToAccountErrors(result.Errors));
+        return AccountCreationResult.Failure(ToAccountErrors(result.Errors, collapseDisplayName: true));
     }
 
     public async Task<CurrentUser?> GetCurrentUserAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -74,7 +74,7 @@ public class AccountRepository(UserManager<ApplicationUser> userManager, IUserAc
         return PasswordChangeResult.Failure(ToAccountErrors(result.Errors));
     }
 
-    private static List<AccountError> ToAccountErrors(IEnumerable<IdentityError> identityErrors)
+    private static List<AccountError> ToAccountErrors(IEnumerable<IdentityError> identityErrors, bool collapseDisplayName = false)
     {
         List<IdentityError> errors = identityErrors.ToList();
         HashSet<string> codes = errors.Select(error => error.Code).ToHashSet(StringComparer.Ordinal);
@@ -85,6 +85,7 @@ public class AccountRepository(UserManager<ApplicationUser> userManager, IUserAc
             string code = error.Code switch
             {
                 AccountErrorCodes.DuplicateEmail or AccountErrorCodes.DuplicateUserName => AccountErrorCodes.RegistrationFailed,
+                AccountErrorCodes.DuplicateDisplayName when collapseDisplayName => AccountErrorCodes.RegistrationFailed,
                 AccountErrorCodes.InvalidUserName => AccountErrorCodes.InvalidEmail,
                 _ => error.Code
             };
