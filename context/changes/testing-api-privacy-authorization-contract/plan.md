@@ -524,33 +524,33 @@ No data migration. The API and SPA deploy from one merge; the only visible effec
 
 #### Automated
 
-- [x] 3.1 `mine` lists only the caller's sightings for A and for B: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Mine_lists_only"`
-- [x] 3.2 B's profile rename and password change leave A's account and password unchanged: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Account_changes_by"`
-- [x] 3.3 B cannot change A's password by supplying A's current password: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_change_with_another"`
-- [x] 3.4 B's sighting is attributed to B despite forged ownership fields in the body: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Sighting_is_attributed"`
-- [x] 3.5 B reads A's sighting by id and in nearby with a display name and no email, anonymous gets 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Open_reads"`
-- [x] 3.6 Every endpoint is authorize-protected or on the anonymous list, with no stale list entries: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Anonymous_list"`
-- [x] 3.7 Anonymous calls to every protected endpoint get 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Anonymous_calls"`
-- [x] 3.8 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
+- [x] 3.1 `mine` lists only the caller's sightings for A and for B: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Mine_lists_only"` — 7d634e4
+- [x] 3.2 B's profile rename and password change leave A's account and password unchanged: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Account_changes_by"` — 7d634e4
+- [x] 3.3 B cannot change A's password by supplying A's current password: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_change_with_another"` — 7d634e4
+- [x] 3.4 B's sighting is attributed to B despite forged ownership fields in the body: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Sighting_is_attributed"` — 7d634e4
+- [x] 3.5 B reads A's sighting by id and in nearby with a display name and no email, anonymous gets 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Open_reads"` — 7d634e4
+- [x] 3.6 Every endpoint is authorize-protected or on the anonymous list, with no stale list entries: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Anonymous_list"` — 7d634e4
+- [x] 3.7 Anonymous calls to every protected endpoint get 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Anonymous_calls"` — 7d634e4
+- [x] 3.8 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — 7d634e4
 
 #### Manual
 
-- [x] 3.9 Mutation check: temporarily remove `[Authorize]` from one sighting action; the protection guard fails; restore it and confirm `git diff` shows no production change
+- [x] 3.9 Mutation check: temporarily remove `[Authorize]` from one sighting action; the protection guard fails; restore it and confirm `git diff` shows no production change — 7d634e4
 
 ### Phase 4: Risk #3 token lifecycle after a password change
 
 #### Automated
 
-- [ ] 4.1 A refresh with an unrevoked refresh token returns working tokens: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Refresh_without_a_password_change"`
-- [ ] 4.2 A rename does not end other sessions: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Rename_keeps"`
-- [ ] 4.3 After a password change the old refresh token gets 401 and the new password logs in: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_change_rejects_the_old_refresh_token"`
-- [ ] 4.4 After a password change the old access token still gets 200: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Old_access_token_survives"`
-- [ ] 4.5 After the clock passes the access lifetime the old access token gets 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Old_access_token_is_rejected_after_expiry"`
-- [ ] 4.6 The lifecycle tests pass three runs in a row: `for i in 1 2 3; do dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~TokenLifecycleContractTests" || break; done`
+- [x] 4.1 A refresh with an unrevoked refresh token returns working tokens: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Refresh_without_a_password_change"`
+- [x] 4.2 A rename does not end other sessions: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Rename_keeps"`
+- [x] 4.3 After a password change the old refresh token gets 401 and the new password logs in: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_change_rejects_the_old_refresh_token"`
+- [x] 4.4 After a password change the old access token still gets 200: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Old_access_token_survives"`
+- [x] 4.5 After the clock passes the access lifetime the old access token gets 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Old_access_token_is_rejected_after_expiry"`
+- [x] 4.6 The lifecycle tests pass three runs in a row: `for i in 1 2 3; do dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~TokenLifecycleContractTests" || break; done`
 
 #### Manual
 
-- [ ] 4.7 Test names and the Phase 7 cookbook wording present "old access token survives until expiry" as accepted behaviour tied to D1, not as a defect
+- [x] 4.7 Test names and the Phase 7 cookbook wording present "old access token survives until expiry" as accepted behaviour tied to D1, not as a defect
 
 ### Phase 5: Close the display-name oracle
 
