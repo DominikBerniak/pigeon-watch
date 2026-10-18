@@ -347,14 +347,14 @@ None. No schema, API contract or stored data changes. The remembered email lives
 
 #### Automated
 
-- [x] 3.1 The label exists: `Select-String -Path PigeonWatch/Api/BusinessObjects/Resources/UiLabels.resx -Pattern "auth.errors.registrationUnconfirmed"`
-- [x] 3.2 Frontend suite passes: `npm test -- --watch=false` from `PigeonWatch/Frontend`
-- [x] 3.3 Production build stays within the budget: `npm run build` from `PigeonWatch/Frontend`
-- [x] 3.4 The API still builds with the new label embedded: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
-- [x] 3.5 §6.2 and §6.3 are no longer placeholders: `Select-String -Path context/foundation/test-plan.md -Pattern "TBD — see §3 Phase 1"` returns no match
+- [x] 3.1 The label exists: `Select-String -Path PigeonWatch/Api/BusinessObjects/Resources/UiLabels.resx -Pattern "auth.errors.registrationUnconfirmed"` — 2ee6dc5
+- [x] 3.2 Frontend suite passes: `npm test -- --watch=false` from `PigeonWatch/Frontend` — 2ee6dc5
+- [x] 3.3 Production build stays within the budget: `npm run build` from `PigeonWatch/Frontend` — 2ee6dc5
+- [x] 3.4 The API still builds with the new label embedded: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 2ee6dc5
+- [x] 3.5 §6.2 and §6.3 are no longer placeholders: `Select-String -Path context/foundation/test-plan.md -Pattern "TBD — see §3 Phase 1"` returns no match — 2ee6dc5
 
 #### Manual
 
-- [x] 3.6 With the API stopped and `npm start` running, submit a valid registration; after the warm-up panel ends (about 2 minutes) the form shows the unconfirmed text and keeps the typed values.
-- [x] 3.7 Start the API and submit the same form again: the account is created and the user lands signed in.
-- [x] 3.8 The login page still shows the original warm-up text when the API is stopped.
+- [x] 3.6 With the API stopped and `npm start` running, submit a valid registration; after the warm-up panel ends (about 2 minutes) the form shows the unconfirmed text and keeps the typed values. — 2ee6dc5
+- [x] 3.7 Start the API and submit the same form again: the account is created and the user lands signed in. — 2ee6dc5
+- [x] 3.8 The login page still shows the original warm-up text when the API is stopped. — 2ee6dc5
