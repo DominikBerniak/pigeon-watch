@@ -494,108 +494,108 @@ No data migration. The API and SPA deploy from one merge; the only visible effec
 
 #### Automated
 
-- [x] 1.1 Solution builds with the new harness helpers: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 8009738
-- [x] 1.2 Existing integration tests still pass: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — 8009738
-- [x] 1.3 research.md records an entry for each of the six framework questions: `grep -c "^### FW[1-6]" context/changes/testing-api-privacy-authorization-contract/research.md` prints 6 — 8009738
-- [x] 1.4 The probe class is gone: `test ! -e PigeonWatch/Api/IntegrationTests/ProbeScratch.cs` — 8009738
+- [x] 1.1 Solution builds with the new harness helpers: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — fb12924
+- [x] 1.2 Existing integration tests still pass: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — fb12924
+- [x] 1.3 research.md records an entry for each of the six framework questions: `grep -c "^### FW[1-6]" context/changes/testing-api-privacy-authorization-contract/research.md` prints 6 — fb12924
+- [x] 1.4 The probe class is gone: `test ! -e PigeonWatch/Api/IntegrationTests/ProbeScratch.cs` — fb12924
 
 #### Manual
 
-- [x] 1.5 The clock decision (which of the four branches, and what the Phase 4 expiry test will use) is read and agreed before Phase 4 depends on it — 8009738
+- [x] 1.5 The clock decision (which of the four branches, and what the Phase 4 expiry test will use) is read and agreed before Phase 4 depends on it — fb12924
 
 ### Phase 2: Risk #2 leak sweep
 
 #### Automated
 
-- [x] 2.1 Scanner self-tests find the seeded email raw, JSON-escaped, in a header and in Set-Cookie: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~ResponseLeakScanner"` — ce7085d
-- [x] 2.2 Positive control finds A's own email in A's configuration response: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Scanner_finds_the_own_email"` — ce7085d
-- [x] 2.3 Coverage guard passes (every route has a fixture or exemption, no stale entries): `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Every_"` — ce7085d
-- [x] 2.4 Sweep as anonymous, as B and as A finds no other user's email and no 429 or unexpected 5xx: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Sweep_as_"` — ce7085d
-- [x] 2.5 Stubbed Identity routes behave as stubs with no body: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Stubbed_identity_routes"` — ce7085d
-- [x] 2.6 Audit columns hold user ids or SYSTEM, never an email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Audit_columns"` — ce7085d
-- [x] 2.7 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — ce7085d
+- [x] 2.1 Scanner self-tests find the seeded email raw, JSON-escaped, in a header and in Set-Cookie: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~ResponseLeakScanner"` — fb12924
+- [x] 2.2 Positive control finds A's own email in A's configuration response: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Scanner_finds_the_own_email"` — fb12924
+- [x] 2.3 Coverage guard passes (every route has a fixture or exemption, no stale entries): `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Every_"` — fb12924
+- [x] 2.4 Sweep as anonymous, as B and as A finds no other user's email and no 429 or unexpected 5xx: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Sweep_as_"` — fb12924
+- [x] 2.5 Stubbed Identity routes behave as stubs with no body: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Stubbed_identity_routes"` — fb12924
+- [x] 2.6 Audit columns hold user ids or SYSTEM, never an email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Audit_columns"` — fb12924
+- [x] 2.7 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — fb12924
 
 #### Manual
 
-- [x] 2.8 Mutation check one: temporarily add the reporter's email to the sighting response; the sweep fails on `nearby`; revert and confirm `git diff` shows no production change — ce7085d
-- [x] 2.9 Mutation check two: temporarily delete one fixture; the coverage guard fails; restore it — ce7085d
+- [x] 2.8 Mutation check one: temporarily add the reporter's email to the sighting response; the sweep fails on `nearby`; revert and confirm `git diff` shows no production change — fb12924
+- [x] 2.9 Mutation check two: temporarily delete one fixture; the coverage guard fails; restore it — fb12924
 
 ### Phase 3: Risk #3 ownership and endpoint protection
 
 #### Automated
 
-- [x] 3.1 `mine` lists only the caller's sightings for A and for B: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Mine_lists_only"` — 7d634e4
-- [x] 3.2 B's profile rename and password change leave A's account and password unchanged: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Account_changes_by"` — 7d634e4
-- [x] 3.3 B cannot change A's password by supplying A's current password: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_change_with_another"` — 7d634e4
-- [x] 3.4 B's sighting is attributed to B despite forged ownership fields in the body: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Sighting_is_attributed"` — 7d634e4
-- [x] 3.5 B reads A's sighting by id and in nearby with a display name and no email, anonymous gets 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Open_reads"` — 7d634e4
-- [x] 3.6 Every endpoint is authorize-protected or on the anonymous list, with no stale list entries: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Anonymous_list"` — 7d634e4
-- [x] 3.7 Anonymous calls to every protected endpoint get 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Anonymous_calls"` — 7d634e4
-- [x] 3.8 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — 7d634e4
+- [x] 3.1 `mine` lists only the caller's sightings for A and for B: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Mine_lists_only"` — fb12924
+- [x] 3.2 B's profile rename and password change leave A's account and password unchanged: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Account_changes_by"` — fb12924
+- [x] 3.3 B cannot change A's password by supplying A's current password: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_change_with_another"` — fb12924
+- [x] 3.4 B's sighting is attributed to B despite forged ownership fields in the body: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Sighting_is_attributed"` — fb12924
+- [x] 3.5 B reads A's sighting by id and in nearby with a display name and no email, anonymous gets 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Open_reads"` — fb12924
+- [x] 3.6 Every endpoint is authorize-protected or on the anonymous list, with no stale list entries: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Anonymous_list"` — fb12924
+- [x] 3.7 Anonymous calls to every protected endpoint get 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Anonymous_calls"` — fb12924
+- [x] 3.8 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — fb12924
 
 #### Manual
 
-- [x] 3.9 Mutation check: temporarily remove `[Authorize]` from one sighting action; the protection guard fails; restore it and confirm `git diff` shows no production change — 7d634e4
+- [x] 3.9 Mutation check: temporarily remove `[Authorize]` from one sighting action; the protection guard fails; restore it and confirm `git diff` shows no production change — fb12924
 
 ### Phase 4: Risk #3 token lifecycle after a password change
 
 #### Automated
 
-- [x] 4.1 A refresh with an unrevoked refresh token returns working tokens: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Refresh_without_a_password_change"` — 3d35f22
-- [x] 4.2 A rename does not end other sessions: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Rename_keeps"` — 3d35f22
-- [x] 4.3 After a password change the old refresh token gets 401 and the new password logs in: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_change_rejects_the_old_refresh_token"` — 3d35f22
-- [x] 4.4 After a password change the old access token still gets 200: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Old_access_token_survives"` — 3d35f22
-- [x] 4.5 After the clock passes the access lifetime the old access token gets 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Old_access_token_is_rejected_after_expiry"` — 3d35f22
-- [x] 4.6 The lifecycle tests pass three runs in a row: `for i in 1 2 3; do dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~TokenLifecycleContractTests" || break; done` — 3d35f22
+- [x] 4.1 A refresh with an unrevoked refresh token returns working tokens: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Refresh_without_a_password_change"` — fb12924
+- [x] 4.2 A rename does not end other sessions: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Rename_keeps"` — fb12924
+- [x] 4.3 After a password change the old refresh token gets 401 and the new password logs in: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_change_rejects_the_old_refresh_token"` — fb12924
+- [x] 4.4 After a password change the old access token still gets 200: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Old_access_token_survives"` — fb12924
+- [x] 4.5 After the clock passes the access lifetime the old access token gets 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Old_access_token_is_rejected_after_expiry"` — fb12924
+- [x] 4.6 The lifecycle tests pass three runs in a row: `for i in 1 2 3; do dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~TokenLifecycleContractTests" || break; done` — fb12924
 
 #### Manual
 
-- [x] 4.7 Test names and the Phase 7 cookbook wording present "old access token survives until expiry" as accepted behaviour tied to D1, not as a defect — 3d35f22
+- [x] 4.7 Test names and the Phase 7 cookbook wording present "old access token survives until expiry" as accepted behaviour tied to D1, not as a defect — fb12924
 
 ### Phase 5: Close the display-name oracle
 
 #### Automated
 
-- [x] 5.1 Register with a taken display name answers 400 RegistrationFailed only, for a new and for an existing email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_with_a_taken_display_name"` — bde4734
-- [x] 5.2 Rename to a taken display name still returns DuplicateDisplayName: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj --filter "FullyQualifiedName~AccountRepositoryTests"` — bde4734
-- [x] 5.3 Unit tests pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — bde4734
-- [x] 5.4 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — bde4734
-- [x] 5.5 Frontend tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — bde4734
-- [x] 5.6 Production frontend build stays within budget: `npm run build` (run from `PigeonWatch/Frontend`) — bde4734
-- [x] 5.7 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — bde4734
+- [x] 5.1 Register with a taken display name answers 400 RegistrationFailed only, for a new and for an existing email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_with_a_taken_display_name"` — fb12924
+- [x] 5.2 Rename to a taken display name still returns DuplicateDisplayName: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj --filter "FullyQualifiedName~AccountRepositoryTests"` — fb12924
+- [x] 5.3 Unit tests pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — fb12924
+- [x] 5.4 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — fb12924
+- [x] 5.5 Frontend tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — fb12924
+- [x] 5.6 Production frontend build stays within budget: `npm run build` (run from `PigeonWatch/Frontend`) — fb12924
+- [x] 5.7 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — fb12924
 
 #### Manual
 
-- [x] 5.8 The new contract test was run red against the unfixed code and failed because the two answers differed (`DuplicateDisplayName` versus `RegistrationFailed`), before the fix was written — bde4734
-- [x] 5.9 In the running SPA, registering with a taken display name shows the generic form message and keeps the typed values, and renaming to a taken name on the profile page still shows "This name is already taken." — bde4734
+- [x] 5.8 The new contract test was run red against the unfixed code and failed because the two answers differed (`DuplicateDisplayName` versus `RegistrationFailed`), before the fix was written — fb12924
+- [x] 5.9 In the running SPA, registering with a taken display name shows the generic form message and keeps the typed values, and renaming to a taken name on the profile page still shows "This name is already taken." — fb12924
 
 ### Phase 6: Risk #6 enumeration, lockout and limiter
 
 #### Automated
 
-- [x] 6.1 Every existing-email register failure variant matches the taken-display-name answer exactly: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_failure_variants"` — 53d6510
-- [x] 6.2 Failed registrations create no extra account and echo neither email nor display name: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_failures_keep"` — 53d6510
-- [x] 6.3 Login answers are identical for an unknown email and a wrong password, and never LockedOut for an unknown email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Login_failure"` — 53d6510
-- [x] 6.4 Five wrong logins from five addresses lock the account and the correct password is then refused: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Lockout_holds_across"` — 53d6510
-- [x] 6.5 A lockout moved into the past lets the correct password in again, or the row is closed with an n/a note when FW5 showed it cannot be driven: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Lockout_expiry"` — 53d6510
-- [x] 6.6 The 11th login request from one address gets 429 while another address still gets LockedOut: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Eleventh_login_request"` — 53d6510
-- [x] 6.7 A stolen access token guessing the current password gets 429 on the 11th attempt from one address: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_guessing"` — 53d6510
-- [x] 6.8 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — 53d6510
+- [x] 6.1 Every existing-email register failure variant matches the taken-display-name answer exactly: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_failure_variants"` — fb12924
+- [x] 6.2 Failed registrations create no extra account and echo neither email nor display name: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_failures_keep"` — fb12924
+- [x] 6.3 Login answers are identical for an unknown email and a wrong password, and never LockedOut for an unknown email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Login_failure"` — fb12924
+- [x] 6.4 Five wrong logins from five addresses lock the account and the correct password is then refused: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Lockout_holds_across"` — fb12924
+- [x] 6.5 A lockout moved into the past lets the correct password in again, or the row is closed with an n/a note when FW5 showed it cannot be driven: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Lockout_expiry"` — fb12924
+- [x] 6.6 The 11th login request from one address gets 429 while another address still gets LockedOut: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Eleventh_login_request"` — fb12924
+- [x] 6.7 A stolen access token guessing the current password gets 429 on the 11th attempt from one address: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_guessing"` — fb12924
+- [x] 6.8 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — fb12924
 
 #### Manual
 
-- [x] 6.9 Mutation check: temporarily raise the limiter's permit limit to 100; the 11th-request and password-guessing tests fail; revert and confirm `git diff` shows no production change — 53d6510
+- [x] 6.9 Mutation check: temporarily raise the limiter's permit limit to 100; the 11th-request and password-guessing tests fail; revert and confirm `git diff` shows no production change — fb12924
 
 ### Phase 7: Cookbook update
 
 #### Automated
 
-- [x] 7.1 The §6.4 placeholder is gone: `grep -c "TBD — see §3 Phase 2" context/foundation/test-plan.md` prints 0 — bdf0d7f
-- [x] 7.2 §6.3 names the new harness seams: `grep -c "TestUser" context/foundation/test-plan.md` prints a count of at least 1 — bdf0d7f
-- [x] 7.3 All three API test projects pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj && dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj && dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — bdf0d7f
-- [x] 7.4 No touched file has LF-only line endings: `git ls-files --eol -m -o --exclude-standard | grep -c "w/lf"` prints 0 — bdf0d7f
+- [x] 7.1 The §6.4 placeholder is gone: `grep -c "TBD — see §3 Phase 2" context/foundation/test-plan.md` prints 0 — fb12924
+- [x] 7.2 §6.3 names the new harness seams: `grep -c "TestUser" context/foundation/test-plan.md` prints a count of at least 1 — fb12924
+- [x] 7.3 All three API test projects pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj && dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj && dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — fb12924
+- [x] 7.4 No touched file has LF-only line endings: `git ls-files --eol -m -o --exclude-standard | grep -c "w/lf"` prints 0 — fb12924
 
 #### Manual
 
-- [x] 7.5 A reader unfamiliar with the suite can follow §6.4 to add a test for a hypothetical new endpoint (fixture or exemption, anonymous list, sweep run) — bdf0d7f
-- [x] 7.6 The §2 backport diff is wording and sources only, with no file or line anchors — bdf0d7f
+- [x] 7.5 A reader unfamiliar with the suite can follow §6.4 to add a test for a hypothetical new endpoint (fixture or exemption, anonymous list, sweep run) — fb12924
+- [x] 7.6 The §2 backport diff is wording and sources only, with no file or line anchors — fb12924
