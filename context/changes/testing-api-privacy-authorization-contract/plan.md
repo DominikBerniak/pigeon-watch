@@ -507,35 +507,35 @@ No data migration. The API and SPA deploy from one merge; the only visible effec
 
 #### Automated
 
-- [x] 2.1 Scanner self-tests find the seeded email raw, JSON-escaped, in a header and in Set-Cookie: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~ResponseLeakScanner"`
-- [x] 2.2 Positive control finds A's own email in A's configuration response: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Scanner_finds_the_own_email"`
-- [x] 2.3 Coverage guard passes (every route has a fixture or exemption, no stale entries): `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Every_"`
-- [x] 2.4 Sweep as anonymous, as B and as A finds no other user's email and no 429 or unexpected 5xx: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Sweep_as_"`
-- [x] 2.5 Stubbed Identity routes behave as stubs with no body: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Stubbed_identity_routes"`
-- [x] 2.6 Audit columns hold user ids or SYSTEM, never an email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Audit_columns"`
-- [x] 2.7 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
+- [x] 2.1 Scanner self-tests find the seeded email raw, JSON-escaped, in a header and in Set-Cookie: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~ResponseLeakScanner"` — ce7085d
+- [x] 2.2 Positive control finds A's own email in A's configuration response: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Scanner_finds_the_own_email"` — ce7085d
+- [x] 2.3 Coverage guard passes (every route has a fixture or exemption, no stale entries): `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Every_"` — ce7085d
+- [x] 2.4 Sweep as anonymous, as B and as A finds no other user's email and no 429 or unexpected 5xx: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Sweep_as_"` — ce7085d
+- [x] 2.5 Stubbed Identity routes behave as stubs with no body: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Stubbed_identity_routes"` — ce7085d
+- [x] 2.6 Audit columns hold user ids or SYSTEM, never an email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Audit_columns"` — ce7085d
+- [x] 2.7 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — ce7085d
 
 #### Manual
 
-- [x] 2.8 Mutation check one: temporarily add the reporter's email to the sighting response; the sweep fails on `nearby`; revert and confirm `git diff` shows no production change
-- [x] 2.9 Mutation check two: temporarily delete one fixture; the coverage guard fails; restore it
+- [x] 2.8 Mutation check one: temporarily add the reporter's email to the sighting response; the sweep fails on `nearby`; revert and confirm `git diff` shows no production change — ce7085d
+- [x] 2.9 Mutation check two: temporarily delete one fixture; the coverage guard fails; restore it — ce7085d
 
 ### Phase 3: Risk #3 ownership and endpoint protection
 
 #### Automated
 
-- [ ] 3.1 `mine` lists only the caller's sightings for A and for B: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Mine_lists_only"`
-- [ ] 3.2 B's profile rename and password change leave A's account and password unchanged: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Account_changes_by"`
-- [ ] 3.3 B cannot change A's password by supplying A's current password: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_change_with_another"`
-- [ ] 3.4 B's sighting is attributed to B despite forged ownership fields in the body: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Sighting_is_attributed"`
-- [ ] 3.5 B reads A's sighting by id and in nearby with a display name and no email, anonymous gets 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Open_reads"`
-- [ ] 3.6 Every endpoint is authorize-protected or on the anonymous list, with no stale list entries: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Anonymous_list"`
-- [ ] 3.7 Anonymous calls to every protected endpoint get 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Anonymous_calls"`
-- [ ] 3.8 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
+- [x] 3.1 `mine` lists only the caller's sightings for A and for B: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Mine_lists_only"`
+- [x] 3.2 B's profile rename and password change leave A's account and password unchanged: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Account_changes_by"`
+- [x] 3.3 B cannot change A's password by supplying A's current password: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_change_with_another"`
+- [x] 3.4 B's sighting is attributed to B despite forged ownership fields in the body: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Sighting_is_attributed"`
+- [x] 3.5 B reads A's sighting by id and in nearby with a display name and no email, anonymous gets 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Open_reads"`
+- [x] 3.6 Every endpoint is authorize-protected or on the anonymous list, with no stale list entries: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Anonymous_list"`
+- [x] 3.7 Anonymous calls to every protected endpoint get 401: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Anonymous_calls"`
+- [x] 3.8 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
 
 #### Manual
 
-- [ ] 3.9 Mutation check: temporarily remove `[Authorize]` from one sighting action; the protection guard fails; restore it and confirm `git diff` shows no production change
+- [x] 3.9 Mutation check: temporarily remove `[Authorize]` from one sighting action; the protection guard fails; restore it and confirm `git diff` shows no production change
 
 ### Phase 4: Risk #3 token lifecycle after a password change
 
