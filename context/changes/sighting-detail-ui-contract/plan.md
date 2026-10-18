@@ -388,12 +388,12 @@ None. No data, API or route change; two new UI-label keys are served by the exis
 
 #### Automated
 
-- [x] 4.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`)
-- [x] 4.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`)
-- [x] 4.3 Hardcoded-value scan on the detail page, page-card and kitchen-sink files returns 0 new hits: `grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(' PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.html PigeonWatch/Frontend/src/app/shared/ui/page-card/page-card.html PigeonWatch/Frontend/src/app/dev/kitchen-sink/state-cell.html`
-- [x] 4.4 Frontend rules file names the new input and the sink group: `grep -nE 'interactiveMarkers|Sighting detail' PigeonWatch/Frontend/CLAUDE.md`
+- [x] 4.1 Frontend unit tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — 20546a2
+- [x] 4.2 Production build passes within the 500 kB initial budget: `npm run build` (run from `PigeonWatch/Frontend`) — 20546a2
+- [x] 4.3 Hardcoded-value scan on the detail page, page-card and kitchen-sink files returns 0 new hits: `grep -nE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(' PigeonWatch/Frontend/src/app/features/sightings/sighting-detail-page/sighting-detail-page.html PigeonWatch/Frontend/src/app/shared/ui/page-card/page-card.html PigeonWatch/Frontend/src/app/dev/kitchen-sink/state-cell.html` — 20546a2
+- [x] 4.4 Frontend rules file names the new input and the sink group: `grep -nE 'interactiveMarkers|Sighting detail' PigeonWatch/Frontend/CLAUDE.md` — 20546a2
 
 #### Manual
 
-- [x] 4.5 PigeonWatch/Frontend/CLAUDE.md reads correctly: the map-view, kitchen-sink and arrival-pattern entries match what was built and nothing contradicts them
-- [x] 4.6 research.md `## Charges` marks charge 4 and every deferred candidate as deferred with a reason, and points charges 1, 2, 3 and 5 to their phases
+- [x] 4.5 PigeonWatch/Frontend/CLAUDE.md reads correctly: the map-view, kitchen-sink and arrival-pattern entries match what was built and nothing contradicts them — 20546a2
+- [x] 4.6 research.md `## Charges` marks charge 4 and every deferred candidate as deferred with a reason, and points charges 1, 2, 3 and 5 to their phases — 20546a2
