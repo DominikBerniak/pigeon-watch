@@ -6,7 +6,7 @@ Scope: `PigeonWatch/Api/` only — the ASP.NET Core Web API. See `@PigeonWatch/C
 
 ## What this owns
 
-ASP.NET Core Web API (.NET 10). Owns auth and the status-workflow/urgency-ranking business logic for sightings (the status workflow and criticality levels are defined in `@context/foundation/prd.md`, Business Logic). Solution: `PigeonWatchApi.slnx` with six layered projects plus two test projects: `ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` and `UnitTests/PigeonWatch.UnitTests.csproj` (xUnit, NSubstitute, SQLite in-memory for the user store).
+ASP.NET Core Web API (.NET 10). Owns auth and the status-workflow/urgency-ranking business logic for sightings (the status workflow and criticality levels are defined in `@context/foundation/prd.md`, Business Logic). Solution: `PigeonWatchApi.slnx` with six layered projects plus three test projects: `ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`, `UnitTests/PigeonWatch.UnitTests.csproj` (xUnit, NSubstitute, SQLite in-memory for the user store) and `IntegrationTests/PigeonWatch.IntegrationTests.csproj` (xUnit, `WebApplicationFactory<Program>` on SQLite in-memory).
 
 Data layer: EF Core (SQL Server) via `Data/PigeonWatchDbContext.cs`, migrations in `Data/Migrations/`. Two tables:
 
@@ -123,8 +123,10 @@ dotnet build PigeonWatch/Api/PigeonWatchApi.slnx
 dotnet run --project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj
 dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj   # architecture tests
 dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj   # unit tests
+dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj   # integration tests (real pipeline, SQLite in-memory)
 dotnet list PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj package --vulnerable --include-transitive   # dependency audit
 dotnet list PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj package --vulnerable --include-transitive   # test project dependency audit
+dotnet list PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj package --vulnerable --include-transitive   # integration test project dependency audit
 dotnet tool restore   # pins dotnet-ef
 dotnet ef migrations add <Name> --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj --output-dir Migrations
 dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj

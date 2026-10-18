@@ -17,7 +17,7 @@ Slices S-01 (register and log in), S-02 (edit profile name) and S-03 (report a s
 
 ## Layout
 
-- `Api/` — ASP.NET Core Web API (.NET 10), solution `Api/PigeonWatchApi.slnx` with six layered projects plus architecture and unit tests:
+- `Api/` — ASP.NET Core Web API (.NET 10), solution `Api/PigeonWatchApi.slnx` with six layered projects plus architecture, unit and integration tests:
   - `WebApi.Host/` — the deployed host and EF startup project (`Program.cs`, appsettings, pipeline, rate limiter); calls only `AddPigeonWatch` and `MapPigeonWatch` for application code.
   - `WebApi/` — controllers, API models, view model creators, mappers.
   - `DependencyInjection/` — the only place services are registered.
@@ -26,6 +26,7 @@ Slices S-01 (register and log in), S-02 (edit profile name) and S-03 (report a s
   - `BusinessObjects/` — plain domain and result types.
   - `ArchitectureTests/` — tests that enforce the layer and coding rules.
   - `UnitTests/` — xUnit unit tests (NSubstitute mocks, SQLite in-memory for the user store).
+  - `IntegrationTests/` — xUnit tests that drive the real HTTP pipeline through `WebApplicationFactory<Program>` on SQLite in-memory.
 
   The layer rules, reference direction, coding rules and commands live in `@PigeonWatch/Api/CLAUDE.md`; read it before changing anything under `Api/`.
 - `Frontend/` — Angular 22 app on Angular Material, styled through `--pw-*` design tokens, `pw-*` common classes and reusable `shared/ui` components. See `@PigeonWatch/Frontend/CLAUDE.md` for the UI rules, commands and specifics.
