@@ -332,29 +332,29 @@ None. No schema, API contract or stored data changes. The remembered email lives
 
 #### Automated
 
-- [x] 2.1 Before the implementation edits, the recovery scenarios of the new spec fail: `npm test -- --watch=false` from `PigeonWatch/Frontend`
-- [x] 2.2 After the implementation, the whole frontend suite passes: `npm test -- --watch=false` from `PigeonWatch/Frontend`
-- [x] 2.3 Production build stays within the bundle budget: `npm run build` from `PigeonWatch/Frontend`
-- [x] 2.4 The pre-existing interceptor and session specs pass without edits to their existing cases.
+- [x] 2.1 Before the implementation edits, the recovery scenarios of the new spec fail: `npm test -- --watch=false` from `PigeonWatch/Frontend` — 53a04cb
+- [x] 2.2 After the implementation, the whole frontend suite passes: `npm test -- --watch=false` from `PigeonWatch/Frontend` — 53a04cb
+- [x] 2.3 Production build stays within the bundle budget: `npm run build` from `PigeonWatch/Frontend` — 53a04cb
+- [x] 2.4 The pre-existing interceptor and session specs pass without edits to their existing cases. — 53a04cb
 
 #### Manual
 
-- [x] 2.5 With the local API and `npm start` running, a normal registration lands signed in on the home page.
-- [x] 2.6 Registering an already-used email shows the generic "couldn't create" message and the browser Network panel shows no `/auth/login` call after the register request.
-- [x] 2.7 With the API running, a valid registration after a short API stop and restart (warm-up panel shown, then recovered) still ends with exactly one account and a signed-in user.
+- [x] 2.5 With the local API and `npm start` running, a normal registration lands signed in on the home page. — 53a04cb
+- [x] 2.6 Registering an already-used email shows the generic "couldn't create" message and the browser Network panel shows no `/auth/login` call after the register request. — 53a04cb
+- [x] 2.7 With the API running, a valid registration after a short API stop and restart (warm-up panel shown, then recovered) still ends with exactly one account and a signed-in user. — 53a04cb
 
 ### Phase 3: Honest unconfirmed message and close-out
 
 #### Automated
 
-- [ ] 3.1 The label exists: `Select-String -Path PigeonWatch/Api/BusinessObjects/Resources/UiLabels.resx -Pattern "auth.errors.registrationUnconfirmed"`
-- [ ] 3.2 Frontend suite passes: `npm test -- --watch=false` from `PigeonWatch/Frontend`
-- [ ] 3.3 Production build stays within the budget: `npm run build` from `PigeonWatch/Frontend`
-- [ ] 3.4 The API still builds with the new label embedded: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
-- [ ] 3.5 §6.2 and §6.3 are no longer placeholders: `Select-String -Path context/foundation/test-plan.md -Pattern "TBD — see §3 Phase 1"` returns no match
+- [x] 3.1 The label exists: `Select-String -Path PigeonWatch/Api/BusinessObjects/Resources/UiLabels.resx -Pattern "auth.errors.registrationUnconfirmed"`
+- [x] 3.2 Frontend suite passes: `npm test -- --watch=false` from `PigeonWatch/Frontend`
+- [x] 3.3 Production build stays within the budget: `npm run build` from `PigeonWatch/Frontend`
+- [x] 3.4 The API still builds with the new label embedded: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
+- [x] 3.5 §6.2 and §6.3 are no longer placeholders: `Select-String -Path context/foundation/test-plan.md -Pattern "TBD — see §3 Phase 1"` returns no match
 
 #### Manual
 
-- [ ] 3.6 With the API stopped and `npm start` running, submit a valid registration; after the warm-up panel ends (about 2 minutes) the form shows the unconfirmed text and keeps the typed values.
-- [ ] 3.7 Start the API and submit the same form again: the account is created and the user lands signed in.
-- [ ] 3.8 The login page still shows the original warm-up text when the API is stopped.
+- [x] 3.6 With the API stopped and `npm start` running, submit a valid registration; after the warm-up panel ends (about 2 minutes) the form shows the unconfirmed text and keeps the typed values.
+- [x] 3.7 Start the API and submit the same form again: the account is created and the user lands signed in.
+- [x] 3.8 The login page still shows the original warm-up text when the API is stopped.

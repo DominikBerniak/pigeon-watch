@@ -77,7 +77,7 @@ orchestrator updates Status as artifacts appear on disk.
 | 2 | API privacy and authorization contract | Prove no email leak, ownership enforced, sessions invalidated, no email enumeration | #2, #3, #6 | integration (contract) | not started | — |
 | 3 | Report-to-map flow | Prove a reported sighting lands on the nearby map under the PRD rules, plus one critical-path e2e | #4 | integration + 1 e2e | not started | — |
 | 4 | Shared UI behaviour guard | Prove shared components keep behaviour and accessibility; add a selective multimodal review on 1–3 screens | #5 | component spec, accessibility, multimodal review (selective) | not started | — |
-| 5 | Quality-gates wiring | Wire the new suites into PR checks and make the post-deploy smoke touch the database | cross-cutting | gates | not started | — |
+| 5 | Quality-gates wiring | Wire the suites added after Phase 1 into PR checks (the API integration step is already wired) and make the post-deploy smoke touch the database | cross-cutting | gates | not started | — |
 
 Order rationale: Phase 1 attacks the top risk and builds the API integration
 harness that Phases 2 and 3 reuse. Phase 4 has the highest likelihood but the
@@ -143,7 +143,13 @@ the relevant rollout phase ships; before that, the sub-section reads
 
 ### 6.2 Adding a frontend test for slow or failing HTTP (cold start)
 
-- TBD — see §3 Phase 1 for the cold-start registration retry pattern.
+- **Where**: next to the flow it covers, here `PigeonWatch/Frontend/src/app/core/auth/register-cold-start.spec.ts` (Vitest via `ng test`, no extra tooling). The interceptor's own cases live in `core/warmup/warmup.interceptor.spec.ts`.
+- **Rule: keep the retry real, script the network.** Compose the real `authInterceptor`, `warmupInterceptor`, `AuthApi` and the service under test with `provideHttpClient(withInterceptors([...]))` and `provideHttpClientTesting()`; never mock the retry, the interceptor or the service. Drive the whole flow through `HttpTestingController`: `request.error(new ProgressEvent('error'))` for status `0`, `flush(null, { status: 503, headers: { 'Retry-After': '10' } })` for a platform 503, `flush(body, { status: 400, ... })` for an application answer.
+- **Time**: `vi.useFakeTimers()` in `beforeEach` and `vi.useRealTimers()` in `afterEach`; move the clock with `vi.advanceTimersByTime`. Import `warmupBudgetMs` from the interceptor instead of hard-coding 120 s, and finish a case with `httpMock.verify()` after advancing past the budget so a stray resend or extra request fails the test.
+- **Contract**: script the response bodies exactly as the API integration suite observed them (§6.3); the frontend fake is only as honest as that pairing. Assert the resent body equals the original, count the requests of the follow-up call (`expectOne` / `expectNone`), and assert outcomes by status and error codes, not by English text.
+- **Naming**: one `describe` per situation (`register during a cold start`), one `it` per scenario written as the user-visible outcome; `it.each([0, 503] as const)` for the two unanswered statuses.
+- **Reference test**: `register-cold-start.spec.ts`, `recovers with a login when a resend answers RegistrationFailed`.
+- **Run**: `npm test -- --watch=false` from `PigeonWatch/Frontend` (add `--include src/app/core/auth/register-cold-start.spec.ts` for one file).
 
 ### 6.3 Adding an API integration test
 
@@ -174,6 +180,8 @@ the relevant rollout phase ships; before that, the sub-section reads
 (Optional. After each phase lands, `/10x-implement` appends a 2–3 line note
 here capturing anything surprising the phase taught.)
 
+- **Phase 1, cold-start registration resilience**: the risk was a false "failed" for an account that was created, not a duplicate row (unique indexes already prevent that). The resend after a lost response lands on the generic `RegistrationFailed` 400, so the fix is a scoped recovery login with the typed credentials after an inconclusive register, plus a register-only "couldn't confirm" message after an unanswered warm-up. The real-chain spec (§6.2) and the API integration suite (§6.3) pin the two halves of the same contract.
+
 ## 7. What We Deliberately Don't Test
 
 Exclusions agreed during the rollout (Phase 2 interview, Q5). Future
@@ -181,12 +189,15 @@ contributors should respect these unless the underlying assumption changes.
 
 - **Pixel-level snapshot tests** — they break on every styling change and catch nothing meaningful. Re-evaluate if the design system freezes and a stable visual baseline exists. (Source: Phase 2 interview Q5.)
 - **The dev-only kitchen-sink page** — it ships no user-facing behaviour. Re-evaluate if it becomes reachable by end users. (Source: Phase 2 interview Q5.)
+- **SQL-Server-only register branches** — the duplicate-insert translation (`SqlException` 2601/2627), the `SqlException` to 503 mapping and the execution-strategy commit ambiguity of `EnableRetryOnFailure` cannot run on the SQLite in-memory harness, and a SQL Server container is not worth its CI cost for them today. Re-evaluate if a duplicate or half-created account is ever seen in production. (Source: `testing-cold-start-registration-resilience` plan.)
+- **A `429` on a resend and two browser tabs registering at once** — a resend that the rate limiter rejects still shows the too-many-requests message, and two tabs racing one registration are not recovered or tested. Re-evaluate if support reports either. (Source: `testing-cold-start-registration-resilience` plan.)
 
 ## 8. Freshness Ledger
 
 - Strategy (§1–§5) last reviewed: 2026-10-18
 - Stack versions last verified: 2026-10-18
 - AI-native tool references last verified: 2026-10-18
+- 2026-10-18: §3 Phase 5 goal reworded so it no longer claims to wire the API integration suite (Phase 1 wired it; §5 already said so); §6.2, §6.7 and §7 filled by `testing-cold-start-registration-resilience`.
 
 Refresh (`/10x-test-plan --refresh`) when:
 

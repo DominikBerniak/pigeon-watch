@@ -8,6 +8,7 @@ export type AuthFormError =
   | 'tooManyRequests'
   | 'warmupFailed'
   | 'registrationFailed'
+  | 'registrationUnconfirmed'
   | 'unexpected';
 
 export type RegisterField = 'email' | 'displayName' | 'password';
@@ -45,7 +46,9 @@ export function registerFailure(error: unknown): RegisterFailure {
   const codes = problemErrorCodes(error);
 
   if (error.status !== 400 || codes.length === 0) {
-    return { formError: transportFailure(error), fieldErrors: {} };
+    const formError = isUnanswered(error) ? 'registrationUnconfirmed' : transportFailure(error);
+
+    return { formError, fieldErrors: {} };
   }
 
   const failure: RegisterFailure = { formError: null, fieldErrors: {} };
@@ -98,13 +101,21 @@ export function authErrorMessage(resources: ResourceService, error: AuthFormErro
 
   if (error === 'registrationFailed') return resources.translate('auth.errors.registrationFailed');
 
+  if (error === 'registrationUnconfirmed') {
+    return resources.translate('auth.errors.registrationUnconfirmed');
+  }
+
   return resources.translate('common.unexpectedError');
+}
+
+function isUnanswered(error: HttpErrorResponse): boolean {
+  return error.status === 503 || error.status === 0;
 }
 
 function transportFailure(error: HttpErrorResponse): AuthFormError {
   if (error.status === 429) return 'tooManyRequests';
 
-  if (error.status === 503 || error.status === 0) return 'warmupFailed';
+  if (isUnanswered(error)) return 'warmupFailed';
 
   return 'unexpected';
 }
