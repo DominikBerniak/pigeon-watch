@@ -82,6 +82,16 @@ public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null) : W
         return count;
     }
 
+    public int ExpireLockout(string email)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = "UPDATE USER_ACCOUNT SET LOCKOUT_END = '2000-01-01 00:00:00+00:00' WHERE NORMALIZED_EMAIL = $email";
+        command.Parameters.AddWithValue("$email", email.ToUpperInvariant());
+        int affected = command.ExecuteNonQuery();
+
+        return affected;
+    }
+
     public void CloseDatabase()
     {
         connection.Close();

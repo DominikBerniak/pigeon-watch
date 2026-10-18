@@ -556,35 +556,35 @@ No data migration. The API and SPA deploy from one merge; the only visible effec
 
 #### Automated
 
-- [x] 5.1 Register with a taken display name answers 400 RegistrationFailed only, for a new and for an existing email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_with_a_taken_display_name"`
-- [x] 5.2 Rename to a taken display name still returns DuplicateDisplayName: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj --filter "FullyQualifiedName~AccountRepositoryTests"`
-- [x] 5.3 Unit tests pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
-- [x] 5.4 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`
-- [x] 5.5 Frontend tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`)
-- [x] 5.6 Production frontend build stays within budget: `npm run build` (run from `PigeonWatch/Frontend`)
-- [x] 5.7 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
+- [x] 5.1 Register with a taken display name answers 400 RegistrationFailed only, for a new and for an existing email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_with_a_taken_display_name"` — bde4734
+- [x] 5.2 Rename to a taken display name still returns DuplicateDisplayName: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj --filter "FullyQualifiedName~AccountRepositoryTests"` — bde4734
+- [x] 5.3 Unit tests pass: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — bde4734
+- [x] 5.4 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — bde4734
+- [x] 5.5 Frontend tests pass: `npm test -- --watch=false` (run from `PigeonWatch/Frontend`) — bde4734
+- [x] 5.6 Production frontend build stays within budget: `npm run build` (run from `PigeonWatch/Frontend`) — bde4734
+- [x] 5.7 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — bde4734
 
 #### Manual
 
-- [x] 5.8 The new contract test was run red against the unfixed code and failed because the two answers differed (`DuplicateDisplayName` versus `RegistrationFailed`), before the fix was written
-- [x] 5.9 In the running SPA, registering with a taken display name shows the generic form message and keeps the typed values, and renaming to a taken name on the profile page still shows "This name is already taken."
+- [x] 5.8 The new contract test was run red against the unfixed code and failed because the two answers differed (`DuplicateDisplayName` versus `RegistrationFailed`), before the fix was written — bde4734
+- [x] 5.9 In the running SPA, registering with a taken display name shows the generic form message and keeps the typed values, and renaming to a taken name on the profile page still shows "This name is already taken." — bde4734
 
 ### Phase 6: Risk #6 enumeration, lockout and limiter
 
 #### Automated
 
-- [ ] 6.1 Every existing-email register failure variant matches the taken-display-name answer exactly: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_failure_variants"`
-- [ ] 6.2 Failed registrations create no extra account and echo neither email nor display name: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_failures_keep"`
-- [ ] 6.3 Login answers are identical for an unknown email and a wrong password, and never LockedOut for an unknown email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Login_failure"`
-- [ ] 6.4 Five wrong logins from five addresses lock the account and the correct password is then refused: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Lockout_holds_across"`
-- [ ] 6.5 A lockout moved into the past lets the correct password in again, or the row is closed with an n/a note when FW5 showed it cannot be driven: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Lockout_expiry"`
-- [ ] 6.6 The 11th login request from one address gets 429 while another address still gets LockedOut: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Eleventh_login_request"`
-- [ ] 6.7 A stolen access token guessing the current password gets 429 on the 11th attempt from one address: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_guessing"`
-- [ ] 6.8 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
+- [x] 6.1 Every existing-email register failure variant matches the taken-display-name answer exactly: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_failure_variants"`
+- [x] 6.2 Failed registrations create no extra account and echo neither email nor display name: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Register_failures_keep"`
+- [x] 6.3 Login answers are identical for an unknown email and a wrong password, and never LockedOut for an unknown email: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Login_failure"`
+- [x] 6.4 Five wrong logins from five addresses lock the account and the correct password is then refused: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Lockout_holds_across"`
+- [x] 6.5 A lockout moved into the past lets the correct password in again, or the row is closed with an n/a note when FW5 showed it cannot be driven: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Lockout_expiry"`
+- [x] 6.6 The 11th login request from one address gets 429 while another address still gets LockedOut: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Eleventh_login_request"`
+- [x] 6.7 A stolen access token guessing the current password gets 429 on the 11th attempt from one address: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj --filter "FullyQualifiedName~Password_guessing"`
+- [x] 6.8 Full integration suite passes: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
 
 #### Manual
 
-- [ ] 6.9 Mutation check: temporarily raise the limiter's permit limit to 100; the 11th-request and password-guessing tests fail; revert and confirm `git diff` shows no production change
+- [x] 6.9 Mutation check: temporarily raise the limiter's permit limit to 100; the 11th-request and password-guessing tests fail; revert and confirm `git diff` shows no production change
 
 ### Phase 7: Cookbook update
 
