@@ -14,6 +14,7 @@ export class MapViewStub {
   readonly markers = input<readonly MapMarker[]>([]);
   readonly pin = input<GeoPoint | null>(null);
   readonly selectedId = input<string | null>(null);
+  readonly interactiveMarkers = input(true);
   readonly mapClick = output<GeoPoint>();
   readonly centerChange = output<GeoPoint>();
   readonly zoomChange = output<number>();

@@ -16,6 +16,7 @@ describe('MapView', () => {
   async function render(
     pin: GeoPoint | null = null,
     markers: readonly MapMarker[] = [marker],
+    interactiveMarkers = true,
   ): Promise<HTMLElement> {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -26,6 +27,7 @@ describe('MapView', () => {
     fixture.componentRef.setInput('zoom', 6);
     fixture.componentRef.setInput('markers', markers);
     fixture.componentRef.setInput('pin', pin);
+    fixture.componentRef.setInput('interactiveMarkers', interactiveMarkers);
     await fixture.whenStable();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -161,6 +163,53 @@ describe('MapView', () => {
 
     expect(selected).toEqual([]);
     expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('makes interactive markers a labelled tab stop with a pressed state by default', async () => {
+    const root = await render();
+
+    expect(icon(root, 'urgent').getAttribute('tabindex')).toBe('0');
+    expect(icon(root, 'urgent').getAttribute('role')).toBe('button');
+    expect(icon(root, 'urgent').getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('draws display-only markers with no tab stop, no button role and no pressed state', async () => {
+    const root = await render(null, [marker, other], false);
+
+    for (const kind of ['urgent', 'monitor'] as const) {
+      expect(icon(root, kind).hasAttribute('tabindex')).toBe(false);
+      expect(icon(root, kind).hasAttribute('role')).toBe(false);
+      expect(icon(root, kind).hasAttribute('aria-pressed')).toBe(false);
+    }
+
+    await select(marker.id);
+
+    expect(icon(root, 'urgent').classList).toContain('pw-map-marker--selected');
+    expect(icon(root, 'urgent').hasAttribute('aria-pressed')).toBe(false);
+  });
+
+  it('emits nothing from a display-only marker on click or on Enter and Space', async () => {
+    const root = await render(null, [marker], false);
+    const selected: string[] = [];
+    fixture.componentInstance.markerSelect.subscribe((id) => selected.push(id));
+
+    icon(root, 'urgent').click();
+    const enter = press(icon(root, 'urgent'), 'Enter');
+    const space = press(icon(root, 'urgent'), ' ');
+
+    expect(selected).toEqual([]);
+    expect(enter.defaultPrevented).toBe(false);
+    expect(space.defaultPrevented).toBe(false);
+  });
+
+  it('redraws the markers when they become display-only', async () => {
+    const root = await render();
+
+    fixture.componentRef.setInput('interactiveMarkers', false);
+    await fixture.whenStable();
+
+    expect(icon(root, 'urgent').hasAttribute('tabindex')).toBe(false);
+    expect(icon(root, 'urgent').hasAttribute('aria-pressed')).toBe(false);
   });
 
   it('marks no marker as selected by default', async () => {
