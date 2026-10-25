@@ -85,6 +85,7 @@ export class MapView {
   private leaflet: LeafletModule | null = null;
   private map: Leaflet.Map | null = null;
   private markerLayer: Leaflet.LayerGroup | null = null;
+  private resizeObserver: ResizeObserver | null = null;
   private pinMarker: Leaflet.Marker | null = null;
   private readonly shownMarkers = new Map<string, Leaflet.Marker>();
   private shownAttribution: string | null = null;
@@ -113,7 +114,10 @@ export class MapView {
     effect(() => this.applySelection(this.selectedId()));
     effect(() => this.applyPin());
     effect(() => this.applyAttribution());
-    this.destroyRef.onDestroy(() => this.map?.remove());
+    this.destroyRef.onDestroy(() => {
+      this.resizeObserver?.disconnect();
+      this.map?.remove();
+    });
   }
 
   focusMarker(id: string): void {
@@ -165,8 +169,18 @@ export class MapView {
     this.leaflet = leaflet;
     this.map = map;
     this.markerLayer = leaflet.layerGroup().addTo(map);
+    this.observeResize(map);
     this.ready.set(true);
     this.mapReady.emit();
+  }
+
+  private observeResize(map: Leaflet.Map): void {
+    if (typeof ResizeObserver === 'undefined') return;
+
+    const observer = new ResizeObserver(() => map.invalidateSize());
+
+    observer.observe(this.canvas().nativeElement);
+    this.resizeObserver = observer;
   }
 
   private applyView(): void {

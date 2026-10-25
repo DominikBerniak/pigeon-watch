@@ -355,27 +355,27 @@ The shell and tokens are in the initial bundle, so `npm run build` is checked af
 
 #### Automated
 
-- [x] 2.1 Page-card and my-sightings specs pass
-- [x] 2.2 Style-token spec passes
+- [x] 2.1 Page-card and my-sightings specs pass — b4023e3
+- [x] 2.2 Style-token spec passes — b4023e3
 
 #### Manual
 
-- [x] 2.3 Login, register and profile cards are larger from xl and unchanged below it
-- [x] 2.4 The My sightings card has the same width as the profile card at every width
-- [x] 2.5 The warm-up overlay text still looks right at 2000 px
+- [x] 2.3 Login, register and profile cards are larger from xl and unchanged below it — b4023e3
+- [x] 2.4 The My sightings card has the same width as the profile card at every width — b4023e3
+- [x] 2.5 The warm-up overlay text still looks right at 2000 px — b4023e3
 
 ### Phase 3: Map component and map home
 
 #### Automated
 
-- [ ] 3.1 Map-view and map-home specs pass
-- [ ] 3.2 Production build passes
+- [x] 3.1 Map-view and map-home specs pass
+- [x] 3.2 Production build passes
 
 #### Manual
 
-- [ ] 3.3 At 1600 and 2000 px the map home column is wider than 64rem and the map is taller than 24rem
-- [ ] 3.4 Resizing the browser window across xl keeps the map tiles aligned with its box
-- [ ] 3.5 Below xl the map home looks as it did before
+- [x] 3.3 At 1600 and 2000 px the map home column is wider than 64rem and the map is taller than 24rem
+- [x] 3.4 Resizing the browser window across xl keeps the map tiles aligned with its box
+- [x] 3.5 Below xl the map home looks as it did before
 
 ### Phase 4: Sighting detail two-column
 
