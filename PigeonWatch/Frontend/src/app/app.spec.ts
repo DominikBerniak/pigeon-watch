@@ -108,6 +108,33 @@ describe('App', () => {
     expect(link?.textContent?.trim()).toBe('PigeonWatch');
   });
 
+  it('publishes the user button width on the root and removes it on logout', async () => {
+    class FakeResizeObserver {
+      observe = vi.fn();
+      disconnect = vi.fn();
+    }
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+    const root = document.documentElement.style;
+
+    try {
+      await render();
+      currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
+      TestBed.tick();
+      await TestBed.inject(ApplicationRef).whenStable();
+
+      expect(root.getPropertyValue('--pw-user-button-width')).toMatch(/px$/);
+
+      currentUser.set(null);
+      TestBed.tick();
+      await TestBed.inject(ApplicationRef).whenStable();
+
+      expect(root.getPropertyValue('--pw-user-button-width')).toBe('');
+    } finally {
+      vi.unstubAllGlobals();
+      root.removeProperty('--pw-user-button-width');
+    }
+  });
+
   it('logs out from the menu', async () => {
     await openUserMenu();
 

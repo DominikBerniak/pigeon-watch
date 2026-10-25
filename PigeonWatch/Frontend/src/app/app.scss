@@ -40,15 +40,11 @@
 }
 
 .app-header__user-button {
-  --mat-button-outlined-pressed-state-layer-opacity: 0;
-
   min-width: var(--pw-user-menu-width);
   max-width: 100%;
 }
 
 .app-header__user-button.app-header__user-button--open {
-  --mat-button-outlined-container-shape: var(--pw-radius-md) var(--pw-radius-md) 0 0;
-
   border-bottom-color: transparent;
   background-color: var(--pw-color-surface);
 }

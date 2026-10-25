@@ -335,6 +335,12 @@ The shell and tokens are in the initial bundle, so `npm run build` is checked af
 - Earlier decisions: `context/archive/2026-10-11-nearby-map-ui-contract/plan.md:268-274`
 - Deferred map resize item D5: `context/archive/2026-10-11-nearby-map-ui-contract/research.md:92`
 
+## Addendum: shipped deviations (impl review, 2026-10-25)
+
+- **Tiers and card width.** The map home, `sightings/new` and `sightings/:id` all use `layout: 'wide'` (90rem from `xl`); no route uses `roomy`, which the shell still supports. `app-page-card` `width="wide"` is 90rem from `xl`, not 60rem. The detail page asks for `wide` only while the map is shown and keeps the form width otherwise; its details/map grid applies only in that state.
+- **Bundle budget.** The initial bundle is 512 kB. The `angular.json` warning limit went from 500 kB to 520 kB in Phase 5 (`mat-select`, menu theming), so criterion 6.2 passes against the raised limit, not the original 500 kB.
+- **Unplanned shell and form changes.** An inner `.app-body` scroll container with a non-sticky header (`position: relative` so visually hidden elements stay inside it); a brand home link; user menu and select panel styling with a published `--pw-user-button-width`; `mat-select` with a clear option on the report page; a textarea max height; a `headerActions` slot on `app-page-card`; menu, select and option Material overrides. Scroll behaviour inside `.app-body` (arrival focus, keyboard scrolling, Leaflet wheel and drag) needs a manual pass on each route.
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.

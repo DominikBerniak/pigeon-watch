@@ -30,12 +30,15 @@
 
 .page-card__heading {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
+  min-width: 0;
   gap: var(--pw-space-2);
 }
 
 .page-card__title {
   font-size: var(--pw-font-size-xl);
+  overflow-wrap: anywhere;
 }
 
 .page-card__actions {

@@ -123,3 +123,19 @@ app-submit-button[data-tone='success'] {
     )
   );
 }
+
+button.app-header__user-button {
+  @include mat.button-overrides(
+    (
+      outlined-pressed-state-layer-opacity: 0,
+    )
+  );
+}
+
+button.app-header__user-button.app-header__user-button--open {
+  @include mat.button-overrides(
+    (
+      outlined-container-shape: var(--pw-radius-md) var(--pw-radius-md) 0 0,
+    )
+  );
+}

@@ -65,6 +65,14 @@ describe('PageCard', () => {
     expect(getComputedStyle(footer).display).toBe('none');
   });
 
+  it('does not display the footer when only headerActions are projected', async () => {
+    const fixture = TestBed.createComponent(HeaderActionsPageCardHost);
+    await fixture.whenStable();
+    const footer: HTMLElement = fixture.nativeElement.querySelector('mat-card-actions');
+
+    expect(getComputedStyle(footer).display).toBe('none');
+  });
+
   it('displays the footer when actions are projected', async () => {
     const fixture = TestBed.createComponent(PageCardHost);
     await fixture.whenStable();

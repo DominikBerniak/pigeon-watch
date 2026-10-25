@@ -30,7 +30,7 @@
     </button>
   }
   @if (sighting(); as sighting) {
-    <div class="sighting-detail">
+    <div class="sighting-detail" [class.sighting-detail--map]="mapShown()">
       <div class="sighting-detail__details">
         <dl app-detail-list>
           <div app-detail-item [label]="'sighting.detail.status' | translate">

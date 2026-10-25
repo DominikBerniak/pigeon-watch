@@ -73,7 +73,10 @@ export class App {
 
       publish();
       observer.observe(button);
-      onCleanup(() => observer.disconnect());
+      onCleanup(() => {
+        observer.disconnect();
+        document.documentElement.style.removeProperty(userButtonWidthProperty);
+      });
     });
   }
 
