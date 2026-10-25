@@ -407,11 +407,11 @@ The shell and tokens are in the initial bundle, so `npm run build` is checked af
 
 #### Automated
 
-- [x] 6.1 Full frontend test run passes
-- [x] 6.2 Production build passes and the initial bundle stays under 500 kB
+- [x] 6.1 Full frontend test run passes — 8f88a05
+- [x] 6.2 Production build passes and the initial bundle stays under 500 kB — 8f88a05
 
 #### Manual
 
-- [x] 6.3 At 1280, 1600 and 2000 px each of the six routes looks right
-- [x] 6.4 At 1024 px and below nothing regressed except the header and My sightings alignment
-- [x] 6.5 Console shows no errors at 2000 px on the map home and detail page
+- [x] 6.3 At 1280, 1600 and 2000 px each of the six routes looks right — 8f88a05
+- [x] 6.4 At 1024 px and below nothing regressed except the header and My sightings alignment — 8f88a05
+- [x] 6.5 Console shows no errors at 2000 px on the map home and detail page — 8f88a05
