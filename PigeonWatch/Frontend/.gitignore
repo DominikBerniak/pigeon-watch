@@ -44,3 +44,14 @@ __screenshots__/
 Thumbs.db
 
 /src/app/core/resources/generated/
+
+# Playwright
+playwright/.auth/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+.playwright-cli/
+
+# Local E2E credentials
+.env
