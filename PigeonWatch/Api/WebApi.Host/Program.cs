@@ -1,4 +1,8 @@
+using System.Collections;
+using System.Diagnostics;
+using System.Security.Claims;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.RateLimiting;
 using PigeonWatch.DependencyInjection;
 using PigeonWatch.WebApi.RateLimiting;
@@ -55,6 +59,33 @@ namespace PigeonWatch.WebApi.Host
 
             WebApplication app = builder.Build();
 
+            app.Use(async (context, next) =>
+            {
+                long startedAt = Stopwatch.GetTimestamp();
+                RequestLogScope scope = new(Activity.Current?.Id ?? context.TraceIdentifier);
+                context.Features.Set(scope);
+
+                using IDisposable? loggerScope = app.Logger.BeginScope(scope);
+
+                try
+                {
+                    await next(context);
+                }
+                finally
+                {
+                    Endpoint? endpoint = context.GetEndpoint() ?? context.Features.Get<IExceptionHandlerFeature>()?.Endpoint;
+                    string route = (endpoint as RouteEndpoint)?.RoutePattern.RawText ?? "unmatched";
+                    double elapsedMs = Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds;
+
+                    app.Logger.LogInformation(
+                        "HTTP {Method} {Route} responded {StatusCode} in {ElapsedMs} ms",
+                        context.Request.Method,
+                        route,
+                        context.Response.StatusCode,
+                        elapsedMs);
+                }
+            });
+
             app.UseExceptionHandler();
 
             if (app.Environment.IsDevelopment())
@@ -71,6 +102,16 @@ namespace PigeonWatch.WebApi.Host
 
             app.UseAuthentication();
 
+            app.Use(async (context, next) =>
+            {
+                RequestLogScope? scope = context.Features.Get<RequestLogScope>();
+
+                if (scope is not null && Guid.TryParse(context.User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+                    scope.UserId = userId;
+
+                await next(context);
+            });
+
             app.UseRateLimiter();
 
             app.UseAuthorization();
@@ -80,6 +121,43 @@ namespace PigeonWatch.WebApi.Host
             app.MapPigeonWatch();
 
             app.Run();
+        }
+
+        private sealed class RequestLogScope(string traceId) : IReadOnlyList<KeyValuePair<string, object?>>
+        {
+            public Guid? UserId { get; set; }
+
+            public int Count => UserId is null ? 1 : 2;
+
+            public KeyValuePair<string, object?> this[int index]
+            {
+                get
+                {
+                    if (index == 0)
+                        return new KeyValuePair<string, object?>("TraceId", traceId);
+
+                    if (index == 1 && UserId is not null)
+                        return new KeyValuePair<string, object?>("UserId", UserId);
+
+                    throw new ArgumentOutOfRangeException(nameof(index));
+                }
+            }
+
+            public IEnumerator<KeyValuePair<string, object?>> GetEnumerator()
+            {
+                for (int index = 0; index < Count; index++)
+                    yield return this[index];
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
+
+            public override string ToString()
+            {
+                return UserId is null ? $"TraceId:{traceId}" : $"TraceId:{traceId} UserId:{UserId}";
+            }
         }
     }
 }

@@ -246,7 +246,7 @@ public sealed class PigeonWatchUserStoreTests : IDisposable
         DbContextOptions<PigeonWatchDbContext> options = new DbContextOptionsBuilder<PigeonWatchDbContext>()
             .UseSqlite(connection)
             .AddInterceptors(new AuditSaveChangesInterceptor(
-                new HttpContextCurrentUserProvider(new HttpContextAccessor()),
+                new HttpContextCurrentUserProvider(new HttpContextAccessor(), NullLogger<HttpContextCurrentUserProvider>.Instance),
                 TimeProvider.System))
             .Options;
 
