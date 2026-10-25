@@ -5,6 +5,22 @@
   padding-inline: var(--pw-space-4);
 }
 
+.pw-user-menu-panel.pw-user-menu-panel {
+  min-width: max(var(--pw-user-menu-width), var(--pw-user-button-width));
+  max-width: none;
+  border: var(--pw-border-width) solid var(--pw-color-border);
+}
+
+.pw-select-panel.pw-select-panel {
+  --mat-focus-indicator-display: none;
+
+  margin-top: calc(var(--pw-radius-md) * -1);
+  border: var(--pw-focus-ring-width) solid var(--pw-color-primary);
+  border-top: var(--pw-border-width) solid var(--pw-color-border);
+  border-radius: 0 0 var(--pw-radius-md) var(--pw-radius-md);
+  box-shadow: var(--pw-shadow-md);
+}
+
 .pw-stack {
   display: flex;
   flex-direction: column;

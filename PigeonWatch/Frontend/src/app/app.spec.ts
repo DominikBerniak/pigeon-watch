@@ -14,6 +14,7 @@ class BlankPage {}
 
 const testRoutes: Routes = [
   { path: '', pathMatch: 'full', component: BlankPage, data: { layout: 'wide' } },
+  { path: 'roomy', component: BlankPage, data: { layout: 'roomy' } },
   { path: 'profile', component: BlankPage },
 ];
 
@@ -98,6 +99,42 @@ describe('App', () => {
     expect(items[1].getAttribute('href')).toBe('/profile');
   });
 
+  it('links the brand in the header to the home page', async () => {
+    currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
+    const element = await render();
+    const link = element.querySelector<HTMLAnchorElement>('header a.app-header__home');
+
+    expect(link?.getAttribute('href')).toBe('/');
+    expect(link?.textContent?.trim()).toBe('PigeonWatch');
+  });
+
+  it('publishes the user button width on the root and removes it on logout', async () => {
+    class FakeResizeObserver {
+      observe = vi.fn();
+      disconnect = vi.fn();
+    }
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+    const root = document.documentElement.style;
+
+    try {
+      await render();
+      currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
+      TestBed.tick();
+      await TestBed.inject(ApplicationRef).whenStable();
+
+      expect(root.getPropertyValue('--pw-user-button-width')).toMatch(/px$/);
+
+      currentUser.set(null);
+      TestBed.tick();
+      await TestBed.inject(ApplicationRef).whenStable();
+
+      expect(root.getPropertyValue('--pw-user-button-width')).toBe('');
+    } finally {
+      vi.unstubAllGlobals();
+      root.removeProperty('--pw-user-button-width');
+    }
+  });
+
   it('logs out from the menu', async () => {
     await openUserMenu();
 
@@ -106,28 +143,59 @@ describe('App', () => {
     expect(logout).toHaveBeenCalledOnce();
   });
 
-  it('widens main only on a route whose data asks for the wide layout', async () => {
+  async function renderSignedIn(): Promise<{ main: HTMLElement }> {
     currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
     const element = await render();
-    const router = TestBed.inject(Router);
-    const main = element.querySelector('main')!;
 
-    await router.navigateByUrl('/');
+    return { main: element.querySelector('main')! };
+  }
+
+  async function navigate(url: string): Promise<void> {
+    await TestBed.inject(Router).navigateByUrl(url);
     await TestBed.inject(ApplicationRef).whenStable();
+  }
+
+  it('widens main on a route whose data asks for the wide layout', async () => {
+    const { main } = await renderSignedIn();
+
+    await navigate('/');
 
     expect(main.classList).toContain('app-main--wide');
+    expect(main.classList).not.toContain('app-main--roomy');
+  });
 
-    await router.navigateByUrl('/profile');
-    await TestBed.inject(ApplicationRef).whenStable();
+  it('gives main the roomy layout on a route whose data asks for it', async () => {
+    const { main } = await renderSignedIn();
 
+    await navigate('/roomy');
+
+    expect(main.classList).toContain('app-main--roomy');
     expect(main.classList).not.toContain('app-main--wide');
   });
 
-  it('declares the wide layout on the home route only among product routes', () => {
+  it('keeps the default layout on a route without a layout value', async () => {
+    const { main } = await renderSignedIn();
+
+    await navigate('/');
+    await navigate('/profile');
+
+    expect(main.classList).not.toContain('app-main--wide');
+    expect(main.classList).not.toContain('app-main--roomy');
+  });
+
+  it('declares the wide layout on the home, report and sighting detail routes among product routes', () => {
     const wide = routes
       .filter((route) => !devRoutes.includes(route))
       .filter((route) => route.data?.['layout'] === 'wide');
 
-    expect(wide.map((route) => route.path)).toEqual(['']);
+    expect(wide.map((route) => route.path)).toEqual(['', 'sightings/new', 'sightings/:id']);
+  });
+
+  it('declares no layout on any other product route', () => {
+    const others = routes
+      .filter((route) => !devRoutes.includes(route))
+      .filter((route) => route.data?.['layout'] !== undefined && route.data['layout'] !== 'wide');
+
+    expect(others).toEqual([]);
   });
 });

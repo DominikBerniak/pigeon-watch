@@ -1,3 +1,5 @@
+@use 'breakpoints' as bp;
+
 :host {
   display: block;
 }
@@ -9,4 +11,8 @@
   border-radius: var(--pw-radius-md);
   background-color: var(--pw-color-border-subtle);
   isolation: isolate;
+
+  @include bp.from(xl) {
+    height: var(--pw-map-height-xl);
+  }
 }

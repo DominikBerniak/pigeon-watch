@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { PageCard } from './page-card';
+import { PageCard, PageCardWidth } from './page-card';
 
 @Component({
   imports: [PageCard],
@@ -20,6 +20,22 @@ class SubtitledPageCardHost {
   readonly subtitle = signal<string | undefined>('Card subtitle');
 }
 
+@Component({
+  imports: [PageCard],
+  template: `<app-page-card [title]="'Card title'" [width]="width()" />`,
+})
+class WidthPageCardHost {
+  readonly width = signal<PageCardWidth>('form');
+}
+
+@Component({
+  imports: [PageCard],
+  template: `<app-page-card [title]="'Card title'"
+    ><button headerActions class="toggle">Toggle</button></app-page-card
+  >`,
+})
+class HeaderActionsPageCardHost {}
+
 describe('PageCard', () => {
   it('renders the title as the h1 and projects the body and actions', async () => {
     const fixture = TestBed.createComponent(PageCardHost);
@@ -32,8 +48,25 @@ describe('PageCard', () => {
     expect(element.querySelector('mat-card-actions .actions')).not.toBeNull();
   });
 
+  it('projects headerActions into the header beside the title', async () => {
+    const fixture = TestBed.createComponent(HeaderActionsPageCardHost);
+    await fixture.whenStable();
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('header .toggle')).not.toBeNull();
+    expect(element.querySelector('mat-card-actions .toggle')).toBeNull();
+  });
+
   it('does not display the footer when nothing is projected into actions', async () => {
     const fixture = TestBed.createComponent(SubtitledPageCardHost);
+    await fixture.whenStable();
+    const footer: HTMLElement = fixture.nativeElement.querySelector('mat-card-actions');
+
+    expect(getComputedStyle(footer).display).toBe('none');
+  });
+
+  it('does not display the footer when only headerActions are projected', async () => {
+    const fixture = TestBed.createComponent(HeaderActionsPageCardHost);
     await fixture.whenStable();
     const footer: HTMLElement = fixture.nativeElement.querySelector('mat-card-actions');
 
@@ -71,5 +104,23 @@ describe('PageCard', () => {
     await fixture.whenStable();
 
     expect(element.querySelector('h1 + p')).toBeNull();
+  });
+
+  it('keeps the form width by default and reflects the wide width as a host class', async () => {
+    const fixture = TestBed.createComponent(WidthPageCardHost);
+    await fixture.whenStable();
+    const card: HTMLElement = fixture.nativeElement.querySelector('app-page-card');
+
+    expect(card.classList.contains('page-card-host--wide')).toBe(false);
+
+    fixture.componentInstance.width.set('wide');
+    await fixture.whenStable();
+
+    expect(card.classList.contains('page-card-host--wide')).toBe(true);
+
+    fixture.componentInstance.width.set('form');
+    await fixture.whenStable();
+
+    expect(card.classList.contains('page-card-host--wide')).toBe(false);
   });
 });

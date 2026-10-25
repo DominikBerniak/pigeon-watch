@@ -69,13 +69,20 @@
 
   --pw-content-max-width: 40rem;
   --pw-content-wide-max-width: 64rem;
+  --pw-content-wide-xl-max-width: 90rem;
   --pw-viewport-min-height: 100vh;
   --pw-viewport-min-height-dynamic: 100dvh;
   --pw-form-max-width: 28rem;
+  --pw-form-max-width-xl: 34rem;
+  --pw-page-card-wide-max-width: 90rem;
   --pw-control-height: 3rem;
+  --pw-user-menu-width: 12rem;
+  --pw-user-button-width: var(--pw-user-menu-width);
+  --pw-textarea-max-height: 16rem;
   --pw-brand-mark-size-md: 2rem;
   --pw-brand-mark-size-lg: 3rem;
   --pw-map-height: 24rem;
+  --pw-map-height-xl: clamp(24rem, 60vh, 48rem);
   --pw-map-aside-width: 18rem;
   --pw-map-marker-size: 1.5rem;
   --pw-map-marker-size-selected: 2rem;
@@ -89,6 +96,12 @@
 
   --pw-z-header: 100;
   --pw-z-overlay: 1000;
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --pw-form-max-width: var(--pw-form-max-width-xl);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

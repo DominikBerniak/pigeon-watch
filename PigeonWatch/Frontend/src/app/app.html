@@ -2,13 +2,24 @@
 
 @if (currentUser(); as user) {
   <header class="app-header">
-    <div class="pw-container pw-cluster app-header__bar">
-      <app-brand [name]="'common.appName' | translate" />
+    <div class="pw-cluster app-header__bar">
+      <a class="app-header__home" routerLink="/">
+        <app-brand [name]="'common.appName' | translate" />
+      </a>
       <div class="pw-cluster app-header__user">
-        <button mat-stroked-button type="button" [matMenuTriggerFor]="userMenu">
+        <button
+          mat-stroked-button
+          type="button"
+          class="app-header__user-button"
+          disableRipple
+          [class.app-header__user-button--open]="userMenuOpen()"
+          [matMenuTriggerFor]="userMenu"
+          (menuOpened)="userMenuOpen.set(true)"
+          (menuClosed)="userMenuOpen.set(false)"
+        >
           {{ user.displayName }}
         </button>
-        <mat-menu #userMenu="matMenu" xPosition="before">
+        <mat-menu #userMenu="matMenu" class="pw-user-menu-panel" xPosition="before">
           <a mat-menu-item routerLink="/sightings/new">{{ 'nav.reportSighting' | translate }}</a>
           <a mat-menu-item routerLink="/profile">{{ 'header.profile' | translate }}</a>
           <button mat-menu-item type="button" (click)="logout()">
@@ -20,9 +31,16 @@
   </header>
 }
 
-<main class="app-main" [class.app-main--guest]="!currentUser()" [class.app-main--wide]="wide()">
-  @if (!currentUser()) {
-    <app-brand size="lg" [name]="'common.appName' | translate" />
-  }
-  <router-outlet />
-</main>
+<div class="app-body">
+  <main
+    class="app-main"
+    [class.app-main--guest]="!currentUser()"
+    [class.app-main--wide]="layout() === 'wide'"
+    [class.app-main--roomy]="layout() === 'roomy'"
+  >
+    @if (!currentUser()) {
+      <app-brand size="lg" [name]="'common.appName' | translate" />
+    }
+    <router-outlet />
+  </main>
+</div>

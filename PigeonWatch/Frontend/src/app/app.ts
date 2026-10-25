@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
@@ -14,6 +22,8 @@ import { SessionService } from './core/auth/session.service';
 import { TranslatePipe } from './core/resources/translate.pipe';
 import { WarmupPanel } from './core/warmup/warmup-panel/warmup-panel';
 import { Brand } from './shared/ui/brand/brand';
+
+const userButtonWidthProperty = '--pw-user-button-width';
 
 @Component({
   imports: [
@@ -37,23 +47,52 @@ export class App {
   private readonly router = inject(Router);
 
   protected readonly currentUser = this.session.currentUser;
-  protected readonly wide = toSignal(
+  private readonly userTrigger = viewChild(MatMenuTrigger, { read: ElementRef });
+
+  protected readonly userMenuOpen = signal(false);
+  protected readonly layout = toSignal(
     this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
-      map(() => layoutOf(this.router.routerState.snapshot.root) === 'wide'),
+      map(() => layoutOf(this.router.routerState.snapshot.root)),
     ),
-    { initialValue: false },
+    { initialValue: null },
   );
+
+  constructor() {
+    effect((onCleanup) => {
+      const button = this.userTrigger()?.nativeElement as HTMLElement | undefined;
+
+      if (!button || typeof ResizeObserver === 'undefined') return;
+
+      const publish = (): void =>
+        document.documentElement.style.setProperty(
+          userButtonWidthProperty,
+          `${button.getBoundingClientRect().width}px`,
+        );
+      const observer = new ResizeObserver(publish);
+
+      publish();
+      observer.observe(button);
+      onCleanup(() => {
+        observer.disconnect();
+        document.documentElement.style.removeProperty(userButtonWidthProperty);
+      });
+    });
+  }
 
   protected logout(): void {
     this.session.logout();
   }
 }
 
-function layoutOf(root: ActivatedRouteSnapshot): unknown {
+type Layout = 'wide' | 'roomy';
+
+function layoutOf(root: ActivatedRouteSnapshot): Layout | null {
   let route = root;
 
   while (route.firstChild) route = route.firstChild;
 
-  return route.data['layout'];
+  const layout = route.data['layout'];
+
+  return layout === 'wide' || layout === 'roomy' ? layout : null;
 }

@@ -1,4 +1,4 @@
-<app-page-card [title]="title()">
+<app-page-card [width]="mapShown() ? 'wide' : 'form'" [title]="title()">
   <a actions mat-button routerLink="/">{{ 'sighting.detail.back' | translate }}</a>
   @switch (state().kind) {
     @case ('loading') {
@@ -13,62 +13,67 @@
       </app-error-retry>
     }
   }
+  @if (sighting()) {
+    <button
+      headerActions
+      mat-stroked-button
+      type="button"
+      aria-controls="sighting-detail-map"
+      [attr.aria-expanded]="mapShown()"
+      (click)="toggleMap()"
+    >
+      @if (mapShown()) {
+        {{ 'sighting.detail.hideMap' | translate }}
+      } @else {
+        {{ 'sighting.detail.showMap' | translate }}
+      }
+    </button>
+  }
   @if (sighting(); as sighting) {
-    <div class="pw-stack">
-      <dl app-detail-list>
-        <div app-detail-item [label]="'sighting.detail.status' | translate">
-          {{ statusLabel(sighting.status) | translate }}
-        </div>
-        <div app-detail-item [label]="'sighting.detail.criticality' | translate">
-          <app-criticality-badge [kind]="criticalityKind(sighting.criticality)">
-            {{ criticalityLabel(sighting.criticality) | translate }}
-          </app-criticality-badge>
-        </div>
-        <div app-detail-item value="text" [label]="'sighting.detail.description' | translate">
-          {{ sighting.description }}
-        </div>
-        <div app-detail-item value="text" [label]="'sighting.detail.behaviour' | translate">
-          {{ sighting.behaviour }}
-        </div>
-        <div app-detail-item [label]="'sighting.detail.reporter' | translate">
-          {{ sighting.reporterDisplayName }}
-        </div>
-        <div app-detail-item [label]="'sighting.detail.reportedAt' | translate">
-          <time [attr.datetime]="sighting.createdAt">{{
-            sighting.createdAt | date: 'medium'
-          }}</time>
-        </div>
-        <div app-detail-item value="numeric" [label]="'sighting.detail.location' | translate">
-          {{ coordinatesText() }}
-        </div>
-      </dl>
-      <div class="pw-cluster">
-        <button
-          mat-stroked-button
-          type="button"
-          aria-controls="sighting-detail-map"
-          [attr.aria-expanded]="mapShown()"
-          (click)="toggleMap()"
-        >
-          @if (mapShown()) {
-            {{ 'sighting.detail.hideMap' | translate }}
-          } @else {
-            {{ 'sighting.detail.showMap' | translate }}
-          }
-        </button>
+    <div class="sighting-detail" [class.sighting-detail--map]="mapShown()">
+      <div class="sighting-detail__details">
+        <dl app-detail-list>
+          <div app-detail-item [label]="'sighting.detail.status' | translate">
+            {{ statusLabel(sighting.status) | translate }}
+          </div>
+          <div app-detail-item [label]="'sighting.detail.criticality' | translate">
+            <app-criticality-badge [kind]="criticalityKind(sighting.criticality)">
+              {{ criticalityLabel(sighting.criticality) | translate }}
+            </app-criticality-badge>
+          </div>
+          <div app-detail-item value="text" [label]="'sighting.detail.description' | translate">
+            {{ sighting.description }}
+          </div>
+          <div app-detail-item value="text" [label]="'sighting.detail.behaviour' | translate">
+            {{ sighting.behaviour }}
+          </div>
+          <div app-detail-item [label]="'sighting.detail.reporter' | translate">
+            {{ sighting.reporterDisplayName }}
+          </div>
+          <div app-detail-item [label]="'sighting.detail.reportedAt' | translate">
+            <time [attr.datetime]="sighting.createdAt">{{
+              sighting.createdAt | date: 'medium'
+            }}</time>
+          </div>
+          <div app-detail-item value="numeric" [label]="'sighting.detail.location' | translate">
+            {{ coordinatesText() }}
+          </div>
+        </dl>
       </div>
-      <div id="sighting-detail-map">
-        @if (mapShown()) {
-          @if (position(); as centre) {
-            <app-map-view
-              [label]="'sighting.detail.mapLabel' | translate"
-              [center]="centre"
-              [zoom]="mapZoom"
-              [markers]="markers()"
-              [interactiveMarkers]="false"
-            />
+      <div class="sighting-detail__map">
+        <div id="sighting-detail-map">
+          @if (mapShown()) {
+            @if (position(); as centre) {
+              <app-map-view
+                [label]="'sighting.detail.mapLabel' | translate"
+                [center]="centre"
+                [zoom]="mapZoom"
+                [markers]="markers()"
+                [interactiveMarkers]="false"
+              />
+            }
           }
-        }
+        </div>
       </div>
     </div>
   }

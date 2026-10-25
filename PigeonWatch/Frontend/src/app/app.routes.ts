@@ -31,6 +31,7 @@ export const routes: Routes = [
   {
     path: 'sightings/new',
     canActivate: [authGuard],
+    data: { layout: 'wide' },
     loadComponent: () =>
       import('./features/sightings/report-sighting-page/report-sighting-page').then(
         (m) => m.ReportSightingPage,
@@ -39,6 +40,7 @@ export const routes: Routes = [
   {
     path: 'sightings/:id',
     canActivate: [authGuard],
+    data: { layout: 'wide' },
     loadComponent: () =>
       import('./features/sightings/sighting-detail-page/sighting-detail-page').then(
         (m) => m.SightingDetailPage,

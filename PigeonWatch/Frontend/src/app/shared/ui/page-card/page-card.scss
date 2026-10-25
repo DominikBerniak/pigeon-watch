@@ -22,12 +22,23 @@
 
 .page-card__header {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pw-space-3);
+}
+
+.page-card__heading {
+  display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
+  min-width: 0;
   gap: var(--pw-space-2);
 }
 
 .page-card__title {
   font-size: var(--pw-font-size-xl);
+  overflow-wrap: anywhere;
 }
 
 .page-card__actions {
@@ -39,6 +50,12 @@
 
 .page-card__actions:empty {
   display: none;
+}
+
+@include bp.from(xl) {
+  :host(.page-card-host--wide) {
+    max-width: var(--pw-page-card-wide-max-width);
+  }
 }
 
 @include bp.from(sm) {

@@ -69,6 +69,32 @@ html {
     )
   );
 
+  @include mat.select-overrides(
+    (
+      panel-background-color: var(--pw-color-surface),
+      container-elevation-shadow: var(--pw-shadow-md),
+    )
+  );
+
+  @include mat.menu-overrides(
+    (
+      container-color: var(--pw-color-surface),
+      container-shape: 0 0 var(--pw-radius-md) var(--pw-radius-md),
+      container-elevation-shadow: var(--pw-shadow-md),
+      item-hover-state-layer-color: var(--pw-color-info-surface),
+      item-focus-state-layer-color: var(--pw-color-info-surface),
+    )
+  );
+
+  @include mat.option-overrides(
+    (
+      selected-state-label-text-color: var(--pw-color-primary),
+      selected-state-layer-color: var(--pw-color-info-surface),
+      hover-state-layer-color: var(--pw-color-info-surface),
+      focus-state-layer-color: var(--pw-color-info-surface),
+    )
+  );
+
   @include mat.dialog-overrides(
     (
       container-shape: var(--pw-radius-xl),
@@ -94,6 +120,22 @@ app-submit-button[data-tone='success'] {
     (
       filled-container-color: var(--pw-color-success),
       filled-label-text-color: var(--pw-color-on-primary),
+    )
+  );
+}
+
+button.app-header__user-button {
+  @include mat.button-overrides(
+    (
+      outlined-pressed-state-layer-opacity: 0,
+    )
+  );
+}
+
+button.app-header__user-button.app-header__user-button--open {
+  @include mat.button-overrides(
+    (
+      outlined-container-shape: var(--pw-radius-md) var(--pw-radius-md) 0 0,
     )
   );
 }

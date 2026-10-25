@@ -10,6 +10,17 @@ const centre: GeoPoint = { latitude: 52.07, longitude: 19.48 };
 const marker: MapMarker = { id: 'sighting-1', latitude: 52.1, longitude: 19.5, kind: 'urgent' };
 const other: MapMarker = { id: 'sighting-2', latitude: 52.0, longitude: 19.4, kind: 'monitor' };
 
+class FakeResizeObserver {
+  static instances: FakeResizeObserver[] = [];
+
+  readonly observe = vi.fn();
+  readonly disconnect = vi.fn();
+
+  constructor(readonly callback: () => void) {
+    FakeResizeObserver.instances.push(this);
+  }
+}
+
 describe('MapView', () => {
   let fixture: ComponentFixture<MapView>;
 
@@ -70,7 +81,13 @@ describe('MapView', () => {
     await fixture.whenStable();
   }
 
+  beforeEach(() => {
+    FakeResizeObserver.instances = [];
+  });
+
   afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
     leafletStylesheets().forEach((link) => link.remove());
   });
 
@@ -323,6 +340,40 @@ describe('MapView', () => {
     fixture.destroy();
 
     expect(canvas?.querySelector('.leaflet-map-pane')).toBeNull();
+  });
+
+  it('renders without a ResizeObserver', async () => {
+    vi.stubGlobal('ResizeObserver', undefined);
+
+    const root = await render();
+
+    expect(root.querySelector('.leaflet-container')).not.toBeNull();
+    expect(FakeResizeObserver.instances).toHaveLength(0);
+  });
+
+  it('observes the canvas, invalidates the map size on resize and disconnects on teardown', async () => {
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+    const leafletModule = await import('leaflet');
+    const leaflet =
+      (leafletModule as unknown as { default?: typeof leafletModule }).default ?? leafletModule;
+    const invalidateSize = vi.spyOn(leaflet.Map.prototype, 'invalidateSize');
+
+    const root = await render();
+    const canvas = root.querySelector<HTMLElement>('.map-view__canvas');
+    const [observer] = FakeResizeObserver.instances;
+
+    expect(FakeResizeObserver.instances).toHaveLength(1);
+    expect(observer.observe).toHaveBeenCalledWith(canvas);
+
+    invalidateSize.mockClear();
+    observer.callback();
+
+    expect(invalidateSize).toHaveBeenCalledTimes(1);
+    expect(observer.disconnect).not.toHaveBeenCalled();
+
+    fixture.destroy();
+
+    expect(observer.disconnect).toHaveBeenCalledTimes(1);
   });
 
   it('emits mapReady once the map is created', async () => {
