@@ -3,7 +3,7 @@ change_id: app-wide-large-screen-layout
 title: App-wide layout for large screens
 status: implementing
 created: 2026-10-18
-updated: 2026-10-19
+updated: 2026-10-25
 archived_at: null
 ---
 

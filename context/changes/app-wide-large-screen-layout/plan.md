@@ -343,26 +343,26 @@ The shell and tokens are in the initial bundle, so `npm run build` is checked af
 
 #### Automated
 
-- [x] 1.1 Shell specs pass
-- [x] 1.2 Production build passes within the bundle budget
+- [x] 1.1 Shell specs pass — 796781f
+- [x] 1.2 Production build passes within the bundle budget — 796781f
 
 #### Manual
 
-- [x] 1.3 At 1024 px and below, the header and page look as they did before on the map home and on profile
-- [x] 1.4 The header bar width matches the map home column, and its contents stay in the same place on profile and the map home
+- [x] 1.3 At 1024 px and below, the header and page look as they did before on the map home and on profile — 796781f
+- [x] 1.4 The header bar width matches the map home column, and its contents stay in the same place on profile and the map home — 796781f
 
 ### Phase 2: Page card and form pages
 
 #### Automated
 
-- [ ] 2.1 Page-card and my-sightings specs pass
-- [ ] 2.2 Style-token spec passes
+- [x] 2.1 Page-card and my-sightings specs pass
+- [x] 2.2 Style-token spec passes
 
 #### Manual
 
-- [ ] 2.3 Login, register and profile cards are larger from xl and unchanged below it
-- [ ] 2.4 The My sightings card has the same width as the profile card at every width
-- [ ] 2.5 The warm-up overlay text still looks right at 2000 px
+- [x] 2.3 Login, register and profile cards are larger from xl and unchanged below it
+- [x] 2.4 The My sightings card has the same width as the profile card at every width
+- [x] 2.5 The warm-up overlay text still looks right at 2000 px
 
 ### Phase 3: Map component and map home
 

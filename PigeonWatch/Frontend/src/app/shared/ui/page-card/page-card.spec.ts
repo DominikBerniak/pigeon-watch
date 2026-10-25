@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { PageCard } from './page-card';
+import { PageCard, PageCardWidth } from './page-card';
 
 @Component({
   imports: [PageCard],
@@ -18,6 +18,14 @@ class PageCardHost {}
 })
 class SubtitledPageCardHost {
   readonly subtitle = signal<string | undefined>('Card subtitle');
+}
+
+@Component({
+  imports: [PageCard],
+  template: `<app-page-card [title]="'Card title'" [width]="width()" />`,
+})
+class WidthPageCardHost {
+  readonly width = signal<PageCardWidth>('form');
 }
 
 describe('PageCard', () => {
@@ -71,5 +79,23 @@ describe('PageCard', () => {
     await fixture.whenStable();
 
     expect(element.querySelector('h1 + p')).toBeNull();
+  });
+
+  it('keeps the form width by default and reflects the wide width as a host class', async () => {
+    const fixture = TestBed.createComponent(WidthPageCardHost);
+    await fixture.whenStable();
+    const card: HTMLElement = fixture.nativeElement.querySelector('app-page-card');
+
+    expect(card.classList.contains('page-card-host--wide')).toBe(false);
+
+    fixture.componentInstance.width.set('wide');
+    await fixture.whenStable();
+
+    expect(card.classList.contains('page-card-host--wide')).toBe(true);
+
+    fixture.componentInstance.width.set('form');
+    await fixture.whenStable();
+
+    expect(card.classList.contains('page-card-host--wide')).toBe(false);
   });
 });

@@ -41,6 +41,12 @@
   display: none;
 }
 
+@include bp.from(xl) {
+  :host(.page-card-host--wide) {
+    max-width: var(--pw-page-card-wide-max-width);
+  }
+}
+
 @include bp.from(sm) {
   .page-card__body {
     padding-inline: var(--pw-space-6);

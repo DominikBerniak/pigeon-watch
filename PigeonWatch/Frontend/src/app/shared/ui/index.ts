@@ -16,5 +16,6 @@ export { FormSubmitState, SubmitErrorStateMatcher } from './form-field/form-subm
 export { LoadingIndicator } from './loading-indicator/loading-indicator';
 export type { LoadingIndicatorLayout } from './loading-indicator/loading-indicator';
 export { PageCard } from './page-card/page-card';
+export type { PageCardWidth } from './page-card/page-card';
 export { SubmitButton } from './submit-button/submit-button';
 export type { SubmitButtonTone } from './submit-button/submit-button';
