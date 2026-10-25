@@ -349,75 +349,75 @@ The shell and tokens are in the initial bundle, so `npm run build` is checked af
 
 #### Automated
 
-- [x] 1.1 Shell specs pass — 796781f
-- [x] 1.2 Production build passes within the bundle budget — 796781f
+- [x] 1.1 Shell specs pass — 4138698
+- [x] 1.2 Production build passes within the bundle budget — 4138698
 
 #### Manual
 
-- [x] 1.3 At 1024 px and below, the header and page look as they did before on the map home and on profile — 796781f
-- [x] 1.4 The header bar width matches the map home column, and its contents stay in the same place on profile and the map home — 796781f
+- [x] 1.3 At 1024 px and below, the header and page look as they did before on the map home and on profile — 4138698
+- [x] 1.4 The header bar width matches the map home column, and its contents stay in the same place on profile and the map home — 4138698
 
 ### Phase 2: Page card and form pages
 
 #### Automated
 
-- [x] 2.1 Page-card and my-sightings specs pass — b4023e3
-- [x] 2.2 Style-token spec passes — b4023e3
+- [x] 2.1 Page-card and my-sightings specs pass — 4138698
+- [x] 2.2 Style-token spec passes — 4138698
 
 #### Manual
 
-- [x] 2.3 Login, register and profile cards are larger from xl and unchanged below it — b4023e3
-- [x] 2.4 The My sightings card has the same width as the profile card at every width — b4023e3
-- [x] 2.5 The warm-up overlay text still looks right at 2000 px — b4023e3
+- [x] 2.3 Login, register and profile cards are larger from xl and unchanged below it — 4138698
+- [x] 2.4 The My sightings card has the same width as the profile card at every width — 4138698
+- [x] 2.5 The warm-up overlay text still looks right at 2000 px — 4138698
 
 ### Phase 3: Map component and map home
 
 #### Automated
 
-- [x] 3.1 Map-view and map-home specs pass — d2f03fa
-- [x] 3.2 Production build passes — d2f03fa
+- [x] 3.1 Map-view and map-home specs pass — 4138698
+- [x] 3.2 Production build passes — 4138698
 
 #### Manual
 
-- [x] 3.3 At 1600 and 2000 px the map home column is wider than 64rem and the map is taller than 24rem — d2f03fa
-- [x] 3.4 Resizing the browser window across xl keeps the map tiles aligned with its box — d2f03fa
-- [x] 3.5 Below xl the map home looks as it did before — d2f03fa
+- [x] 3.3 At 1600 and 2000 px the map home column is wider than 64rem and the map is taller than 24rem — 4138698
+- [x] 3.4 Resizing the browser window across xl keeps the map tiles aligned with its box — 4138698
+- [x] 3.5 Below xl the map home looks as it did before — 4138698
 
 ### Phase 4: Sighting detail two-column
 
 #### Automated
 
-- [x] 4.1 Detail page spec passes, including that no map exists before Show map — 73cbc5e
-- [x] 4.2 Production build passes — 73cbc5e
+- [x] 4.1 Detail page spec passes, including that no map exists before Show map — 4138698
+- [x] 4.2 Production build passes — 4138698
 
 #### Manual
 
-- [x] 4.3 At 1600 and 2000 px the details are on the left and the toggle and map on the right — 73cbc5e
-- [x] 4.4 The map appears only after pressing Show map, and Hide map removes it — 73cbc5e
-- [x] 4.5 Below xl the detail page is unchanged — 73cbc5e
+- [x] 4.3 At 1600 and 2000 px the details are on the left and the toggle and map on the right — 4138698
+- [x] 4.4 The map appears only after pressing Show map, and Hide map removes it — 4138698
+- [x] 4.5 Below xl the detail page is unchanged — 4138698
 
 ### Phase 5: Report two-column
 
 #### Automated
 
-- [x] 5.1 Report page spec passes — a382af4
-- [x] 5.2 Production build passes — a382af4
+- [x] 5.1 Report page spec passes — 4138698
+- [x] 5.2 Production build passes — 4138698
 
 #### Manual
 
-- [x] 5.3 At 1600 and 2000 px the fields are on the left, the picker on the right, and the actions below — a382af4
-- [x] 5.4 Dropping a pin and submitting still works with the new structure — a382af4
-- [x] 5.5 Below xl the report page is unchanged — a382af4
+- [x] 5.3 At 1600 and 2000 px the fields are on the left, the picker on the right, and the actions below — 4138698
+- [x] 5.4 Dropping a pin and submitting still works with the new structure — 4138698
+- [x] 5.5 Below xl the report page is unchanged — 4138698
 
 ### Phase 6: Kitchen sink, docs and gate
 
 #### Automated
 
-- [x] 6.1 Full frontend test run passes — 8f88a05
-- [x] 6.2 Production build passes and the initial bundle stays under 500 kB — 8f88a05
+- [x] 6.1 Full frontend test run passes — 4138698
+- [x] 6.2 Production build passes and the initial bundle stays under 500 kB — 4138698
 
 #### Manual
 
-- [x] 6.3 At 1280, 1600 and 2000 px each of the six routes looks right — 8f88a05
-- [x] 6.4 At 1024 px and below nothing regressed except the header and My sightings alignment — 8f88a05
-- [x] 6.5 Console shows no errors at 2000 px on the map home and detail page — 8f88a05
+- [x] 6.3 At 1280, 1600 and 2000 px each of the six routes looks right — 4138698
+- [x] 6.4 At 1024 px and below nothing regressed except the header and My sightings alignment — 4138698
+- [x] 6.5 Console shows no errors at 2000 px on the map home and detail page — 4138698
