@@ -1,95 +1,118 @@
 <app-page-card
   [title]="'sighting.form.title' | translate"
   [subtitle]="'sighting.form.subtitle' | translate"
+  width="wide"
 >
-  <form class="pw-stack" [formRoot]="reportForm" (submit)="submit()">
-    <mat-form-field class="pw-full-width">
-      <mat-label>{{ 'sighting.form.nameLabel' | translate }}</mat-label>
-      <input
-        matInput
-        type="text"
-        autocomplete="off"
-        [placeholder]="'sighting.form.namePlaceholder' | translate"
-        [formField]="reportForm.name"
-      />
-      <mat-hint>{{ 'sighting.form.nameHint' | translate: rules().nameMaxLength }}</mat-hint>
-      <mat-error>
-        <app-field-errors [field]="reportForm.name" [messages]="nameMessages()" />
-      </mat-error>
-    </mat-form-field>
-    <mat-form-field class="pw-full-width">
-      <mat-label>{{ 'sighting.form.descriptionLabel' | translate }}</mat-label>
-      <textarea
-        matInput
-        rows="4"
-        [placeholder]="'sighting.form.descriptionPlaceholder' | translate"
-        [formField]="reportForm.description"
-      ></textarea>
-      <mat-hint>{{
-        'sighting.form.descriptionHint' | translate: rules().descriptionMaxLength
-      }}</mat-hint>
-      <mat-error>
-        <app-field-errors [field]="reportForm.description" [messages]="descriptionMessages()" />
-      </mat-error>
-    </mat-form-field>
-    <mat-form-field class="pw-full-width">
-      <mat-label>{{ 'sighting.form.behaviourLabel' | translate }}</mat-label>
-      <textarea
-        matInput
-        rows="3"
-        [placeholder]="'sighting.form.behaviourPlaceholder' | translate"
-        [formField]="reportForm.behaviour"
-      ></textarea>
-      <mat-hint>{{
-        'sighting.form.behaviourHint' | translate: rules().behaviourMaxLength
-      }}</mat-hint>
-      <mat-error>
-        <app-field-errors [field]="reportForm.behaviour" [messages]="behaviourMessages()" />
-      </mat-error>
-    </mat-form-field>
-    <mat-form-field class="pw-full-width">
-      <mat-label>{{ 'sighting.form.statusLabel' | translate }}</mat-label>
-      <select matNativeControl [formField]="reportForm.status">
-        <option value="">{{ 'sighting.form.statusPlaceholder' | translate }}</option>
-        @for (status of statuses; track status) {
-          <option [value]="status">{{ statusLabels[status] | translate }}</option>
-        }
-      </select>
-      <mat-hint>{{ 'sighting.form.statusHint' | translate }}</mat-hint>
-      <mat-error>
-        <app-field-errors [field]="reportForm.status" [messages]="choiceMessages()" />
-      </mat-error>
-    </mat-form-field>
-    <mat-form-field class="pw-full-width">
-      <mat-label>{{ 'sighting.form.criticalityLabel' | translate }}</mat-label>
-      <select matNativeControl [formField]="reportForm.criticality">
-        <option value="">{{ 'sighting.form.criticalityPlaceholder' | translate }}</option>
-        @for (criticality of criticalities; track criticality) {
-          <option [value]="criticality">{{ criticalityLabels[criticality] | translate }}</option>
-        }
-      </select>
-      <mat-hint>{{ 'sighting.form.criticalityHint' | translate }}</mat-hint>
-      <mat-error>
-        <app-field-errors [field]="reportForm.criticality" [messages]="choiceMessages()" />
-      </mat-error>
-    </mat-form-field>
-    <app-location-picker [formField]="reportForm.location" />
-    @if (errorText(); as text) {
-      <app-alert kind="error">{{ text }}</app-alert>
-    }
-    <app-form-actions>
-      <button
-        mat-stroked-button
-        type="button"
-        class="pw-full-width"
-        [disabled]="busy()"
-        (click)="cancel()"
-      >
-        {{ 'sighting.form.cancel' | translate }}
-      </button>
-      <app-submit-button [busy]="busy()">{{
-        'sighting.form.submit' | translate
-      }}</app-submit-button>
-    </app-form-actions>
+  <form class="report-form" [formRoot]="reportForm" (submit)="submit()">
+    <div class="pw-stack">
+      <mat-form-field class="pw-full-width">
+        <mat-label>{{ 'sighting.form.nameLabel' | translate }}</mat-label>
+        <input
+          matInput
+          type="text"
+          autocomplete="off"
+          [placeholder]="'sighting.form.namePlaceholder' | translate"
+          [formField]="reportForm.name"
+        />
+        <mat-hint>{{ 'sighting.form.nameHint' | translate: rules().nameMaxLength }}</mat-hint>
+        <mat-error>
+          <app-field-errors [field]="reportForm.name" [messages]="nameMessages()" />
+        </mat-error>
+      </mat-form-field>
+      <mat-form-field class="pw-full-width">
+        <mat-label>{{ 'sighting.form.descriptionLabel' | translate }}</mat-label>
+        <textarea
+          matInput
+          rows="4"
+          [placeholder]="'sighting.form.descriptionPlaceholder' | translate"
+          [formField]="reportForm.description"
+        ></textarea>
+        <mat-hint>{{
+          'sighting.form.descriptionHint' | translate: rules().descriptionMaxLength
+        }}</mat-hint>
+        <mat-error>
+          <app-field-errors [field]="reportForm.description" [messages]="descriptionMessages()" />
+        </mat-error>
+      </mat-form-field>
+      <mat-form-field class="pw-full-width">
+        <mat-label>{{ 'sighting.form.behaviourLabel' | translate }}</mat-label>
+        <textarea
+          matInput
+          rows="3"
+          [placeholder]="'sighting.form.behaviourPlaceholder' | translate"
+          [formField]="reportForm.behaviour"
+        ></textarea>
+        <mat-hint>{{
+          'sighting.form.behaviourHint' | translate: rules().behaviourMaxLength
+        }}</mat-hint>
+        <mat-error>
+          <app-field-errors [field]="reportForm.behaviour" [messages]="behaviourMessages()" />
+        </mat-error>
+      </mat-form-field>
+      <mat-form-field class="pw-full-width" floatLabel="always">
+        <mat-label>{{ 'sighting.form.statusLabel' | translate }}</mat-label>
+        <mat-select
+          panelClass="pw-select-panel"
+          [formField]="reportForm.status"
+          [placeholder]="'sighting.form.statusPlaceholder' | translate"
+        >
+          <mat-option
+            [value]="null"
+            [attr.aria-label]="'sighting.form.statusPlaceholder' | translate"
+          />
+          @for (status of statuses; track status) {
+            <mat-option [value]="status">{{ statusLabels[status] | translate }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>{{ 'sighting.form.statusHint' | translate }}</mat-hint>
+        <mat-error>
+          <app-field-errors [field]="reportForm.status" [messages]="choiceMessages()" />
+        </mat-error>
+      </mat-form-field>
+      <mat-form-field class="pw-full-width" floatLabel="always">
+        <mat-label>{{ 'sighting.form.criticalityLabel' | translate }}</mat-label>
+        <mat-select
+          panelClass="pw-select-panel"
+          [formField]="reportForm.criticality"
+          [placeholder]="'sighting.form.criticalityPlaceholder' | translate"
+        >
+          <mat-option
+            [value]="null"
+            [attr.aria-label]="'sighting.form.criticalityPlaceholder' | translate"
+          />
+          @for (criticality of criticalities; track criticality) {
+            <mat-option [value]="criticality">{{
+              criticalityLabels[criticality] | translate
+            }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>{{ 'sighting.form.criticalityHint' | translate }}</mat-hint>
+        <mat-error>
+          <app-field-errors [field]="reportForm.criticality" [messages]="choiceMessages()" />
+        </mat-error>
+      </mat-form-field>
+    </div>
+    <div>
+      <app-location-picker [formField]="reportForm.location" />
+    </div>
+    <div class="report-form__footer pw-stack">
+      @if (errorText(); as text) {
+        <app-alert kind="error">{{ text }}</app-alert>
+      }
+      <app-form-actions>
+        <button
+          mat-stroked-button
+          type="button"
+          class="pw-full-width"
+          [disabled]="busy()"
+          (click)="cancel()"
+        >
+          {{ 'sighting.form.cancel' | translate }}
+        </button>
+        <app-submit-button [busy]="busy()">{{
+          'sighting.form.submit' | translate
+        }}</app-submit-button>
+      </app-form-actions>
+    </div>
   </form>
 </app-page-card>

@@ -381,27 +381,27 @@ The shell and tokens are in the initial bundle, so `npm run build` is checked af
 
 #### Automated
 
-- [x] 4.1 Detail page spec passes, including that no map exists before Show map
-- [x] 4.2 Production build passes
+- [x] 4.1 Detail page spec passes, including that no map exists before Show map — 73cbc5e
+- [x] 4.2 Production build passes — 73cbc5e
 
 #### Manual
 
-- [x] 4.3 At 1600 and 2000 px the details are on the left and the toggle and map on the right
-- [x] 4.4 The map appears only after pressing Show map, and Hide map removes it
-- [x] 4.5 Below xl the detail page is unchanged
+- [x] 4.3 At 1600 and 2000 px the details are on the left and the toggle and map on the right — 73cbc5e
+- [x] 4.4 The map appears only after pressing Show map, and Hide map removes it — 73cbc5e
+- [x] 4.5 Below xl the detail page is unchanged — 73cbc5e
 
 ### Phase 5: Report two-column
 
 #### Automated
 
-- [ ] 5.1 Report page spec passes
-- [ ] 5.2 Production build passes
+- [x] 5.1 Report page spec passes
+- [x] 5.2 Production build passes
 
 #### Manual
 
-- [ ] 5.3 At 1600 and 2000 px the fields are on the left, the picker on the right, and the actions below
-- [ ] 5.4 Dropping a pin and submitting still works with the new structure
-- [ ] 5.5 Below xl the report page is unchanged
+- [x] 5.3 At 1600 and 2000 px the fields are on the left, the picker on the right, and the actions below
+- [x] 5.4 Dropping a pin and submitting still works with the new structure
+- [x] 5.5 Below xl the report page is unchanged
 
 ### Phase 6: Kitchen sink, docs and gate
 

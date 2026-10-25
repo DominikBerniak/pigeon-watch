@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
@@ -35,8 +44,12 @@ import { Brand } from './shared/ui/brand/brand';
 export class App {
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
 
   protected readonly currentUser = this.session.currentUser;
+  private readonly userTrigger = viewChild(MatMenuTrigger, { read: ElementRef });
+
+  protected readonly userMenuOpen = signal(false);
   protected readonly layout = toSignal(
     this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
@@ -44,6 +57,20 @@ export class App {
     ),
     { initialValue: null },
   );
+
+  protected openUserMenu(menu: MatMenu): void {
+    this.userMenuOpen.set(true);
+
+    afterNextRender(
+      () => {
+        const panel = document.getElementById(menu.panelId);
+        const button = this.userTrigger()?.nativeElement as HTMLElement | undefined;
+
+        if (panel && button) panel.style.minWidth = `${button.getBoundingClientRect().width}px`;
+      },
+      { injector: this.injector },
+    );
+  }
 
   protected logout(): void {
     this.session.logout();

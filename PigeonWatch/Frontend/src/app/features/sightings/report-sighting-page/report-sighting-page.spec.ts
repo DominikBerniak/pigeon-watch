@@ -1,6 +1,9 @@
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HarnessLoader } from '@angular/cdk/testing';
+import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatSelectHarness } from '@angular/material/select/testing';
 import { By } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
 import { Observable, Subject, of, throwError } from 'rxjs';
@@ -39,6 +42,7 @@ describe('ReportSightingPage', () => {
   let create: ReturnType<typeof vi.fn<(sighting: NewSighting) => Observable<Sighting>>>;
   let navigate: ReturnType<typeof spyOnNavigate>;
   let fixture: ComponentFixture<ReportSightingPage>;
+  let loader: HarnessLoader;
 
   beforeEach(async () => {
     create = vi.fn<(sighting: NewSighting) => Observable<Sighting>>(() => of(created));
@@ -62,6 +66,7 @@ describe('ReportSightingPage', () => {
     });
     navigate = spyOnNavigate();
     fixture = TestBed.createComponent(ReportSightingPage);
+    loader = TestbedHarnessEnvironment.loader(fixture);
     await fixture.whenStable();
   });
 
@@ -87,18 +92,30 @@ describe('ReportSightingPage', () => {
     return [...root().querySelectorAll<HTMLElement>('mat-form-field')];
   }
 
-  function setValue(
-    element: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
-    value: string,
-  ): void {
+  function setValue(element: HTMLInputElement | HTMLTextAreaElement, value: string): void {
     element.value = value;
     element.dispatchEvent(new Event('input'));
     element.dispatchEvent(new Event('change'));
     element.dispatchEvent(new Event('blur'));
   }
 
-  function selects(): HTMLSelectElement[] {
-    return [...root().querySelectorAll<HTMLSelectElement>('select')];
+  async function selects(): Promise<MatSelectHarness[]> {
+    return loader.getAllHarnesses(MatSelectHarness);
+  }
+
+  async function optionLabels(select: MatSelectHarness): Promise<string[]> {
+    await select.open();
+
+    const labels = await Promise.all((await select.getOptions()).map((option) => option.getText()));
+
+    await select.close();
+
+    return labels;
+  }
+
+  async function choose(select: MatSelectHarness, label: string): Promise<void> {
+    await select.open();
+    await select.clickOptions({ text: label });
   }
 
   function textareas(): HTMLTextAreaElement[] {
@@ -113,8 +130,10 @@ describe('ReportSightingPage', () => {
     setValue(control<HTMLInputElement>('input[type="text"]'), name);
     setValue(textareas()[0], 'Grey pigeon');
     setValue(textareas()[1], 'Cannot fly');
-    setValue(selects()[0], String(SightingStatus.caught));
-    setValue(selects()[1], String(SightingCriticality.urgent));
+    const [status, criticality] = await selects();
+
+    await choose(status, 'Caught');
+    await choose(criticality, 'Urgent');
     map().mapClick.emit(warsaw);
     await settle();
   }
@@ -142,6 +161,7 @@ describe('ReportSightingPage', () => {
       root().querySelector('app-form-actions app-submit-button button')?.textContent?.trim(),
     ).toBe('Report sighting');
     expect(root().querySelector('app-location-picker')).not.toBeNull();
+    expect(root().querySelector('app-page-card')?.classList).toContain('page-card-host--wide');
     expect(fields().map((field) => field.querySelector('mat-label')?.textContent?.trim())).toEqual([
       'Name (optional)',
       'Description',
@@ -151,28 +171,52 @@ describe('ReportSightingPage', () => {
     ]);
   });
 
-  it('offers only Spotted and Caught as statuses after an empty first option', () => {
-    const options = [...selects()[0].options];
+  it('offers only Spotted and Caught as statuses with an empty first option', async () => {
+    const [status] = await selects();
 
-    expect(options.map((option) => option.value)).toEqual(['', '1', '2']);
-    expect(options.map((option) => option.textContent?.trim())).toEqual([
-      'Choose a status',
-      'Spotted',
-      'Caught',
-    ]);
-    expect(selects()[0].value).toBe('');
+    expect(await optionLabels(status)).toEqual(['', 'Spotted', 'Caught']);
+    expect(await status.getValueText()).toBe('Choose a status');
   });
 
-  it('offers the three criticalities after an empty first option', () => {
-    const options = [...selects()[1].options];
+  it('shows the chosen status and returns to the placeholder when the blank option is picked', async () => {
+    const [status] = await selects();
 
-    expect(options.map((option) => option.value)).toEqual(['', '1', '2', '3']);
-    expect(options.map((option) => option.textContent?.trim())).toEqual([
-      'Choose a criticality',
-      'Monitor',
-      'Needs help soon',
-      'Urgent',
-    ]);
+    await status.open();
+    await status.clickOptions({ text: 'Caught' });
+
+    expect(await status.getValueText()).toBe('Caught');
+    expect(await optionLabels(status)).toEqual(['', 'Spotted', 'Caught']);
+
+    await status.open();
+    await status.clickOptions({ text: '' });
+
+    expect(await status.getValueText()).toBe('Choose a status');
+
+    await status.open();
+
+    const selected = await Promise.all(
+      (await status.getOptions()).map((option) => option.isSelected()),
+    );
+
+    expect(selected).toEqual([false, false, false]);
+  });
+
+  it('reports a cleared status as required after submit', async () => {
+    const [status] = await selects();
+
+    await choose(status, 'Caught');
+    await status.open();
+    await status.clickOptions({ text: '' });
+    await submit();
+
+    expect(create).not.toHaveBeenCalled();
+    expect(fieldErrors()[3]).toBe('This field is required.');
+  });
+
+  it('offers the three criticalities after an empty first option', async () => {
+    const [, criticality] = await selects();
+
+    expect(await optionLabels(criticality)).toEqual(['', 'Monitor', 'Needs help soon', 'Urgent']);
   });
 
   it('shows required errors only after submit', async () => {

@@ -11,6 +11,7 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ConfigurationService } from '../../../core/configuration/configuration.service';
@@ -67,6 +68,7 @@ const emptyReport: ReportModel = {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     TranslatePipe,
     Alert,
     FieldErrors,
@@ -77,6 +79,7 @@ const emptyReport: ReportModel = {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './report-sighting-page.html',
+  styleUrl: './report-sighting-page.scss',
 })
 export class ReportSightingPage {
   private readonly submitState = inject(FormSubmitState);

@@ -7,10 +7,18 @@
         <app-brand [name]="'common.appName' | translate" />
       </a>
       <div class="pw-cluster app-header__user">
-        <button mat-stroked-button type="button" [matMenuTriggerFor]="userMenu">
+        <button
+          mat-stroked-button
+          type="button"
+          class="app-header__user-button"
+          [class.app-header__user-button--open]="userMenuOpen()"
+          [matMenuTriggerFor]="userMenu"
+          (menuOpened)="openUserMenu(userMenu)"
+          (menuClosed)="userMenuOpen.set(false)"
+        >
           {{ user.displayName }}
         </button>
-        <mat-menu #userMenu="matMenu" xPosition="before">
+        <mat-menu #userMenu="matMenu" class="pw-user-menu-panel" xPosition="before">
           <a mat-menu-item routerLink="/sightings/new">{{ 'nav.reportSighting' | translate }}</a>
           <a mat-menu-item routerLink="/profile">{{ 'header.profile' | translate }}</a>
           <button mat-menu-item type="button" (click)="logout()">
