@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Logging;
 using PigeonWatch.BusinessLogic.Services;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.WebApi.Mappers;
@@ -18,7 +19,8 @@ public class AccountController(
     IRegisterRequestMapper registerRequestMapper,
     IRegisteredAccountViewModelCreator registeredAccountViewModelCreator,
     IUpdatedProfileViewModelCreator updatedProfileViewModelCreator,
-    IPasswordChangedViewModelCreator passwordChangedViewModelCreator) : ControllerBase
+    IPasswordChangedViewModelCreator passwordChangedViewModelCreator,
+    ILogger<AccountController> logger) : FailureLoggingControllerBase(logger)
 {
     [HttpPost("register")]
     [AllowAnonymous]
@@ -29,7 +31,7 @@ public class AccountController(
         AccountCreationResult result = await accountService.RegisterAsync(account, cancellationToken);
 
         if (!result.Succeeded || result.Account is null)
-            return GetValidationProblem<RegisteredAccountModel>(result.Errors);
+            return GetValidationProblem<RegisteredAccountModel>(ToErrors(result.Errors));
 
         return Ok(registeredAccountViewModelCreator.Create(result.Account));
     }
@@ -39,15 +41,15 @@ public class AccountController(
     public async Task<ActionResult<UpdatedProfileModel>> UpdateProfile(UpdateProfileRequestModel request, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
-            return Unauthorized();
+            return UnauthorizedForInvalidIdentity();
 
         ProfileUpdateResult result = await accountService.UpdateDisplayNameAsync(userId, request.DisplayName, cancellationToken);
 
         if (result.Errors.Any(error => error.Code == AccountErrorCodes.UserNotFound))
-            return Unauthorized();
+            return UnauthorizedForMissingUser();
 
         if (!result.Succeeded || result.Profile is null)
-            return GetValidationProblem<UpdatedProfileModel>(result.Errors);
+            return GetValidationProblem<UpdatedProfileModel>(ToErrors(result.Errors));
 
         return Ok(updatedProfileViewModelCreator.Create(result.Profile));
     }
@@ -58,24 +60,21 @@ public class AccountController(
     public async Task<ActionResult<PasswordChangedModel>> ChangePassword(ChangePasswordRequestModel request, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
-            return Unauthorized();
+            return UnauthorizedForInvalidIdentity();
 
         PasswordChangeResult result = await accountService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword, cancellationToken);
 
         if (result.Errors.Any(error => error.Code == AccountErrorCodes.UserNotFound))
-            return Unauthorized();
+            return UnauthorizedForMissingUser();
 
         if (!result.Succeeded)
-            return GetValidationProblem<PasswordChangedModel>(result.Errors);
+            return GetValidationProblem<PasswordChangedModel>(ToErrors(result.Errors));
 
         return Ok(passwordChangedViewModelCreator.Create(result));
     }
 
-    private ActionResult<TResponseModel> GetValidationProblem<TResponseModel>(IReadOnlyList<AccountError> errors)
+    private static IEnumerable<(string Code, string Description)> ToErrors(IReadOnlyList<AccountError> errors)
     {
-        foreach (AccountError error in errors)
-            ModelState.AddModelError(error.Code, error.Description);
-
-        return ValidationProblem(ModelState);
+        return errors.Select(error => (error.Code, error.Description));
     }
 }

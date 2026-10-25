@@ -1,7 +1,7 @@
-using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using PigeonWatch.BusinessLogic.Services;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.WebApi.Mappers;
@@ -16,25 +16,37 @@ namespace PigeonWatch.WebApi.Controllers;
 public class SightingsController(
     ISightingService sightingService,
     ICreateSightingRequestMapper createSightingRequestMapper,
-    ISightingViewModelCreator sightingViewModelCreator) : ControllerBase
+    ISightingViewModelCreator sightingViewModelCreator,
+    ILogger<SightingsController> logger) : FailureLoggingControllerBase(logger)
 {
-    private const string retryAfterSecondsExtension = "retryAfterSeconds";
     private const string noStoreCacheControl = "private, no-store";
+
+    private static readonly HashSet<string> loggedErrorCodes =
+    [
+        SightingErrorCodes.InvalidLocation,
+        SightingErrorCodes.InvalidInitialStatus,
+        SightingErrorCodes.InvalidCriticality
+    ];
 
     [HttpPost]
     public async Task<ActionResult<SightingModel>> Create(CreateSightingRequestModel request, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
-            return Unauthorized();
+            return UnauthorizedForInvalidIdentity();
 
         NewSighting sighting = createSightingRequestMapper.Map(userId, request);
         SightingCreateResult result = await sightingService.CreateAsync(sighting, cancellationToken);
 
         if (result.Errors.Any(error => error.Code == SightingErrorCodes.ReporterNotFound))
-            return Unauthorized();
+            return UnauthorizedForMissingUser();
 
         if (!result.Succeeded || result.Sighting is null)
-            return GetValidationProblem<SightingModel>(result.Errors, result.RetryAfterSeconds);
+        {
+            foreach (SightingError error in result.Errors.Where(error => loggedErrorCodes.Contains(error.Code)))
+                LogInvalidInput(error.Code);
+
+            return GetValidationProblem<SightingModel>(result.Errors.Select(error => (error.Code, error.Description)), result.RetryAfterSeconds);
+        }
 
         SightingModel model = sightingViewModelCreator.Create(result.Sighting);
 
@@ -49,7 +61,7 @@ public class SightingsController(
         Sighting? sighting = await sightingService.GetAsync(id, cancellationToken);
 
         if (sighting is null)
-            return NotFound();
+            return NotFoundForSighting(id);
 
         return Ok(sightingViewModelCreator.Create(sighting));
     }
@@ -70,26 +82,10 @@ public class SightingsController(
         Response.Headers.CacheControl = noStoreCacheControl;
 
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
-            return Unauthorized();
+            return UnauthorizedForInvalidIdentity();
 
         IReadOnlyList<Sighting> sightings = await sightingService.GetMineAsync(userId, cancellationToken);
 
         return Ok(sightingViewModelCreator.CreateList(sightings));
-    }
-
-    private ActionResult<TResponseModel> GetValidationProblem<TResponseModel>(IReadOnlyList<SightingError> errors, int? retryAfterSeconds)
-    {
-        foreach (SightingError error in errors)
-            ModelState.AddModelError(error.Code, error.Description);
-
-        ActionResult problem = ValidationProblem(ModelState);
-
-        if (retryAfterSeconds is int seconds && problem is ObjectResult { Value: ProblemDetails details })
-        {
-            details.Extensions[retryAfterSecondsExtension] = seconds;
-            Response.Headers.RetryAfter = seconds.ToString(CultureInfo.InvariantCulture);
-        }
-
-        return problem;
     }
 }

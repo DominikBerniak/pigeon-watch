@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using PigeonWatch.BusinessLogic.Services;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.WebApi.Models;
@@ -14,7 +15,8 @@ public class ConfigurationController(
     IClientConfigurationService clientConfigurationService,
     IGeneralConfigurationService generalConfigurationService,
     IClientConfigurationViewModelCreator clientConfigurationViewModelCreator,
-    IGeneralConfigurationViewModelCreator generalConfigurationViewModelCreator) : ControllerBase
+    IGeneralConfigurationViewModelCreator generalConfigurationViewModelCreator,
+    ILogger<ConfigurationController> logger) : FailureLoggingControllerBase(logger)
 {
     [HttpGet("client")]
     [AllowAnonymous]
@@ -33,12 +35,12 @@ public class ConfigurationController(
         Response.Headers.CacheControl = "private, no-store";
 
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
-            return Unauthorized();
+            return UnauthorizedForInvalidIdentity();
 
         CurrentUser? currentUser = await generalConfigurationService.GetAsync(userId, cancellationToken);
 
         if (currentUser is null)
-            return Unauthorized();
+            return UnauthorizedForMissingUser();
 
         List<string> roles = User.FindAll(ClaimTypes.Role).Select(claim => claim.Value).ToList();
 

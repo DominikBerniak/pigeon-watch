@@ -93,6 +93,16 @@ public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null) : W
         return count;
     }
 
+    public int DeleteUserAccount(Guid id)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = "DELETE FROM USER_ACCOUNT WHERE ID = $id";
+        command.Parameters.AddWithValue("$id", id);
+        int affected = command.ExecuteNonQuery();
+
+        return affected;
+    }
+
     public int ExpireLockout(string email)
     {
         using SqliteCommand command = connection.CreateCommand();

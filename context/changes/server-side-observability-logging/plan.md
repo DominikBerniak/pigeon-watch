@@ -327,29 +327,29 @@ None: no schema, response or configuration contract changes. `appsettings.json` 
 
 #### Automated
 
-- [x] 1.1 New integration tests for scope, summary line, no query string and 500 path pass
-- [x] 1.2 New unit test for the SYSTEM audit fallback warning passes
-- [x] 1.3 EF command lines at Information are not emitted through the factory
-- [x] 1.4 Architecture tests pass
-- [x] 1.5 Solution builds with style rules enforced
-- [x] 1.6 New test package has no known vulnerabilities
+- [x] 1.1 New integration tests for scope, summary line, no query string and 500 path pass — 54b1dcb
+- [x] 1.2 New unit test for the SYSTEM audit fallback warning passes — 54b1dcb
+- [x] 1.3 EF command lines at Information are not emitted through the factory — 54b1dcb
+- [x] 1.4 Architecture tests pass — 54b1dcb
+- [x] 1.5 Solution builds with style rules enforced — 54b1dcb
+- [x] 1.6 New test package has no known vulnerabilities — 54b1dcb
 
 #### Manual
 
-- [x] 1.7 Local run shows scoped lines and one summary line per request with no query string, email or token
+- [x] 1.7 Local run shows scoped lines and one summary line per request with no query string, email or token — 54b1dcb
 
 ### Phase 2: Controller failure logging
 
 #### Automated
 
-- [ ] 2.1 New integration tests for orphan-token 401, invalid-location 400, cooldown silence and 404 miss pass
-- [ ] 2.2 New unit tests for the shared helper or controllers pass
-- [ ] 2.3 Architecture tests pass
-- [ ] 2.4 Solution builds with style rules enforced
+- [x] 2.1 New integration tests for orphan-token 401, invalid-location 400, cooldown silence and 404 miss pass
+- [x] 2.2 New unit tests for the shared helper or controllers pass
+- [x] 2.3 Architecture tests pass
+- [x] 2.4 Solution builds with style rules enforced
 
 #### Manual
 
-- [ ] 2.5 Local invalid create and unknown sighting id each log one line with the expected level and no personal data
+- [x] 2.5 Local invalid create and unknown sighting id each log one line with the expected level and no personal data
 
 ### Phase 3: Identity and user-store logging
 

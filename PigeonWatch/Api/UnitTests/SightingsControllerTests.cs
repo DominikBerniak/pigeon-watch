@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using PigeonWatch.BusinessLogic.Services;
 using PigeonWatch.BusinessObjects;
@@ -220,7 +221,7 @@ public class SightingsControllerTests
                 Arg.Any<string?>())
             .Returns(call => new ValidationProblemDetails(call.Arg<ModelStateDictionary>()) { Status = StatusCodes.Status400BadRequest });
 
-        return new(sightingService, new CreateSightingRequestMapper(), new SightingViewModelCreator())
+        return new(sightingService, new CreateSightingRequestMapper(), new SightingViewModelCreator(), NullLogger<SightingsController>.Instance)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } },
             ProblemDetailsFactory = problemDetailsFactory
