@@ -66,6 +66,7 @@ const coordinateDecimals = 5;
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sighting-detail-page.html',
+  styleUrl: './sighting-detail-page.scss',
 })
 export class SightingDetailPage {
   private readonly route = inject(ActivatedRoute);

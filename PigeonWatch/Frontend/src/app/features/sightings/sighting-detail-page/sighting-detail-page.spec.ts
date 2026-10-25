@@ -98,12 +98,35 @@ describe('SightingDetailPage', () => {
     expect(root.querySelector('time')?.textContent?.trim()).not.toBe('');
   });
 
+  it('widens the page card while the map is shown', async () => {
+    const root = await open();
+    const card = root.querySelector('app-page-card');
+
+    expect(card?.classList).not.toContain('page-card-host--wide');
+
+    button(root, 'Show map').click();
+    await settle();
+
+    expect(card?.classList).toContain('page-card-host--wide');
+
+    button(root, 'Hide map').click();
+    await settle();
+
+    expect(card?.classList).not.toContain('page-card-host--wide');
+  });
+
   it('shows the unnamed label as the title for a sighting without a name', async () => {
     get.mockReturnValue(of({ ...sighting, name: null }));
 
     const root = await open();
 
     expect(root.querySelector('app-page-card h1')?.textContent?.trim()).toBe('Unnamed bird');
+  });
+
+  it('puts the map toggle in the card header beside the title', async () => {
+    const root = await open();
+
+    expect(root.querySelector('app-page-card header button')).toBe(button(root, 'Show map'));
   });
 
   it('renders no map until "Show map" is pressed, then one map with a single marker', async () => {

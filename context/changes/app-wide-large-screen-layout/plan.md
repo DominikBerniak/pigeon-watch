@@ -368,27 +368,27 @@ The shell and tokens are in the initial bundle, so `npm run build` is checked af
 
 #### Automated
 
-- [x] 3.1 Map-view and map-home specs pass
-- [x] 3.2 Production build passes
+- [x] 3.1 Map-view and map-home specs pass — d2f03fa
+- [x] 3.2 Production build passes — d2f03fa
 
 #### Manual
 
-- [x] 3.3 At 1600 and 2000 px the map home column is wider than 64rem and the map is taller than 24rem
-- [x] 3.4 Resizing the browser window across xl keeps the map tiles aligned with its box
-- [x] 3.5 Below xl the map home looks as it did before
+- [x] 3.3 At 1600 and 2000 px the map home column is wider than 64rem and the map is taller than 24rem — d2f03fa
+- [x] 3.4 Resizing the browser window across xl keeps the map tiles aligned with its box — d2f03fa
+- [x] 3.5 Below xl the map home looks as it did before — d2f03fa
 
 ### Phase 4: Sighting detail two-column
 
 #### Automated
 
-- [ ] 4.1 Detail page spec passes, including that no map exists before Show map
-- [ ] 4.2 Production build passes
+- [x] 4.1 Detail page spec passes, including that no map exists before Show map
+- [x] 4.2 Production build passes
 
 #### Manual
 
-- [ ] 4.3 At 1600 and 2000 px the details are on the left and the toggle and map on the right
-- [ ] 4.4 The map appears only after pressing Show map, and Hide map removes it
-- [ ] 4.5 Below xl the detail page is unchanged
+- [x] 4.3 At 1600 and 2000 px the details are on the left and the toggle and map on the right
+- [x] 4.4 The map appears only after pressing Show map, and Hide map removes it
+- [x] 4.5 Below xl the detail page is unchanged
 
 ### Phase 5: Report two-column
 

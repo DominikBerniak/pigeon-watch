@@ -28,6 +28,14 @@ class WidthPageCardHost {
   readonly width = signal<PageCardWidth>('form');
 }
 
+@Component({
+  imports: [PageCard],
+  template: `<app-page-card [title]="'Card title'"
+    ><button headerActions class="toggle">Toggle</button></app-page-card
+  >`,
+})
+class HeaderActionsPageCardHost {}
+
 describe('PageCard', () => {
   it('renders the title as the h1 and projects the body and actions', async () => {
     const fixture = TestBed.createComponent(PageCardHost);
@@ -38,6 +46,15 @@ describe('PageCard', () => {
     expect(element.querySelector('h1')?.textContent?.trim()).toBe('Card title');
     expect(element.querySelector('mat-card-content .body')).not.toBeNull();
     expect(element.querySelector('mat-card-actions .actions')).not.toBeNull();
+  });
+
+  it('projects headerActions into the header beside the title', async () => {
+    const fixture = TestBed.createComponent(HeaderActionsPageCardHost);
+    await fixture.whenStable();
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('header .toggle')).not.toBeNull();
+    expect(element.querySelector('mat-card-actions .toggle')).toBeNull();
   });
 
   it('does not display the footer when nothing is projected into actions', async () => {
