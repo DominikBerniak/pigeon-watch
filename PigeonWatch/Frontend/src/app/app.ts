@@ -37,12 +37,12 @@ export class App {
   private readonly router = inject(Router);
 
   protected readonly currentUser = this.session.currentUser;
-  protected readonly wide = toSignal(
+  protected readonly layout = toSignal(
     this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
-      map(() => layoutOf(this.router.routerState.snapshot.root) === 'wide'),
+      map(() => layoutOf(this.router.routerState.snapshot.root)),
     ),
-    { initialValue: false },
+    { initialValue: null },
   );
 
   protected logout(): void {
@@ -50,10 +50,14 @@ export class App {
   }
 }
 
-function layoutOf(root: ActivatedRouteSnapshot): unknown {
+type Layout = 'wide' | 'roomy';
+
+function layoutOf(root: ActivatedRouteSnapshot): Layout | null {
   let route = root;
 
   while (route.firstChild) route = route.firstChild;
 
-  return route.data['layout'];
+  const layout = route.data['layout'];
+
+  return layout === 'wide' || layout === 'roomy' ? layout : null;
 }

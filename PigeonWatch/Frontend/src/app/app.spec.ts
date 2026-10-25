@@ -14,6 +14,7 @@ class BlankPage {}
 
 const testRoutes: Routes = [
   { path: '', pathMatch: 'full', component: BlankPage, data: { layout: 'wide' } },
+  { path: 'roomy', component: BlankPage, data: { layout: 'roomy' } },
   { path: 'profile', component: BlankPage },
 ];
 
@@ -98,6 +99,15 @@ describe('App', () => {
     expect(items[1].getAttribute('href')).toBe('/profile');
   });
 
+  it('links the brand in the header to the home page', async () => {
+    currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
+    const element = await render();
+    const link = element.querySelector<HTMLAnchorElement>('header a.app-header__home');
+
+    expect(link?.getAttribute('href')).toBe('/');
+    expect(link?.textContent?.trim()).toBe('PigeonWatch');
+  });
+
   it('logs out from the menu', async () => {
     await openUserMenu();
 
@@ -106,21 +116,44 @@ describe('App', () => {
     expect(logout).toHaveBeenCalledOnce();
   });
 
-  it('widens main only on a route whose data asks for the wide layout', async () => {
+  async function renderSignedIn(): Promise<{ main: HTMLElement }> {
     currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
     const element = await render();
-    const router = TestBed.inject(Router);
-    const main = element.querySelector('main')!;
 
-    await router.navigateByUrl('/');
+    return { main: element.querySelector('main')! };
+  }
+
+  async function navigate(url: string): Promise<void> {
+    await TestBed.inject(Router).navigateByUrl(url);
     await TestBed.inject(ApplicationRef).whenStable();
+  }
+
+  it('widens main on a route whose data asks for the wide layout', async () => {
+    const { main } = await renderSignedIn();
+
+    await navigate('/');
 
     expect(main.classList).toContain('app-main--wide');
+    expect(main.classList).not.toContain('app-main--roomy');
+  });
 
-    await router.navigateByUrl('/profile');
-    await TestBed.inject(ApplicationRef).whenStable();
+  it('gives main the roomy layout on a route whose data asks for it', async () => {
+    const { main } = await renderSignedIn();
+
+    await navigate('/roomy');
+
+    expect(main.classList).toContain('app-main--roomy');
+    expect(main.classList).not.toContain('app-main--wide');
+  });
+
+  it('keeps the default layout on a route without a layout value', async () => {
+    const { main } = await renderSignedIn();
+
+    await navigate('/');
+    await navigate('/profile');
 
     expect(main.classList).not.toContain('app-main--wide');
+    expect(main.classList).not.toContain('app-main--roomy');
   });
 
   it('declares the wide layout on the home route only among product routes', () => {

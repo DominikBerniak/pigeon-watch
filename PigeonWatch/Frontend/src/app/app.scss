@@ -1,8 +1,15 @@
 @use 'breakpoints' as bp;
 
+:host {
+  display: flex;
+  flex-direction: column;
+  height: var(--pw-viewport-min-height-dynamic);
+}
+
 .app-header {
-  position: sticky;
-  top: 0;
+  flex: none;
+  overflow-y: hidden;
+  scrollbar-gutter: stable;
   z-index: var(--pw-z-header);
   background-color: var(--pw-color-header);
   backdrop-filter: blur(var(--pw-blur-md));
@@ -11,15 +18,42 @@
 
 .app-header__bar {
   justify-content: space-between;
+  width: 100%;
+  max-width: var(--pw-content-max-width);
   min-height: var(--pw-brand-mark-size-lg);
+  margin-inline: auto;
   padding-block: var(--pw-space-3);
+  padding-inline: var(--pw-space-4);
+
+  @include bp.from(md) {
+    max-width: var(--pw-content-wide-max-width);
+  }
+
+  @include bp.from(xl) {
+    max-width: var(--pw-content-wide-xl-max-width);
+  }
+}
+
+.app-header__home {
+  color: inherit;
+  text-decoration: none;
 }
 
 .app-header__user {
   gap: var(--pw-space-4);
 }
 
+.app-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
 .app-main {
+  width: 100%;
   max-width: var(--pw-content-max-width);
   margin: var(--pw-space-6) auto;
   padding: 0 var(--pw-space-4);
@@ -27,6 +61,16 @@
 
 .app-main--wide {
   @include bp.from(md) {
+    max-width: var(--pw-content-wide-max-width);
+  }
+
+  @include bp.from(xl) {
+    max-width: var(--pw-content-wide-xl-max-width);
+  }
+}
+
+.app-main--roomy {
+  @include bp.from(xl) {
     max-width: var(--pw-content-wide-max-width);
   }
 }
@@ -37,7 +81,7 @@
   align-items: stretch;
   justify-content: center;
   gap: var(--pw-space-6);
-  min-height: var(--pw-viewport-min-height-dynamic);
+  flex: 1 0 auto;
   margin-block: 0;
   padding-block: var(--pw-space-6);
 }
