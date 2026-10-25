@@ -163,4 +163,12 @@ describe('App', () => {
 
     expect(wide.map((route) => route.path)).toEqual(['', 'sightings/new', 'sightings/:id']);
   });
+
+  it('declares no layout on any other product route', () => {
+    const others = routes
+      .filter((route) => !devRoutes.includes(route))
+      .filter((route) => route.data?.['layout'] !== undefined && route.data['layout'] !== 'wide');
+
+    expect(others).toEqual([]);
+  });
 });

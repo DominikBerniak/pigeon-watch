@@ -11,9 +11,10 @@
           mat-stroked-button
           type="button"
           class="app-header__user-button"
+          disableRipple
           [class.app-header__user-button--open]="userMenuOpen()"
           [matMenuTriggerFor]="userMenu"
-          (menuOpened)="openUserMenu(userMenu)"
+          (menuOpened)="userMenuOpen.set(true)"
           (menuClosed)="userMenuOpen.set(false)"
         >
           {{ user.displayName }}

@@ -40,6 +40,8 @@
 }
 
 .app-header__user-button {
+  --mat-button-outlined-pressed-state-layer-opacity: 0;
+
   min-width: var(--pw-user-menu-width);
   max-width: 100%;
 }
@@ -59,6 +61,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
+  position: relative;
   min-height: 0;
   overflow-y: auto;
   scrollbar-gutter: stable;

@@ -2,8 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  Injector,
-  afterNextRender,
+  effect,
   inject,
   signal,
   viewChild,
@@ -23,6 +22,8 @@ import { SessionService } from './core/auth/session.service';
 import { TranslatePipe } from './core/resources/translate.pipe';
 import { WarmupPanel } from './core/warmup/warmup-panel/warmup-panel';
 import { Brand } from './shared/ui/brand/brand';
+
+const userButtonWidthProperty = '--pw-user-button-width';
 
 @Component({
   imports: [
@@ -44,7 +45,6 @@ import { Brand } from './shared/ui/brand/brand';
 export class App {
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
-  private readonly injector = inject(Injector);
 
   protected readonly currentUser = this.session.currentUser;
   private readonly userTrigger = viewChild(MatMenuTrigger, { read: ElementRef });
@@ -58,18 +58,23 @@ export class App {
     { initialValue: null },
   );
 
-  protected openUserMenu(menu: MatMenu): void {
-    this.userMenuOpen.set(true);
+  constructor() {
+    effect((onCleanup) => {
+      const button = this.userTrigger()?.nativeElement as HTMLElement | undefined;
 
-    afterNextRender(
-      () => {
-        const panel = document.getElementById(menu.panelId);
-        const button = this.userTrigger()?.nativeElement as HTMLElement | undefined;
+      if (!button || typeof ResizeObserver === 'undefined') return;
 
-        if (panel && button) panel.style.minWidth = `${button.getBoundingClientRect().width}px`;
-      },
-      { injector: this.injector },
-    );
+      const publish = (): void =>
+        document.documentElement.style.setProperty(
+          userButtonWidthProperty,
+          `${button.getBoundingClientRect().width}px`,
+        );
+      const observer = new ResizeObserver(publish);
+
+      publish();
+      observer.observe(button);
+      onCleanup(() => observer.disconnect());
+    });
   }
 
   protected logout(): void {

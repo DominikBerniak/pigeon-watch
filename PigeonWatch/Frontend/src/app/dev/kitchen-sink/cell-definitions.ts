@@ -424,5 +424,5 @@ const detailCells: readonly SightingDetailCell[] = [
 export const cellGroups: readonly CellGroup[] = [
   { title: 'Profile', wide: false, cells: [...profileCells, ...dialogCells] },
   { title: 'Nearby map', wide: true, cells: nearbyMapCells },
-  { title: 'Sighting detail', wide: false, cells: detailCells },
+  { title: 'Sighting detail', wide: true, cells: detailCells },
 ];

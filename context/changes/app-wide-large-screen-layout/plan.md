@@ -394,24 +394,24 @@ The shell and tokens are in the initial bundle, so `npm run build` is checked af
 
 #### Automated
 
-- [x] 5.1 Report page spec passes
-- [x] 5.2 Production build passes
+- [x] 5.1 Report page spec passes — a382af4
+- [x] 5.2 Production build passes — a382af4
 
 #### Manual
 
-- [x] 5.3 At 1600 and 2000 px the fields are on the left, the picker on the right, and the actions below
-- [x] 5.4 Dropping a pin and submitting still works with the new structure
-- [x] 5.5 Below xl the report page is unchanged
+- [x] 5.3 At 1600 and 2000 px the fields are on the left, the picker on the right, and the actions below — a382af4
+- [x] 5.4 Dropping a pin and submitting still works with the new structure — a382af4
+- [x] 5.5 Below xl the report page is unchanged — a382af4
 
 ### Phase 6: Kitchen sink, docs and gate
 
 #### Automated
 
-- [ ] 6.1 Full frontend test run passes
-- [ ] 6.2 Production build passes and the initial bundle stays under 500 kB
+- [x] 6.1 Full frontend test run passes
+- [x] 6.2 Production build passes and the initial bundle stays under 500 kB
 
 #### Manual
 
-- [ ] 6.3 At 1280, 1600 and 2000 px each of the six routes looks right
-- [ ] 6.4 At 1024 px and below nothing regressed except the header and My sightings alignment
-- [ ] 6.5 Console shows no errors at 2000 px on the map home and detail page
+- [x] 6.3 At 1280, 1600 and 2000 px each of the six routes looks right
+- [x] 6.4 At 1024 px and below nothing regressed except the header and My sightings alignment
+- [x] 6.5 Console shows no errors at 2000 px on the map home and detail page

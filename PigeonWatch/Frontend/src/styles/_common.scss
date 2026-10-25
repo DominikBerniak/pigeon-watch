@@ -6,7 +6,7 @@
 }
 
 .pw-user-menu-panel.pw-user-menu-panel {
-  min-width: var(--pw-user-menu-width);
+  min-width: max(var(--pw-user-menu-width), var(--pw-user-button-width));
   max-width: none;
   border: var(--pw-border-width) solid var(--pw-color-border);
 }
