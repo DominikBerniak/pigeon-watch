@@ -235,7 +235,7 @@ public sealed class SightingRepositoryTests : IDisposable
         };
 
         await using PigeonWatchDbContext db = CreateContext();
-        PigeonWatchUserStore store = new(db, new UserAccountMapper(), normalizer, new IdentityErrorDescriber());
+        PigeonWatchUserStore store = new(db, new UserAccountMapper(), normalizer, new IdentityErrorDescriber(), NullLogger<PigeonWatchUserStore>.Instance);
         IdentityResult result = await store.CreateAsync(user, cancellationToken);
 
         Assert.True(result.Succeeded);

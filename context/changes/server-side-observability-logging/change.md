@@ -3,7 +3,7 @@ change_id: server-side-observability-logging
 title: Server-side observability logging from the 2026-10-25 audit
 status: implementing
 created: 2026-10-25
-updated: 2026-10-25
+updated: 2026-10-26
 archived_at: null
 ---
 

@@ -342,27 +342,27 @@ None: no schema, response or configuration contract changes. `appsettings.json` 
 
 #### Automated
 
-- [x] 2.1 New integration tests for orphan-token 401, invalid-location 400, cooldown silence and 404 miss pass
-- [x] 2.2 New unit tests for the shared helper or controllers pass
-- [x] 2.3 Architecture tests pass
-- [x] 2.4 Solution builds with style rules enforced
+- [x] 2.1 New integration tests for orphan-token 401, invalid-location 400, cooldown silence and 404 miss pass — 75bdc62
+- [x] 2.2 New unit tests for the shared helper or controllers pass — 75bdc62
+- [x] 2.3 Architecture tests pass — 75bdc62
+- [x] 2.4 Solution builds with style rules enforced — 75bdc62
 
 #### Manual
 
-- [x] 2.5 Local invalid create and unknown sighting id each log one line with the expected level and no personal data
+- [x] 2.5 Local invalid create and unknown sighting id each log one line with the expected level and no personal data — 75bdc62
 
 ### Phase 3: Identity and user-store logging
 
 #### Automated
 
-- [ ] 3.1 New unit tests for Identity code logging, concurrency branches and no-PII assertions pass
-- [ ] 3.2 New integration test for duplicate registration logging with unchanged generic response passes
-- [ ] 3.3 Architecture tests pass
-- [ ] 3.4 Solution builds with style rules enforced
+- [x] 3.1 New unit tests for Identity code logging, concurrency branches and no-PII assertions pass
+- [x] 3.2 New integration test for duplicate registration logging with unchanged generic response passes
+- [x] 3.3 Architecture tests pass
+- [x] 3.4 Solution builds with style rules enforced
 
 #### Manual
 
-- [ ] 3.5 Duplicate registration locally logs the original code without the email while the form shows the same generic message
+- [x] 3.5 Duplicate registration locally logs the original code without the email while the form shows the same generic message
 
 ### Phase 4: 503 handler
 
