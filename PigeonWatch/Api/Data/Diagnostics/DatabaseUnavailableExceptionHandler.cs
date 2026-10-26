@@ -16,11 +16,7 @@ public class DatabaseUnavailableExceptionHandler(
 
     private static readonly HashSet<int> coldStartErrorNumbers = [40613, 40197, 40501, 49918, 49919, 49920];
 
-    private static readonly HashSet<int> unavailableErrorNumbers =
-    [
-        40613, 40197, 40501, 49918, 49919, 49920,
-        -2, 53, 258, 10053, 10054, 10060, 233, 64, 121
-    ];
+    private static readonly HashSet<int> unavailableErrorNumbers = [.. coldStartErrorNumbers, -2, 53, 258, 10053, 10054, 10060, 233, 64, 121];
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken = default)
     {

@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -75,10 +74,7 @@ public static class PigeonWatchEndpointRouteBuilderExtensions
                 .GetRequiredService<ILoggerFactory>()
                 .CreateLogger("PigeonWatch.AuthEvents");
 
-            if (Guid.TryParse(httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
-                logger.Log(level, "Authentication {Outcome} on {Route} for {UserId}", outcome, route, userId);
-            else
-                logger.Log(level, "Authentication {Outcome} on {Route}", outcome, route);
+            logger.Log(level, "Authentication {Outcome} on {Route}", outcome, route);
 
             return result;
         });

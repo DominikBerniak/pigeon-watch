@@ -130,6 +130,7 @@ public class AccountRepository(
 
         return accountErrors;
     }
+
     private void LogIdentityError(string originalCode, bool collapsed, string operation)
     {
         if (collapsed)

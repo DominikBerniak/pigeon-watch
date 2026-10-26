@@ -80,7 +80,7 @@ namespace PigeonWatch.WebApi.Host
             app.Use(async (context, next) =>
             {
                 long startedAt = Stopwatch.GetTimestamp();
-                RequestLogScope scope = new(Activity.Current?.Id ?? context.TraceIdentifier);
+                RequestLogScope scope = new(Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier);
                 context.Features.Set(scope);
 
                 using IDisposable? loggerScope = app.Logger.BeginScope(scope);
@@ -88,6 +88,13 @@ namespace PigeonWatch.WebApi.Host
                 try
                 {
                     await next(context);
+                }
+                catch
+                {
+                    if (!context.Response.HasStarted)
+                        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+
+                    throw;
                 }
                 finally
                 {
