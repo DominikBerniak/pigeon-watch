@@ -368,25 +368,25 @@ None: no schema, response or configuration contract changes. `appsettings.json` 
 
 #### Automated
 
-- [x] 4.1 New unit tests for the level split, structured fields and unchanged 503 contract pass
-- [x] 4.2 Existing warm-up and cold-start integration tests pass unchanged
-- [x] 4.3 Architecture tests pass
-- [x] 4.4 Solution builds with style rules enforced
+- [x] 4.1 New unit tests for the level split, structured fields and unchanged 503 contract pass — 0d5de23
+- [x] 4.2 Existing warm-up and cold-start integration tests pass unchanged — 0d5de23
+- [x] 4.3 Architecture tests pass — 0d5de23
+- [x] 4.4 Solution builds with style rules enforced — 0d5de23
 
 #### Manual
 
-- [x] 4.5 With LocalDB stopped, the 503 is unchanged and an Error with SQL number and route is logged
+- [x] 4.5 With LocalDB stopped, the 503 is unchanged and an Error with SQL number and route is logged — 0d5de23
 
 ### Phase 5: Auth events and 429 logging
 
 #### Automated
 
-- [ ] 5.1 New integration tests for login outcomes, 429 rejection and stubbed-route logging pass
-- [ ] 5.2 Existing lockout, rate-limit and auth contract tests pass unchanged
-- [ ] 5.3 Architecture tests pass
-- [ ] 5.4 Unit tests and solution build pass
+- [x] 5.1 New integration tests for login outcomes, 429 rejection and stubbed-route logging pass
+- [x] 5.2 Existing lockout, rate-limit and auth contract tests pass unchanged
+- [x] 5.3 Architecture tests pass
+- [x] 5.4 Unit tests and solution build pass
 
 #### Manual
 
-- [ ] 5.5 Six wrong-password logins locally log failed then locked-out lines with no email or password
-- [ ] 5.6 Audit findings covered by this change can be checked off against the new log output
+- [x] 5.5 Six wrong-password logins locally log failed then locked-out lines with no email or password
+- [x] 5.6 Audit findings covered by this change can be checked off against the new log output

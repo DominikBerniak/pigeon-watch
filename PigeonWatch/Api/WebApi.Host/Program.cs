@@ -41,6 +41,24 @@ namespace PigeonWatch.WebApi.Host
             builder.Services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.OnRejected = (context, token) =>
+                {
+                    Endpoint? endpoint = context.HttpContext.GetEndpoint();
+                    string policyName = endpoint?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName ?? "unknown";
+                    string route = (endpoint as RouteEndpoint)?.RoutePattern.RawText ?? "unmatched";
+                    bool remoteIpMissing = context.HttpContext.Connection.RemoteIpAddress is null;
+
+                    context.HttpContext.RequestServices
+                        .GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("PigeonWatch.RateLimiting")
+                        .LogWarning(
+                            "Rate limit rejected {Route} under policy {PolicyName} (remote IP missing: {RemoteIpMissing})",
+                            route,
+                            policyName,
+                            remoteIpMissing);
+
+                    return ValueTask.CompletedTask;
+                };
                 options.AddPolicy(RateLimitPolicyNames.Auth, httpContext =>
                 {
                     if (httpContext.Request.Path.Value?.EndsWith("/auth/refresh", StringComparison.OrdinalIgnoreCase) == true)
