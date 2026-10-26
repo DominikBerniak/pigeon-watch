@@ -327,66 +327,66 @@ None: no schema, response or configuration contract changes. `appsettings.json` 
 
 #### Automated
 
-- [x] 1.1 New integration tests for scope, summary line, no query string and 500 path pass — 54b1dcb
-- [x] 1.2 New unit test for the SYSTEM audit fallback warning passes — 54b1dcb
-- [x] 1.3 EF command lines at Information are not emitted through the factory — 54b1dcb
-- [x] 1.4 Architecture tests pass — 54b1dcb
-- [x] 1.5 Solution builds with style rules enforced — 54b1dcb
-- [x] 1.6 New test package has no known vulnerabilities — 54b1dcb
+- [x] 1.1 New integration tests for scope, summary line, no query string and 500 path pass — 813c763
+- [x] 1.2 New unit test for the SYSTEM audit fallback warning passes — 813c763
+- [x] 1.3 EF command lines at Information are not emitted through the factory — 813c763
+- [x] 1.4 Architecture tests pass — 813c763
+- [x] 1.5 Solution builds with style rules enforced — 813c763
+- [x] 1.6 New test package has no known vulnerabilities — 813c763
 
 #### Manual
 
-- [x] 1.7 Local run shows scoped lines and one summary line per request with no query string, email or token — 54b1dcb
+- [x] 1.7 Local run shows scoped lines and one summary line per request with no query string, email or token — 813c763
 
 ### Phase 2: Controller failure logging
 
 #### Automated
 
-- [x] 2.1 New integration tests for orphan-token 401, invalid-location 400, cooldown silence and 404 miss pass — 75bdc62
-- [x] 2.2 New unit tests for the shared helper or controllers pass — 75bdc62
-- [x] 2.3 Architecture tests pass — 75bdc62
-- [x] 2.4 Solution builds with style rules enforced — 75bdc62
+- [x] 2.1 New integration tests for orphan-token 401, invalid-location 400, cooldown silence and 404 miss pass — 813c763
+- [x] 2.2 New unit tests for the shared helper or controllers pass — 813c763
+- [x] 2.3 Architecture tests pass — 813c763
+- [x] 2.4 Solution builds with style rules enforced — 813c763
 
 #### Manual
 
-- [x] 2.5 Local invalid create and unknown sighting id each log one line with the expected level and no personal data — 75bdc62
+- [x] 2.5 Local invalid create and unknown sighting id each log one line with the expected level and no personal data — 813c763
 
 ### Phase 3: Identity and user-store logging
 
 #### Automated
 
-- [x] 3.1 New unit tests for Identity code logging, concurrency branches and no-PII assertions pass — 0c35a7f
-- [x] 3.2 New integration test for duplicate registration logging with unchanged generic response passes — 0c35a7f
-- [x] 3.3 Architecture tests pass — 0c35a7f
-- [x] 3.4 Solution builds with style rules enforced — 0c35a7f
+- [x] 3.1 New unit tests for Identity code logging, concurrency branches and no-PII assertions pass — 813c763
+- [x] 3.2 New integration test for duplicate registration logging with unchanged generic response passes — 813c763
+- [x] 3.3 Architecture tests pass — 813c763
+- [x] 3.4 Solution builds with style rules enforced — 813c763
 
 #### Manual
 
-- [x] 3.5 Duplicate registration locally logs the original code without the email while the form shows the same generic message — 0c35a7f
+- [x] 3.5 Duplicate registration locally logs the original code without the email while the form shows the same generic message — 813c763
 
 ### Phase 4: 503 handler
 
 #### Automated
 
-- [x] 4.1 New unit tests for the level split, structured fields and unchanged 503 contract pass — 0d5de23
-- [x] 4.2 Existing warm-up and cold-start integration tests pass unchanged — 0d5de23
-- [x] 4.3 Architecture tests pass — 0d5de23
-- [x] 4.4 Solution builds with style rules enforced — 0d5de23
+- [x] 4.1 New unit tests for the level split, structured fields and unchanged 503 contract pass — 813c763
+- [x] 4.2 Existing warm-up and cold-start integration tests pass unchanged — 813c763
+- [x] 4.3 Architecture tests pass — 813c763
+- [x] 4.4 Solution builds with style rules enforced — 813c763
 
 #### Manual
 
-- [x] 4.5 With LocalDB stopped, the 503 is unchanged and an Error with SQL number and route is logged — 0d5de23
+- [x] 4.5 With LocalDB stopped, the 503 is unchanged and an Error with SQL number and route is logged — 813c763
 
 ### Phase 5: Auth events and 429 logging
 
 #### Automated
 
-- [x] 5.1 New integration tests for login outcomes, 429 rejection and stubbed-route logging pass — 9008935
-- [x] 5.2 Existing lockout, rate-limit and auth contract tests pass unchanged — 9008935
-- [x] 5.3 Architecture tests pass — 9008935
-- [x] 5.4 Unit tests and solution build pass — 9008935
+- [x] 5.1 New integration tests for login outcomes, 429 rejection and stubbed-route logging pass — 813c763
+- [x] 5.2 Existing lockout, rate-limit and auth contract tests pass unchanged — 813c763
+- [x] 5.3 Architecture tests pass — 813c763
+- [x] 5.4 Unit tests and solution build pass — 813c763
 
 #### Manual
 
-- [x] 5.5 Six wrong-password logins locally log failed then locked-out lines with no email or password — 9008935
-- [x] 5.6 Audit findings covered by this change can be checked off against the new log output — 9008935
+- [x] 5.5 Six wrong-password logins locally log failed then locked-out lines with no email or password — 813c763
+- [x] 5.6 Audit findings covered by this change can be checked off against the new log output — 813c763

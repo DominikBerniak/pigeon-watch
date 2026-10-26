@@ -1,10 +1,10 @@
 ---
 change_id: server-side-observability-logging
 title: Server-side observability logging from the 2026-10-25 audit
-status: impl_reviewed
+status: archived
 created: 2026-10-25
 updated: 2026-10-26
-archived_at: null
+archived_at: 2026-10-26T17:35:09Z
 ---
 
 ## Notes
