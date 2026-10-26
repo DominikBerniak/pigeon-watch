@@ -381,12 +381,12 @@ None: no schema, response or configuration contract changes. `appsettings.json` 
 
 #### Automated
 
-- [x] 5.1 New integration tests for login outcomes, 429 rejection and stubbed-route logging pass
-- [x] 5.2 Existing lockout, rate-limit and auth contract tests pass unchanged
-- [x] 5.3 Architecture tests pass
-- [x] 5.4 Unit tests and solution build pass
+- [x] 5.1 New integration tests for login outcomes, 429 rejection and stubbed-route logging pass — 9008935
+- [x] 5.2 Existing lockout, rate-limit and auth contract tests pass unchanged — 9008935
+- [x] 5.3 Architecture tests pass — 9008935
+- [x] 5.4 Unit tests and solution build pass — 9008935
 
 #### Manual
 
-- [x] 5.5 Six wrong-password logins locally log failed then locked-out lines with no email or password
-- [x] 5.6 Audit findings covered by this change can be checked off against the new log output
+- [x] 5.5 Six wrong-password logins locally log failed then locked-out lines with no email or password — 9008935
+- [x] 5.6 Audit findings covered by this change can be checked off against the new log output — 9008935
