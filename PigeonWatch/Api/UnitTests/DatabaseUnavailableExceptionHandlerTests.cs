@@ -15,12 +15,15 @@ public class DatabaseUnavailableExceptionHandlerTests
     private readonly IProblemDetailsService problemDetailsService = Substitute.For<IProblemDetailsService>();
     private readonly ILogger<DatabaseUnavailableExceptionHandler> logger = Substitute.For<ILogger<DatabaseUnavailableExceptionHandler>>();
 
-    public static TheoryData<Exception> UnavailableExceptions => new()
+    public static TheoryData<Exception, LogLevel, int?> UnavailableExceptions => new()
     {
-        new RetryLimitExceededException("Retry limit exceeded.", CreateSqlException(40613)),
-        new InvalidOperationException("Wrapped.", CreateSqlException(40613)),
-        new InvalidOperationException("Wrapped.", CreateSqlException(53)),
-        new DbUpdateException("Wrapped twice.", new InvalidOperationException("Wrapped.", CreateSqlException(53)))
+        { new RetryLimitExceededException("Retry limit exceeded.", CreateSqlException(40613)), LogLevel.Warning, 40613 },
+        { new InvalidOperationException("Wrapped.", CreateSqlException(40613)), LogLevel.Warning, 40613 },
+        { new InvalidOperationException("Wrapped.", CreateSqlException(53)), LogLevel.Error, 53 },
+        { new DbUpdateException("Wrapped twice.", new InvalidOperationException("Wrapped.", CreateSqlException(53))), LogLevel.Error, 53 },
+        { CreateSqlException(40613), LogLevel.Warning, 40613 },
+        { CreateSqlException(-2), LogLevel.Error, -2 },
+        { new RetryLimitExceededException("Retry limit exceeded."), LogLevel.Error, null }
     };
 
     public static TheoryData<Exception> OtherExceptions => new()
@@ -32,7 +35,7 @@ public class DatabaseUnavailableExceptionHandlerTests
 
     [Theory]
     [MemberData(nameof(UnavailableExceptions))]
-    public async Task Database_unavailability_maps_to_503_with_retry_after(Exception exception)
+    public async Task Database_unavailability_maps_to_503_with_retry_after(Exception exception, LogLevel expectedLevel, int? expectedSqlErrorNumber)
     {
         DefaultHttpContext httpContext = new();
 
@@ -46,8 +49,11 @@ public class DatabaseUnavailableExceptionHandlerTests
             && context.ProblemDetails.Status == StatusCodes.Status503ServiceUnavailable
             && context.ProblemDetails.Title == "Service warming up"));
         ICall logCall = Assert.Single(LogCalls());
-        Assert.Equal(LogLevel.Warning, logCall.GetArguments()[0]);
+        Assert.Equal(expectedLevel, logCall.GetArguments()[0]);
         Assert.Same(exception, logCall.GetArguments()[3]);
+        Assert.Equal(expectedSqlErrorNumber, State(logCall, "SqlErrorNumber"));
+        Assert.Equal("unknown", State(logCall, "Route"));
+        Assert.Equal("10", State(logCall, "RetryAfterSeconds"));
     }
 
     [Theory]
@@ -68,6 +74,13 @@ public class DatabaseUnavailableExceptionHandlerTests
     private DatabaseUnavailableExceptionHandler CreateHandler()
     {
         return new(problemDetailsService, logger);
+    }
+
+    private static object? State(ICall logCall, string key)
+    {
+        IReadOnlyList<KeyValuePair<string, object?>> state = (IReadOnlyList<KeyValuePair<string, object?>>)logCall.GetArguments()[2]!;
+
+        return state.Single(pair => pair.Key == key).Value;
     }
 
     private IEnumerable<ICall> LogCalls()

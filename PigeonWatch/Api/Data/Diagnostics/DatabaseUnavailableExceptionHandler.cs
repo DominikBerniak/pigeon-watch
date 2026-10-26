@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
@@ -13,6 +14,8 @@ public class DatabaseUnavailableExceptionHandler(
 {
     private const string retryAfterSeconds = "10";
 
+    private static readonly HashSet<int> coldStartErrorNumbers = [40613, 40197, 40501, 49918, 49919, 49920];
+
     private static readonly HashSet<int> unavailableErrorNumbers =
     [
         40613, 40197, 40501, 49918, 49919, 49920,
@@ -24,7 +27,18 @@ public class DatabaseUnavailableExceptionHandler(
         if (!IsDatabaseUnavailable(exception))
             return false;
 
-        logger.LogWarning(exception, "Database unavailable; responding 503 with Retry-After {RetryAfterSeconds} s.", retryAfterSeconds);
+        int? sqlErrorNumber = FindSqlErrorNumber(exception);
+        Endpoint? endpoint = httpContext.Features.Get<IExceptionHandlerFeature>()?.Endpoint ?? httpContext.GetEndpoint();
+        string route = (endpoint as RouteEndpoint)?.RoutePattern.RawText ?? "unknown";
+        LogLevel logLevel = sqlErrorNumber is int number && coldStartErrorNumbers.Contains(number) ? LogLevel.Warning : LogLevel.Error;
+
+        logger.Log(
+            logLevel,
+            exception,
+            "Database unavailable (SQL error {SqlErrorNumber}) on {Route}; responding 503 with Retry-After {RetryAfterSeconds} s.",
+            sqlErrorNumber,
+            route,
+            retryAfterSeconds);
         httpContext.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
         httpContext.Response.Headers.RetryAfter = retryAfterSeconds;
 
@@ -40,6 +54,17 @@ public class DatabaseUnavailableExceptionHandler(
         });
 
         return true;
+    }
+
+    private static int? FindSqlErrorNumber(Exception exception)
+    {
+        for (Exception? current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is SqlException sqlException)
+                return sqlException.Number;
+        }
+
+        return null;
     }
 
     private static bool IsDatabaseUnavailable(Exception exception)

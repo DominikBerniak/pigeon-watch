@@ -355,27 +355,27 @@ None: no schema, response or configuration contract changes. `appsettings.json` 
 
 #### Automated
 
-- [x] 3.1 New unit tests for Identity code logging, concurrency branches and no-PII assertions pass
-- [x] 3.2 New integration test for duplicate registration logging with unchanged generic response passes
-- [x] 3.3 Architecture tests pass
-- [x] 3.4 Solution builds with style rules enforced
+- [x] 3.1 New unit tests for Identity code logging, concurrency branches and no-PII assertions pass — 0c35a7f
+- [x] 3.2 New integration test for duplicate registration logging with unchanged generic response passes — 0c35a7f
+- [x] 3.3 Architecture tests pass — 0c35a7f
+- [x] 3.4 Solution builds with style rules enforced — 0c35a7f
 
 #### Manual
 
-- [x] 3.5 Duplicate registration locally logs the original code without the email while the form shows the same generic message
+- [x] 3.5 Duplicate registration locally logs the original code without the email while the form shows the same generic message — 0c35a7f
 
 ### Phase 4: 503 handler
 
 #### Automated
 
-- [ ] 4.1 New unit tests for the level split, structured fields and unchanged 503 contract pass
-- [ ] 4.2 Existing warm-up and cold-start integration tests pass unchanged
-- [ ] 4.3 Architecture tests pass
-- [ ] 4.4 Solution builds with style rules enforced
+- [x] 4.1 New unit tests for the level split, structured fields and unchanged 503 contract pass
+- [x] 4.2 Existing warm-up and cold-start integration tests pass unchanged
+- [x] 4.3 Architecture tests pass
+- [x] 4.4 Solution builds with style rules enforced
 
 #### Manual
 
-- [ ] 4.5 With LocalDB stopped, the 503 is unchanged and an Error with SQL number and route is logged
+- [x] 4.5 With LocalDB stopped, the 503 is unchanged and an Error with SQL number and route is logged
 
 ### Phase 5: Auth events and 429 logging
 
