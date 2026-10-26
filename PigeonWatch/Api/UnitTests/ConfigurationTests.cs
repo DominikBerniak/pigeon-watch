@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using PigeonWatch.BusinessLogic.Services;
 using PigeonWatch.BusinessObjects;
@@ -115,7 +116,8 @@ public class ConfigurationTests
             new ClientConfigurationService(),
             new GeneralConfigurationService(accountRepository),
             new ClientConfigurationViewModelCreator(),
-            new GeneralConfigurationViewModelCreator())
+            new GeneralConfigurationViewModelCreator(),
+            NullLogger<ConfigurationController>.Instance)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } }
         };

@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 using PigeonWatch.Data;
 using PigeonWatch.WebApi.Host;
 
@@ -17,7 +19,16 @@ namespace PigeonWatch.IntegrationTests;
 public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null) : WebApplicationFactory<Program>
 {
     private readonly SqliteConnection connection = OpenConnection();
+    private readonly FakeLogCollector logs = new();
     private int nextClientNumber;
+
+    public FakeLogCollector Logs
+    {
+        get
+        {
+            return logs;
+        }
+    }
 
     public HttpClient CreateApiClient(string? clientAddress = null)
     {
@@ -82,6 +93,16 @@ public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null) : W
         return count;
     }
 
+    public int DeleteUserAccount(Guid id)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = "DELETE FROM USER_ACCOUNT WHERE ID = $id";
+        command.Parameters.AddWithValue("$id", id);
+        int affected = command.ExecuteNonQuery();
+
+        return affected;
+    }
+
     public int ExpireLockout(string email)
     {
         using SqliteCommand command = connection.CreateCommand();
@@ -90,6 +111,11 @@ public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null) : W
         int affected = command.ExecuteNonQuery();
 
         return affected;
+    }
+
+    public void ClearLogs()
+    {
+        logs.Clear();
     }
 
     public void CloseDatabase()
@@ -109,6 +135,8 @@ public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null) : W
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.ConfigureLogging(logging => logging.AddProvider(new FakeLoggerProvider(logs)));
+
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<DbContextOptions<PigeonWatchDbContext>>();

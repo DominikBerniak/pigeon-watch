@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using PigeonWatch.BusinessLogic.Services;
 using PigeonWatch.BusinessObjects;
@@ -212,7 +213,8 @@ public class AccountControllerTests
             new RegisterRequestMapper(),
             new RegisteredAccountViewModelCreator(),
             new UpdatedProfileViewModelCreator(),
-            new PasswordChangedViewModelCreator())
+            new PasswordChangedViewModelCreator(),
+            NullLogger<AccountController>.Instance)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } },
             ProblemDetailsFactory = problemDetailsFactory

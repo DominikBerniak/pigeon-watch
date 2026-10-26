@@ -1,12 +1,40 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data.Identity;
 using PigeonWatch.Data.Mappers;
 
 namespace PigeonWatch.Data.Repositories;
 
-public class AccountRepository(UserManager<ApplicationUser> userManager, IUserAccountMapper userAccountMapper) : IAccountRepository
+public class AccountRepository(
+    UserManager<ApplicationUser> userManager,
+    IUserAccountMapper userAccountMapper,
+    ILogger<AccountRepository> logger) : IAccountRepository
 {
+    private const string concurrencyFailureCode = "ConcurrencyFailure";
+    private const string registerOperation = "register";
+    private const string renameOperation = "rename";
+    private const string passwordChangeOperation = "passwordChange";
+
+    private static readonly HashSet<string> knownCodes = new(StringComparer.Ordinal)
+    {
+        AccountErrorCodes.DuplicateEmail,
+        AccountErrorCodes.InvalidEmail,
+        AccountErrorCodes.DuplicateUserName,
+        AccountErrorCodes.InvalidUserName,
+        AccountErrorCodes.RegistrationFailed,
+        AccountErrorCodes.DuplicateDisplayName,
+        AccountErrorCodes.DisplayNameLength,
+        AccountErrorCodes.DisplayNameInvalidCharacter,
+        AccountErrorCodes.UserNotFound,
+        AccountErrorCodes.PasswordMismatch,
+        AccountErrorCodes.PasswordTooShort,
+        AccountErrorCodes.PasswordRequiresDigit,
+        AccountErrorCodes.PasswordRequiresLower,
+        AccountErrorCodes.PasswordRequiresUpper,
+        AccountErrorCodes.PasswordRequiresNonAlphanumeric
+    };
+
     private const string registrationFailedDescription = "The account could not be created.";
     private const string userNotFoundDescription = "The user could not be found.";
 
@@ -26,7 +54,7 @@ public class AccountRepository(UserManager<ApplicationUser> userManager, IUserAc
         if (result.Succeeded)
             return AccountCreationResult.Success(userAccountMapper.ToRegisteredAccount(user));
 
-        return AccountCreationResult.Failure(ToAccountErrors(result.Errors, collapseDisplayName: true));
+        return AccountCreationResult.Failure(ToAccountErrors(result.Errors, registerOperation, collapseDisplayName: true));
     }
 
     public async Task<CurrentUser?> GetCurrentUserAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -54,7 +82,7 @@ public class AccountRepository(UserManager<ApplicationUser> userManager, IUserAc
         if (result.Succeeded)
             return ProfileUpdateResult.Success(userAccountMapper.ToUpdatedProfile(user));
 
-        return ProfileUpdateResult.Failure(ToAccountErrors(result.Errors));
+        return ProfileUpdateResult.Failure(ToAccountErrors(result.Errors, renameOperation));
     }
 
     public async Task<PasswordChangeResult> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
@@ -71,10 +99,10 @@ public class AccountRepository(UserManager<ApplicationUser> userManager, IUserAc
         if (result.Succeeded)
             return PasswordChangeResult.Success();
 
-        return PasswordChangeResult.Failure(ToAccountErrors(result.Errors));
+        return PasswordChangeResult.Failure(ToAccountErrors(result.Errors, passwordChangeOperation));
     }
 
-    private static List<AccountError> ToAccountErrors(IEnumerable<IdentityError> identityErrors, bool collapseDisplayName = false)
+    private List<AccountError> ToAccountErrors(IEnumerable<IdentityError> identityErrors, string operation, bool collapseDisplayName = false)
     {
         List<IdentityError> errors = identityErrors.ToList();
         HashSet<string> codes = errors.Select(error => error.Code).ToHashSet(StringComparer.Ordinal);
@@ -91,6 +119,8 @@ public class AccountRepository(UserManager<ApplicationUser> userManager, IUserAc
             };
             string description = code == AccountErrorCodes.RegistrationFailed ? registrationFailedDescription : error.Description;
 
+            LogIdentityError(error.Code, code == AccountErrorCodes.RegistrationFailed && error.Code != code, operation);
+
             bool collapsesIntoExistingEmailError = code != error.Code && codes.Contains(code);
             bool alreadyAdded = accountErrors.Any(accountError => accountError.Code == code);
 
@@ -99,5 +129,15 @@ public class AccountRepository(UserManager<ApplicationUser> userManager, IUserAc
         }
 
         return accountErrors;
+    }
+
+    private void LogIdentityError(string originalCode, bool collapsed, string operation)
+    {
+        if (collapsed)
+            logger.LogInformation("Identity error {ErrorCode} collapsed into a generic failure during {Operation}", originalCode, operation);
+        else if (originalCode == concurrencyFailureCode)
+            logger.LogWarning("Identity reported {ErrorCode} during {Operation}", originalCode, operation);
+        else if (!knownCodes.Contains(originalCode))
+            logger.LogError("Identity returned unexpected error {ErrorCode} during {Operation}", originalCode, operation);
     }
 }

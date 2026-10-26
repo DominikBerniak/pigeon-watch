@@ -1,9 +1,12 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace PigeonWatch.Data.Auditing;
 
-public class HttpContextCurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICurrentUserProvider
+public class HttpContextCurrentUserProvider(
+    IHttpContextAccessor httpContextAccessor,
+    ILogger<HttpContextCurrentUserProvider> logger) : ICurrentUserProvider
 {
     public const string SystemUserName = "SYSTEM";
 
@@ -16,6 +19,13 @@ public class HttpContextCurrentUserProvider(IHttpContextAccessor httpContextAcce
 
         string? userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        return string.IsNullOrEmpty(userId) ? SystemUserName : userId;
+        if (string.IsNullOrEmpty(userId))
+        {
+            logger.LogWarning("Authenticated principal has no NameIdentifier claim, recording the audit user as {AuditUser}", SystemUserName);
+
+            return SystemUserName;
+        }
+
+        return userId;
     }
 }

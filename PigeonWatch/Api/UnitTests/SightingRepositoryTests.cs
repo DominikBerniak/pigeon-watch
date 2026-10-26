@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data;
 using PigeonWatch.Data.Auditing;
@@ -234,7 +235,7 @@ public sealed class SightingRepositoryTests : IDisposable
         };
 
         await using PigeonWatchDbContext db = CreateContext();
-        PigeonWatchUserStore store = new(db, new UserAccountMapper(), normalizer, new IdentityErrorDescriber());
+        PigeonWatchUserStore store = new(db, new UserAccountMapper(), normalizer, new IdentityErrorDescriber(), NullLogger<PigeonWatchUserStore>.Instance);
         IdentityResult result = await store.CreateAsync(user, cancellationToken);
 
         Assert.True(result.Succeeded);
@@ -252,7 +253,7 @@ public sealed class SightingRepositoryTests : IDisposable
         DbContextOptions<PigeonWatchDbContext> options = new DbContextOptionsBuilder<PigeonWatchDbContext>()
             .UseSqlite(connection)
             .AddInterceptors(new AuditSaveChangesInterceptor(
-                new HttpContextCurrentUserProvider(new HttpContextAccessor()),
+                new HttpContextCurrentUserProvider(new HttpContextAccessor(), NullLogger<HttpContextCurrentUserProvider>.Instance),
                 timeProvider))
             .Options;
 

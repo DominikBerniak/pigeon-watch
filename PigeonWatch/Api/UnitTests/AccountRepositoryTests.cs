@@ -1,5 +1,8 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.Core;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data.Identity;
 using PigeonWatch.Data.Mappers;
@@ -11,13 +14,14 @@ public class AccountRepositoryTests
 {
     private readonly UserManager<ApplicationUser> userManager = Substitute.For<UserManager<ApplicationUser>>(
         Substitute.For<IUserStore<ApplicationUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
+    private readonly ILogger<AccountRepository> logger = Substitute.For<ILogger<AccountRepository>>();
 
     [Fact]
     public async Task Successful_creation_uses_the_email_as_user_name()
     {
         userManager.CreateAsync(Arg.Any<ApplicationUser>(), Arg.Any<string>()).Returns(IdentityResult.Success);
 
-        AccountCreationResult result = await new AccountRepository(userManager, new UserAccountMapper()).CreateAsync(
+        AccountCreationResult result = await new AccountRepository(userManager, new UserAccountMapper(), logger).CreateAsync(
             new NewAccount("user@example.com", "Secret1!", "Pidgey"),
             TestContext.Current.CancellationToken);
 
@@ -63,7 +67,7 @@ public class AccountRepositoryTests
             new IdentityErrorDescriber().DuplicateUserName("user@example.com"),
             new IdentityErrorDescriber().DuplicateEmail("user@example.com")));
 
-        AccountCreationResult result = await new AccountRepository(userManager, new UserAccountMapper()).CreateAsync(
+        AccountCreationResult result = await new AccountRepository(userManager, new UserAccountMapper(), logger).CreateAsync(
             new NewAccount("user@example.com", "Secret1!", "Pidgey"),
             TestContext.Current.CancellationToken);
 
@@ -117,7 +121,7 @@ public class AccountRepositoryTests
         Guid unknownId = Guid.NewGuid();
         userManager.FindByIdAsync(unknownId.ToString()).Returns((ApplicationUser?)null);
 
-        CurrentUser? currentUser = await new AccountRepository(userManager, new UserAccountMapper()).GetCurrentUserAsync(
+        CurrentUser? currentUser = await new AccountRepository(userManager, new UserAccountMapper(), logger).GetCurrentUserAsync(
             unknownId,
             TestContext.Current.CancellationToken);
 
@@ -130,7 +134,7 @@ public class AccountRepositoryTests
         ApplicationUser user = new() { Id = Guid.NewGuid(), Email = "user@example.com", DisplayName = "Pidgey" };
         userManager.FindByIdAsync(user.Id.ToString()).Returns(user);
 
-        CurrentUser? currentUser = await new AccountRepository(userManager, new UserAccountMapper()).GetCurrentUserAsync(
+        CurrentUser? currentUser = await new AccountRepository(userManager, new UserAccountMapper(), logger).GetCurrentUserAsync(
             user.Id,
             TestContext.Current.CancellationToken);
 
@@ -144,7 +148,7 @@ public class AccountRepositoryTests
         userManager.FindByIdAsync(user.Id.ToString()).Returns(user);
         userManager.UpdateAsync(user).Returns(IdentityResult.Success);
 
-        ProfileUpdateResult result = await new AccountRepository(userManager, new UserAccountMapper()).UpdateDisplayNameAsync(
+        ProfileUpdateResult result = await new AccountRepository(userManager, new UserAccountMapper(), logger).UpdateDisplayNameAsync(
             user.Id,
             "Feathers",
             TestContext.Current.CancellationToken);
@@ -160,7 +164,7 @@ public class AccountRepositoryTests
         Guid unknownId = Guid.NewGuid();
         userManager.FindByIdAsync(unknownId.ToString()).Returns((ApplicationUser?)null);
 
-        ProfileUpdateResult result = await new AccountRepository(userManager, new UserAccountMapper()).UpdateDisplayNameAsync(
+        ProfileUpdateResult result = await new AccountRepository(userManager, new UserAccountMapper(), logger).UpdateDisplayNameAsync(
             unknownId,
             "Feathers",
             TestContext.Current.CancellationToken);
@@ -201,7 +205,7 @@ public class AccountRepositoryTests
         userManager.FindByIdAsync(user.Id.ToString()).Returns(user);
         userManager.ChangePasswordAsync(user, "Old1!", "New1Password!").Returns(IdentityResult.Success);
 
-        PasswordChangeResult result = await new AccountRepository(userManager, new UserAccountMapper()).ChangePasswordAsync(
+        PasswordChangeResult result = await new AccountRepository(userManager, new UserAccountMapper(), logger).ChangePasswordAsync(
             user.Id,
             "Old1!",
             "New1Password!",
@@ -218,7 +222,7 @@ public class AccountRepositoryTests
         Guid unknownId = Guid.NewGuid();
         userManager.FindByIdAsync(unknownId.ToString()).Returns((ApplicationUser?)null);
 
-        PasswordChangeResult result = await new AccountRepository(userManager, new UserAccountMapper()).ChangePasswordAsync(
+        PasswordChangeResult result = await new AccountRepository(userManager, new UserAccountMapper(), logger).ChangePasswordAsync(
             unknownId,
             "Old1!",
             "New1Password!",
@@ -273,13 +277,98 @@ public class AccountRepositoryTests
         Assert.DoesNotContain(result.Errors, error => error.Description.Contains("New1Password!", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task A_duplicate_email_on_registration_logs_one_information_with_the_original_code_and_no_personal_data()
+    {
+        AccountCreationResult result = await CreateWithErrors(AccountErrorCodes.DuplicateEmail);
+
+        LogCall call = Assert.Single(LogCalls(logger));
+        Assert.Equal(LogLevel.Information, call.Level);
+        Assert.Equal(AccountErrorCodes.DuplicateEmail, call.State["ErrorCode"]);
+        Assert.Equal("register", call.State["Operation"]);
+        Assert.Equal([AccountErrorCodes.RegistrationFailed], result.Errors.Select(error => error.Code));
+        AssertNoPersonalData(call);
+    }
+
+    [Fact]
+    public async Task A_duplicate_display_name_on_registration_logs_an_information_and_on_rename_logs_nothing()
+    {
+        await CreateWithErrors(AccountErrorCodes.DuplicateDisplayName);
+        LogCall registration = Assert.Single(LogCalls(logger));
+        logger.ClearReceivedCalls();
+
+        await RenameWithErrors(AccountErrorCodes.DuplicateDisplayName);
+
+        Assert.Equal(LogLevel.Information, registration.Level);
+        Assert.Equal(AccountErrorCodes.DuplicateDisplayName, registration.State["ErrorCode"]);
+        Assert.Empty(LogCalls(logger));
+    }
+
+    [Fact]
+    public async Task Known_validation_codes_log_nothing()
+    {
+        await CreateWithErrors(AccountErrorCodes.InvalidEmail, AccountErrorCodes.InvalidUserName, AccountErrorCodes.DisplayNameLength);
+        await ChangePasswordWithErrors(new IdentityErrorDescriber().PasswordMismatch(), new IdentityErrorDescriber().PasswordTooShort(8));
+
+        Assert.Empty(LogCalls(logger));
+    }
+
+    [Fact]
+    public async Task A_concurrency_failure_on_rename_logs_a_warning_and_is_passed_through_unchanged()
+    {
+        string concurrencyCode = new IdentityErrorDescriber().ConcurrencyFailure().Code;
+
+        ProfileUpdateResult result = await RenameWithErrors(concurrencyCode);
+
+        LogCall call = Assert.Single(LogCalls(logger));
+        Assert.Equal(LogLevel.Warning, call.Level);
+        Assert.Equal(concurrencyCode, call.State["ErrorCode"]);
+        Assert.Equal("rename", call.State["Operation"]);
+        Assert.Equal([new AccountError(concurrencyCode, $"{concurrencyCode} description")], result.Errors);
+    }
+
+    [Theory]
+    [InlineData("DefaultError")]
+    [InlineData("SomethingUnexpected")]
+    public async Task An_unknown_identity_code_logs_an_error_and_is_passed_through_unchanged(string code)
+    {
+        AccountCreationResult result = await CreateWithErrors(code);
+
+        LogCall call = Assert.Single(LogCalls(logger));
+        Assert.Equal(LogLevel.Error, call.Level);
+        Assert.Equal(code, call.State["ErrorCode"]);
+        Assert.Equal([new AccountError(code, $"{code} description")], result.Errors);
+        AssertNoPersonalData(call);
+    }
+
+    [Fact]
+    public async Task Password_change_logs_an_unknown_code_with_the_password_change_operation_and_no_passwords()
+    {
+        await ChangePasswordWithErrors(new IdentityError { Code = "DefaultError", Description = "Old1! New1Password!" });
+
+        LogCall call = Assert.Single(LogCalls(logger));
+        Assert.Equal("passwordChange", call.State["Operation"]);
+        Assert.DoesNotContain("Old1!", call.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(call.State.Values, value => value?.ToString()?.Contains("New1Password!", StringComparison.Ordinal) == true);
+    }
+
+    private static void AssertNoPersonalData(LogCall call)
+    {
+        Assert.DoesNotContain("user@example.com", call.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Pidgey", call.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(
+            call.State.Values,
+            value => value?.ToString()?.Contains("user@example.com", StringComparison.OrdinalIgnoreCase) == true
+                || value?.ToString()?.Contains("Pidgey", StringComparison.OrdinalIgnoreCase) == true);
+    }
+
     private Task<PasswordChangeResult> ChangePasswordWithErrors(params IdentityError[] errors)
     {
         ApplicationUser user = new() { Id = Guid.NewGuid(), Email = "user@example.com", DisplayName = "Pidgey" };
         userManager.FindByIdAsync(user.Id.ToString()).Returns(user);
         userManager.ChangePasswordAsync(user, "Old1!", "New1Password!").Returns(IdentityResult.Failed(errors));
 
-        return new AccountRepository(userManager, new UserAccountMapper()).ChangePasswordAsync(
+        return new AccountRepository(userManager, new UserAccountMapper(), logger).ChangePasswordAsync(
             user.Id,
             "Old1!",
             "New1Password!",
@@ -295,7 +384,7 @@ public class AccountRepositoryTests
         userManager.FindByIdAsync(user.Id.ToString()).Returns(user);
         userManager.UpdateAsync(user).Returns(IdentityResult.Failed(errors));
 
-        return new AccountRepository(userManager, new UserAccountMapper()).UpdateDisplayNameAsync(
+        return new AccountRepository(userManager, new UserAccountMapper(), logger).UpdateDisplayNameAsync(
             user.Id,
             "Feathers",
             TestContext.Current.CancellationToken);
@@ -308,8 +397,33 @@ public class AccountRepositoryTests
             .ToArray();
         userManager.CreateAsync(Arg.Any<ApplicationUser>(), Arg.Any<string>()).Returns(IdentityResult.Failed(errors));
 
-        return new AccountRepository(userManager, new UserAccountMapper()).CreateAsync(
+        return new AccountRepository(userManager, new UserAccountMapper(), logger).CreateAsync(
             new NewAccount("user@example.com", "Secret1!", "Pidgey"),
             TestContext.Current.CancellationToken);
     }
+
+    private static List<LogCall> LogCalls(ILogger logger)
+    {
+        List<LogCall> calls = logger.ReceivedCalls()
+            .Where(call => call.GetMethodInfo().Name == nameof(ILogger.Log))
+            .Select(ToLogCall)
+            .ToList();
+
+        return calls;
+    }
+
+    private static LogCall ToLogCall(ICall call)
+    {
+        object?[] arguments = call.GetArguments();
+        Dictionary<string, object?> state = [];
+
+        foreach (KeyValuePair<string, object?> pair in (IEnumerable<KeyValuePair<string, object?>>)arguments[2]!)
+            state[pair.Key] = pair.Value;
+
+        string message = state["{OriginalFormat}"]?.ToString() ?? string.Empty;
+
+        return new LogCall((LogLevel)arguments[0]!, state, message);
+    }
+
+    private sealed record LogCall(LogLevel Level, Dictionary<string, object?> State, string Message);
 }

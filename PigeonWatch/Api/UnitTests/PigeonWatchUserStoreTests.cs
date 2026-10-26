@@ -1,9 +1,13 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using NSubstitute;
+using NSubstitute.Core;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data;
 using PigeonWatch.Data.Auditing;
@@ -17,6 +21,7 @@ public sealed class PigeonWatchUserStoreTests : IDisposable
 {
     private readonly SqliteConnection connection = new("DataSource=:memory:");
     private readonly UpperInvariantLookupNormalizer normalizer = new();
+    private readonly ILogger<PigeonWatchUserStore> storeLogger = Substitute.For<ILogger<PigeonWatchUserStore>>();
     private readonly CancellationToken cancellationToken = TestContext.Current.CancellationToken;
 
     public PigeonWatchUserStoreTests()
@@ -113,7 +118,7 @@ public sealed class PigeonWatchUserStoreTests : IDisposable
         await CreateAsync(user);
 
         await using PigeonWatchDbContext db = CreateContext();
-        AccountRepository repository = new(CreateUserManager(db), new UserAccountMapper());
+        AccountRepository repository = new(CreateUserManager(db), new UserAccountMapper(), NullLogger<AccountRepository>.Instance);
         ProfileUpdateResult result = await repository.UpdateDisplayNameAsync(user.Id, "Feathers", cancellationToken);
 
         Assert.True(result.Succeeded);
@@ -133,7 +138,7 @@ public sealed class PigeonWatchUserStoreTests : IDisposable
         await CreateAsync(NewUser("second@example.com", "Feathers"));
 
         await using PigeonWatchDbContext db = CreateContext();
-        AccountRepository repository = new(CreateUserManager(db), new UserAccountMapper());
+        AccountRepository repository = new(CreateUserManager(db), new UserAccountMapper(), NullLogger<AccountRepository>.Instance);
         ProfileUpdateResult caseOnly = await repository.UpdateDisplayNameAsync(first.Id, "pIDGEY", cancellationToken);
         ProfileUpdateResult taken = await repository.UpdateDisplayNameAsync(first.Id, "FEATHERS", cancellationToken);
 
@@ -163,6 +168,66 @@ public sealed class PigeonWatchUserStoreTests : IDisposable
         Assert.True(firstResult.Succeeded);
         Assert.NotEqual(user.ConcurrencyStamp, firstCopy.ConcurrencyStamp);
         Assert.Equal([new IdentityErrorDescriber().ConcurrencyFailure().Code], staleResult.Errors.Select(error => error.Code));
+    }
+
+    [Fact]
+    public async Task Update_with_a_stale_concurrency_stamp_logs_a_warning_with_the_user_id()
+    {
+        ApplicationUser user = NewUser("user@example.com", "Pidgey");
+        await CreateAsync(user);
+
+        await using PigeonWatchDbContext firstDb = CreateContext();
+        await using PigeonWatchDbContext secondDb = CreateContext();
+        PigeonWatchUserStore firstStore = CreateStore(firstDb);
+        PigeonWatchUserStore secondStore = CreateStore(secondDb);
+        ApplicationUser firstCopy = (await firstStore.FindByIdAsync(user.Id.ToString(), cancellationToken))!;
+        ApplicationUser staleCopy = (await secondStore.FindByIdAsync(user.Id.ToString(), cancellationToken))!;
+        firstCopy.AccessFailedCount = 1;
+        await firstStore.UpdateAsync(firstCopy, cancellationToken);
+        storeLogger.ClearReceivedCalls();
+
+        staleCopy.AccessFailedCount = 2;
+        IdentityResult staleResult = await secondStore.UpdateAsync(staleCopy, cancellationToken);
+
+        LogCall call = Assert.Single(LogCalls(storeLogger));
+        Assert.Equal(LogLevel.Warning, call.Level);
+        Assert.Equal(user.Id, call.State["UserId"]);
+        Assert.Equal("update", call.State["Operation"]);
+        Assert.Equal([new IdentityErrorDescriber().ConcurrencyFailure().Code], staleResult.Errors.Select(error => error.Code));
+        AssertNoPersonalData(call);
+    }
+
+    [Fact]
+    public async Task Update_and_delete_of_a_missing_user_log_a_warning_and_return_concurrency_failure()
+    {
+        ApplicationUser ghost = NewUser("ghost@example.com", "Ghost");
+        ghost.Id = Guid.NewGuid();
+
+        await using PigeonWatchDbContext db = CreateContext();
+        PigeonWatchUserStore store = CreateStore(db);
+        IdentityResult updateResult = await store.UpdateAsync(ghost, cancellationToken);
+        IdentityResult deleteResult = await store.DeleteAsync(ghost, cancellationToken);
+
+        List<LogCall> calls = LogCalls(storeLogger);
+        Assert.Equal(["update", "delete"], calls.Select(call => call.State["Operation"]));
+        Assert.All(calls, call =>
+        {
+            Assert.Equal(LogLevel.Warning, call.Level);
+            Assert.Equal(ghost.Id, call.State["UserId"]);
+            AssertNoPersonalData(call);
+        });
+        Assert.Equal([new IdentityErrorDescriber().ConcurrencyFailure().Code], updateResult.Errors.Select(error => error.Code));
+        Assert.Equal([new IdentityErrorDescriber().ConcurrencyFailure().Code], deleteResult.Errors.Select(error => error.Code));
+    }
+
+    [Fact]
+    public async Task Duplicate_display_name_branches_stay_silent()
+    {
+        await CreateAsync(NewUser("first@example.com", "Pidgey"));
+
+        await CreateAsync(NewUser("second@example.com", "pIDGEY"));
+
+        Assert.Empty(LogCalls(storeLogger));
     }
 
     [Fact]
@@ -219,7 +284,7 @@ public sealed class PigeonWatchUserStoreTests : IDisposable
 
     private PigeonWatchUserStore CreateStore(PigeonWatchDbContext db)
     {
-        return new(db, new UserAccountMapper(), normalizer, new IdentityErrorDescriber());
+        return new(db, new UserAccountMapper(), normalizer, new IdentityErrorDescriber(), storeLogger);
     }
 
     private UserManager<ApplicationUser> CreateUserManager(PigeonWatchDbContext db)
@@ -241,15 +306,50 @@ public sealed class PigeonWatchUserStoreTests : IDisposable
             NullLogger<UserManager<ApplicationUser>>.Instance);
     }
 
+    private static void AssertNoPersonalData(LogCall call)
+    {
+        Assert.DoesNotContain("example.com", call.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(
+            call.State.Values,
+            value => value?.ToString()?.Contains("example.com", StringComparison.OrdinalIgnoreCase) == true
+                || value?.ToString()?.Contains("Pidgey", StringComparison.OrdinalIgnoreCase) == true
+                || value?.ToString()?.Contains("Ghost", StringComparison.OrdinalIgnoreCase) == true);
+    }
+
     private PigeonWatchDbContext CreateContext()
     {
         DbContextOptions<PigeonWatchDbContext> options = new DbContextOptionsBuilder<PigeonWatchDbContext>()
             .UseSqlite(connection)
             .AddInterceptors(new AuditSaveChangesInterceptor(
-                new HttpContextCurrentUserProvider(new HttpContextAccessor()),
+                new HttpContextCurrentUserProvider(new HttpContextAccessor(), NullLogger<HttpContextCurrentUserProvider>.Instance),
                 TimeProvider.System))
             .Options;
 
         return new PigeonWatchDbContext(options);
     }
+
+    private static List<LogCall> LogCalls(ILogger logger)
+    {
+        List<LogCall> calls = logger.ReceivedCalls()
+            .Where(call => call.GetMethodInfo().Name == nameof(ILogger.Log))
+            .Select(ToLogCall)
+            .ToList();
+
+        return calls;
+    }
+
+    private static LogCall ToLogCall(ICall call)
+    {
+        object?[] arguments = call.GetArguments();
+        Dictionary<string, object?> state = [];
+
+        foreach (KeyValuePair<string, object?> pair in (IEnumerable<KeyValuePair<string, object?>>)arguments[2]!)
+            state[pair.Key] = pair.Value;
+
+        string message = state["{OriginalFormat}"]?.ToString() ?? string.Empty;
+
+        return new LogCall((LogLevel)arguments[0]!, state, message);
+    }
+
+    private sealed record LogCall(LogLevel Level, Dictionary<string, object?> State, string Message);
 }

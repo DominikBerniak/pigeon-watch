@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data.Entities;
 using PigeonWatch.Data.Mappers;
@@ -11,7 +12,8 @@ public class PigeonWatchUserStore(
     PigeonWatchDbContext db,
     IUserAccountMapper userAccountMapper,
     ILookupNormalizer lookupNormalizer,
-    IdentityErrorDescriber errorDescriber) :
+    IdentityErrorDescriber errorDescriber,
+    ILogger<PigeonWatchUserStore> logger) :
     IUserPasswordStore<ApplicationUser>,
     IUserEmailStore<ApplicationUser>,
     IUserSecurityStampStore<ApplicationUser>,
@@ -56,7 +58,11 @@ public class PigeonWatchUserStore(
         UserAccountEntity? entity = await db.UserAccounts.FindAsync([user.Id], cancellationToken);
 
         if (entity is null)
+        {
+            LogConcurrencyFailure("update", user.Id);
+
             return IdentityResult.Failed(errorDescriber.ConcurrencyFailure());
+        }
 
         string normalizedDisplayName = NormalizeDisplayName(user);
 
@@ -75,6 +81,8 @@ public class PigeonWatchUserStore(
         }
         catch (DbUpdateConcurrencyException)
         {
+            LogConcurrencyFailure("update", user.Id);
+
             db.Entry(entity).State = EntityState.Detached;
 
             return IdentityResult.Failed(errorDescriber.ConcurrencyFailure());
@@ -96,7 +104,11 @@ public class PigeonWatchUserStore(
         UserAccountEntity? entity = await db.UserAccounts.FindAsync([user.Id], cancellationToken);
 
         if (entity is null)
+        {
+            LogConcurrencyFailure("delete", user.Id);
+
             return IdentityResult.Failed(errorDescriber.ConcurrencyFailure());
+        }
 
         db.Entry(entity).Property(e => e.ConcurrencyStamp).OriginalValue = user.ConcurrencyStamp;
         db.UserAccounts.Remove(entity);
@@ -107,6 +119,8 @@ public class PigeonWatchUserStore(
         }
         catch (DbUpdateConcurrencyException)
         {
+            LogConcurrencyFailure("delete", user.Id);
+
             db.Entry(entity).State = EntityState.Detached;
 
             return IdentityResult.Failed(errorDescriber.ConcurrencyFailure());
@@ -283,6 +297,11 @@ public class PigeonWatchUserStore(
     public void Dispose()
     {
         GC.SuppressFinalize(this);
+    }
+
+    private void LogConcurrencyFailure(string operation, Guid userId)
+    {
+        logger.LogWarning("User store {Operation} hit a concurrency failure or missing user {UserId}", operation, userId);
     }
 
     private string NormalizeDisplayName(ApplicationUser user)
