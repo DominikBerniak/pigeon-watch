@@ -17,6 +17,7 @@ public sealed class EndpointProtectionTests : IDisposable
         new("POST auth/refresh", "Refreshing presents a refresh token instead of a bearer header, so the endpoint is anonymous by design."),
         new("GET configuration/client", "Validation rules are public configuration that the sign-up screen needs before sign-in."),
         new("GET resources/{culture}", "UI labels are public text that every screen needs before sign-in."),
+        new("POST client-errors", "Browser error reports arrive from visitors who may not be signed in, so the endpoint is anonymous by design and is guarded by the rate limiter, a body cap and allowlist validation."),
         new("POST auth/register", "Stubbed Identity route that answers 404 for every caller, so it is stubbed rather than protected."),
         new("GET auth/confirmEmail", "Stubbed Identity route that answers 404 for every caller, so it is stubbed rather than protected."),
         new("POST auth/resendConfirmationEmail", "Stubbed Identity route that answers 404 for every caller, so it is stubbed rather than protected."),

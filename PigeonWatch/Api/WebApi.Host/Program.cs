@@ -73,6 +73,15 @@ namespace PigeonWatch.WebApi.Host
                             QueueLimit = 0
                         });
                 });
+                options.AddPolicy(RateLimitPolicyNames.ClientErrors, httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        httpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 20,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0
+                        }));
             });
 
             WebApplication app = builder.Build();
