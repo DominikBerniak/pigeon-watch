@@ -338,29 +338,29 @@ None: no schema, response or existing contract changes. One new anonymous route,
 
 #### Automated
 
-- [x] 2.1 New reporter specs for allowlist, dedupe, cap and self-failure pass
-- [x] 2.2 New specs for the ErrorHandler, navigation handler, bootstrap beacon and problemTraceId pass
-- [x] 2.3 Production build passes within the bundle budgets
-- [x] 2.4 Full frontend suite passes with no existing spec edited
+- [x] 2.1 New reporter specs for allowlist, dedupe, cap and self-failure pass — 09edf30
+- [x] 2.2 New specs for the ErrorHandler, navigation handler, bootstrap beacon and problemTraceId pass — 09edf30
+- [x] 2.3 Production build passes within the bundle budgets — 09edf30
+- [x] 2.4 Full frontend suite passes with no existing spec edited — 09edf30
 
 #### Manual
 
-- [x] 2.5 An uncaught error from the browser console logs one uncaught line and a repeat logs none
-- [x] 2.6 A blocked lazy chunk produces one navigation line
+- [x] 2.5 An uncaught error from the browser console logs one uncaught line and a repeat logs none — 09edf30
+- [x] 2.6 A blocked lazy chunk produces one navigation line — 09edf30
 
 ### Phase 3: Interceptors and core services (SPA)
 
 #### Automated
 
-- [ ] 3.1 New specs for session-expired reporting pass
-- [ ] 3.2 New specs for warm-up exhaustion reporting pass
-- [ ] 3.3 New specs for config, label and storage fallback reporting pass
-- [ ] 3.4 Production build within budgets and full frontend suite pass
+- [x] 3.1 New specs for session-expired reporting pass
+- [x] 3.2 New specs for warm-up exhaustion reporting pass
+- [x] 3.3 New specs for config, label and storage fallback reporting pass
+- [x] 3.4 Production build within budgets and full frontend suite pass
 
 #### Manual
 
-- [ ] 3.5 Clearing the refresh token logs the user out as before and logs one session-expired line
-- [ ] 3.6 With the API running against an unreachable database, one warmup-exhausted report with status 503 is logged after the warm-up budget
+- [x] 3.5 Clearing the refresh token logs the user out as before and logs one session-expired line
+- [x] 3.6 With the API running against an unreachable database, one warmup-exhausted report with status 503 is logged after the warm-up budget
 
 ### Phase 4: Feature swallow sites and reference id UI (SPA)
 

@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { isApiUrl } from '../http/api-url';
+import { ErrorReportingService } from '../error-reporting/error-reporting.service';
 import { AUTH_RETRIED, SKIP_AUTH } from '../http/http-context-tokens';
 import { SessionService } from './session.service';
 import { TokenStore } from './token-store';
@@ -15,6 +16,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const tokens = inject(TokenStore);
   const session = inject(SessionService);
   const router = inject(Router);
+  const reporting = inject(ErrorReportingService);
 
   return next(withBearer(request, tokens.accessToken())).pipe(
     catchError((error: unknown) => {
@@ -23,6 +25,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
       }
 
       if (!tokens.refreshToken()) {
+        reporting.report('session-expired', 'auth.refresh.missing', error);
         session.expire(router.url);
 
         return throwError(() => error);
@@ -30,7 +33,10 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
       return session.refreshTokens().pipe(
         catchError((refreshError: unknown) => {
-          if (isSessionRejected(refreshError)) session.expire(router.url);
+          if (isSessionRejected(refreshError)) {
+            reporting.report('session-expired', 'auth.refresh.rejected', refreshError);
+            session.expire(router.url);
+          }
 
           return throwError(() => refreshError);
         }),

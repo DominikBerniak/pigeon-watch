@@ -1,6 +1,7 @@
 import { HttpErrorResponse, HttpEvent, HttpInterceptorFn } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { Injector, inject } from '@angular/core';
 import { Observable, Subscription } from 'rxjs';
+import { ErrorReportingService } from '../error-reporting/error-reporting.service';
 import { isApiUrl } from '../http/api-url';
 import { REQUEST_RESENT, SKIP_WARMUP } from '../http/http-context-tokens';
 import { WarmupState } from './warmup-state';
@@ -16,6 +17,7 @@ export const warmupInterceptor: HttpInterceptorFn = (request, next) => {
   }
 
   const state = inject(WarmupState);
+  const injector = inject(Injector);
 
   return new Observable<HttpEvent<unknown>>((subscriber) => {
     const startedAt = Date.now();
@@ -56,6 +58,9 @@ export const warmupInterceptor: HttpInterceptorFn = (request, next) => {
 
           if (Date.now() - startedAt >= warmupBudgetMs) {
             endWarming('failed');
+            injector
+              .get(ErrorReportingService)
+              .report('warmup-exhausted', 'warmup.budget.exhausted', error);
             subscriber.error(error);
 
             return;

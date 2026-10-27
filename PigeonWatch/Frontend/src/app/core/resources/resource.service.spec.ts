@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ErrorReportingService } from '../error-reporting/error-reporting.service';
 import { WarmupState } from '../warmup/warmup-state';
 import { warmupInterceptor } from '../warmup/warmup.interceptor';
 import { defaultLabels } from './generated/snapshots';
@@ -28,6 +29,7 @@ describe('ResourceService', () => {
       providers: [
         provideHttpClient(withInterceptors([warmupInterceptor])),
         provideHttpClientTesting(),
+        { provide: ErrorReportingService, useValue: { report: vi.fn() } },
       ],
     });
     httpMock = TestBed.inject(HttpTestingController);

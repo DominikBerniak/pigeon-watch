@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, Injector, inject, signal } from '@angular/core';
+import { ErrorReportingService } from '../error-reporting/error-reporting.service';
 
 export const refreshTokenStorageKey = 'pigeonwatch.refreshToken';
 
@@ -11,6 +12,7 @@ export interface AccessTokenResponse {
 
 @Injectable({ providedIn: 'root' })
 export class TokenStore {
+  private readonly injector = inject(Injector);
   private readonly accessTokenState = signal<string | null>(null);
   private memoryRefreshToken: string | null = null;
   private storageUnavailable = false;
@@ -22,8 +24,9 @@ export class TokenStore {
 
     try {
       return localStorage.getItem(refreshTokenStorageKey);
-    } catch {
+    } catch (error) {
       this.storageUnavailable = true;
+      this.reportStorage(error);
 
       return this.memoryRefreshToken;
     }
@@ -36,8 +39,9 @@ export class TokenStore {
     try {
       localStorage.setItem(refreshTokenStorageKey, response.refreshToken);
       this.storageUnavailable = false;
-    } catch {
+    } catch (error) {
       this.storageUnavailable = true;
+      this.reportStorage(error);
     }
   }
 
@@ -47,8 +51,13 @@ export class TokenStore {
 
     try {
       localStorage.removeItem(refreshTokenStorageKey);
-    } catch {
+    } catch (error) {
       this.storageUnavailable = true;
+      this.reportStorage(error);
     }
+  }
+
+  private reportStorage(error: unknown): void {
+    this.injector.get(ErrorReportingService).report('fallback', 'storage.token', error);
   }
 }

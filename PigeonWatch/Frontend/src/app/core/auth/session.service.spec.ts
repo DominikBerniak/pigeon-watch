@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ErrorReportingService } from '../error-reporting/error-reporting.service';
 import { ConfigurationService } from '../configuration/configuration.service';
 import { authInterceptor } from './auth.interceptor';
 import { AutoLoginError, ReLoginError, SessionService } from './session.service';
@@ -33,6 +34,7 @@ describe('SessionService', () => {
       providers: [
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
+        { provide: ErrorReportingService, useValue: { report: vi.fn() } },
         provideRouter([]),
       ],
     });
