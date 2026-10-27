@@ -324,29 +324,29 @@ None: no schema, response or existing contract changes. One new anonymous route,
 
 #### Automated
 
-- [x] 1.1 New integration tests for the report endpoint, level mapping, bad bodies and rate limit pass
-- [x] 1.2 New unit tests for the kind-to-level mapping and logged fields pass
-- [x] 1.3 Existing endpoint coverage, protection and privacy tests pass with the endpoint registered
-- [x] 1.4 Architecture tests pass
-- [x] 1.5 Solution builds with style rules enforced
+- [x] 1.1 New integration tests for the report endpoint, level mapping, bad bodies and rate limit pass — 5b851a7
+- [x] 1.2 New unit tests for the kind-to-level mapping and logged fields pass — 5b851a7
+- [x] 1.3 Existing endpoint coverage, protection and privacy tests pass with the endpoint registered — 5b851a7
+- [x] 1.4 Architecture tests pass — 5b851a7
+- [x] 1.5 Solution builds with style rules enforced — 5b851a7
 
 #### Manual
 
-- [x] 1.6 A local curl.exe report returns 202 with one clean log line and the 21st call returns 429
+- [x] 1.6 A local curl.exe report returns 202 with one clean log line and the 21st call returns 429 — 5b851a7
 
 ### Phase 2: Reporter core and global handlers (SPA)
 
 #### Automated
 
-- [ ] 2.1 New reporter specs for allowlist, dedupe, cap and self-failure pass
-- [ ] 2.2 New specs for the ErrorHandler, navigation handler, bootstrap beacon and problemTraceId pass
-- [ ] 2.3 Production build passes within the bundle budgets
-- [ ] 2.4 Full frontend suite passes with no existing spec edited
+- [x] 2.1 New reporter specs for allowlist, dedupe, cap and self-failure pass
+- [x] 2.2 New specs for the ErrorHandler, navigation handler, bootstrap beacon and problemTraceId pass
+- [x] 2.3 Production build passes within the bundle budgets
+- [x] 2.4 Full frontend suite passes with no existing spec edited
 
 #### Manual
 
-- [ ] 2.5 An uncaught error from the browser console logs one uncaught line and a repeat logs none
-- [ ] 2.6 A blocked lazy chunk produces one navigation line
+- [x] 2.5 An uncaught error from the browser console logs one uncaught line and a repeat logs none
+- [x] 2.6 A blocked lazy chunk produces one navigation line
 
 ### Phase 3: Interceptors and core services (SPA)
 

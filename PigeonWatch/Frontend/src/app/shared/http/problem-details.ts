@@ -22,6 +22,12 @@ export function problemExtension(error: HttpErrorResponse, name: string): unknow
   return isRecord(body) ? body[name] : undefined;
 }
 
+export function problemTraceId(error: HttpErrorResponse): string | null {
+  const value = problemExtension(error, 'traceId');
+
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
