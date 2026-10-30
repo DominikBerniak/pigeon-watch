@@ -324,66 +324,66 @@ None: no schema, response or existing contract changes. One new anonymous route,
 
 #### Automated
 
-- [x] 1.1 New integration tests for the report endpoint, level mapping, bad bodies and rate limit pass — 5b851a7
-- [x] 1.2 New unit tests for the kind-to-level mapping and logged fields pass — 5b851a7
-- [x] 1.3 Existing endpoint coverage, protection and privacy tests pass with the endpoint registered — 5b851a7
-- [x] 1.4 Architecture tests pass — 5b851a7
-- [x] 1.5 Solution builds with style rules enforced — 5b851a7
+- [x] 1.1 New integration tests for the report endpoint, level mapping, bad bodies and rate limit pass — f38669f
+- [x] 1.2 New unit tests for the kind-to-level mapping and logged fields pass — f38669f
+- [x] 1.3 Existing endpoint coverage, protection and privacy tests pass with the endpoint registered — f38669f
+- [x] 1.4 Architecture tests pass — f38669f
+- [x] 1.5 Solution builds with style rules enforced — f38669f
 
 #### Manual
 
-- [x] 1.6 A local curl.exe report returns 202 with one clean log line and the 21st call returns 429 — 5b851a7
+- [x] 1.6 A local curl.exe report returns 202 with one clean log line and the 21st call returns 429 — f38669f
 
 ### Phase 2: Reporter core and global handlers (SPA)
 
 #### Automated
 
-- [x] 2.1 New reporter specs for allowlist, dedupe, cap and self-failure pass — 09edf30
-- [x] 2.2 New specs for the ErrorHandler, navigation handler, bootstrap beacon and problemTraceId pass — 09edf30
-- [x] 2.3 Production build passes within the bundle budgets — 09edf30
-- [x] 2.4 Full frontend suite passes with no existing spec edited — 09edf30
+- [x] 2.1 New reporter specs for allowlist, dedupe, cap and self-failure pass — f38669f
+- [x] 2.2 New specs for the ErrorHandler, navigation handler, bootstrap beacon and problemTraceId pass — f38669f
+- [x] 2.3 Production build passes within the bundle budgets — f38669f
+- [x] 2.4 Full frontend suite passes with no existing spec edited — f38669f
 
 #### Manual
 
-- [x] 2.5 An uncaught error from the browser console logs one uncaught line and a repeat logs none — 09edf30
-- [x] 2.6 A blocked lazy chunk produces one navigation line — 09edf30
+- [x] 2.5 An uncaught error from the browser console logs one uncaught line and a repeat logs none — f38669f
+- [x] 2.6 A blocked lazy chunk produces one navigation line — f38669f
 
 ### Phase 3: Interceptors and core services (SPA)
 
 #### Automated
 
-- [x] 3.1 New specs for session-expired reporting pass — f3a54ed
-- [x] 3.2 New specs for warm-up exhaustion reporting pass — f3a54ed
-- [x] 3.3 New specs for config, label and storage fallback reporting pass — f3a54ed
-- [x] 3.4 Production build within budgets and full frontend suite pass — f3a54ed
+- [x] 3.1 New specs for session-expired reporting pass — f38669f
+- [x] 3.2 New specs for warm-up exhaustion reporting pass — f38669f
+- [x] 3.3 New specs for config, label and storage fallback reporting pass — f38669f
+- [x] 3.4 Production build within budgets and full frontend suite pass — f38669f
 
 #### Manual
 
-- [x] 3.5 Clearing the refresh token logs the user out as before and logs one session-expired line (accepted on specs, see change.md) — f3a54ed
-- [x] 3.6 With the API running against an unreachable database, one warmup-exhausted report with status 503 is logged after the warm-up budget — f3a54ed
+- [x] 3.5 Clearing the refresh token logs the user out as before and logs one session-expired line (accepted on specs, see change.md) — f38669f
+- [x] 3.6 With the API running against an unreachable database, one warmup-exhausted report with status 503 is logged after the warm-up budget — f38669f
 
 ### Phase 4: Feature swallow sites and reference id UI (SPA)
 
 #### Automated
 
-- [x] 4.1 New specs for the reference element and failure types pass — 7bd0bef
-- [x] 4.2 New page specs for report-or-silent rules and previous markers pass — 7bd0bef
-- [x] 4.3 New specs for map and geolocation fallbacks pass — 7bd0bef
-- [x] 4.4 API unit and architecture tests pass with the new label key — 7bd0bef
-- [x] 4.5 Production build within budgets and full frontend suite pass — 7bd0bef
+- [x] 4.1 New specs for the reference element and failure types pass — f38669f
+- [x] 4.2 New page specs for report-or-silent rules and previous markers pass — f38669f
+- [x] 4.3 New specs for map and geolocation fallbacks pass — f38669f
+- [x] 4.4 API unit and architecture tests pass with the new label key — f38669f
+- [x] 4.5 Production build within budgets and full frontend suite pass — f38669f
 
 #### Manual
 
-- [x] 4.6 With an unreachable database the nearby map shows a reference matching the 500 log TraceId and one api-failure line is logged — 7bd0bef
-- [x] 4.7 A wrong login password and an unknown sighting id show no reference and log no client report — 7bd0bef
+- [x] 4.6 With an unreachable database the nearby map shows a reference matching the 500 log TraceId and one api-failure line is logged — f38669f
+- [x] 4.7 A wrong login password and an unknown sighting id show no reference and log no client report — f38669f
 
 ### Phase 5: Playwright e2e and docs
 
 #### Automated
 
-- [x] 5.1 The new e2e test passes and goes red when the report call is removed — 4e9e54b
-- [x] 5.2 Full frontend suite and production build still pass — 4e9e54b
+- [x] 5.1 The new e2e test passes and goes red when the report call is removed — f38669f
+- [x] 5.2 Full frontend suite and production build still pass — f38669f
 
 #### Manual
 
-- [x] 5.3 The CLAUDE.md files are accurate and the audit findings can be matched to report kinds or the reference UI — 4e9e54b
+- [x] 5.3 The CLAUDE.md files are accurate and the audit findings can be matched to report kinds or the reference UI — f38669f

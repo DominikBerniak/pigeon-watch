@@ -1,10 +1,10 @@
 ---
 change_id: spa-error-reporting-seam
 title: Spa error reporting seam
-status: impl_reviewed
+status: archived
 created: 2026-10-27
 updated: 2026-10-30
-archived_at: null
+archived_at: 2026-10-30T17:05:03Z
 ---
 
 ## Notes
