@@ -381,9 +381,9 @@ None: no schema, response or existing contract changes. One new anonymous route,
 
 #### Automated
 
-- [x] 5.1 The new e2e test passes and goes red when the report call is removed
+- [x] 5.1 The new e2e test passes and goes red when the report call is removed — 4e9e54b
 5.2 Full frontend suite and production build still pass
 
 #### Manual
 
-- [x] 5.3 The CLAUDE.md files are accurate and the audit findings can be matched to report kinds or the reference UI
+- [x] 5.3 The CLAUDE.md files are accurate and the audit findings can be matched to report kinds or the reference UI — 4e9e54b
