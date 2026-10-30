@@ -366,24 +366,24 @@ None: no schema, response or existing contract changes. One new anonymous route,
 
 #### Automated
 
-- [x] 4.1 New specs for the reference element and failure types pass
-- [x] 4.2 New page specs for report-or-silent rules and previous markers pass
-- [x] 4.3 New specs for map and geolocation fallbacks pass
-- [x] 4.4 API unit and architecture tests pass with the new label key
-- [x] 4.5 Production build within budgets and full frontend suite pass
+- [x] 4.1 New specs for the reference element and failure types pass — 7bd0bef
+- [x] 4.2 New page specs for report-or-silent rules and previous markers pass — 7bd0bef
+- [x] 4.3 New specs for map and geolocation fallbacks pass — 7bd0bef
+- [x] 4.4 API unit and architecture tests pass with the new label key — 7bd0bef
+- [x] 4.5 Production build within budgets and full frontend suite pass — 7bd0bef
 
 #### Manual
 
-- [x] 4.6 With an unreachable database the nearby map shows a reference matching the 500 log TraceId and one api-failure line is logged
-- [x] 4.7 A wrong login password and an unknown sighting id show no reference and log no client report
+- [x] 4.6 With an unreachable database the nearby map shows a reference matching the 500 log TraceId and one api-failure line is logged — 7bd0bef
+- [x] 4.7 A wrong login password and an unknown sighting id show no reference and log no client report — 7bd0bef
 
 ### Phase 5: Playwright e2e and docs
 
 #### Automated
 
-- [ ] 5.1 The new e2e test passes and goes red when the report call is removed
-- [ ] 5.2 Full frontend suite and production build still pass
+- [x] 5.1 The new e2e test passes and goes red when the report call is removed
+5.2 Full frontend suite and production build still pass
 
 #### Manual
 
-- [ ] 5.3 The CLAUDE.md files are accurate and the audit findings can be matched to report kinds or the reference UI
+- [x] 5.3 The CLAUDE.md files are accurate and the audit findings can be matched to report kinds or the reference UI
