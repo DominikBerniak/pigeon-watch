@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { environment } from '../../../environments/environment';
 import { REQUEST_RESENT, SKIP_WARMUP } from '../http/http-context-tokens';
+import { ErrorReportingService } from '../error-reporting/error-reporting.service';
 import { WarmupState } from './warmup-state';
 import { warmupInterceptor } from './warmup.interceptor';
 
@@ -19,6 +20,7 @@ describe('warmupInterceptor', () => {
       providers: [
         provideHttpClient(withInterceptors([warmupInterceptor])),
         provideHttpClientTesting(),
+        { provide: ErrorReportingService, useValue: { report: vi.fn() } },
       ],
     });
     http = TestBed.inject(HttpClient);

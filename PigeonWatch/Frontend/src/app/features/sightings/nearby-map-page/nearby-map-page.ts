@@ -20,8 +20,10 @@ import {
   GeolocationOutcome,
   GeolocationService,
 } from '../../../core/geolocation/geolocation.service';
+import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
+import { isExpectedClientStatus, unexpectedTraceId } from '../../../shared/http/problem-details';
 import { minSearchZoom, nearbyMapZoom, neutralMapView } from '../../../shared/map/map-config';
 import { MapMarker } from '../../../shared/map/map-marker';
 import { MapView } from '../../../shared/map/map-view/map-view';
@@ -30,6 +32,7 @@ import {
   CriticalityBadge,
   DetailItem,
   DetailList,
+  ErrorReference,
   LoadingIndicator,
 } from '../../../shared/ui';
 import {
@@ -45,7 +48,7 @@ import { SightingsApi } from '../sightings-api';
 type NearbyState =
   | { readonly kind: 'idle' }
   | { readonly kind: 'loading' }
-  | { readonly kind: 'error' }
+  | { readonly kind: 'error'; readonly traceId?: string }
   | { readonly kind: 'loaded'; readonly items: readonly Sighting[] };
 
 type NearbyStatus =
@@ -78,6 +81,7 @@ let nextStatusId = 0;
     DetailItem,
     DetailList,
     Alert,
+    ErrorReference,
     LoadingIndicator,
     MapView,
   ],
@@ -90,6 +94,7 @@ export class NearbyMapPage {
   private readonly geolocation = inject(GeolocationService);
   private readonly configuration = inject(ConfigurationService);
   private readonly resources = inject(ResourceService);
+  private readonly reporting = inject(ErrorReportingService);
   private readonly injector = inject(Injector);
   private readonly searches = new Subject<GeoPoint>();
   private readonly locationRequests = new Subject<void>();
@@ -122,6 +127,11 @@ export class NearbyMapPage {
       this.configuration.clientConfig()?.sightingRules?.nearbyRadiusKm ??
       fallbackSightingRules.nearbyRadiusKm,
   );
+  protected readonly errorTraceId = computed(() => {
+    const state = this.state();
+
+    return state.kind === 'error' ? (state.traceId ?? null) : null;
+  });
   protected readonly title = computed(() =>
     this.positionUnknown() ? 'map.titleArea' : 'map.title',
   );
@@ -184,7 +194,7 @@ export class NearbyMapPage {
         switchMap((centre) =>
           this.sightingsApi.nearby(centre).pipe(
             map((list): NearbyState => ({ kind: 'loaded', items: list.items })),
-            catchError(() => of<NearbyState>({ kind: 'error' })),
+            catchError((error: unknown) => of(this.failureState(error))),
             startWith<NearbyState>({ kind: 'loading' }),
           ),
         ),
@@ -252,8 +262,16 @@ export class NearbyMapPage {
     this.state.set(state);
 
     if (state.kind === 'loaded') this.sightings.set(state.items);
+  }
 
-    if (state.kind === 'error') this.sightings.set([]);
+  private failureState(error: unknown): NearbyState {
+    if (!isExpectedClientStatus(error)) {
+      this.reporting.report('api-failure', 'nearby.search', error);
+    }
+
+    const traceId = unexpectedTraceId(error);
+
+    return traceId === undefined ? { kind: 'error' } : { kind: 'error', traceId };
   }
 
   private applyLocation(outcome: GeolocationOutcome): void {

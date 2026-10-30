@@ -17,10 +17,12 @@ import { finalize } from 'rxjs';
 import { safeReturnUrl } from '../../../core/auth/safe-return-url';
 import { AutoLoginError, SessionService } from '../../../core/auth/session.service';
 import { ConfigurationService } from '../../../core/configuration/configuration.service';
+import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import {
   Alert,
+  ErrorReference,
   FieldErrors,
   FormSubmitState,
   PageCard,
@@ -41,6 +43,7 @@ import {
   AuthFormError,
   RegisterField,
   authErrorMessage,
+  isReportableAuthFailure,
   registerFailure,
 } from '../../../shared/auth/auth-errors';
 import { LoginNavigationState } from '../../../shared/auth/login-navigation-state';
@@ -64,6 +67,7 @@ interface RegisterModel {
     RouterLink,
     TranslatePipe,
     Alert,
+    ErrorReference,
     FieldErrors,
     PageCard,
     SubmitButton,
@@ -77,6 +81,7 @@ export class RegisterPage {
   private readonly configuration = inject(ConfigurationService);
   private readonly router = inject(Router);
   private readonly resources = inject(ResourceService);
+  private readonly reporting = inject(ErrorReportingService);
   private readonly returnUrl = inject(ActivatedRoute).snapshot.queryParamMap.get('returnUrl');
   private readonly model = signal<RegisterModel>({
     email: '',
@@ -113,6 +118,7 @@ export class RegisterPage {
     validate(path.confirmPassword, confirmPasswordValidator(path.password));
   });
   protected readonly busy = signal(false);
+  protected readonly traceId = signal<string | null>(null);
   protected readonly formErrorText = computed(() => {
     const error = this.formError();
 
@@ -166,6 +172,7 @@ export class RegisterPage {
     const account = this.model();
     this.busy.set(true);
     this.formError.set(null);
+    this.traceId.set(null);
     this.session
       .register({
         email: account.email,
@@ -197,6 +204,11 @@ export class RegisterPage {
 
     this.serverErrors.set(serverErrors);
     this.formError.set(failure.formError);
+    this.traceId.set(failure.traceId ?? null);
+
+    if (isReportableAuthFailure(error, failure.formError)) {
+      this.reporting.report('api-failure', 'auth.register', error);
+    }
   }
 
   private navigateToLogin(email: string): void {

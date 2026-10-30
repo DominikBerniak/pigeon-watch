@@ -24,10 +24,11 @@ Auth: Identity bearer tokens (`MapIdentityApi`, no cookies). The bearer and refr
 - `GET sightings/{id:guid}`: one `SightingModel`, or 404.
 - `GET sightings/nearby?latitude=&longitude=` (both required and range-validated): up to 200 newest open sightings within 10 km of the point, as `SightingListModel`.
 - `GET sightings/mine`: up to 50 of the current user's newest sightings, any status, as `SightingListModel`.
+- `POST client-errors` (anonymous, rate limited by the `clientErrors` policy, body capped at 2 KB): the SPA's error report (`ClientErrorsController`). The body is a closed allowlist (`kind`, `context`, `httpStatus`, `errorName`, `traceId`, `route`, `sessionId`; see `ClientErrorReportModel`), the answer is `202` with no body, and the server only logs it: `fallback` reports at Information, every other kind at Warning, never Error, so a client report cannot page anyone.
 
 All four `sightings` endpoints are `[Authorize]` (`SightingsController`), and the reads send `Cache-Control: private, no-store`. `SightingModel` carries the reporter's display name, never the reporter id or email.
 
-The `auth` rate-limit policy (`WebApi/RateLimiting/RateLimitPolicyNames.cs`, configured in `Program.cs`) allows 10 requests per minute per client IP for login and register; `auth/refresh` is exempt. A database that is paused or unreachable surfaces as `503` ProblemDetails with `Retry-After: 10` through `Data/Diagnostics/DatabaseUnavailableExceptionHandler.cs`; other exceptions stay `500`.
+The `auth` rate-limit policy (`WebApi/RateLimiting/RateLimitPolicyNames.cs`, configured in `Program.cs`) allows 10 requests per minute per client IP for login and register; `auth/refresh` is exempt. The separate `clientErrors` policy allows 20 requests per minute per client IP for `POST client-errors`, in its own bucket so error reports never use up the login budget. A database that is paused or unreachable surfaces as `503` ProblemDetails with `Retry-After: 10` through `Data/Diagnostics/DatabaseUnavailableExceptionHandler.cs`; other exceptions stay `500`.
 
 Auditing records the user id: `Data/Auditing/HttpContextCurrentUserProvider.cs` returns the `ClaimTypes.NameIdentifier` of the current request, or `SYSTEM` for anonymous saves (registration, failed-login lockout counters).
 

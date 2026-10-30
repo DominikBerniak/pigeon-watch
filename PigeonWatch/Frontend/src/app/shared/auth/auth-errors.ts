@@ -1,6 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ResourceService } from '../../core/resources/resource.service';
-import { problemDetail, problemErrorCodes } from '../http/problem-details';
+import {
+  isExpectedClientStatus,
+  problemDetail,
+  problemErrorCodes,
+  unexpectedTraceId,
+} from '../http/problem-details';
 
 export type AuthFormError =
   | 'invalidCredentials'
@@ -13,8 +18,14 @@ export type AuthFormError =
 
 export type RegisterField = 'email' | 'displayName' | 'password';
 
+export interface LoginFailure {
+  formError: AuthFormError;
+  traceId?: string;
+}
+
 export interface RegisterFailure {
   formError: AuthFormError | null;
+  traceId?: string;
   fieldErrors: Partial<Record<RegisterField, string>>;
 }
 
@@ -22,6 +33,7 @@ export type ProfileField = 'displayName';
 
 export interface ProfileFailure {
   formError: AuthFormError | null;
+  traceId?: string;
   fieldErrors: Partial<Record<ProfileField, string>>;
 }
 
@@ -29,6 +41,7 @@ export type PasswordChangeField = 'currentPassword' | 'newPassword';
 
 export interface PasswordChangeFailure {
   formError: AuthFormError | null;
+  traceId?: string;
   fieldErrors: Partial<Record<PasswordChangeField, string>>;
 }
 
@@ -40,6 +53,16 @@ export function loginFailure(error: unknown): AuthFormError {
   return problemDetail(error) === 'LockedOut' ? 'lockedOut' : 'invalidCredentials';
 }
 
+export function loginFailureResult(error: unknown): LoginFailure {
+  const formError = loginFailure(error);
+
+  return { formError, ...traceOf(error, formError) };
+}
+
+export function isReportableAuthFailure(error: unknown, formError: AuthFormError | null): boolean {
+  return formError === 'unexpected' && !isExpectedClientStatus(error);
+}
+
 export function registerFailure(error: unknown): RegisterFailure {
   if (!(error instanceof HttpErrorResponse)) return { formError: 'unexpected', fieldErrors: {} };
 
@@ -48,14 +71,14 @@ export function registerFailure(error: unknown): RegisterFailure {
   if (error.status !== 400 || codes.length === 0) {
     const formError = isUnanswered(error) ? 'registrationUnconfirmed' : transportFailure(error);
 
-    return { formError, fieldErrors: {} };
+    return { formError, ...traceOf(error, formError), fieldErrors: {} };
   }
 
   const failure: RegisterFailure = { formError: null, fieldErrors: {} };
 
   for (const code of codes) applyErrorCode(failure, code);
 
-  return failure;
+  return { ...failure, ...traceOf(error, failure.formError) };
 }
 
 export function profileFailure(error: unknown): ProfileFailure {
@@ -64,14 +87,16 @@ export function profileFailure(error: unknown): ProfileFailure {
   const codes = problemErrorCodes(error);
 
   if (error.status !== 400 || codes.length === 0) {
-    return { formError: transportFailure(error), fieldErrors: {} };
+    const formError = transportFailure(error);
+
+    return { formError, ...traceOf(error, formError), fieldErrors: {} };
   }
 
   const failure: ProfileFailure = { formError: null, fieldErrors: {} };
 
   for (const code of codes) applyProfileCode(failure, code);
 
-  return failure;
+  return { ...failure, ...traceOf(error, failure.formError) };
 }
 
 export function passwordChangeFailure(error: unknown): PasswordChangeFailure {
@@ -80,14 +105,16 @@ export function passwordChangeFailure(error: unknown): PasswordChangeFailure {
   const codes = problemErrorCodes(error);
 
   if (error.status !== 400 || codes.length === 0) {
-    return { formError: transportFailure(error), fieldErrors: {} };
+    const formError = transportFailure(error);
+
+    return { formError, ...traceOf(error, formError), fieldErrors: {} };
   }
 
   const failure: PasswordChangeFailure = { formError: null, fieldErrors: {} };
 
   for (const code of codes) applyPasswordChangeCode(failure, code);
 
-  return failure;
+  return { ...failure, ...traceOf(error, failure.formError) };
 }
 
 export function authErrorMessage(resources: ResourceService, error: AuthFormError): string {
@@ -106,6 +133,14 @@ export function authErrorMessage(resources: ResourceService, error: AuthFormErro
   }
 
   return resources.translate('common.unexpectedError');
+}
+
+function traceOf(error: unknown, formError: AuthFormError | null): { traceId?: string } {
+  if (formError !== 'unexpected') return {};
+
+  const traceId = unexpectedTraceId(error);
+
+  return traceId === undefined ? {} : { traceId };
 }
 
 function isUnanswered(error: HttpErrorResponse): boolean {

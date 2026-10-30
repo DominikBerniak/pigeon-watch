@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { ErrorReportingService } from '../error-reporting/error-reporting.service';
 import { warmupBudgetMs, warmupInterceptor } from '../warmup/warmup.interceptor';
 import { RegisterRequest } from './auth-api';
 import { authInterceptor } from './auth.interceptor';
@@ -43,6 +44,7 @@ describe('register during a cold start', () => {
       providers: [
         provideHttpClient(withInterceptors([authInterceptor, warmupInterceptor])),
         provideHttpClientTesting(),
+        { provide: ErrorReportingService, useValue: { report: vi.fn() } },
         provideRouter([]),
       ],
     });

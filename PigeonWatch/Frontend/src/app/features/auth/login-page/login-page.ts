@@ -7,17 +7,24 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { safeReturnUrl } from '../../../core/auth/safe-return-url';
 import { SessionService } from '../../../core/auth/session.service';
+import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import {
   Alert,
+  ErrorReference,
   FieldErrors,
   FormSubmitState,
   PageCard,
   SubmitButton,
   provideFormFieldDefaults,
 } from '../../../shared/ui';
-import { AuthFormError, authErrorMessage, loginFailure } from '../../../shared/auth/auth-errors';
+import {
+  AuthFormError,
+  authErrorMessage,
+  isReportableAuthFailure,
+  loginFailureResult,
+} from '../../../shared/auth/auth-errors';
 import { LoginNavigationState } from '../../../shared/auth/login-navigation-state';
 
 interface LoginModel {
@@ -37,6 +44,7 @@ interface LoginModel {
     RouterLink,
     TranslatePipe,
     Alert,
+    ErrorReference,
     FieldErrors,
     PageCard,
     SubmitButton,
@@ -49,6 +57,7 @@ export class LoginPage {
   private readonly submitState = inject(FormSubmitState);
   private readonly router = inject(Router);
   private readonly resources = inject(ResourceService);
+  private readonly reporting = inject(ErrorReportingService);
   private readonly returnUrl = inject(ActivatedRoute).snapshot.queryParamMap.get('returnUrl');
   private readonly navigationState = readNavigationState(this.router);
   private readonly model = signal<LoginModel>({
@@ -64,6 +73,7 @@ export class LoginPage {
   });
   protected readonly notice = signal(this.navigationState?.notice ?? null);
   protected readonly busy = signal(false);
+  protected readonly traceId = signal<string | null>(null);
   protected readonly formErrorText = computed(() => {
     const error = this.formError();
 
@@ -85,13 +95,25 @@ export class LoginPage {
     const credentials = this.model();
     this.busy.set(true);
     this.formError.set(null);
+    this.traceId.set(null);
     this.session
       .login(credentials.email, credentials.password)
       .pipe(finalize(() => this.busy.set(false)))
       .subscribe({
         next: () => void this.router.navigateByUrl(safeReturnUrl(this.returnUrl)),
-        error: (error: unknown) => this.formError.set(loginFailure(error)),
+        error: (error: unknown) => this.handleFailure(error),
       });
+  }
+
+  private handleFailure(error: unknown): void {
+    const failure = loginFailureResult(error);
+
+    this.formError.set(failure.formError);
+    this.traceId.set(failure.traceId ?? null);
+
+    if (isReportableAuthFailure(error, failure.formError)) {
+      this.reporting.report('api-failure', 'auth.login', error);
+    }
   }
 }
 

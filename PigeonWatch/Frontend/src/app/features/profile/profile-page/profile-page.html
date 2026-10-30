@@ -40,7 +40,10 @@
           </mat-error>
         </mat-form-field>
         @if (errorText(); as text) {
-          <app-alert kind="error">{{ text }}</app-alert>
+          <app-alert kind="error">
+            {{ text }}
+            <app-error-reference [traceId]="errorTraceId()" />
+          </app-alert>
         }
         <app-form-actions>
           <button

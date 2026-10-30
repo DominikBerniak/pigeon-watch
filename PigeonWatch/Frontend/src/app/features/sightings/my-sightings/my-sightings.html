@@ -8,6 +8,7 @@
       @case ('error') {
         <app-error-retry [retryLabel]="'sighting.mine.retry' | translate" (retry)="retry()">
           {{ 'sighting.mine.error' | translate }}
+          <app-error-reference [traceId]="errorTraceId()" />
         </app-error-retry>
       }
     }

@@ -66,7 +66,10 @@
         }
       </div>
       @if (status() === 'error') {
-        <app-alert kind="error">{{ 'map.error' | translate }}</app-alert>
+        <app-alert kind="error">
+          {{ 'map.error' | translate }}
+          <app-error-reference [traceId]="errorTraceId()" />
+        </app-alert>
       }
     </div>
   </div>

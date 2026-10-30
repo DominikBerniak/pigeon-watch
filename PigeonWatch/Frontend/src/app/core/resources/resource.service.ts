@@ -3,6 +3,7 @@ import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, defer, from, map, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ErrorReportingService } from '../error-reporting/error-reporting.service';
 import { SKIP_AUTH, SKIP_WARMUP } from '../http/http-context-tokens';
 import { CultureStore } from './culture-store';
 import { UiLabels, defaultCulture, defaultLabels, snapshots } from './generated/snapshots';
@@ -17,6 +18,7 @@ export class ResourceService {
   private readonly http = inject(HttpClient);
   private readonly document = inject(DOCUMENT);
   private readonly cultureStore = inject(CultureStore);
+  private readonly reporting = inject(ErrorReportingService);
   private readonly cultureState = signal<string>(defaultCulture);
   private readonly labelsState = signal<UiLabels>(defaultLabels);
   private readonly warnedKeys = new Set<string>();
@@ -66,7 +68,11 @@ export class ResourceService {
         this.apply(response.culture || this.requestedCulture, response.labels);
       }),
       map(() => undefined),
-      catchError(() => of(undefined)),
+      catchError((error: unknown) => {
+        this.reporting.report('fallback', 'labels.load.failed', error);
+
+        return of(undefined);
+      }),
     );
   }
 
@@ -80,7 +86,11 @@ export class ResourceService {
         if (!this.servedByApi) this.apply(culture, labels);
       }),
       map(() => undefined),
-      catchError(() => of(undefined)),
+      catchError((error: unknown) => {
+        this.reporting.report('fallback', 'labels.snapshot.failed', error);
+
+        return of(undefined);
+      }),
     );
   }
 

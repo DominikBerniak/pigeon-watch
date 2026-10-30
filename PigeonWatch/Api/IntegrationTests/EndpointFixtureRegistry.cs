@@ -35,6 +35,7 @@ public sealed class EndpointFixtureRegistry
         new(["GET configuration/client"], BuildConfigurationClient),
         new(["GET configuration/general"], BuildConfigurationGeneral),
         new(["GET resources/{culture}"], BuildResources),
+        new(["POST client-errors"], BuildClientErrors),
         new(["POST sightings"], BuildCreateSighting),
         new(["GET sightings/{id:guid}"], BuildGetSighting),
         new(["GET sightings/nearby"], BuildNearby),
@@ -161,6 +162,22 @@ public sealed class EndpointFixtureRegistry
             Make(key, "invalid initial status", JsonOf(HttpMethod.Post, uri, SightingBody(99, 2, 52.2297, 21.0122))),
             Make(key, "invalid criticality", JsonOf(HttpMethod.Post, uri, SightingBody(1, 99, 52.2297, 21.0122))),
             Make(key, "out of range location", JsonOf(HttpMethod.Post, uri, SightingBody(1, 2, 200, 21.0122)))
+        ];
+
+        AddMalformed(requests, key, HttpMethod.Post, uri);
+
+        return requests;
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildClientErrors(FixtureContext context)
+    {
+        const string key = "POST client-errors";
+        const string uri = "/client-errors";
+        List<FixtureRequest> requests =
+        [
+            Make(key, "valid report", JsonOf(HttpMethod.Post, uri, new { kind = "api-failure", context = "nearby.load", httpStatus = 500, errorName = "HttpErrorResponse", traceId = "4bf92f3577b34da6", route = "/sightings/:id", sessionId = Guid.NewGuid() })),
+            Make(key, "unknown kind", JsonOf(HttpMethod.Post, uri, new { kind = "other", context = "nearby.load", route = "/", sessionId = Guid.NewGuid() })),
+            Make(key, "context holding a registered email", JsonOf(HttpMethod.Post, uri, new { kind = "fallback", context = context.RegisteredEmails[0], route = "/", sessionId = Guid.NewGuid() }))
         ];
 
         AddMalformed(requests, key, HttpMethod.Post, uri);

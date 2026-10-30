@@ -15,6 +15,9 @@
   <data name="common.appName" xml:space="preserve">
     <value>PigeonWatch</value>
   </data>
+  <data name="common.errorReference" xml:space="preserve">
+    <value>Reference: {0}</value>
+  </data>
   <data name="common.loading" xml:space="preserve">
     <value>Loading…</value>
   </data>

@@ -18,6 +18,7 @@ import {
 } from 'rxjs';
 import { problemErrorCodes } from '../../shared/http/problem-details';
 import { ConfigurationService } from '../configuration/configuration.service';
+import { ErrorReportingService } from '../error-reporting/error-reporting.service';
 import { REQUEST_RESENT } from '../http/http-context-tokens';
 import { WarmupState } from '../warmup/warmup-state';
 import { AuthApi, RegisterRequest } from './auth-api';
@@ -44,6 +45,7 @@ export class SessionService {
   private readonly configuration = inject(ConfigurationService);
   private readonly warmup = inject(WarmupState);
   private readonly router = inject(Router);
+  private readonly reporting = inject(ErrorReportingService);
   private readonly ready = new ReplaySubject<void>(1);
   private refreshInFlight: Observable<AccessTokenResponse> | null = null;
   private sessionGeneration = 0;
@@ -64,7 +66,9 @@ export class SessionService {
     if (this.initialized) return;
 
     this.initialized = true;
-    this.configuration.loadClient().subscribe({ error: () => undefined });
+    this.configuration.loadClient().subscribe({
+      error: (error: unknown) => this.reporting.report('fallback', 'config.client.failed', error),
+    });
 
     if (!this.tokens.refreshToken()) {
       this.markReady();
@@ -209,6 +213,7 @@ export class SessionService {
       map(() => undefined),
       catchError((error: unknown) => {
         if (isSessionRejected(error)) this.clearSession();
+        else this.reporting.report('session-expired', 'session.restore.failed', error);
 
         return of(undefined);
       }),

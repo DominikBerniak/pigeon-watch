@@ -8,10 +8,12 @@ import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ReLoginError, SessionService } from '../../../core/auth/session.service';
 import { ConfigurationService } from '../../../core/configuration/configuration.service';
+import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import {
   Alert,
+  ErrorReference,
   FieldErrors,
   FormActions,
   FormSubmitState,
@@ -29,6 +31,7 @@ import {
   AuthFormError,
   PasswordChangeField,
   authErrorMessage,
+  isReportableAuthFailure,
   passwordChangeFailure,
 } from '../../../shared/auth/auth-errors';
 import { LoginNavigationState } from '../../../shared/auth/login-navigation-state';
@@ -53,6 +56,7 @@ const emptyModel: PasswordModel = { currentPassword: '', newPassword: '', confir
     MatInputModule,
     TranslatePipe,
     Alert,
+    ErrorReference,
     FieldErrors,
     FormActions,
     SubmitButton,
@@ -66,6 +70,7 @@ export class PasswordDialog {
   private readonly configuration = inject(ConfigurationService);
   private readonly router = inject(Router);
   private readonly resources = inject(ResourceService);
+  private readonly reporting = inject(ErrorReportingService);
   private readonly dialogRef = inject<MatDialogRef<PasswordDialog, boolean>>(MatDialogRef);
   private readonly model = signal<PasswordModel>({ ...emptyModel });
   private readonly serverErrors = signal<ServerFieldErrors<PasswordChangeField>>({});
@@ -88,6 +93,7 @@ export class PasswordDialog {
     validate(path.confirmPassword, confirmPasswordValidator(path.newPassword));
   });
   protected readonly busy = signal(false);
+  protected readonly traceId = signal<string | null>(null);
   protected readonly allFieldsFilled = computed(() => {
     const { currentPassword, newPassword, confirmPassword } = this.model();
 
@@ -131,6 +137,7 @@ export class PasswordDialog {
     this.busy.set(true);
     this.dialogRef.disableClose = true;
     this.formError.set(null);
+    this.traceId.set(null);
     this.session
       .changePassword(passwords.currentPassword, passwords.newPassword)
       .pipe(
@@ -164,6 +171,11 @@ export class PasswordDialog {
 
     this.serverErrors.set(serverErrors);
     this.formError.set(failure.formError);
+    this.traceId.set(failure.traceId ?? null);
+
+    if (isReportableAuthFailure(error, failure.formError)) {
+      this.reporting.report('api-failure', 'profile.password', error);
+    }
   }
 
   private navigateToLogin(email: string): void {

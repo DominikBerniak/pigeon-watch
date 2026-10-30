@@ -16,11 +16,13 @@ import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ConfigurationService } from '../../../core/configuration/configuration.service';
 import { GeoPoint } from '../../../core/geolocation/geo-point';
+import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import { LocationPicker } from '../../../shared/map/location-picker/location-picker';
 import {
   Alert,
+  ErrorReference,
   FieldErrors,
   FormActions,
   FormSubmitState,
@@ -28,7 +30,12 @@ import {
   SubmitButton,
   provideFormFieldDefaults,
 } from '../../../shared/ui';
-import { SightingFailure, sightingErrorMessage, sightingFailure } from '../sighting-errors';
+import {
+  SightingFailure,
+  isReportableSightingFailure,
+  sightingErrorMessage,
+  sightingFailure,
+} from '../sighting-errors';
 import {
   NewSighting,
   SightingCriticality,
@@ -71,6 +78,7 @@ const emptyReport: ReportModel = {
     MatSelectModule,
     TranslatePipe,
     Alert,
+    ErrorReference,
     FieldErrors,
     FormActions,
     LocationPicker,
@@ -86,6 +94,7 @@ export class ReportSightingPage {
   private readonly configuration = inject(ConfigurationService);
   private readonly sightingsApi = inject(SightingsApi);
   private readonly resources = inject(ResourceService);
+  private readonly reporting = inject(ErrorReportingService);
   private readonly router = inject(Router);
   private readonly model = signal<ReportModel>({ ...emptyReport });
   private readonly failure = signal<SightingFailure | null>(null);
@@ -114,6 +123,11 @@ export class ReportSightingPage {
     const failure = this.failure();
 
     return failure ? sightingErrorMessage(this.resources, failure) : null;
+  });
+  protected readonly errorTraceId = computed(() => {
+    const failure = this.failure();
+
+    return failure?.kind === 'generic' ? (failure.traceId ?? null) : null;
   });
   protected readonly nameMessages = computed(() => ({
     maxLength: this.maxLengthMessage(this.rules().nameMaxLength),
@@ -150,8 +164,18 @@ export class ReportSightingPage {
       .pipe(finalize(() => this.busy.set(false)))
       .subscribe({
         next: (created) => void this.router.navigate(['/sightings', created.id]),
-        error: (error: unknown) => this.failure.set(sightingFailure(error)),
+        error: (error: unknown) => this.handleFailure(error),
       });
+  }
+
+  private handleFailure(error: unknown): void {
+    const failure = sightingFailure(error);
+
+    this.failure.set(failure);
+
+    if (isReportableSightingFailure(error, failure)) {
+      this.reporting.report('api-failure', 'sighting.report', error);
+    }
   }
 
   private maxLengthMessage(length: number): string {

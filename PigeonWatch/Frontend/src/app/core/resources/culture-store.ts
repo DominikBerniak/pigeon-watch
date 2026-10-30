@@ -1,4 +1,5 @@
-import { Injectable, InjectionToken, inject } from '@angular/core';
+import { Injectable, InjectionToken, Injector, inject } from '@angular/core';
+import { ErrorReportingService } from '../error-reporting/error-reporting.service';
 import { defaultCulture, supportedCultures } from './generated/snapshots';
 
 export const cultureStorageKey = 'pigeonwatch.culture';
@@ -11,9 +12,10 @@ export const SUPPORTED_CULTURES = new InjectionToken<readonly string[]>('SUPPORT
 @Injectable({ providedIn: 'root' })
 export class CultureStore {
   private readonly supportedCultures = inject(SUPPORTED_CULTURES);
+  private readonly injector = inject(Injector);
 
   selected(): string {
-    const saved = readStoredCulture();
+    const saved = this.readStoredCulture();
 
     if (!saved) return defaultCulture;
 
@@ -25,16 +27,22 @@ export class CultureStore {
   save(culture: string): void {
     try {
       localStorage.setItem(cultureStorageKey, culture);
-    } catch {
-      return;
+    } catch (error) {
+      this.reportStorage(error);
     }
   }
-}
 
-function readStoredCulture(): string | null {
-  try {
-    return localStorage.getItem(cultureStorageKey);
-  } catch {
-    return null;
+  private readStoredCulture(): string | null {
+    try {
+      return localStorage.getItem(cultureStorageKey);
+    } catch (error) {
+      this.reportStorage(error);
+
+      return null;
+    }
+  }
+
+  private reportStorage(error: unknown): void {
+    this.injector.get(ErrorReportingService).report('fallback', 'storage.culture', error);
   }
 }

@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { ErrorReportingService } from '../error-reporting/error-reporting.service';
 import { SKIP_AUTH } from '../http/http-context-tokens';
 import { authInterceptor } from './auth.interceptor';
 import { SessionService } from './session.service';
@@ -26,6 +27,7 @@ describe('authInterceptor', () => {
       providers: [
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
+        { provide: ErrorReportingService, useValue: { report: vi.fn() } },
         provideRouter([{ path: 'sightings/:id', component: BlankPage }]),
       ],
     });
