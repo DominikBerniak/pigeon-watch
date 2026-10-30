@@ -17,6 +17,7 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, catchError, combineLatest, map, of, startWith, switchMap, tap } from 'rxjs';
 import { GeoPoint } from '../../../core/geolocation/geo-point';
+import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import { pickerMapZoom } from '../../../shared/map/map-config';
@@ -27,11 +28,12 @@ import {
   CriticalityBadge,
   DetailItem,
   DetailList,
+  ErrorReference,
   ErrorRetry,
   LoadingIndicator,
   PageCard,
 } from '../../../shared/ui';
-import { sightingFailure } from '../sighting-errors';
+import { isReportableSightingFailure, sightingFailure } from '../sighting-errors';
 import {
   Sighting,
   sightingCriticalityLabel,
@@ -43,7 +45,7 @@ import { SightingsApi } from '../sightings-api';
 type DetailState =
   | { readonly kind: 'loading' }
   | { readonly kind: 'notFound' }
-  | { readonly kind: 'error' }
+  | { readonly kind: 'error'; readonly traceId?: string }
   | { readonly kind: 'loaded'; readonly sighting: Sighting };
 
 const coordinateDecimals = 5;
@@ -59,6 +61,7 @@ const coordinateDecimals = 5;
     CriticalityBadge,
     DetailItem,
     DetailList,
+    ErrorReference,
     ErrorRetry,
     LoadingIndicator,
     MapView,
@@ -72,6 +75,7 @@ export class SightingDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly sightingsApi = inject(SightingsApi);
   private readonly resources = inject(ResourceService);
+  private readonly reporting = inject(ErrorReportingService);
   private readonly pageTitle = inject(Title);
   private readonly injector = inject(Injector);
   private readonly router = inject(Router);
@@ -90,6 +94,11 @@ export class SightingDetailPage {
     const state = this.state();
 
     return state.kind === 'loaded' ? state.sighting : null;
+  });
+  protected readonly errorTraceId = computed(() => {
+    const state = this.state();
+
+    return state.kind === 'error' ? (state.traceId ?? null) : null;
   });
   protected readonly title = computed(() => {
     const sighting = this.sighting();
@@ -158,7 +167,7 @@ export class SightingDetailPage {
         switchMap(([id]) =>
           this.sightingsApi.get(id).pipe(
             map((sighting): DetailState => ({ kind: 'loaded', sighting })),
-            catchError((error: unknown) => of(failureState(error))),
+            catchError((error: unknown) => of(this.failureState(error))),
             startWith<DetailState>({ kind: 'loading' }),
           ),
         ),
@@ -173,6 +182,20 @@ export class SightingDetailPage {
 
   protected toggleMap(): void {
     this.mapShown.update((shown) => !shown);
+  }
+
+  private failureState(error: unknown): DetailState {
+    const failure = sightingFailure(error);
+
+    if (failure.kind === 'notFound') return { kind: 'notFound' };
+
+    if (isReportableSightingFailure(error, failure)) {
+      this.reporting.report('api-failure', 'sighting.detail', error);
+    }
+
+    return failure.kind === 'generic' && failure.traceId !== undefined
+      ? { kind: 'error', traceId: failure.traceId }
+      : { kind: 'error' };
   }
 
   private applyState(state: DetailState): void {
@@ -194,8 +217,4 @@ export class SightingDetailPage {
 
     afterNextRender(() => this.card()?.focusHeading(), { injector: this.injector });
   }
-}
-
-function failureState(error: unknown): DetailState {
-  return sightingFailure(error).kind === 'notFound' ? { kind: 'notFound' } : { kind: 'error' };
 }

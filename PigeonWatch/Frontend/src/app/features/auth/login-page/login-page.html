@@ -7,7 +7,10 @@
       <app-alert kind="success">{{ text }}</app-alert>
     }
     @if (formErrorText(); as text) {
-      <app-alert kind="error">{{ text }}</app-alert>
+      <app-alert kind="error">
+        {{ text }}
+        <app-error-reference [traceId]="traceId()" />
+      </app-alert>
     }
     <mat-form-field class="pw-full-width">
       <mat-label>{{ 'auth.fields.email' | translate }}</mat-label>

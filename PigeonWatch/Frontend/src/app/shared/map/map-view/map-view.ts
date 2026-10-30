@@ -18,6 +18,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type * as Leaflet from 'leaflet';
 import { EMPTY, Observable, catchError, from } from 'rxjs';
+import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { GeoPoint } from '../../../core/geolocation/geo-point';
 import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
@@ -75,6 +76,7 @@ function addLeafletStylesheet(document: Document): void {
 })
 export class MapView {
   private readonly resources = inject(ResourceService);
+  private readonly reporting = inject(ErrorReportingService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly loadLeaflet = inject(LEAFLET_LOADER);
   private readonly canvas = viewChild.required<ElementRef<HTMLElement>>('canvas');
@@ -89,6 +91,7 @@ export class MapView {
   private pinMarker: Leaflet.Marker | null = null;
   private readonly shownMarkers = new Map<string, Leaflet.Marker>();
   private shownAttribution: string | null = null;
+  private tileErrorReported = false;
 
   readonly label = input.required<string>();
   readonly center = input.required<GeoPoint>();
@@ -134,7 +137,8 @@ export class MapView {
     this.failed.set(false);
     this.loadLeaflet()
       .pipe(
-        catchError(() => {
+        catchError((error: unknown) => {
+          this.reporting.report('fallback', 'map.import.failed', error);
           this.failed.set(true);
           this.loadFailed.emit(true);
 
@@ -157,6 +161,7 @@ export class MapView {
     map.attributionControl.setPrefix(false);
     leaflet
       .tileLayer(mapTiles.urlTemplate, { minZoom: mapTiles.minZoom, maxZoom: mapTiles.maxZoom })
+      .on('tileerror', () => this.reportTileError())
       .addTo(map);
     map.on('click', (event: Leaflet.LeafletMouseEvent) =>
       this.mapClick.emit(pointOf(event.latlng)),
@@ -172,6 +177,13 @@ export class MapView {
     this.observeResize(map);
     this.ready.set(true);
     this.mapReady.emit();
+  }
+
+  private reportTileError(): void {
+    if (this.tileErrorReported) return;
+
+    this.tileErrorReported = true;
+    this.reporting.report('fallback', 'map.tile.error');
   }
 
   private observeResize(map: Leaflet.Map): void {

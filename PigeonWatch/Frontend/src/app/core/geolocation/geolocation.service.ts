@@ -1,6 +1,7 @@
 import { DOCUMENT } from '@angular/common';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { Observable, of, timeout } from 'rxjs';
+import { ErrorReportingService } from '../error-reporting/error-reporting.service';
 
 export type GeolocationFailure = 'denied' | 'unavailable' | 'timeout' | 'unsupported';
 
@@ -17,6 +18,7 @@ const timeoutCode = 3;
 @Injectable({ providedIn: 'root' })
 export class GeolocationService {
   private readonly document = inject(DOCUMENT);
+  private readonly injector = inject(Injector);
 
   currentPosition(highAccuracy: boolean): Observable<GeolocationOutcome> {
     return new Observable<GeolocationOutcome>((subscriber) => {
@@ -43,7 +45,8 @@ export class GeolocationService {
           (error) => emit({ status: failureOf(error.code) }),
           { enableHighAccuracy: highAccuracy, timeout: geolocationTimeoutMs },
         );
-      } catch {
+      } catch (error) {
+        this.injector.get(ErrorReportingService).report('fallback', 'geolocation.exception', error);
         emit({ status: 'unavailable' });
       }
     }).pipe(

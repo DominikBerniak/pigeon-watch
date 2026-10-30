@@ -15,12 +15,14 @@ import { MatInputModule } from '@angular/material/input';
 import { catchError, filter, finalize, of, switchMap } from 'rxjs';
 import { SessionService } from '../../../core/auth/session.service';
 import { ConfigurationService } from '../../../core/configuration/configuration.service';
+import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import {
   Alert,
   DetailItem,
   DetailList,
+  ErrorReference,
   FieldErrors,
   FormActions,
   FormSubmitState,
@@ -35,7 +37,12 @@ import {
   forbiddenDisplayNameCharacter,
   serverErrorFor,
 } from '../../../shared/validation/account-validation';
-import { AuthFormError, authErrorMessage, profileFailure } from '../../../shared/auth/auth-errors';
+import {
+  AuthFormError,
+  authErrorMessage,
+  isReportableAuthFailure,
+  profileFailure,
+} from '../../../shared/auth/auth-errors';
 import { MySightings } from '../../sightings/my-sightings/my-sightings';
 import { PasswordDialog } from '../password-dialog/password-dialog';
 import { ProfileApi } from '../profile-api';
@@ -49,7 +56,7 @@ type ProfileField = 'displayName';
 type ProfileNotice =
   | { readonly kind: 'saved' }
   | { readonly kind: 'passwordChanged' }
-  | { readonly kind: 'error'; readonly error: AuthFormError };
+  | { readonly kind: 'error'; readonly error: AuthFormError; readonly traceId?: string };
 
 @Component({
   providers: [provideFormFieldDefaults()],
@@ -64,6 +71,7 @@ type ProfileNotice =
     Alert,
     DetailItem,
     DetailList,
+    ErrorReference,
     FieldErrors,
     FormActions,
     MySightings,
@@ -80,6 +88,7 @@ export class ProfilePage {
   private readonly configuration = inject(ConfigurationService);
   private readonly profileApi = inject(ProfileApi);
   private readonly resources = inject(ResourceService);
+  private readonly reporting = inject(ErrorReportingService);
   private readonly dialog = inject(MatDialog);
   private readonly savedName = signal(this.session.currentUser()?.displayName ?? '');
   private readonly model = signal<ProfileModel>({ displayName: this.savedName() });
@@ -116,6 +125,11 @@ export class ProfilePage {
     const notice = this.notice();
 
     return notice?.kind === 'error' ? authErrorMessage(this.resources, notice.error) : null;
+  });
+  protected readonly errorTraceId = computed(() => {
+    const notice = this.notice();
+
+    return notice?.kind === 'error' ? (notice.traceId ?? null) : null;
   });
   protected readonly displayNameMessages = computed(() => ({
     required: this.resources.translate('auth.validation.required'),
@@ -168,7 +182,15 @@ export class ProfilePage {
     this.profileApi
       .updateDisplayName(profile.displayName)
       .pipe(
-        switchMap(() => this.configuration.loadGeneral().pipe(catchError(() => of(null)))),
+        switchMap(() =>
+          this.configuration.loadGeneral().pipe(
+            catchError((error: unknown) => {
+              this.reporting.report('fallback', 'profile.reload.failed', error);
+
+              return of(null);
+            }),
+          ),
+        ),
         finalize(() => this.busy.set(false)),
       )
       .subscribe({
@@ -189,6 +211,14 @@ export class ProfilePage {
     const kind = failure.fieldErrors.displayName;
 
     this.serverErrors.set(kind ? { displayName: { kind, value: profile.displayName } } : {});
-    this.notice.set(failure.formError ? { kind: 'error', error: failure.formError } : null);
+    this.notice.set(
+      failure.formError
+        ? { kind: 'error', error: failure.formError, traceId: failure.traceId }
+        : null,
+    );
+
+    if (isReportableAuthFailure(error, failure.formError)) {
+      this.reporting.report('api-failure', 'profile.update', error);
+    }
   }
 }

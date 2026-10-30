@@ -8,6 +8,7 @@ export type { DetailItemValue } from './detail-list/detail-item';
 export { DetailList } from './detail-list/detail-list';
 export type { DetailListLayout } from './detail-list/detail-list';
 export { ErrorRetry } from './error-retry/error-retry';
+export { ErrorReference } from './error-reference/error-reference';
 export { FieldErrors } from './field-errors/field-errors';
 export type { FieldErrorMessages } from './field-errors/field-errors';
 export { FormActions } from './form-actions/form-actions';

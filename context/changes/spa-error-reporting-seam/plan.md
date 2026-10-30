@@ -352,30 +352,30 @@ None: no schema, response or existing contract changes. One new anonymous route,
 
 #### Automated
 
-- [x] 3.1 New specs for session-expired reporting pass
-- [x] 3.2 New specs for warm-up exhaustion reporting pass
-- [x] 3.3 New specs for config, label and storage fallback reporting pass
-- [x] 3.4 Production build within budgets and full frontend suite pass
+- [x] 3.1 New specs for session-expired reporting pass — f3a54ed
+- [x] 3.2 New specs for warm-up exhaustion reporting pass — f3a54ed
+- [x] 3.3 New specs for config, label and storage fallback reporting pass — f3a54ed
+- [x] 3.4 Production build within budgets and full frontend suite pass — f3a54ed
 
 #### Manual
 
-- [x] 3.5 Clearing the refresh token logs the user out as before and logs one session-expired line
-- [x] 3.6 With the API running against an unreachable database, one warmup-exhausted report with status 503 is logged after the warm-up budget
+- [x] 3.5 Clearing the refresh token logs the user out as before and logs one session-expired line — f3a54ed
+- [x] 3.6 With the API running against an unreachable database, one warmup-exhausted report with status 503 is logged after the warm-up budget — f3a54ed
 
 ### Phase 4: Feature swallow sites and reference id UI (SPA)
 
 #### Automated
 
-- [ ] 4.1 New specs for the reference element and failure types pass
-- [ ] 4.2 New page specs for report-or-silent rules and previous markers pass
-- [ ] 4.3 New specs for map and geolocation fallbacks pass
-- [ ] 4.4 API unit and architecture tests pass with the new label key
-- [ ] 4.5 Production build within budgets and full frontend suite pass
+- [x] 4.1 New specs for the reference element and failure types pass
+- [x] 4.2 New page specs for report-or-silent rules and previous markers pass
+- [x] 4.3 New specs for map and geolocation fallbacks pass
+- [x] 4.4 API unit and architecture tests pass with the new label key
+- [x] 4.5 Production build within budgets and full frontend suite pass
 
 #### Manual
 
-- [ ] 4.6 With an unreachable database the nearby map shows a reference matching the 500 log TraceId and one api-failure line is logged
-- [ ] 4.7 A wrong login password and an unknown sighting id show no reference and log no client report
+- [x] 4.6 With an unreachable database the nearby map shows a reference matching the 500 log TraceId and one api-failure line is logged
+- [x] 4.7 A wrong login password and an unknown sighting id show no reference and log no client report
 
 ### Phase 5: Playwright e2e and docs
 

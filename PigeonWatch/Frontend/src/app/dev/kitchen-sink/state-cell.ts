@@ -22,6 +22,7 @@ import {
 import { filter, finalize, ignoreElements, merge, switchMap, take, tap, timeout } from 'rxjs';
 import { SessionService } from '../../core/auth/session.service';
 import { ConfigurationService } from '../../core/configuration/configuration.service';
+import { ErrorReportingService } from '../../core/error-reporting/error-reporting.service';
 import { GeolocationService } from '../../core/geolocation/geolocation.service';
 import { ResourceService } from '../../core/resources/resource.service';
 import { ProfileApi } from '../../features/profile/profile-api';
@@ -49,6 +50,7 @@ interface NextLocationOption {
     { provide: ProfileApi, useFactory: () => inject(CellStubs).profileApi },
     { provide: SightingsApi, useFactory: () => inject(CellStubs).sightingsApi },
     { provide: GeolocationService, useFactory: () => inject(CellStubs).geolocation },
+    { provide: ErrorReportingService, useValue: { report: (): void => undefined } },
     {
       provide: LEAFLET_LOADER,
       useFactory: () => inject(CellStubs).leafletLoader(inject(LEAFLET_LOADER, { skipSelf: true })),
