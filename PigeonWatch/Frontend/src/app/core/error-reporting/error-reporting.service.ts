@@ -24,7 +24,7 @@ export class ErrorReportingService {
 
   report(kind: ErrorReportKind, context: string, error?: unknown): void {
     const status = error instanceof HttpErrorResponse ? error.status : undefined;
-    const key = `${kind}|${context}|${status ?? ''}`;
+    const key = `${kind}|${context}|${status ?? ''}|${errorNameOf(error) ?? ''}`;
 
     if (this.seen.has(key) || this.seen.size >= maxReports) return;
 

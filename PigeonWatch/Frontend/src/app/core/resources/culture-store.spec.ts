@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { ErrorReportingService } from '../error-reporting/error-reporting.service';
 import { CultureStore, SUPPORTED_CULTURES, cultureStorageKey } from './culture-store';
 
 describe('CultureStore', () => {
@@ -6,7 +7,10 @@ describe('CultureStore', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [{ provide: SUPPORTED_CULTURES, useValue: ['en', 'pl'] }],
+      providers: [
+        { provide: SUPPORTED_CULTURES, useValue: ['en', 'pl'] },
+        { provide: ErrorReportingService, useValue: { report: vi.fn() } },
+      ],
     });
     store = TestBed.inject(CultureStore);
   });

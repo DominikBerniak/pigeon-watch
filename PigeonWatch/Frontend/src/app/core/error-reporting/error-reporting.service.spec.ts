@@ -106,6 +106,14 @@ describe('ErrorReportingService', () => {
     expect(httpMock.match(reportUrl).length).toBe(3);
   });
 
+  it('treats errors with different names as distinct', () => {
+    service.report('uncaught', 'app.uncaught', new TypeError('a'));
+    service.report('uncaught', 'app.uncaught', new TypeError('b'));
+    service.report('uncaught', 'app.uncaught', new RangeError('c'));
+
+    expect(httpMock.match(reportUrl).length).toBe(2);
+  });
+
   it('drops the 21st distinct report', () => {
     for (let i = 0; i < 21; i++) service.report('fallback', `ctx.n${i}`);
 

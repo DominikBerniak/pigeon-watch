@@ -359,7 +359,7 @@ None: no schema, response or existing contract changes. One new anonymous route,
 
 #### Manual
 
-- [x] 3.5 Clearing the refresh token logs the user out as before and logs one session-expired line — f3a54ed
+- [x] 3.5 Clearing the refresh token logs the user out as before and logs one session-expired line (accepted on specs, see change.md) — f3a54ed
 - [x] 3.6 With the API running against an unreachable database, one warmup-exhausted report with status 503 is logged after the warm-up budget — f3a54ed
 
 ### Phase 4: Feature swallow sites and reference id UI (SPA)
@@ -382,7 +382,7 @@ None: no schema, response or existing contract changes. One new anonymous route,
 #### Automated
 
 - [x] 5.1 The new e2e test passes and goes red when the report call is removed — 4e9e54b
-5.2 Full frontend suite and production build still pass
+- [x] 5.2 Full frontend suite and production build still pass — 4e9e54b
 
 #### Manual
 
