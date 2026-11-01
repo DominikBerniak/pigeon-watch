@@ -1,10 +1,10 @@
 ---
 change_id: filter-sightings-nearby
 title: Filter sightings by nearby area, status and criticality
-status: impl_reviewed
+status: archived
 created: 2026-11-01
 updated: 2026-11-01
-archived_at: null
+archived_at: 2026-11-01T15:22:02Z
 ---
 
 ## Notes
