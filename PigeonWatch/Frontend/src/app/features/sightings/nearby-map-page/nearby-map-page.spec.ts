@@ -13,12 +13,21 @@ import {
 import { nearbyMapZoom, neutralMapView } from '../../../shared/map/map-config';
 import { MapView } from '../../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../../shared/map/testing/map-view-stub';
-import { Sighting, SightingCriticality, SightingList, SightingStatus } from '../sighting.types';
+import {
+  Sighting,
+  SightingCriticality,
+  SightingFilters,
+  SightingList,
+  SightingStatus,
+} from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
+import { NearbyMapFilters } from './nearby-map-filters';
 import { NearbyMapPage } from './nearby-map-page';
 
 const warsaw: GeoPoint = { latitude: 52.2297, longitude: 21.0122 };
 const krakow: GeoPoint = { latitude: 50.0614, longitude: 19.9366 };
+const noFilters: SightingFilters = { statuses: [], criticalities: [] };
+const urgentOnly: SightingFilters = { statuses: [], criticalities: [SightingCriticality.urgent] };
 
 const hint =
   'We couldn\'t get your location. Move the map to your area and tap "Search this area".';
@@ -48,7 +57,9 @@ describe('NearbyMapPage', () => {
   let currentPosition: ReturnType<
     typeof vi.fn<(highAccuracy: boolean) => Observable<GeolocationOutcome>>
   >;
-  let nearby: ReturnType<typeof vi.fn<(centre: GeoPoint) => Observable<SightingList>>>;
+  let nearby: ReturnType<
+    typeof vi.fn<(centre: GeoPoint, filters?: SightingFilters) => Observable<SightingList>>
+  >;
   let fixture: ComponentFixture<NearbyMapPage>;
 
   async function render(
@@ -60,7 +71,9 @@ describe('NearbyMapPage', () => {
     currentPosition = vi.fn<(highAccuracy: boolean) => Observable<GeolocationOutcome>>(
       () => position,
     );
-    nearby = vi.fn<(centre: GeoPoint) => Observable<SightingList>>(() => result);
+    nearby = vi.fn<(centre: GeoPoint, filters?: SightingFilters) => Observable<SightingList>>(
+      () => result,
+    );
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -146,11 +159,19 @@ describe('NearbyMapPage', () => {
     return text('h1');
   }
 
+  async function applyFilters(filters: SightingFilters): Promise<void> {
+    const control = fixture.debugElement.query(By.directive(NearbyMapFilters))
+      .componentInstance as NearbyMapFilters;
+
+    control.filtersChange.emit(filters);
+    await settle();
+  }
+
   it('asks for a low-accuracy position and queries once at that centre when it is known', async () => {
     await render({ status: 'ok', ...warsaw });
 
     expect(currentPosition).toHaveBeenCalledExactlyOnceWith(false);
-    expect(nearby).toHaveBeenCalledExactlyOnceWith(warsaw);
+    expect(nearby).toHaveBeenCalledExactlyOnceWith(warsaw, noFilters);
     expect(map().center()).toEqual(warsaw);
     expect(map().zoom()).toBe(nearbyMapZoom);
     expect(root().querySelector('app-alert')).toBeNull();
@@ -265,7 +286,7 @@ describe('NearbyMapPage', () => {
     search.click();
     await settle();
 
-    expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow);
+    expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow, noFilters);
   });
 
   it('disables "Search this area" while "Locate me" is pending', async () => {
@@ -298,7 +319,7 @@ describe('NearbyMapPage', () => {
     search.click();
     await settle();
 
-    expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow);
+    expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow, noFilters);
   });
 
   it('queries the current map centre when "Search this area" is pressed', async () => {
@@ -311,7 +332,7 @@ describe('NearbyMapPage', () => {
     button('Search this area').click();
     await settle();
 
-    expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow);
+    expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow, noFilters);
     expect(map().markers().length).toBe(2);
   });
 
@@ -323,8 +344,8 @@ describe('NearbyMapPage', () => {
     button('Search this area').click();
     await settle();
 
-    expect(nearby).toHaveBeenNthCalledWith(1, warsaw);
-    expect(nearby).toHaveBeenNthCalledWith(2, krakow);
+    expect(nearby).toHaveBeenNthCalledWith(1, warsaw, noFilters);
+    expect(nearby).toHaveBeenNthCalledWith(2, krakow, noFilters);
   });
 
   it('shows an inline loading status while the query is in flight', async () => {
@@ -417,7 +438,7 @@ describe('NearbyMapPage', () => {
     await settle();
 
     expect(nearby).toHaveBeenCalledTimes(2);
-    expect(nearby).toHaveBeenLastCalledWith(warsaw);
+    expect(nearby).toHaveBeenLastCalledWith(warsaw, noFilters);
     expect(root().querySelector('app-alert[role="alert"]')).toBeNull();
     expect(findButton('Try again')).toBeUndefined();
     expect(statusElement().classList).not.toContain('pw-visually-hidden');
@@ -564,7 +585,7 @@ describe('NearbyMapPage', () => {
     expect(map().zoom()).toBe(nearbyMapZoom);
     expect(heading()).toBe('Sightings near you');
     expect(findButton('Locate me')).toBeUndefined();
-    expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow);
+    expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow, noFilters);
     expect(status()).toBe('2 open sightings within 10 km');
     expect(document.activeElement).toBe(button('Search this area'));
   });
@@ -619,7 +640,7 @@ describe('NearbyMapPage', () => {
     await settle();
 
     expect(map().center()).toEqual(krakow);
-    expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow);
+    expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow, noFilters);
   });
 
   it('drops the result status and disables Search while the map failed, and restores them on recovery', async () => {
@@ -714,5 +735,156 @@ describe('NearbyMapPage', () => {
     expect(findButton('Try again')).toBeDefined();
     expect(status()).toBe('');
     expect(button('Search this area').hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('keeps the filter row collapsed below the toolbar until Show filters opens it', async () => {
+    await render({ status: 'ok', ...warsaw });
+
+    const toolbar = root().querySelector('.nearby-toolbar')!;
+    const filters = root().querySelector<HTMLElement>('app-nearby-map-filters')!;
+    const toggle = button('Show filters');
+
+    expect(filters.previousElementSibling).toBe(toolbar);
+    expect(filters.hidden).toBe(true);
+    expect(toggle.getAttribute('aria-controls')).toBe(filters.id);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+
+    toggle.click();
+    await settle();
+
+    expect(filters.hidden).toBe(false);
+    expect(toggle.textContent?.trim()).toBe('Hide filters');
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    toggle.click();
+    await settle();
+
+    expect(filters.hidden).toBe(true);
+    expect(toggle.textContent?.trim()).toBe('Show filters');
+  });
+
+  it('shows how many filter values are chosen on Show filters while the row is collapsed', async () => {
+    await render({ status: 'ok', ...warsaw });
+    await applyFilters({
+      statuses: [SightingStatus.caught],
+      criticalities: [SightingCriticality.monitor, SightingCriticality.urgent],
+    });
+
+    const toggle = button('Show filters (3)');
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+
+    toggle.click();
+    await settle();
+
+    expect(toggle.textContent?.trim()).toBe('Hide filters');
+
+    toggle.click();
+    await applyFilters(noFilters);
+
+    expect(toggle.textContent?.trim()).toBe('Show filters');
+  });
+
+  it('disables the filters while the position is being located', async () => {
+    const pending = new Subject<GeolocationOutcome>();
+    await render(pending);
+
+    const selects = () => [...root().querySelectorAll('app-nearby-map-filters mat-select')];
+
+    expect(selects().map((select) => select.getAttribute('aria-disabled'))).toEqual([
+      'true',
+      'true',
+    ]);
+
+    pending.next({ status: 'ok', ...warsaw });
+    pending.complete();
+    await settle();
+
+    expect(selects().map((select) => select.getAttribute('aria-disabled'))).toEqual([
+      'false',
+      'false',
+    ]);
+  });
+
+  it('re-runs the last search centre with the chosen filters and clears the selection', async () => {
+    await render({ status: 'ok', ...warsaw });
+    map().centerChange.emit(krakow);
+    map().markerSelect.emit('sighting-1');
+    await settle();
+
+    const pending = new Subject<SightingList>();
+    nearby.mockReturnValue(pending);
+    await applyFilters(urgentOnly);
+
+    expect(nearby).toHaveBeenCalledTimes(2);
+    expect(nearby).toHaveBeenLastCalledWith(warsaw, urgentOnly);
+    expect(map().selectedId()).toBeNull();
+    expect(root().querySelector('mat-card')).toBeNull();
+    expect(status()).toBe('Loading…');
+    expect(
+      map()
+        .markers()
+        .map((marker) => marker.id),
+    ).toEqual(['sighting-1', 'sighting-2']);
+
+    pending.next({ items: [named] });
+    pending.complete();
+    await settle();
+
+    expect(
+      map()
+        .markers()
+        .map((marker) => marker.id),
+    ).toEqual(['sighting-1']);
+    expect(status()).toBe('1 open sightings within 10 km');
+  });
+
+  it('keeps the filters for the next search area', async () => {
+    await render({ status: 'ok', ...warsaw });
+    await applyFilters(urgentOnly);
+    map().centerChange.emit(krakow);
+    await settle();
+
+    button('Search this area').click();
+    await settle();
+
+    expect(nearby).toHaveBeenLastCalledWith(krakow, urgentOnly);
+  });
+
+  it('only stores the filters while there is no search centre yet', async () => {
+    await render({ status: 'denied' });
+    await applyFilters(urgentOnly);
+
+    expect(nearby).not.toHaveBeenCalled();
+    expect(status()).toBe('Zoom in to search an area');
+
+    map().centerChange.emit(krakow);
+    await zoomTo(10);
+    button('Search this area').click();
+    await settle();
+
+    expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow, urgentOnly);
+  });
+
+  it('shows the no-match text when a filtered search finds nothing', async () => {
+    await render({ status: 'ok', ...warsaw });
+    nearby.mockReturnValue(of({ items: [] }));
+
+    await applyFilters(urgentOnly);
+
+    expect(status()).toBe('No open sightings within 10 km match the selected filters.');
+    expect(map().markers()).toEqual([]);
+  });
+
+  it('shows the radius-only empty text again once the filters are cleared', async () => {
+    await render({ status: 'ok', ...warsaw }, of({ items: [] }));
+    await applyFilters(urgentOnly);
+
+    expect(status()).toBe('No open sightings within 10 km match the selected filters.');
+
+    await applyFilters(noFilters);
+
+    expect(nearby).toHaveBeenLastCalledWith(warsaw, noFilters);
+    expect(status()).toBe('No open sightings within 10 km of this area.');
   });
 });

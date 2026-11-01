@@ -1,4 +1,15 @@
-import { Observable, concatMap, filter, from, interval, map, take, tap, timeout } from 'rxjs';
+import {
+  Observable,
+  concatMap,
+  filter,
+  from,
+  interval,
+  map,
+  switchMap,
+  take,
+  tap,
+  timeout,
+} from 'rxjs';
 
 export interface CellContext {
   readonly root: HTMLElement;
@@ -65,6 +76,19 @@ export function submitForm(): CellStep {
     );
 }
 
+export function choose(selector: string, labelKey: string): CellStep {
+  return ({ root, text }) =>
+    until(() => root.querySelector<HTMLElement>(selector)).pipe(
+      tap((select) => select.querySelector<HTMLElement>('[cdk-overlay-origin]')?.click()),
+      switchMap((select) => until(() => optionWithText(`${select.id}-panel`, text(labelKey)))),
+      tap((option) => option.click()),
+      switchMap(() =>
+        until(() => document.querySelector<HTMLElement>('.cdk-overlay-backdrop-showing')),
+      ),
+      tap((backdrop) => backdrop.click()),
+    );
+}
+
 export function waitFor(selector: string): CellStep {
   return ({ root }) => until(() => root.querySelector(selector));
 }
@@ -82,6 +106,16 @@ function buttonWithText(root: HTMLElement, label: string): HTMLButtonElement | n
   return (
     [...root.querySelectorAll<HTMLButtonElement>('button[type="button"]')].find(
       (button) => button.textContent?.trim() === label,
+    ) ?? null
+  );
+}
+
+function optionWithText(panelId: string, label: string): HTMLElement | null {
+  const panel = document.getElementById(panelId);
+
+  return (
+    [...(panel?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])].find(
+      (option) => option.textContent?.trim() === label,
     ) ?? null
   );
 }

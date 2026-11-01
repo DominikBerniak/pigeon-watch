@@ -132,6 +132,24 @@ button.app-header__user-button {
   );
 }
 
+button.nearby-filters-toggle[aria-expanded='true'] {
+  @include mat.button-overrides(
+    (
+      outlined-outline-color: var(--pw-color-primary),
+      outlined-label-text-color: var(--pw-color-primary),
+    )
+  );
+}
+
+app-nearby-map-filters {
+  @include mat.form-field-overrides(
+    (
+      container-height: var(--pw-control-height),
+      container-vertical-padding: var(--pw-space-3),
+    )
+  );
+}
+
 button.app-header__user-button.app-header__user-button--open {
   @include mat.button-overrides(
     (

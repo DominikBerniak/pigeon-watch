@@ -14,6 +14,7 @@ import { UpdatedProfile } from '../../features/profile/profile-api';
 import {
   Sighting,
   SightingCriticality,
+  SightingFilters,
   SightingList,
   SightingStatus,
 } from '../../features/sightings/sighting.types';
@@ -21,7 +22,8 @@ import {
 export type SaveMode = 'success' | 'duplicate' | 'failure' | 'pending';
 export type PasswordMode = 'success' | 'wrongCurrent' | 'pending';
 export type MineMode = 'empty' | 'items';
-export type NearbyMode = 'items' | 'empty' | 'failure' | 'pending' | 'itemsThenPending';
+export type NearbyMode =
+  'items' | 'empty' | 'failure' | 'pending' | 'itemsThenPending' | 'filtered';
 export type NextLocationMode = 'ok' | 'timeout' | 'pending';
 export type GeolocationMode = 'ok' | 'denied' | 'timeoutThenNext' | NextLocationMode;
 export type LeafletMode = 'tileless' | 'failure';
@@ -122,6 +124,16 @@ function badRequest(errors: Record<string, string[]>): HttpErrorResponse {
   return new HttpErrorResponse({ status: 400, error: { status: 400, errors } });
 }
 
+function matches(sighting: Sighting, filters?: SightingFilters): boolean {
+  const statuses = filters?.statuses ?? [];
+  const criticalities = filters?.criticalities ?? [];
+
+  return (
+    (statuses.length === 0 || statuses.includes(sighting.status)) &&
+    (criticalities.length === 0 || criticalities.includes(sighting.criticality))
+  );
+}
+
 function outcomeOf(
   mode: Exclude<GeolocationMode, 'timeoutThenNext'>,
 ): Observable<GeolocationOutcome> {
@@ -180,7 +192,8 @@ export class CellStubs {
   };
   readonly sightingsApi = {
     mine: (): Observable<SightingList> => this.mineResult(),
-    nearby: (): Observable<SightingList> => this.nearbyResult(),
+    nearby: (_centre: GeoPoint, filters?: SightingFilters): Observable<SightingList> =>
+      this.nearbyResult(filters),
     get: (): Observable<Sighting> => this.detailResult(),
   };
   readonly geolocation = {
@@ -252,7 +265,7 @@ export class CellStubs {
     return of({ items: withItems ? [...sinkSightings] : [] });
   }
 
-  private nearbyResult(): Observable<SightingList> {
+  private nearbyResult(filters?: SightingFilters): Observable<SightingList> {
     const modes = this.modes();
     const firstRequest = this.nearbyRequests++ === 0;
 
@@ -265,6 +278,8 @@ export class CellStubs {
         return throwError(() => new HttpErrorResponse({ status: 500 }));
       case 'pending':
         return NEVER;
+      case 'filtered':
+        return of({ items: sinkSightings.filter((sighting) => matches(sighting, filters)) });
       default:
         return of({ items: [] });
     }

@@ -38,21 +38,38 @@ import {
 import {
   Sighting,
   SightingCriticality,
+  SightingFilters,
   fallbackSightingRules,
   sightingCriticalityLabel,
   sightingCriticalityMarker,
   sightingStatusLabel,
 } from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
+import { NearbyMapFilters } from './nearby-map-filters';
 
 type NearbyState =
   | { readonly kind: 'idle' }
   | { readonly kind: 'loading' }
   | { readonly kind: 'error'; readonly traceId?: string }
-  | { readonly kind: 'loaded'; readonly items: readonly Sighting[] };
+  | { readonly kind: 'loaded'; readonly items: readonly Sighting[]; readonly filtered: boolean };
 
 type NearbyStatus =
-  'none' | 'locating' | 'zoomToSearch' | 'hint' | 'loading' | 'found' | 'empty' | 'error';
+  | 'none'
+  | 'locating'
+  | 'zoomToSearch'
+  | 'hint'
+  | 'loading'
+  | 'found'
+  | 'empty'
+  | 'noMatch'
+  | 'error';
+
+interface NearbySearch {
+  readonly centre: GeoPoint;
+  readonly filters: SightingFilters;
+}
+
+const noFilters: SightingFilters = { statuses: [], criticalities: [] };
 
 type LocationStatus = GeolocationOutcome['status'];
 
@@ -84,6 +101,7 @@ let nextStatusId = 0;
     ErrorReference,
     LoadingIndicator,
     MapView,
+    NearbyMapFilters,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './nearby-map-page.html',
@@ -96,12 +114,13 @@ export class NearbyMapPage {
   private readonly resources = inject(ResourceService);
   private readonly reporting = inject(ErrorReportingService);
   private readonly injector = inject(Injector);
-  private readonly searches = new Subject<GeoPoint>();
+  private readonly searches = new Subject<NearbySearch>();
   private readonly locationRequests = new Subject<void>();
   private readonly mapCentre = signal<GeoPoint>(neutralMapView.centre);
   private readonly mapZoom = signal<number>(neutralMapView.zoom);
   private readonly awaitingSearch = signal(false);
   private readonly locationStatus = signal<LocationStatus | null>(null);
+  private readonly filters = signal<SightingFilters>(noFilters);
   private readonly mapView = viewChild<MapView>('mapView');
   private readonly selectedHeading = viewChild<ElementRef<HTMLElement>>('selectedHeading');
   private readonly searchButton = viewChild('searchButton', {
@@ -118,6 +137,10 @@ export class NearbyMapPage {
   protected readonly positionUnknown = signal(false);
   protected readonly state = signal<NearbyState>({ kind: 'idle' });
   protected readonly sightings = signal<readonly Sighting[]>([]);
+  protected readonly filtersOpen = signal(false);
+  protected readonly activeFilterCount = computed(
+    () => this.filters().statuses.length + this.filters().criticalities.length,
+  );
   protected readonly statusLabel = sightingStatusLabel;
   protected readonly criticalityLabel = sightingCriticalityLabel;
   protected readonly criticalityKind = sightingCriticalityMarker;
@@ -160,7 +183,11 @@ export class NearbyMapPage {
 
     const state = this.state();
 
-    if (state.kind === 'loaded') return state.items.length > 0 ? 'found' : 'empty';
+    if (state.kind === 'loaded') {
+      if (state.items.length > 0) return 'found';
+
+      return state.filtered ? 'noMatch' : 'empty';
+    }
 
     return state.kind === 'idle' ? 'none' : state.kind;
   });
@@ -191,9 +218,13 @@ export class NearbyMapPage {
   constructor() {
     this.searches
       .pipe(
-        switchMap((centre) =>
-          this.sightingsApi.nearby(centre).pipe(
-            map((list): NearbyState => ({ kind: 'loaded', items: list.items })),
+        switchMap(({ centre, filters }) =>
+          this.sightingsApi.nearby(centre, filters).pipe(
+            map((list): NearbyState => ({
+              kind: 'loaded',
+              items: list.items,
+              filtered: filters.statuses.length > 0 || filters.criticalities.length > 0,
+            })),
             catchError((error: unknown) => of(this.failureState(error))),
             startWith<NearbyState>({ kind: 'loading' }),
           ),
@@ -241,6 +272,16 @@ export class NearbyMapPage {
 
     this.search(this.lastSearchCentre);
     this.focusSearch();
+  }
+
+  protected toggleFilters(): void {
+    this.filtersOpen.update((open) => !open);
+  }
+
+  protected changeFilters(filters: SightingFilters): void {
+    this.filters.set(filters);
+
+    if (this.lastSearchCentre) this.search(this.lastSearchCentre);
   }
 
   protected select(id: string): void {
@@ -309,6 +350,6 @@ export class NearbyMapPage {
     this.lastSearchCentre = centre;
     this.awaitingSearch.set(false);
     this.selectedId.set(null);
-    this.searches.next(centre);
+    this.searches.next({ centre, filters: this.filters() });
   }
 }

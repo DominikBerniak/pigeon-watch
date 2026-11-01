@@ -305,22 +305,22 @@ None. No schema or data change; requests without the new parameters behave as be
 
 #### Automated
 
-- [x] 2.1 Resource snapshots regenerate and the frontend builds within budget: `npm run build` in `PigeonWatch/Frontend`
-- [x] 2.2 Specs pass, including the wrapper spec for the new parameters and the label coverage spec: `npm test -- --watch=false` in `PigeonWatch/Frontend`
+- [x] 2.1 Resource snapshots regenerate and the frontend builds within budget: `npm run build` in `PigeonWatch/Frontend` — 97ea492
+- [x] 2.2 Specs pass, including the wrapper spec for the new parameters and the label coverage spec: `npm test -- --watch=false` in `PigeonWatch/Frontend` — 97ea492
 
 ### Phase 3: Map page filters
 
 #### Automated
 
-- [ ] 3.1 The frontend builds and stays within the initial-bundle budget (initial warning 520 kB, 512.1 kB measured before this change) and the 4 kB component style budget: `npm run build` in `PigeonWatch/Frontend`
-- [ ] 3.2 Specs pass, including the page, filter and kitchen-sink specs and the style-token and label coverage specs: `npm test -- --watch=false` in `PigeonWatch/Frontend`
+- [x] 3.1 The frontend builds and stays within the initial-bundle budget (initial warning 520 kB, 512.1 kB measured before this change) and the 4 kB component style budget: `npm run build` in `PigeonWatch/Frontend`
+- [x] 3.2 Specs pass, including the page, filter and kitchen-sink specs and the style-token and label coverage specs: `npm test -- --watch=false` in `PigeonWatch/Frontend`
 
 #### Manual
 
-- [ ] 3.3 On a phone-sized viewport the two controls fit the toolbar without horizontal scroll and are usable by touch and keyboard
-- [ ] 3.4 Choosing Urgent in the criticality control shows only Urgent markers, the count text matches, the detail card closes, and clearing the control restores the original markers
-- [ ] 3.5 A filter with no match shows the no-match message, not the radius-only message
-- [ ] 3.6 No new CSP violations appear in the browser console
+- [x] 3.3 On a phone-sized viewport the two controls fit the toolbar without horizontal scroll and are usable by touch and keyboard
+- [x] 3.4 Choosing Urgent in the criticality control shows only Urgent markers, the count text matches, the detail card closes, and clearing the control restores the original markers
+- [x] 3.5 A filter with no match shows the no-match message, not the radius-only message
+- [x] 3.6 No new CSP violations appear in the browser console
 
 ### Phase 4: E2E and docs wrap-up
 
