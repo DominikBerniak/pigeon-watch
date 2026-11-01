@@ -1,5 +1,5 @@
-<div class="nearby-filters" role="group" [attr.aria-label]="'map.filters.title' | translate">
-  <mat-form-field class="nearby-filters__field" floatLabel="always">
+<div class="sighting-filters" role="group" [attr.aria-label]="'map.filters.title' | translate">
+  <mat-form-field class="sighting-filters__field" floatLabel="always">
     <mat-label>{{ 'map.filters.status' | translate }}</mat-label>
     <mat-select
       multiple
@@ -9,12 +9,12 @@
       [placeholder]="'map.filters.all' | translate"
       (selectionChange)="changeStatuses($event.value)"
     >
-      @for (status of statusOptions; track status) {
+      @for (status of statusOptions(); track status) {
         <mat-option [value]="status">{{ statusLabel(status) | translate }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
-  <mat-form-field class="nearby-filters__field" floatLabel="always">
+  <mat-form-field class="sighting-filters__field" floatLabel="always">
     <mat-label>{{ 'map.filters.criticality' | translate }}</mat-label>
     <mat-select
       multiple
@@ -36,7 +36,7 @@
   <button
     mat-stroked-button
     type="button"
-    class="nearby-filters__clear"
+    class="sighting-filters__clear"
     [disabled]="disabled() || !active()"
     disabledInteractive
     (click)="clear()"

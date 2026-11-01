@@ -1,0 +1,117 @@
+<app-page-card
+  width="wide"
+  [title]="
+    totalCount() === null
+      ? ('list.page.title' | translate)
+      : ('list.page.titleWithCount' | translate: totalCount())
+  "
+  [subtitle]="'list.page.subtitle' | translate: radiusKm()"
+>
+  <a headerActions mat-stroked-button routerLink="/" [state]="mapReturn()">{{
+    'list.page.mapView' | translate
+  }}</a>
+  <div class="sighting-list__toolbar pw-cluster">
+    <button
+      mat-stroked-button
+      class="sighting-list__filters-toggle"
+      type="button"
+      aria-controls="sighting-list-filters"
+      [attr.aria-expanded]="filtersOpen()"
+      (click)="toggleFilters()"
+    >
+      @if (filtersOpen()) {
+        {{ 'map.filters.hide' | translate }}
+      } @else if (activeFilterCount() > 0) {
+        {{ 'map.filters.showActive' | translate: activeFilterCount() }}
+      } @else {
+        {{ 'map.filters.show' | translate }}
+      }
+    </button>
+  </div>
+  <app-sighting-filters
+    id="sighting-list-filters"
+    [hidden]="!filtersOpen()"
+    [statusOptions]="statusOptions"
+    [initial]="initialFilters"
+    (filtersChange)="changeFilters($event)"
+  />
+  @switch (state().kind) {
+    @case ('locating') {
+      <app-loading-indicator layout="inline" [label]="'list.page.locating' | translate" />
+    }
+    @case ('locationUnavailable') {
+      <app-alert kind="info">{{ 'list.page.locationUnavailable' | translate }}</app-alert>
+      <a class="sighting-list__map-link" mat-flat-button routerLink="/" [state]="mapReturn()">
+        {{ 'list.page.openMap' | translate }}
+      </a>
+    }
+    @case ('loading') {
+      <app-loading-indicator [label]="'common.loading' | translate" />
+    }
+    @case ('error') {
+      <app-error-retry [retryLabel]="'list.page.retry' | translate" (retry)="retry()">
+        {{ 'list.page.error' | translate }}
+        <app-error-reference [traceId]="errorTraceId()" />
+      </app-error-retry>
+    }
+  }
+  @if (state(); as current) {
+    @if (current.kind === 'loaded') {
+      @if (current.items.length > 0) {
+        <ul class="sighting-list">
+          @for (sighting of current.items; track sighting.id) {
+            <li
+              app-sighting-row
+              [sighting]="sighting"
+              [now]="current.loadedAt"
+              [linkState]="detailReturn()"
+            ></li>
+          }
+        </ul>
+      } @else if (current.filtered) {
+        <p class="pw-text-muted">{{ 'list.page.noMatch' | translate: radiusKm() }}</p>
+      } @else {
+        <p class="pw-text-muted">{{ 'list.page.empty' | translate: radiusKm() }}</p>
+      }
+    }
+  }
+  @if (paginatorShown()) {
+    <div class="sighting-list__pager-frame">
+      <div class="sighting-list__pager">
+        <div class="sighting-list__page-size">
+          <span id="sighting-list-page-size-label">
+            {{ 'list.paginator.itemsPerPage' | translate }}
+          </span>
+          <mat-form-field
+            class="sighting-list__page-size-field"
+            appearance="outline"
+            subscriptSizing="dynamic"
+          >
+            <mat-select
+              panelClass="pw-select-panel"
+              aria-labelledby="sighting-list-page-size-label"
+              [value]="pageSize()"
+              (selectionChange)="changePageSize($event.value)"
+            >
+              @for (size of pageSizes; track size) {
+                <mat-option [value]="size">{{ size }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <p class="sighting-list__page-number" aria-live="polite">
+          {{ 'list.paginator.range' | translate: page() : pageCount() }}
+        </p>
+        <mat-paginator
+          class="sighting-list__page-actions"
+          hidePageSize
+          showFirstLastButtons
+          [length]="totalCount() ?? 0"
+          [pageIndex]="page() - 1"
+          [pageSize]="pageSize()"
+          (page)="changePage($event)"
+        />
+      </div>
+    </div>
+  }
+</app-page-card>

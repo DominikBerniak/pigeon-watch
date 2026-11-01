@@ -1,5 +1,13 @@
 <app-page-card [width]="mapShown() ? 'wide' : 'form'" [title]="title()">
-  <a actions mat-button routerLink="/">{{ 'sighting.detail.back' | translate }}</a>
+  @if (returnToList; as handOver) {
+    <a actions mat-button routerLink="/sightings/list" [state]="handOver">
+      {{ 'sighting.detail.backToList' | translate }}
+    </a>
+  } @else {
+    <a actions mat-button routerLink="/" [state]="returnToMap">{{
+      'sighting.detail.back' | translate
+    }}</a>
+  }
   @switch (state().kind) {
     @case ('loading') {
       <app-loading-indicator [label]="'common.loading' | translate" />

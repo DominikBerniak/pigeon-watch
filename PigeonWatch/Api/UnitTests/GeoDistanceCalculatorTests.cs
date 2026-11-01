@@ -68,4 +68,57 @@ public class GeoDistanceCalculatorTests
         Assert.Equal(180, box.MaxLongitude);
         Assert.True(box.MinLongitude < 179.95);
     }
+
+    [Fact]
+    public void Radius_filter_box_equals_the_bounding_box_for_the_same_input()
+    {
+        GeoRadiusFilter filter = calculator.GetRadiusFilter(52.0, 21.0, 10);
+
+        Assert.Equal(calculator.GetBoundingBox(52.0, 21.0, 10), filter.Box);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(5)]
+    [InlineData(9.99)]
+    [InlineData(10.01)]
+    [InlineData(15)]
+    public void Radius_filter_half_chord_test_agrees_with_the_great_circle_distance(double kilometers)
+    {
+        GeoRadiusFilter filter = calculator.GetRadiusFilter(52.0, 21.0, 10);
+
+        for (int bearingDegrees = 0; bearingDegrees < 360; bearingDegrees += 15)
+        {
+            (double latitude, double longitude) = Destination(52.0, 21.0, bearingDegrees, kilometers);
+            bool insideByHalfChord = HalfChord(filter, latitude, longitude) <= filter.HalfChordThreshold;
+
+            Assert.Equal(calculator.GetDistanceKilometers(52.0, 21.0, latitude, longitude) <= 10, insideByHalfChord);
+            Assert.Equal(kilometers <= 10, insideByHalfChord);
+        }
+    }
+
+    private static double HalfChord(GeoRadiusFilter filter, double latitude, double longitude)
+    {
+        double latitudeRadians = latitude * Math.PI / 180;
+        double longitudeRadians = longitude * Math.PI / 180;
+        double latitudeSine = Math.Sin((latitudeRadians - filter.CentreLatitudeRadians) / 2);
+        double longitudeSine = Math.Sin((longitudeRadians - filter.CentreLongitudeRadians) / 2);
+
+        return (latitudeSine * latitudeSine) + (filter.CosCentreLatitude * Math.Cos(latitudeRadians) * longitudeSine * longitudeSine);
+    }
+
+    private static (double Latitude, double Longitude) Destination(double latitude, double longitude, double bearingDegrees, double kilometers)
+    {
+        double angularDistance = kilometers / 6371.0088;
+        double bearing = bearingDegrees * Math.PI / 180;
+        double latitudeRadians = latitude * Math.PI / 180;
+        double longitudeRadians = longitude * Math.PI / 180;
+        double destinationLatitude = Math.Asin((Math.Sin(latitudeRadians) * Math.Cos(angularDistance))
+            + (Math.Cos(latitudeRadians) * Math.Sin(angularDistance) * Math.Cos(bearing)));
+        double destinationLongitude = longitudeRadians + Math.Atan2(
+            Math.Sin(bearing) * Math.Sin(angularDistance) * Math.Cos(latitudeRadians),
+            Math.Cos(angularDistance) - (Math.Sin(latitudeRadians) * Math.Sin(destinationLatitude)));
+
+        return (destinationLatitude * 180 / Math.PI, destinationLongitude * 180 / Math.PI);
+    }
 }

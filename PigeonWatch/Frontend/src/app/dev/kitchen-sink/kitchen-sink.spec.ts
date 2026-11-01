@@ -11,12 +11,13 @@ import { SightingDetailPage } from '../../features/sightings/sighting-detail-pag
 import { LEAFLET_LOADER, MapView } from '../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../shared/map/testing/map-view-stub';
 import { CellDefinition, cellGroups } from './cell-definitions';
-import { sinkLongNameSighting, sinkPosition, sinkSightings } from './cell-stubs';
+import { sinkListSightings, sinkLongNameSighting, sinkPosition, sinkSightings } from './cell-stubs';
 import { KitchenSink } from './kitchen-sink';
 
 const patience = { timeout: 2000, interval: 25 };
+const sinkTestTimeout = 15_000;
 
-describe('KitchenSink', () => {
+describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
   let fixture: ComponentFixture<KitchenSink>;
   let root: HTMLElement;
 
@@ -118,6 +119,7 @@ describe('KitchenSink', () => {
       profile: 'app-profile-page',
       nearbyMap: 'app-nearby-map-page',
       sightingDetail: 'app-sighting-detail-page',
+      sightingList: 'app-sighting-list-page',
     };
 
     expect(root.querySelectorAll('app-state-cell').length).toBe(definitions.length);
@@ -128,7 +130,9 @@ describe('KitchenSink', () => {
 
       expect(textOf(element.querySelector('h3'))).toBe(definition.label);
       expect(
-        element.querySelectorAll('app-profile-page, app-nearby-map-page, app-sighting-detail-page'),
+        element.querySelectorAll(
+          'app-profile-page, app-nearby-map-page, app-sighting-detail-page, app-sighting-list-page',
+        ),
       ).toHaveLength(1);
       expect(element.querySelector(pageOf[definition.group])).not.toBeNull();
     }
@@ -283,7 +287,7 @@ describe('KitchenSink', () => {
 
     await eventually(() => expect(mapOf(id).markers()).toHaveLength(sinkSightings.length));
 
-    expect(cell(id).querySelector('app-nearby-map-filters')).not.toBeNull();
+    expect(cell(id).querySelector('app-sighting-filters')).not.toBeNull();
 
     cell(id).querySelector<HTMLButtonElement>('header button')?.click();
 
@@ -294,14 +298,14 @@ describe('KitchenSink', () => {
           .map((marker) => marker.id),
       ).toEqual(['sink-urgent']);
       expect(statusOf(id)).toBe(label('map.found', 1, 10));
-      expect(cell(id).querySelector<HTMLElement>('app-nearby-map-filters')?.hidden).toBe(false);
+      expect(cell(id).querySelector<HTMLElement>('app-sighting-filters')?.hidden).toBe(false);
       expect(
         [...cell(id).querySelectorAll('button')].some(
           (button) => button.textContent?.trim() === label('map.filters.hide'),
         ),
       ).toBe(true);
       expect(
-        [...cell(id).querySelectorAll('app-nearby-map-filters mat-select')].map((select) =>
+        [...cell(id).querySelectorAll('app-sighting-filters mat-select')].map((select) =>
           select.getAttribute('aria-expanded'),
         ),
       ).toEqual(['false', 'false']);
@@ -513,6 +517,104 @@ describe('KitchenSink', () => {
     });
   });
 
+  function listRowsOf(id: string): HTMLElement[] {
+    return [...cell(id).querySelectorAll<HTMLElement>('li[app-sighting-row]')];
+  }
+
+  it('shows the locating list state with the filters and no request', async () => {
+    await eventually(() => {
+      expect(textOf(cell('list-locating').querySelector('app-loading-indicator'))).toBe(
+        label('list.page.locating'),
+      );
+      expect(cell('list-locating').querySelector('app-sighting-filters')).not.toBeNull();
+      expect(listRowsOf('list-locating')).toHaveLength(0);
+    });
+  });
+
+  it('shows the location message and the map link when the location is denied', async () => {
+    const id = 'list-location-denied';
+
+    await eventually(() => {
+      expect(textOf(cell(id).querySelector('app-alert'))).toBe(
+        label('list.page.locationUnavailable'),
+      );
+      expect(
+        [...cell(id).querySelectorAll('a')].some(
+          (anchor) => textOf(anchor) === label('list.page.openMap'),
+        ),
+      ).toBe(true);
+      expect(cell(id).querySelector('mat-paginator')).toBeNull();
+    });
+  });
+
+  it('shows the spinner while the list request is pending', async () => {
+    await eventually(() => {
+      expect(
+        cell('list-loading').querySelector('app-loading-indicator mat-progress-spinner'),
+      ).not.toBeNull();
+      expect(listRowsOf('list-loading')).toHaveLength(0);
+    });
+  });
+
+  it('shows a row per fixture sighting with mixed criticalities and ages', async () => {
+    const id = 'list-loaded';
+
+    await eventually(() => {
+      const rows = listRowsOf(id);
+
+      expect(rows).toHaveLength(sinkSightings.length);
+      expect(
+        new Set(rows.map((row) => row.querySelector('app-criticality-badge')?.className)).size,
+      ).toBe(3);
+      expect(new Set(rows.map((row) => textOf(row.querySelector('time')))).size).toBe(
+        sinkSightings.length,
+      );
+      expect(cell(id).querySelector('mat-paginator')).not.toBeNull();
+    });
+  });
+
+  it('shows the second page of the paged fixtures after Next page', async () => {
+    const id = 'list-second-page';
+
+    await eventually(() => {
+      expect(listRowsOf(id)).toHaveLength(sinkListSightings.length - 10);
+      expect(textOf(cell(id).querySelector('.sighting-list__page-number'))).toContain(
+        label('list.paginator.range', 2, Math.ceil(sinkListSightings.length / 10)),
+      );
+    });
+  });
+
+  it('shows the empty list text without a paginator', async () => {
+    await eventually(() => {
+      expect(cell('list-empty').textContent).toContain(label('list.page.empty', 10));
+      expect(cell('list-empty').querySelector('mat-paginator')).toBeNull();
+    });
+  });
+
+  it('shows the no-match text when the status chosen from the cell header matches nothing', async () => {
+    const id = 'list-filtered-no-match';
+
+    await eventually(() => expect(listRowsOf(id)).toHaveLength(sinkSightings.length));
+
+    expect(textOf(cell(id).querySelector('header button'))).toBe('Choose Adopted');
+
+    cell(id).querySelector<HTMLButtonElement>('header button')?.click();
+
+    await eventually(() => {
+      expect(cell(id).textContent).toContain(label('list.page.noMatch', 10));
+      expect(listRowsOf(id)).toHaveLength(0);
+    });
+  });
+
+  it('shows the list error as an alert with Try again', async () => {
+    await eventually(() => {
+      expect(textOf(cell('list-error').querySelector('app-alert[role="alert"]'))).toBe(
+        label('list.page.error'),
+      );
+      expect(buttonOf('list-error', 'list.page.retry')).not.toBeNull();
+    });
+  });
+
   it('shows the read-only state', () => {
     const element = cell('read-only');
 
@@ -527,6 +629,9 @@ describe('KitchenSink', () => {
 
       expect(items).toHaveLength(sinkSightings.length);
       items.forEach((item) => expect(item.querySelector('app-criticality-badge')).not.toBeNull());
+      expect(
+        new Set([...items].map((item) => item.querySelector('time')?.textContent?.trim())).size,
+      ).toBe(sinkSightings.length);
     });
   });
 

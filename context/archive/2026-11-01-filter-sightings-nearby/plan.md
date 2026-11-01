@@ -301,44 +301,44 @@ None. No schema or data change; requests without the new parameters behave as be
 
 #### Automated
 
-- [x] 1.1 The API solution builds with the `.editorconfig` style rules: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 720dbb8
-- [x] 1.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — 720dbb8
-- [x] 1.3 Unit tests pass, including the new filter and validation cases: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — 720dbb8
-- [x] 1.4 Integration tests pass, including the endpoint coverage and privacy sweeps with the new fixtures: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — 720dbb8
+- [x] 1.1 The API solution builds with the `.editorconfig` style rules: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 0bc71b1
+- [x] 1.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — 0bc71b1
+- [x] 1.3 Unit tests pass, including the new filter and validation cases: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — 0bc71b1
+- [x] 1.4 Integration tests pass, including the endpoint coverage and privacy sweeps with the new fixtures: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — 0bc71b1
 
 #### Manual
 
-- [x] 1.5 With the API running on LocalDB and a token from `POST auth/login` (use `curl.exe`), `sightings/nearby` with `criticalities=3` returns only Urgent sightings, with `statuses=1` only Spotted ones, and with neither returns the same set as before — 720dbb8
-- [x] 1.6 `statuses=6` (Adopted) and `criticalities=9` each return 400 — 720dbb8
+- [x] 1.5 With the API running on LocalDB and a token from `POST auth/login` (use `curl.exe`), `sightings/nearby` with `criticalities=3` returns only Urgent sightings, with `statuses=1` only Spotted ones, and with neither returns the same set as before — 0bc71b1
+- [x] 1.6 `statuses=6` (Adopted) and `criticalities=9` each return 400 — 0bc71b1
 
 ### Phase 2: SPA data layer and labels
 
 #### Automated
 
-- [x] 2.1 Resource snapshots regenerate and the frontend builds within budget: `npm run build` in `PigeonWatch/Frontend` — 97ea492
-- [x] 2.2 Specs pass, including the wrapper spec for the new parameters and the label coverage spec: `npm test -- --watch=false` in `PigeonWatch/Frontend` — 97ea492
+- [x] 2.1 Resource snapshots regenerate and the frontend builds within budget: `npm run build` in `PigeonWatch/Frontend` — 0bc71b1
+- [x] 2.2 Specs pass, including the wrapper spec for the new parameters and the label coverage spec: `npm test -- --watch=false` in `PigeonWatch/Frontend` — 0bc71b1
 
 ### Phase 3: Map page filters
 
 #### Automated
 
-- [x] 3.1 The frontend builds and stays within the initial-bundle budget (initial warning 520 kB, 512.1 kB measured before this change) and the 4 kB component style budget: `npm run build` in `PigeonWatch/Frontend` — 2bd493e
-- [x] 3.2 Specs pass, including the page, filter and kitchen-sink specs and the style-token and label coverage specs: `npm test -- --watch=false` in `PigeonWatch/Frontend` — 2bd493e
+- [x] 3.1 The frontend builds and stays within the initial-bundle budget (initial warning 520 kB, 512.1 kB measured before this change) and the 4 kB component style budget: `npm run build` in `PigeonWatch/Frontend` — 0bc71b1
+- [x] 3.2 Specs pass, including the page, filter and kitchen-sink specs and the style-token and label coverage specs: `npm test -- --watch=false` in `PigeonWatch/Frontend` — 0bc71b1
 
 #### Manual
 
-- [x] 3.3 On a phone-sized viewport the two controls fit the toolbar without horizontal scroll and are usable by touch and keyboard — 2bd493e
-- [x] 3.4 Choosing Urgent in the criticality control shows only Urgent markers, the count text matches, the detail card closes, and clearing the control restores the original markers — 2bd493e
-- [x] 3.5 A filter with no match shows the no-match message, not the radius-only message — 2bd493e
-- [x] 3.6 No new CSP violations appear in the browser console — 2bd493e
+- [x] 3.3 On a phone-sized viewport the two controls fit the toolbar without horizontal scroll and are usable by touch and keyboard — 0bc71b1
+- [x] 3.4 Choosing Urgent in the criticality control shows only Urgent markers, the count text matches, the detail card closes, and clearing the control restores the original markers — 0bc71b1
+- [x] 3.5 A filter with no match shows the no-match message, not the radius-only message — 0bc71b1
+- [x] 3.6 No new CSP violations appear in the browser console — 0bc71b1
 
 ### Phase 4: E2E and docs wrap-up
 
 #### Automated
 
-- [x] 4.1 The new Playwright test passes: `npx playwright test tests/e2e/nearby-filters.spec.ts` in `PigeonWatch/Frontend` — cc19de1
-- [x] 4.2 The existing E2E tests still pass: `npx playwright test` in `PigeonWatch/Frontend` — cc19de1
+- [x] 4.1 The new Playwright test passes: `npx playwright test tests/e2e/nearby-filters.spec.ts` in `PigeonWatch/Frontend` — 0bc71b1
+- [x] 4.2 The existing E2E tests still pass: `npx playwright test` in `PigeonWatch/Frontend` — 0bc71b1
 
 #### Manual
 
-- [x] 4.3 The documentation edits read correctly and no other file's status fields changed — cc19de1
+- [x] 4.3 The documentation edits read correctly and no other file's status fields changed — 0bc71b1

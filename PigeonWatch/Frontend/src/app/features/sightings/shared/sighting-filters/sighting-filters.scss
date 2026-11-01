@@ -7,18 +7,18 @@
   display: none;
 }
 
-.nearby-filters {
+.sighting-filters {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--pw-space-3);
 }
 
-.nearby-filters__clear {
+.sighting-filters__clear {
   flex: none;
 }
 
-.nearby-filters__field {
+.sighting-filters__field {
   flex: 1 1 var(--pw-map-filter-width);
   min-width: 0;
 }

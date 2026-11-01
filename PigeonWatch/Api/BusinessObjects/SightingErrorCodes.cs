@@ -8,5 +8,7 @@ public static class SightingErrorCodes
     public const string InvalidLocation = "InvalidLocation";
     public const string InvalidFilterStatus = "InvalidFilterStatus";
     public const string InvalidFilterCriticality = "InvalidFilterCriticality";
+    public const string InvalidPage = "InvalidPage";
+    public const string InvalidPageSize = "InvalidPageSize";
     public const string ReporterNotFound = "ReporterNotFound";
 }

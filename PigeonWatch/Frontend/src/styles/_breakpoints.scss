@@ -18,3 +18,15 @@ $breakpoints: (
     @content;
   }
 }
+
+@mixin container-from($name) {
+  $min-width: map.get($breakpoints, $name);
+
+  @if not $min-width {
+    @error 'Unknown breakpoint "#{$name}". Use one of: #{map.keys($breakpoints)}.';
+  }
+
+  @container (min-width: #{$min-width}) {
+    @content;
+  }
+}

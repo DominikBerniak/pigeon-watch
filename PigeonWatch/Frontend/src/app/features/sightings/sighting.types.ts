@@ -40,6 +40,24 @@ export interface SightingList {
   items: Sighting[];
 }
 
+export interface SightingPage {
+  items: Sighting[];
+  totalCount: number;
+}
+
+export interface SightingListRequest {
+  latitude: number;
+  longitude: number;
+  statuses: readonly SightingStatus[];
+  criticalities: readonly SightingCriticality[];
+  page: number;
+  pageSize: number;
+}
+
+export const sightingListPageSizes: readonly number[] = [10, 20, 30];
+
+export const defaultSightingListPageSize = 10;
+
 export interface NewSighting {
   name: string | null;
   description: string;
@@ -111,6 +129,18 @@ export const filterableSightingStatuses: readonly SightingStatus[] = [
   SightingStatus.atTheVet,
   SightingStatus.inHomeCare,
   SightingStatus.awaitingAdoption,
+];
+
+export const allSightingStatuses: readonly SightingStatus[] = [
+  SightingStatus.spotted,
+  SightingStatus.caught,
+  SightingStatus.atTheVet,
+  SightingStatus.inHomeCare,
+  SightingStatus.awaitingAdoption,
+  SightingStatus.adopted,
+  SightingStatus.released,
+  SightingStatus.passedAway,
+  SightingStatus.notFound,
 ];
 
 export interface SightingFilters {

@@ -3,7 +3,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { provideRouter } from '@angular/router';
+import { Location } from '@angular/common';
+import { Navigation, Router, RouterLink, provideRouter } from '@angular/router';
 import { NEVER, Observable, Subject, isObservable, of, throwError } from 'rxjs';
 import { GeoPoint } from '../../../core/geolocation/geo-point';
 import {
@@ -21,7 +22,7 @@ import {
   SightingStatus,
 } from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
-import { NearbyMapFilters } from './nearby-map-filters';
+import { SightingFilterRow } from '../shared/sighting-filters/sighting-filters';
 import { NearbyMapPage } from './nearby-map-page';
 
 const warsaw: GeoPoint = { latitude: 52.2297, longitude: 21.0122 };
@@ -65,6 +66,7 @@ describe('NearbyMapPage', () => {
   async function render(
     outcome: GeolocationOutcome | Observable<GeolocationOutcome>,
     result: Observable<SightingList> = of({ items: [named, unnamed] }),
+    navigationState?: unknown,
   ): Promise<void> {
     const position = isObservable(outcome) ? outcome : of(outcome);
 
@@ -87,6 +89,13 @@ describe('NearbyMapPage', () => {
       remove: { imports: [MapView] },
       add: { imports: [MapViewStub] },
     });
+
+    if (navigationState !== undefined) {
+      vi.spyOn(TestBed.inject(Router), 'currentNavigation').mockReturnValue({
+        extras: { state: navigationState },
+      } as unknown as Navigation);
+    }
+
     fixture = TestBed.createComponent(NearbyMapPage);
     await fixture.whenStable();
   }
@@ -159,11 +168,13 @@ describe('NearbyMapPage', () => {
     return text('h1');
   }
 
-  async function applyFilters(filters: SightingFilters): Promise<void> {
-    const control = fixture.debugElement.query(By.directive(NearbyMapFilters))
-      .componentInstance as NearbyMapFilters;
+  function filterRow(): SightingFilterRow {
+    return fixture.debugElement.query(By.directive(SightingFilterRow))
+      .componentInstance as SightingFilterRow;
+  }
 
-    control.filtersChange.emit(filters);
+  async function applyFilters(filters: SightingFilters): Promise<void> {
+    filterRow().filtersChange.emit(filters);
     await settle();
   }
 
@@ -520,6 +531,81 @@ describe('NearbyMapPage', () => {
     expect(root().querySelector('mat-card')).toBeNull();
   });
 
+  function listLink(): RouterLink {
+    const link = fixture.debugElement
+      .queryAll(By.directive(RouterLink))
+      .find((candidate) => candidate.nativeElement.textContent?.trim() === 'List view');
+
+    if (!link) throw new Error('No List view link');
+
+    return link.injector.get(RouterLink);
+  }
+
+  it('links to the list view without a hand-over before any search has run', async () => {
+    await render({ status: 'denied' });
+
+    expect(listLink().href).toBe('/sightings/list');
+    expect(listLink().state).toBeUndefined();
+  });
+
+  it('hands the last search centre and the filters to the list view after a search', async () => {
+    await render({ status: 'ok', ...warsaw });
+
+    expect(listLink().state).toEqual({ centre: warsaw, filters: noFilters });
+
+    await applyFilters(urgentOnly);
+
+    expect(listLink().state).toEqual({ centre: warsaw, filters: urgentOnly });
+  });
+
+  it('keeps the last search centre in the hand-over while the map moves without a search', async () => {
+    await render({ status: 'ok', ...warsaw });
+    map().centerChange.emit(krakow);
+    await settle();
+
+    expect(listLink().state).toEqual({ centre: warsaw, filters: noFilters });
+
+    button('Search this area').click();
+    await settle();
+
+    expect(listLink().state).toEqual({ centre: krakow, filters: noFilters });
+  });
+
+  it('passes the current filters to the detail page through the selected card link', async () => {
+    await render({ status: 'ok', ...warsaw });
+    await applyFilters(urgentOnly);
+    map().markerSelect.emit('sighting-1');
+    await settle();
+
+    const link = fixture.debugElement.query(By.css('aside mat-card a')).injector.get(RouterLink);
+
+    expect(link.state).toEqual({ mapFilters: urgentOnly });
+  });
+
+  it('starts with the filters the list hands back and searches with them', async () => {
+    await render({ status: 'ok', ...warsaw }, undefined, { mapFilters: urgentOnly });
+
+    expect(nearby).toHaveBeenCalledWith(warsaw, urgentOnly);
+    expect(filterRow().initial()).toEqual(urgentOnly);
+    expect(listLink().state).toEqual({ centre: warsaw, filters: urgentOnly });
+  });
+
+  it('starts without filters when the navigation state holds no valid map filters', async () => {
+    await render({ status: 'ok', ...warsaw }, undefined, { mapFilters: { statuses: 'all' } });
+
+    expect(nearby).toHaveBeenCalledWith(warsaw, noFilters);
+    expect(filterRow().initial()).toEqual(noFilters);
+  });
+
+  it('keeps the chosen filters in its history entry so Back restores them', async () => {
+    await render({ status: 'ok', ...warsaw });
+    await applyFilters(urgentOnly);
+
+    expect(TestBed.inject(Location).getState()).toEqual(
+      expect.objectContaining({ mapFilters: urgentOnly }),
+    );
+  });
+
   it('puts a prominent "Report sighting" link above the map', async () => {
     await render({ status: 'denied' });
 
@@ -741,7 +827,7 @@ describe('NearbyMapPage', () => {
     await render({ status: 'ok', ...warsaw });
 
     const toolbar = root().querySelector('.nearby-toolbar')!;
-    const filters = root().querySelector<HTMLElement>('app-nearby-map-filters')!;
+    const filters = root().querySelector<HTMLElement>('app-sighting-filters')!;
     const toggle = button('Show filters');
 
     expect(filters.previousElementSibling).toBe(toolbar);
@@ -789,7 +875,7 @@ describe('NearbyMapPage', () => {
     const pending = new Subject<GeolocationOutcome>();
     await render(pending);
 
-    const selects = () => [...root().querySelectorAll('app-nearby-map-filters mat-select')];
+    const selects = () => [...root().querySelectorAll('app-sighting-filters mat-select')];
 
     expect(selects().map((select) => select.getAttribute('aria-disabled'))).toEqual([
       'true',

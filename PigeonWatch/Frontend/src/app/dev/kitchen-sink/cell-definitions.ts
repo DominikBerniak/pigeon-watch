@@ -5,12 +5,19 @@ import {
   fill,
   keydown,
   press,
+  pressLabelled,
   repeat,
   submitForm,
   waitFor,
   waitForText,
 } from './cell-driver';
-import { NearbyMapModes, ProfileModes, SightingDetailModes, StubModes } from './cell-stubs';
+import {
+  NearbyMapModes,
+  ProfileModes,
+  SightingDetailModes,
+  SightingListModes,
+  StubModes,
+} from './cell-stubs';
 
 export interface CellScenario {
   readonly action: string;
@@ -28,6 +35,7 @@ interface CellBase {
 export type ProfileCell = CellBase & ProfileModes;
 export type NearbyMapCell = CellBase & NearbyMapModes;
 export type SightingDetailCell = CellBase & SightingDetailModes;
+export type SightingListCell = CellBase & SightingListModes;
 export type CellDefinition = CellBase & StubModes;
 
 export interface CellGroup {
@@ -190,8 +198,8 @@ const marker = '.pw-map-marker--urgent';
 const status = '[role="status"]';
 const zoomIn = '.leaflet-control-zoom-in';
 const countryToSearchZoomSteps = 4;
-const statusFilter = 'app-nearby-map-filters mat-form-field:first-of-type mat-select';
-const criticalityFilter = 'app-nearby-map-filters mat-form-field:last-of-type mat-select';
+const statusFilter = 'app-sighting-filters mat-form-field:first-of-type mat-select';
+const criticalityFilter = 'app-sighting-filters mat-form-field:last-of-type mat-select';
 
 const nearbyMapCells: readonly NearbyMapCell[] = [
   {
@@ -453,8 +461,82 @@ const detailCells: readonly SightingDetailCell[] = [
   },
 ];
 
+const listRow = 'li[app-sighting-row]';
+
+const listCells: readonly SightingListCell[] = [
+  {
+    id: 'list-locating',
+    label: 'Locating (geolocation never answers)',
+    group: 'sightingList',
+    geolocation: 'pending',
+    list: 'items',
+    steps: [],
+  },
+  {
+    id: 'list-location-denied',
+    label: 'Location denied (message and map link, no request)',
+    group: 'sightingList',
+    geolocation: 'denied',
+    list: 'items',
+    steps: [],
+  },
+  {
+    id: 'list-loading',
+    label: 'Loading (list request never completes)',
+    group: 'sightingList',
+    geolocation: 'ok',
+    list: 'pending',
+    steps: [],
+  },
+  {
+    id: 'list-loaded',
+    label: 'Loaded (mixed criticalities and ages, one page)',
+    group: 'sightingList',
+    geolocation: 'ok',
+    list: 'items',
+    steps: [],
+  },
+  {
+    id: 'list-second-page',
+    label: 'Second page (13 sightings, Next page pressed)',
+    group: 'sightingList',
+    geolocation: 'ok',
+    list: 'paged',
+    steps: [waitFor(listRow), pressLabelled('list.paginator.nextPage')],
+  },
+  {
+    id: 'list-empty',
+    label: 'Empty (no sightings nearby)',
+    group: 'sightingList',
+    geolocation: 'ok',
+    list: 'empty',
+    steps: [],
+  },
+  {
+    id: 'list-filtered-no-match',
+    label: 'Filter with no match (Adopted chosen from the cell header)',
+    group: 'sightingList',
+    geolocation: 'ok',
+    list: 'items',
+    steps: [],
+    manual: {
+      action: 'Choose Adopted',
+      steps: [choose(statusFilter, 'sighting.status.adopted')],
+    },
+  },
+  {
+    id: 'list-error',
+    label: 'Error (500, Try again)',
+    group: 'sightingList',
+    geolocation: 'ok',
+    list: 'failure',
+    steps: [],
+  },
+];
+
 export const cellGroups: readonly CellGroup[] = [
   { title: 'Profile', wide: false, cells: [...profileCells, ...dialogCells] },
   { title: 'Nearby map', wide: true, cells: nearbyMapCells },
   { title: 'Sighting detail', wide: true, cells: detailCells },
+  { title: 'Sighting list', wide: false, cells: listCells },
 ];

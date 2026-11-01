@@ -1,3 +1,4 @@
+import { formatDate } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -32,6 +33,10 @@ const unnamed: Sighting = {
 describe('MySightings', () => {
   let mine: ReturnType<typeof vi.fn<() => Observable<SightingList>>>;
   let fixture: ComponentFixture<MySightings>;
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   async function render(result: Observable<SightingList>): Promise<HTMLElement> {
     mine = vi.fn<() => Observable<SightingList>>(() => result);
@@ -94,15 +99,17 @@ describe('MySightings', () => {
     expect(root.querySelectorAll('li').length).toBe(1);
   });
 
-  it('lists each sighting with its name, status, criticality, date and a detail link', async () => {
+  it('lists each sighting with its name, status, criticality, relative age and a detail link', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-11T12:05:00Z'));
+
     const root = await render(of({ items: [named, unnamed] }));
     const items = [...root.querySelectorAll('li')];
 
     expect(items.length).toBe(2);
-    expect(items.map((item) => item.querySelector('a')?.textContent?.trim())).toEqual([
-      'Limpy',
-      'Unnamed bird',
-    ]);
+    expect(
+      items.map((item) => item.querySelector('.sighting-row__name')?.textContent?.trim()),
+    ).toEqual(['Limpy', 'Unnamed bird']);
     expect(items.map((item) => item.querySelector('a')?.getAttribute('href'))).toEqual([
       '/sightings/sighting-1',
       '/sightings/sighting-2',
@@ -112,6 +119,12 @@ describe('MySightings', () => {
     expect(items[1].textContent).toContain('Spotted');
     expect(items[1].textContent).toContain('Monitor');
     expect(items[0].querySelector('time')?.getAttribute('datetime')).toBe(named.createdAt);
-    expect(items[0].querySelector('time')?.textContent?.trim()).not.toBe('');
+    expect(items.map((item) => item.querySelector('time')?.textContent?.trim())).toEqual([
+      '5 min ago',
+      '1 d ago',
+    ]);
+    expect(items[0].querySelector('time')?.getAttribute('title')).toBe(
+      formatDate(named.createdAt, 'medium', 'en-US'),
+    );
   });
 });

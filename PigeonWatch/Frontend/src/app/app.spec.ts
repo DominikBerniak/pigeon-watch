@@ -183,12 +183,17 @@ describe('App', () => {
     expect(main.classList).not.toContain('app-main--roomy');
   });
 
-  it('declares the wide layout on the home, report and sighting detail routes among product routes', () => {
+  it('declares the wide layout on the home, report, sighting list and sighting detail routes among product routes', () => {
     const wide = routes
       .filter((route) => !devRoutes.includes(route))
       .filter((route) => route.data?.['layout'] === 'wide');
 
-    expect(wide.map((route) => route.path)).toEqual(['', 'sightings/new', 'sightings/:id']);
+    expect(wide.map((route) => route.path)).toEqual([
+      '',
+      'sightings/new',
+      'sightings/list',
+      'sightings/:id',
+    ]);
   });
 
   it('declares no layout on any other product route', () => {

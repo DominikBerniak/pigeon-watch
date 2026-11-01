@@ -19,21 +19,7 @@
         } @else {
           <ul class="my-sightings__list">
             @for (sighting of current.items; track sighting.id) {
-              <li class="my-sightings__item">
-                <a class="my-sightings__link" [routerLink]="['/sightings', sighting.id]">
-                  {{ sighting.name ?? ('sighting.unnamed' | translate) }}
-                </a>
-                <p class="pw-text-muted pw-text-small">
-                  {{ statusLabel(sighting.status) | translate }} ·
-                  <app-criticality-badge [kind]="criticalityKind(sighting.criticality)">{{
-                    criticalityLabel(sighting.criticality) | translate
-                  }}</app-criticality-badge>
-                  ·
-                  <time [attr.datetime]="sighting.createdAt">{{
-                    sighting.createdAt | date: 'medium'
-                  }}</time>
-                </p>
-              </li>
+              <li app-sighting-row [sighting]="sighting" [now]="current.loadedAt"></li>
             }
           </ul>
         }

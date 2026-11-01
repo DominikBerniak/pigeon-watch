@@ -36,10 +36,16 @@ import {
 import { isReportableSightingFailure, sightingFailure } from '../sighting-errors';
 import {
   Sighting,
+  SightingFilters,
   sightingCriticalityLabel,
   sightingCriticalityMarker,
   sightingStatusLabel,
 } from '../sighting.types';
+import {
+  NearbyMapReturn,
+  readNearbyMapFilters,
+  readSightingDetailReturn,
+} from '../sighting-list-page/sighting-list-hand-over';
 import { SightingsApi } from '../sightings-api';
 
 type DetailState =
@@ -84,6 +90,12 @@ export class SightingDetailPage {
   private readonly card = viewChild(PageCard);
   private focusOnSettle = this.router.currentNavigation() !== null;
 
+  protected readonly returnToList = readSightingDetailReturn(
+    this.router.currentNavigation()?.extras.state,
+  );
+  protected readonly returnToMap = mapReturnOf(
+    readNearbyMapFilters(this.router.currentNavigation()?.extras.state),
+  );
   protected readonly mapZoom = pickerMapZoom;
   protected readonly state = signal<DetailState>({ kind: 'loading' });
   protected readonly mapShown = signal(false);
@@ -217,4 +229,8 @@ export class SightingDetailPage {
 
     afterNextRender(() => this.card()?.focusHeading(), { injector: this.injector });
   }
+}
+
+function mapReturnOf(filters: SightingFilters | null): NearbyMapReturn | undefined {
+  return filters ? { mapFilters: filters } : undefined;
 }

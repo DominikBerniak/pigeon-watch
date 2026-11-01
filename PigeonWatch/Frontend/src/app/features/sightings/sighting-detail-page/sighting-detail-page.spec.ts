@@ -2,7 +2,7 @@ import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { provideRouter } from '@angular/router';
+import { Router, RouterLink, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { NEVER, Observable, Subject, of, throwError } from 'rxjs';
 import { MapView } from '../../../shared/map/map-view/map-view';
@@ -56,6 +56,10 @@ describe('SightingDetailPage', () => {
     await harness.fixture.whenStable();
     harness.fixture.detectChanges();
     await harness.fixture.whenStable();
+  }
+
+  function backLink(): RouterLink {
+    return harness.routeDebugElement!.query(By.css('mat-card-actions a')).injector.get(RouterLink);
   }
 
   function button(root: HTMLElement, text: string): HTMLButtonElement {
@@ -196,6 +200,59 @@ describe('SightingDetailPage', () => {
     expect(back?.textContent?.trim()).toBe('Back to map');
     expect(back?.getAttribute('href')).toBe('/');
     expect(root.querySelectorAll('a').length).toBe(1);
+    expect(backLink().state).toBeUndefined();
+  });
+
+  it('hands the map filters back through Back to map when opened from the map', async () => {
+    const mapFilters = { statuses: [SightingStatus.spotted], criticalities: [] };
+
+    await TestBed.inject(Router).navigateByUrl('/sightings/sighting-1', {
+      state: { mapFilters },
+    });
+    await settle();
+
+    const back = (harness.routeNativeElement as HTMLElement).querySelector('mat-card-actions a');
+
+    expect(back?.textContent?.trim()).toBe('Back to map');
+    expect(back?.getAttribute('href')).toBe('/');
+    expect(backLink().state).toEqual({ mapFilters });
+  });
+
+  it('links back to the list with its centre and filters when opened from a list row', async () => {
+    const returnToList = {
+      centre: { latitude: 52.2297, longitude: 21.0122 },
+      filters: { statuses: [SightingStatus.spotted], criticalities: [SightingCriticality.urgent] },
+    };
+
+    await TestBed.inject(Router).navigateByUrl('/sightings/sighting-1', {
+      state: { returnToList },
+    });
+    await settle();
+
+    const root = harness.routeNativeElement as HTMLElement;
+    const back = root.querySelector<HTMLAnchorElement>('mat-card-actions a');
+    const link = harness
+      .routeDebugElement!.query(By.css('mat-card-actions a'))
+      .injector.get(RouterLink);
+
+    expect(back?.textContent?.trim()).toBe('Back to list');
+    expect(back?.getAttribute('href')).toBe('/sightings/list');
+    expect(link.state).toEqual(returnToList);
+    expect(root.querySelectorAll('a').length).toBe(1);
+  });
+
+  it('keeps the map link when the list state is not a valid hand-over', async () => {
+    await TestBed.inject(Router).navigateByUrl('/sightings/sighting-1', {
+      state: { returnToList: { centre: { latitude: 999, longitude: 0 }, filters: null } },
+    });
+    await settle();
+
+    const back = (harness.routeNativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+      'mat-card-actions a',
+    );
+
+    expect(back?.textContent?.trim()).toBe('Back to map');
+    expect(back?.getAttribute('href')).toBe('/');
   });
 
   it('shows the Sighting heading and a loading indicator while the sighting loads', async () => {

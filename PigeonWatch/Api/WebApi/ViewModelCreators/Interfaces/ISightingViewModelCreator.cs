@@ -7,4 +7,5 @@ public interface ISightingViewModelCreator
 {
     SightingModel Create(Sighting sighting);
     SightingListModel CreateList(IReadOnlyList<Sighting> sightings);
+    SightingPageModel CreatePage(SightingPage page);
 }

@@ -2,7 +2,14 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { environment } from '../../../environments/environment';
-import { NewSighting, Sighting, SightingCriticality, SightingStatus } from './sighting.types';
+import {
+  NewSighting,
+  Sighting,
+  SightingCriticality,
+  SightingListRequest,
+  SightingPage,
+  SightingStatus,
+} from './sighting.types';
 import { SightingsApi } from './sightings-api';
 
 const sightingsUrl = `${environment.apiUrl}/sightings`;
@@ -112,6 +119,26 @@ describe('SightingsApi', () => {
     expect(request.request.urlWithParams).toBe(
       `${sightingsUrl}/nearby?latitude=50.0614&longitude=19.9366`,
     );
+  });
+
+  it('posts the list request as JSON and returns the page', () => {
+    const listRequest: SightingListRequest = {
+      latitude: 50.0614,
+      longitude: 19.9366,
+      statuses: [SightingStatus.adopted],
+      criticalities: [SightingCriticality.urgent],
+      page: 2,
+      pageSize: 20,
+    };
+    let page: SightingPage | undefined;
+
+    api.list(listRequest).subscribe((value) => (page = value));
+    const request = httpMock.expectOne(`${sightingsUrl}/list`);
+    request.flush({ items: [sighting], totalCount: 21 });
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(listRequest);
+    expect(page).toEqual({ items: [sighting], totalCount: 21 });
   });
 
   it('lists the current user sightings', () => {

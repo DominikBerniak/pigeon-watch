@@ -1,37 +1,29 @@
-import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
-import { RouterLink } from '@angular/router';
 import { Subject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import { isExpectedClientStatus, unexpectedTraceId } from '../../../shared/http/problem-details';
-import { CriticalityBadge, ErrorReference, ErrorRetry, LoadingIndicator } from '../../../shared/ui';
-import {
-  Sighting,
-  sightingCriticalityLabel,
-  sightingCriticalityMarker,
-  sightingStatusLabel,
-} from '../sighting.types';
+import { ErrorReference, ErrorRetry, LoadingIndicator } from '../../../shared/ui';
+import { SightingRow } from '../shared/sighting-row/sighting-row';
+import { Sighting } from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
 
 type MySightingsState =
   | { readonly kind: 'loading' }
   | { readonly kind: 'error'; readonly traceId?: string }
-  | { readonly kind: 'loaded'; readonly items: readonly Sighting[] };
+  | { readonly kind: 'loaded'; readonly items: readonly Sighting[]; readonly loadedAt: Date };
 
 @Component({
   selector: 'app-my-sightings',
   imports: [
-    DatePipe,
     MatCardModule,
-    RouterLink,
     TranslatePipe,
-    CriticalityBadge,
     ErrorReference,
     ErrorRetry,
     LoadingIndicator,
+    SightingRow,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './my-sightings.html',
@@ -48,9 +40,6 @@ export class MySightings {
 
     return state.kind === 'error' ? (state.traceId ?? null) : null;
   });
-  protected readonly statusLabel = sightingStatusLabel;
-  protected readonly criticalityLabel = sightingCriticalityLabel;
-  protected readonly criticalityKind = sightingCriticalityMarker;
 
   constructor() {
     this.reloads
@@ -58,7 +47,11 @@ export class MySightings {
         startWith(undefined),
         switchMap(() =>
           this.sightingsApi.mine().pipe(
-            map((list): MySightingsState => ({ kind: 'loaded', items: list.items })),
+            map((list): MySightingsState => ({
+              kind: 'loaded',
+              items: list.items,
+              loadedAt: new Date(),
+            })),
             catchError((error: unknown) => of(this.failureState(error))),
             startWith<MySightingsState>({ kind: 'loading' }),
           ),

@@ -46,6 +46,29 @@ public class ControllerFailureLoggingTests
         Assert.DoesNotContain(code, call.Message);
     }
 
+    [Theory]
+    [InlineData(SightingErrorCodes.InvalidFilterStatus)]
+    [InlineData(SightingErrorCodes.InvalidFilterCriticality)]
+    [InlineData(SightingErrorCodes.InvalidPage)]
+    [InlineData(SightingErrorCodes.InvalidPageSize)]
+    public async Task List_logs_a_warning_with_the_error_code_for_invalid_input(string code)
+    {
+        sightingService
+            .GetListPageAsync(Arg.Any<SightingListQuery>(), Arg.Any<CancellationToken>())
+            .Returns(SightingListResult.Failure([new SightingError(code, "invalid")]));
+        SightingsController controller = CreateSightingsController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingPageModel> result = await controller.List(
+            new SightingListRequestModel { Latitude = 52.1, Longitude = 21.1 },
+            cancellationToken);
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        LogCall call = Assert.Single(LogCalls(sightingsLogger));
+        Assert.Equal(LogLevel.Warning, call.Level);
+        Assert.Equal(code, call.State["ErrorCode"]);
+        Assert.DoesNotContain(code, call.Message);
+    }
+
     [Fact]
     public async Task Create_logs_nothing_for_a_cooldown_rejection()
     {
@@ -183,7 +206,7 @@ public class ControllerFailureLoggingTests
 
     private SightingsController CreateSightingsController(ClaimsPrincipal user)
     {
-        return new(sightingService, new CreateSightingRequestMapper(), new NearbySightingsRequestMapper(), new SightingViewModelCreator(), sightingsLogger)
+        return new(sightingService, new CreateSightingRequestMapper(), new NearbySightingsRequestMapper(), new SightingListRequestMapper(), new SightingViewModelCreator(), sightingsLogger)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } },
             ProblemDetailsFactory = CreateProblemDetailsFactory()
