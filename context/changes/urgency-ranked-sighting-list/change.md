@@ -1,7 +1,7 @@
 ---
 change_id: urgency-ranked-sighting-list
 title: Urgency ranked sighting list
-status: implemented
+status: impl_reviewed
 created: 2026-11-01
 updated: 2026-11-01
 archived_at: null

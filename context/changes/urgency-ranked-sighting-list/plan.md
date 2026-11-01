@@ -423,6 +423,26 @@ No schema change and no data migration. The SPA and API ship together; an older 
 - Row to promote: `PigeonWatch/Frontend/src/app/features/sightings/my-sightings/my-sightings.html:20-36`
 - E2E pattern: `PigeonWatch/Frontend/tests/e2e/nearby-filters.spec.ts`
 
+## Implementation Addendum (2026-11-01, from impl review)
+
+### A1. Map and detail page round trip (supersedes two "What We're NOT Doing" items)
+
+- The map seeds its filters from navigation state (`readNearbyMapFilters`, open statuses only) and keeps them in the history entry via `Location.replaceState`, so Back and "Map view" restore them. The list's "Map view" link and the detail page's "Back to map" carry `{ mapFilters }`.
+- List rows carry `{ returnToList: { centre, filters } }`; the detail page reads it through `readSightingDetailReturn` and shows "Back to list", which reopens the list at the same centre and filters, page 1.
+- All state passes through the same type guards as the hand-over. Documented in `Frontend/CLAUDE.md`.
+
+### A2. Initial bundle grew (supersedes "initial bundle not grown" in Phase 4)
+
+- Initial total went from 516.31 kB (39d47f4) to 528.18 kB (4c5ce22): Material icon-button +8.15 kB and CDK a11y +4.18 kB pulled into the shared initial chunk by `mat-paginator`, generated UI labels +1.31 kB, global theme overrides and tokens +0.35 kB. The plan missed that resx labels and global theme overrides always land in the initial bundle.
+- The `initial` warning budget in `angular.json` was raised from 520 kB to 540 kB; 528 kB is the new baseline.
+
+### A3. List page UI (supersedes parts of Phase 4 items 3 and 4)
+
+- Pager: `mat-paginator` with `hidePageSize` supplies only the first/previous/next/last buttons; a separate `mat-select` chooses the page size, and the page renders its own `list.paginator.range` as "current / last". `SightingListPaginatorIntl.getRangeLabel` returns an empty string and `list.paginator.rangeEmpty` was not added.
+- Filters sit behind a toggle like the map's (closed by default), not always visible below the header.
+- The title shows the match count once a page has loaded (`list.page.titleWithCount`).
+- Route `sightings/list` declares `layout: 'wide'` so the card can grow past the content width on large screens.
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
@@ -468,14 +488,14 @@ No schema change and no data migration. The SPA and API ship together; an older 
 #### Automated
 
 - [x] 4.1 Frontend tests pass, including the list page, reporting, hand-over guard, kitchen-sink and label-coverage specs — d89abf2
-- [x] 4.2 Production build passes within budgets and the initial bundle is not grown — d89abf2
+- [x] 4.2 Production build passes within budgets and the initial bundle is not grown — d89abf2 — note: build passes, but the initial bundle grew to 528.18 kB and the budget moved to 540 kB (A2)
 
 #### Manual
 
 - [x] 4.3 List view from the map opens at the map centre with filters preselected, in urgency order — d89abf2
 - [x] 4.4 Direct open asks for location; blocked location shows the message and the map link — d89abf2
 - [x] 4.5 Paging, page size, filter reset to page 1, and Back from detail keep centre and filters — d89abf2
-- [x] 4.6 Map view returns to the map with its default state — d89abf2
+- [x] 4.6 Map view returns to the map with its default state — d89abf2 — note: Map view restores the list's filters (A1), not the default state
 - [x] 4.7 Kitchen sink Sighting list group renders every cell — d89abf2
 
 ### Phase 5: E2E — list opened from the map

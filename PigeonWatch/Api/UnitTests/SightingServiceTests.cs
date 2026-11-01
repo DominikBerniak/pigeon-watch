@@ -554,6 +554,20 @@ public class SightingServiceTests
     }
 
     [Theory]
+    [InlineData(int.MaxValue)]
+    [InlineData(int.MaxValue / 10 + 2)]
+    public async Task List_rejects_a_page_whose_offset_overflows(int page)
+    {
+        SightingListResult result = await CreateService().GetListPageAsync(
+            ListQuery() with { Page = page, PageSize = 10 },
+            cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([SightingErrorCodes.InvalidPage], result.Errors.Select(error => error.Code));
+        await AssertNoPageQueryAsync();
+    }
+
+    [Theory]
     [InlineData(0)]
     [InlineData(15)]
     [InlineData(31)]

@@ -223,6 +223,7 @@ public sealed class EndpointFixtureRegistry
             Make(key, "page 2 with size 20", JsonOf(HttpMethod.Post, uri, new { latitude = 52.2297, longitude = 21.0122, page = 2, pageSize = 20 })),
             Make(key, "resolved status filter", JsonOf(HttpMethod.Post, uri, new { latitude = 52.2297, longitude = 21.0122, statuses = new[] { 6 } })),
             Make(key, "page 0", JsonOf(HttpMethod.Post, uri, new { latitude = 52.2297, longitude = 21.0122, page = 0 })),
+            Make(key, "page int.MaxValue", JsonOf(HttpMethod.Post, uri, new { latitude = 52.2297, longitude = 21.0122, page = int.MaxValue })),
             Make(key, "page size 15", JsonOf(HttpMethod.Post, uri, new { latitude = 52.2297, longitude = 21.0122, pageSize = 15 })),
             Make(key, "latitude out of range", JsonOf(HttpMethod.Post, uri, new { latitude = 999, longitude = 21.0122 })),
             Make(key, "missing coordinates", JsonOf(HttpMethod.Post, uri, new { page = 1 })),

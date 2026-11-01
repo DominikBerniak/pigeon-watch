@@ -172,6 +172,8 @@ public class SightingService(
 
         if (query.Page < 1)
             errors.Add(new SightingError(SightingErrorCodes.InvalidPage, "Page must be 1 or greater."));
+        else if (listPageSizes.Contains(query.PageSize) && query.Page > int.MaxValue / query.PageSize)
+            errors.Add(new SightingError(SightingErrorCodes.InvalidPage, "Page is too large for the page size."));
 
         if (!listPageSizes.Contains(query.PageSize))
             errors.Add(new SightingError(SightingErrorCodes.InvalidPageSize, "Page size must be 10, 20 or 30."));

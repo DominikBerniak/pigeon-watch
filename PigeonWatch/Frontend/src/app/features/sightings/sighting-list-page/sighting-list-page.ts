@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,7 +15,11 @@ import {
   GeolocationService,
 } from '../../../core/geolocation/geolocation.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
-import { isExpectedClientStatus, unexpectedTraceId } from '../../../shared/http/problem-details';
+import {
+  isExpectedClientStatus,
+  problemTraceId,
+  unexpectedTraceId,
+} from '../../../shared/http/problem-details';
 import { Alert, ErrorReference, ErrorRetry, LoadingIndicator, PageCard } from '../../../shared/ui';
 import { SightingFilterRow } from '../shared/sighting-filters/sighting-filters';
 import { SightingRow } from '../shared/sighting-row/sighting-row';
@@ -216,12 +221,12 @@ export class SightingListPage {
       })
       .pipe(
         switchMap((result) => {
-          if (!recovering && isPastEnd(query, result)) {
-            const lastPage = Math.ceil(result.totalCount / query.pageSize);
+          if (isPastEnd(query, result)) {
+            const page = recovering ? 1 : Math.ceil(result.totalCount / query.pageSize);
 
-            this.page.set(lastPage);
+            this.page.set(page);
 
-            return this.fetch({ ...query, page: lastPage }, true);
+            return this.fetch({ ...query, page }, true);
           }
 
           this.totalCount.set(result.totalCount);
@@ -237,11 +242,13 @@ export class SightingListPage {
   }
 
   private failureState(error: unknown): SightingListState {
-    if (!isExpectedClientStatus(error)) {
+    const badRequest = error instanceof HttpErrorResponse && error.status === 400;
+
+    if (badRequest || !isExpectedClientStatus(error)) {
       this.reporting.report('api-failure', 'sightings.list', error);
     }
 
-    const traceId = unexpectedTraceId(error);
+    const traceId = badRequest ? (problemTraceId(error) ?? undefined) : unexpectedTraceId(error);
 
     return traceId === undefined ? { kind: 'error' } : { kind: 'error', traceId };
   }

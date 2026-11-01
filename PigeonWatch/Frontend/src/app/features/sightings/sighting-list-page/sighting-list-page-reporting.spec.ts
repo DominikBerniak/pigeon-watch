@@ -62,7 +62,15 @@ describe('SightingListPage failure reporting', () => {
     expect(report).toHaveBeenCalledExactlyOnceWith('api-failure', 'sightings.list', error);
   });
 
-  it.each([400, 429])('does not report or show a reference for a %s', async (status) => {
+  it('shows the reference and reports api-failure for a 400, which the page never causes by input', async () => {
+    const error = new HttpErrorResponse({ status: 400, error: { traceId } });
+    const root = await render(error);
+
+    expect(root.querySelector('app-error-retry')?.textContent).toContain(`Reference: ${traceId}`);
+    expect(report).toHaveBeenCalledExactlyOnceWith('api-failure', 'sightings.list', error);
+  });
+
+  it.each([401, 429])('does not report or show a reference for a %s', async (status) => {
     const root = await render(new HttpErrorResponse({ status, error: { traceId } }));
 
     expect(root.querySelector('app-error-retry')).not.toBeNull();

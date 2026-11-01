@@ -93,10 +93,15 @@ test('the list opened from the map shows the reported sighting and a no-match me
   await expect(panel).toBeHidden();
 
   expect(current.request().postDataJSON()).toMatchObject({ criticalities: [3], page: 1 });
+  const { totalCount: urgentCount } = (await current.json()) as SightingPageBody;
+  await expect(
+    page.getByRole('heading', { name: `Sightings nearby (${urgentCount})` }),
+  ).toBeVisible();
 
   const lastPage = page.getByRole('button', { name: 'Last page' });
 
-  if (!(await holds(current, sightingId)) && (await lastPage.isEnabled())) {
+  if (!(await holds(current, sightingId)) && urgentCount > 10) {
+    await expect(lastPage).toBeEnabled();
     const last = listResponse(page);
     await lastPage.click();
     current = await last;
@@ -126,9 +131,17 @@ test('the list opened from the map shows the reported sighting and a no-match me
   await expect(panel).toBeHidden();
 
   expect(resolved.request().postDataJSON()).toMatchObject({ statuses: [6], page: 1 });
-  await expect(
-    page.getByText(/^No sightings within \d+ km match the selected filters\.$/),
-  ).toBeVisible();
+  const { totalCount: resolvedCount } = (await resolved.json()) as SightingPageBody;
+
+  if (resolvedCount === 0) {
+    await expect(
+      page.getByText(/^No sightings within \d+ km match the selected filters\.$/),
+    ).toBeVisible();
+    await expect(page.locator('.sighting-list__page-number')).toHaveCount(0);
+  } else {
+    await expect(
+      page.getByRole('heading', { name: `Sightings nearby (${resolvedCount})` }),
+    ).toBeVisible();
+  }
   await expect(row).toHaveCount(0);
-  await expect(page.locator('.sighting-list__page-number')).toHaveCount(0);
 });

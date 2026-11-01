@@ -422,13 +422,33 @@ describe('SightingListPage', () => {
     expect(rowNames()).toEqual(['Unnamed bird']);
   });
 
-  it('does not chase the last page twice when it is empty as well', async () => {
+  it('falls back to the first page when the last page comes back empty as well', async () => {
+    await render({ status: 'ok', ...warsaw }, of({ items: [urgent, monitor], totalCount: 25 }));
+    list.mockImplementation((request) =>
+      of(
+        request.page === 3
+          ? { items: [], totalCount: 15 }
+          : request.page === 2
+            ? { items: [], totalCount: 5 }
+            : { items: [monitor], totalCount: 5 },
+      ),
+    );
+
+    await turnTo(2);
+
+    expect(list.mock.calls.map(([request]) => request.page)).toEqual([1, 3, 2, 1]);
+    expect(paginator()?.pageIndex).toBe(0);
+    expect(rowNames()).toEqual(['Unnamed bird']);
+    expect(text('.sighting-list__page-number')).toBe('1 / 1');
+  });
+
+  it('stops after the first page when every page comes back empty', async () => {
     await render({ status: 'ok', ...warsaw }, of({ items: [urgent, monitor], totalCount: 25 }));
     list.mockReturnValue(of({ items: [], totalCount: 15 }));
 
     await turnTo(2);
 
-    expect(list.mock.calls.map(([request]) => request.page)).toEqual([1, 3, 2]);
+    expect(list.mock.calls.map(([request]) => request.page)).toEqual([1, 3, 2, 1]);
     expect(root().querySelector('ul')).toBeNull();
   });
 
