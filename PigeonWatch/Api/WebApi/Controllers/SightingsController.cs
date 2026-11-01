@@ -16,6 +16,7 @@ namespace PigeonWatch.WebApi.Controllers;
 public class SightingsController(
     ISightingService sightingService,
     ICreateSightingRequestMapper createSightingRequestMapper,
+    INearbySightingsRequestMapper nearbySightingsRequestMapper,
     ISightingViewModelCreator sightingViewModelCreator,
     ILogger<SightingsController> logger) : FailureLoggingControllerBase(logger)
 {
@@ -73,9 +74,8 @@ public class SightingsController(
     {
         Response.Headers.CacheControl = noStoreCacheControl;
 
-        List<SightingStatus> statuses = request.Statuses.Select(status => (SightingStatus)status).ToList();
-        List<SightingCriticality> criticalities = request.Criticalities.Select(criticality => (SightingCriticality)criticality).ToList();
-        SightingNearbyResult result = await sightingService.GetNearbyAsync(request.Latitude, request.Longitude, statuses, criticalities, cancellationToken);
+        NearbySightingFilters filters = nearbySightingsRequestMapper.MapFilters(request);
+        SightingNearbyResult result = await sightingService.GetNearbyAsync(request.Latitude, request.Longitude, filters.Statuses, filters.Criticalities, cancellationToken);
 
         if (!result.Succeeded)
         {

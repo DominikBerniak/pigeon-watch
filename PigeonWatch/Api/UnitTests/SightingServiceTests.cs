@@ -223,7 +223,7 @@ public class SightingServiceTests
             box.MinLongitude,
             box.MaxLongitude,
             Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.Order().SequenceEqual(openStatuses)),
-            Arg.Is<IReadOnlyCollection<SightingCriticality>?>(criticalities => criticalities != null && criticalities.Count == 0),
+            Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.Count == 0),
             SightingRules.NearbyBoxMaxRows,
             Arg.Any<CancellationToken>());
     }
@@ -307,7 +307,7 @@ public class SightingServiceTests
             Arg.Any<double>(),
             Arg.Any<double>(),
             Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.Order().SequenceEqual(new[] { SightingStatus.Spotted, SightingStatus.Caught })),
-            Arg.Is<IReadOnlyCollection<SightingCriticality>?>(criticalities => criticalities != null && criticalities.Count == 0),
+            Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.Count == 0),
             SightingRules.NearbyBoxMaxRows,
             Arg.Any<CancellationToken>());
     }
@@ -333,7 +333,7 @@ public class SightingServiceTests
             Arg.Any<double>(),
             Arg.Any<double>(),
             Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.Order().SequenceEqual(openStatuses)),
-            Arg.Is<IReadOnlyCollection<SightingCriticality>?>(criticalities => criticalities != null && criticalities.SequenceEqual(new[] { SightingCriticality.Urgent })),
+            Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.SequenceEqual(new[] { SightingCriticality.Urgent })),
             SightingRules.NearbyBoxMaxRows,
             Arg.Any<CancellationToken>());
     }
@@ -357,8 +357,8 @@ public class SightingServiceTests
             Arg.Any<double>(),
             Arg.Any<double>(),
             Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.SequenceEqual(new[] { SightingStatus.AtTheVet })),
-            Arg.Is<IReadOnlyCollection<SightingCriticality>?>(criticalities => criticalities != null
-                && criticalities.Order().SequenceEqual(new[] { SightingCriticality.Monitor, SightingCriticality.NeedsHelpSoon })),
+            Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities =>
+                criticalities.Order().SequenceEqual(new[] { SightingCriticality.Monitor, SightingCriticality.NeedsHelpSoon })),
             SightingRules.NearbyBoxMaxRows,
             Arg.Any<CancellationToken>());
     }
@@ -452,7 +452,7 @@ public class SightingServiceTests
             Arg.Any<double>(),
             Arg.Any<double>(),
             Arg.Any<IReadOnlyCollection<SightingStatus>>(),
-            Arg.Any<IReadOnlyCollection<SightingCriticality>?>(),
+            Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
             Arg.Any<int>(),
             Arg.Any<CancellationToken>());
     }
@@ -466,7 +466,7 @@ public class SightingServiceTests
                 Arg.Any<double>(),
                 Arg.Any<double>(),
                 Arg.Any<IReadOnlyCollection<SightingStatus>>(),
-                Arg.Any<IReadOnlyCollection<SightingCriticality>?>(),
+                Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
                 Arg.Any<int>(),
                 Arg.Any<CancellationToken>())
             .Returns(candidates);

@@ -283,7 +283,7 @@ public class SightingsControllerTests
                 Arg.Any<string?>())
             .Returns(call => new ValidationProblemDetails(call.Arg<ModelStateDictionary>()) { Status = StatusCodes.Status400BadRequest });
 
-        return new(sightingService, new CreateSightingRequestMapper(), new SightingViewModelCreator(), NullLogger<SightingsController>.Instance)
+        return new(sightingService, new CreateSightingRequestMapper(), new NearbySightingsRequestMapper(), new SightingViewModelCreator(), NullLogger<SightingsController>.Instance)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } },
             ProblemDetailsFactory = problemDetailsFactory

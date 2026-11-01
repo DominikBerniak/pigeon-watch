@@ -183,7 +183,7 @@ public class ControllerFailureLoggingTests
 
     private SightingsController CreateSightingsController(ClaimsPrincipal user)
     {
-        return new(sightingService, new CreateSightingRequestMapper(), new SightingViewModelCreator(), sightingsLogger)
+        return new(sightingService, new CreateSightingRequestMapper(), new NearbySightingsRequestMapper(), new SightingViewModelCreator(), sightingsLogger)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } },
             ProblemDetailsFactory = CreateProblemDetailsFactory()

@@ -194,6 +194,14 @@ Two multi-selects in the map toolbar drive the search pipeline; the page reports
 
 **Contract**: A new `NearbyMode` for a filtered result in `cell-stubs.ts`, new ids following the `map-*` pattern in `nearbyMapCells`, and matching assertions in `kitchen-sink.spec.ts`; the "every cell renders once" test (`:115`) still passes.
 
+#### 5. Addendum (2026-11-01, recorded after implementation review F1)
+
+**File**: `nearby-map-page.html`, `nearby-map-page.ts`, `nearby-map-page.scss`, `nearby-map-filters.html`, `nearby-map-filters.ts`, `_material-theme.scss`, `_tokens.scss`, `UiLabels.resx`, `cell-driver.ts`
+
+**Intent**: The filters do not sit inline in the toolbar. The toolbar holds a "Show filters" / "Show filters (N)" / "Hide filters" toggle (`aria-expanded`, `aria-controls="nearby-filters"`) next to "Search this area", and the filters component renders in its own row below the toolbar, collapsed on load and hidden with `[hidden]`. The component also has a "Clear filters" button that resets both selects. This keeps the toolbar usable at phone width (manual check 3.3).
+
+**Contract**: Extra label keys `map.filters.show`, `map.filters.showActive`, `map.filters.hide`, `map.filters.clear`; a `--pw-map-filter-width` token; the toggle's open state styled through `button.nearby-filters-toggle[aria-expanded='true']` in `_material-theme.scss` plus a background in `nearby-map-page.scss`; a compact form-field override keyed on `app-nearby-map-filters`; a `choose()` step in `cell-driver.ts` so kitchen-sink cells can pick a `mat-select` option. The kitchen-sink cells and the E2E test open the panel before using the selects. The page, the filters' inputs/outputs and the pipeline contract above are unchanged.
+
 ### Success Criteria:
 
 #### Automated Verification:
@@ -225,6 +233,8 @@ One browser-level test keeps the feature working end to end, and the project doc
 **Intent**: Using the seed's mocked geolocation and a sighting reported through the UI as in `seed.spec.ts`, assert that a matching criticality filter keeps its marker and a non-matching one removes it, using `getByRole('combobox')` and `getByRole('option')`.
 
 **Contract**: One test; reuses the `auth.setup.ts` session and the seed's coordinates (52.07, 19.48); the marker is found by its accessible name `${birdName}, Urgent`.
+
+**Addendum (2026-11-01, recorded after implementation review F4)**: The test does not reuse the `auth.setup.ts` session. It clears `storageState` and registers its own timestamped user, because `seed.spec.ts` also reports a sighting as the shared session user and the API allows one report per user per 60 seconds, so the two tests would collide on the cooldown in one run.
 
 #### 2. Frontend and roadmap documentation
 

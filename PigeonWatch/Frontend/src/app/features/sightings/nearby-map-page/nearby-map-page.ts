@@ -281,7 +281,9 @@ export class NearbyMapPage {
   protected changeFilters(filters: SightingFilters): void {
     this.filters.set(filters);
 
-    if (this.lastSearchCentre) this.search(this.lastSearchCentre);
+    if (!this.lastSearchCentre || this.zoomedOut() || this.mapFailed()) return;
+
+    this.search(this.lastSearchCentre);
   }
 
   protected select(id: string): void {

@@ -96,7 +96,7 @@ public sealed class SightingRepositoryTests : IDisposable
         await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.5001, SightingStatus.Spotted));
 
         await using PigeonWatchDbContext db = CreateContext();
-        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, null, 50, cancellationToken);
+        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, cancellationToken);
 
         Assert.Equal(
             new[] { minCorner.Id, maxCorner.Id, centre.Id }.Order(),
@@ -118,7 +118,7 @@ public sealed class SightingRepositoryTests : IDisposable
         }
 
         await using PigeonWatchDbContext db = CreateContext();
-        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, null, 50, cancellationToken);
+        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, cancellationToken);
 
         Assert.Equal(openIds.Order(), found.Select(sighting => sighting.Id).Order());
         Assert.All(found, sighting => Assert.Contains(sighting.Status, openStatuses));
@@ -136,8 +136,8 @@ public sealed class SightingRepositoryTests : IDisposable
 
         await using PigeonWatchDbContext db = CreateContext();
         ISightingRepository repository = CreateRepository(db);
-        IReadOnlyList<Sighting> all = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, null, 50, cancellationToken);
-        IReadOnlyList<Sighting> firstTwo = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, null, 2, cancellationToken);
+        IReadOnlyList<Sighting> all = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, cancellationToken);
+        IReadOnlyList<Sighting> firstTwo = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 2, cancellationToken);
 
         Assert.Equal([newest.Id, middle.Id, oldest.Id], all.Select(sighting => sighting.Id));
         Assert.Equal([newest.Id, middle.Id], firstTwo.Select(sighting => sighting.Id));

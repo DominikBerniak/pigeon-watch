@@ -38,7 +38,7 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
         double minLongitude,
         double maxLongitude,
         IReadOnlyCollection<SightingStatus> statuses,
-        IReadOnlyCollection<SightingCriticality>? criticalities,
+        IReadOnlyCollection<SightingCriticality> criticalities,
         int take,
         CancellationToken cancellationToken = default)
     {
@@ -52,7 +52,7 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
                 && e.Longitude <= maxLongitude
                 && statusList.Contains(e.Status));
 
-        if (criticalities is { Count: > 0 })
+        if (criticalities.Count > 0)
         {
             List<SightingCriticality> criticalityList = criticalities.ToList();
             query = query.Where(e => criticalityList.Contains(e.Criticality));

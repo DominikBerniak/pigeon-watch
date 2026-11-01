@@ -866,6 +866,31 @@ describe('NearbyMapPage', () => {
     expect(nearby).toHaveBeenCalledExactlyOnceWith(krakow, urgentOnly);
   });
 
+  it('only stores the filters while the map is zoomed out', async () => {
+    await render({ status: 'ok', ...warsaw });
+    map().centerChange.emit(krakow);
+    await zoomTo(9);
+    await applyFilters(urgentOnly);
+
+    expect(nearby).toHaveBeenCalledTimes(1);
+    expect(status()).toBe('Zoom in to search an area');
+
+    await zoomTo(10);
+    button('Search this area').click();
+    await settle();
+
+    expect(nearby).toHaveBeenLastCalledWith(krakow, urgentOnly);
+  });
+
+  it('only stores the filters while the map failed to load', async () => {
+    await render({ status: 'ok', ...warsaw });
+    map().loadFailed.emit(true);
+    await settle();
+    await applyFilters(urgentOnly);
+
+    expect(nearby).toHaveBeenCalledTimes(1);
+  });
+
   it('shows the no-match text when a filtered search finds nothing', async () => {
     await render({ status: 'ok', ...warsaw });
     nearby.mockReturnValue(of({ items: [] }));
