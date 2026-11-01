@@ -482,5 +482,5 @@ No schema change and no data migration. The SPA and API ship together; an older 
 
 #### Automated
 
-- [x] 5.1 The new sighting-list Playwright test passes
-- [x] 5.2 The full E2E suite still passes
+- [x] 5.1 The new sighting-list Playwright test passes — eec602e
+- [x] 5.2 The full E2E suite still passes — eec602e
