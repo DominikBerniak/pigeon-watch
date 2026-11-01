@@ -17,6 +17,7 @@ public class SightingsController(
     ISightingService sightingService,
     ICreateSightingRequestMapper createSightingRequestMapper,
     INearbySightingsRequestMapper nearbySightingsRequestMapper,
+    ISightingListRequestMapper sightingListRequestMapper,
     ISightingViewModelCreator sightingViewModelCreator,
     ILogger<SightingsController> logger) : FailureLoggingControllerBase(logger)
 {
@@ -28,7 +29,9 @@ public class SightingsController(
         SightingErrorCodes.InvalidInitialStatus,
         SightingErrorCodes.InvalidCriticality,
         SightingErrorCodes.InvalidFilterStatus,
-        SightingErrorCodes.InvalidFilterCriticality
+        SightingErrorCodes.InvalidFilterCriticality,
+        SightingErrorCodes.InvalidPage,
+        SightingErrorCodes.InvalidPageSize
     ];
 
     [HttpPost]
@@ -86,6 +89,25 @@ public class SightingsController(
         }
 
         return Ok(sightingViewModelCreator.CreateList(result.Sightings));
+    }
+
+    [HttpPost("list")]
+    public async Task<ActionResult<SightingPageModel>> List([FromBody] SightingListRequestModel request, CancellationToken cancellationToken)
+    {
+        Response.Headers.CacheControl = noStoreCacheControl;
+
+        SightingListQuery query = sightingListRequestMapper.Map(request);
+        SightingListResult result = await sightingService.GetListPageAsync(query, cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            foreach (SightingError error in result.Errors.Where(error => loggedErrorCodes.Contains(error.Code)))
+                LogInvalidInput(error.Code);
+
+            return GetValidationProblem<SightingPageModel>(result.Errors.Select(error => (error.Code, error.Description)));
+        }
+
+        return Ok(sightingViewModelCreator.CreatePage(result.Page));
     }
 
     [HttpGet("mine")]

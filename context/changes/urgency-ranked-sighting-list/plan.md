@@ -431,25 +431,25 @@ No schema change and no data migration. The SPA and API ship together; an older 
 
 #### Automated
 
-- [x] 1.1 The SQLite radius test passes, proving sin/cos translate on SQLite
-- [x] 1.2 Unit tests pass
-- [x] 1.3 Architecture tests pass
-- [x] 1.4 Build passes with style rules
-- [x] 1.5 No model change reported by has-pending-model-changes
+- [x] 1.1 The SQLite radius test passes, proving sin/cos translate on SQLite — 4638951
+- [x] 1.2 Unit tests pass — 4638951
+- [x] 1.3 Architecture tests pass — 4638951
+- [x] 1.4 Build passes with style rules — 4638951
+- [x] 1.5 No model change reported by has-pending-model-changes — 4638951
 
 ### Phase 2: API endpoint — POST sightings/list
 
 #### Automated
 
-- [ ] 2.1 Build passes with style rules
-- [ ] 2.2 Architecture tests pass
-- [ ] 2.3 Unit tests pass, including unchanged nearby tests
-- [ ] 2.4 Integration tests pass, including endpoint coverage and the privacy sweep over the new fixtures
+- [x] 2.1 Build passes with style rules
+- [x] 2.2 Architecture tests pass
+- [x] 2.3 Unit tests pass, including unchanged nearby tests
+- [x] 2.4 Integration tests pass, including endpoint coverage and the privacy sweep over the new fixtures
 
 #### Manual
 
-- [ ] 2.5 POST sightings/list on LocalDB returns in-radius sightings in urgency order with the right totalCount
-- [ ] 2.6 GET sightings/nearby returns the same sightings as before, newest first
+- [x] 2.5 POST sightings/list on LocalDB returns in-radius sightings in urgency order with the right totalCount
+- [x] 2.6 GET sightings/nearby returns the same sightings as before, newest first
 
 ### Phase 3: SPA shared components — filters and sighting row
 

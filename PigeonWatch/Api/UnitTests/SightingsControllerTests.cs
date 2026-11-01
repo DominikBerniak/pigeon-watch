@@ -232,6 +232,84 @@ public class SightingsControllerTests
     }
 
     [Fact]
+    public async Task List_returns_the_page_with_its_total_count_without_caching()
+    {
+        Sighting stored = Sighting();
+        sightingService
+            .GetListPageAsync(Arg.Any<SightingListQuery>(), Arg.Any<CancellationToken>())
+            .Returns(SightingListResult.Success(new SightingPage([stored], 31)));
+        SightingsController controller = CreateController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingPageModel> result = await controller.List(
+            new SightingListRequestModel { Latitude = 52.1, Longitude = 21.1 },
+            cancellationToken);
+
+        SightingPageModel model = Assert.IsType<SightingPageModel>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal([stored.Id], model.Items.Select(item => item.Id));
+        Assert.Equal("Pidgey", model.Items[0].ReporterDisplayName);
+        Assert.Equal(31, model.TotalCount);
+        Assert.Equal("private, no-store", controller.Response.Headers.CacheControl.ToString());
+    }
+
+    [Fact]
+    public async Task List_passes_the_mapped_query_to_the_service()
+    {
+        sightingService
+            .GetListPageAsync(Arg.Any<SightingListQuery>(), Arg.Any<CancellationToken>())
+            .Returns(SightingListResult.Success(new SightingPage([], 0)));
+        SightingsController controller = CreateController(Authenticated(Guid.NewGuid()));
+
+        await controller.List(
+            new SightingListRequestModel { Latitude = 52.1, Longitude = 21.1, Statuses = [6], Criticalities = [3], Page = 2, PageSize = 20 },
+            cancellationToken);
+
+        await sightingService.Received(1).GetListPageAsync(
+            Arg.Is<SightingListQuery>(query =>
+                query.Latitude == 52.1
+                && query.Longitude == 21.1
+                && query.Statuses.SequenceEqual(new[] { SightingStatus.Adopted })
+                && query.Criticalities.SequenceEqual(new[] { SightingCriticality.Urgent })
+                && query.Page == 2
+                && query.PageSize == 20),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task List_returns_400_keyed_by_code_for_rejected_values()
+    {
+        sightingService
+            .GetListPageAsync(Arg.Any<SightingListQuery>(), Arg.Any<CancellationToken>())
+            .Returns(SightingListResult.Failure(
+            [
+                new SightingError(SightingErrorCodes.InvalidPage, "page"),
+                new SightingError(SightingErrorCodes.InvalidPageSize, "page size")
+            ]));
+        SightingsController controller = CreateController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingPageModel> result = await controller.List(
+            new SightingListRequestModel { Latitude = 52.1, Longitude = 21.1, Page = 0, PageSize = 15 },
+            cancellationToken);
+
+        ValidationProblemDetails problem = Assert.IsType<ValidationProblemDetails>(Assert.IsType<BadRequestObjectResult>(result.Result).Value);
+        Assert.Equal(
+            [SightingErrorCodes.InvalidPage, SightingErrorCodes.InvalidPageSize],
+            problem.Errors.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal("private, no-store", controller.Response.Headers.CacheControl.ToString());
+    }
+
+    [Fact]
+    public void List_request_defaults_to_the_first_page_of_the_default_size_with_no_filters()
+    {
+        SightingListRequestModel request = new() { Latitude = 52.1, Longitude = 21.1 };
+
+        Assert.Equal(1, request.Page);
+        Assert.Equal(SightingRules.ListDefaultPageSize, request.PageSize);
+        Assert.Equal(10, request.PageSize);
+        Assert.Empty(request.Statuses);
+        Assert.Empty(request.Criticalities);
+    }
+
+    [Fact]
     public async Task Mine_returns_the_current_users_sightings_without_caching()
     {
         Guid userId = Guid.NewGuid();
@@ -283,7 +361,7 @@ public class SightingsControllerTests
                 Arg.Any<string?>())
             .Returns(call => new ValidationProblemDetails(call.Arg<ModelStateDictionary>()) { Status = StatusCodes.Status400BadRequest });
 
-        return new(sightingService, new CreateSightingRequestMapper(), new NearbySightingsRequestMapper(), new SightingViewModelCreator(), NullLogger<SightingsController>.Instance)
+        return new(sightingService, new CreateSightingRequestMapper(), new NearbySightingsRequestMapper(), new SightingListRequestMapper(), new SightingViewModelCreator(), NullLogger<SightingsController>.Instance)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } },
             ProblemDetailsFactory = problemDetailsFactory

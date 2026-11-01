@@ -39,6 +39,7 @@ public sealed class EndpointFixtureRegistry
         new(["POST sightings"], BuildCreateSighting),
         new(["GET sightings/{id:guid}"], BuildGetSighting),
         new(["GET sightings/nearby"], BuildNearby),
+        new(["POST sightings/list"], BuildList),
         new(["GET sightings/mine"], BuildMine),
         new(["POST auth/login"], BuildLogin),
         new(["POST auth/refresh"], BuildRefresh),
@@ -210,6 +211,27 @@ public sealed class EndpointFixtureRegistry
             Make(key, "resolved status and undefined criticality filter", new HttpRequestMessage(HttpMethod.Get, "/sightings/nearby?latitude=52.2297&longitude=21.0122&statuses=6&criticalities=9")),
             Make(key, "non numeric filter value", new HttpRequestMessage(HttpMethod.Get, "/sightings/nearby?latitude=52.2297&longitude=21.0122&statuses=abc"))
         ];
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildList(FixtureContext context)
+    {
+        const string key = "POST sightings/list";
+        const string uri = "/sightings/list";
+        List<FixtureRequest> requests =
+        [
+            Make(key, "default body", JsonOf(HttpMethod.Post, uri, new { latitude = 52.2297, longitude = 21.0122 })),
+            Make(key, "page 2 with size 20", JsonOf(HttpMethod.Post, uri, new { latitude = 52.2297, longitude = 21.0122, page = 2, pageSize = 20 })),
+            Make(key, "resolved status filter", JsonOf(HttpMethod.Post, uri, new { latitude = 52.2297, longitude = 21.0122, statuses = new[] { 6 } })),
+            Make(key, "page 0", JsonOf(HttpMethod.Post, uri, new { latitude = 52.2297, longitude = 21.0122, page = 0 })),
+            Make(key, "page size 15", JsonOf(HttpMethod.Post, uri, new { latitude = 52.2297, longitude = 21.0122, pageSize = 15 })),
+            Make(key, "latitude out of range", JsonOf(HttpMethod.Post, uri, new { latitude = 999, longitude = 21.0122 })),
+            Make(key, "missing coordinates", JsonOf(HttpMethod.Post, uri, new { page = 1 })),
+            Make(key, "non numeric status", JsonOf(HttpMethod.Post, uri, new { latitude = 52.2297, longitude = 21.0122, statuses = new[] { "abc" } }))
+        ];
+
+        AddMalformed(requests, key, HttpMethod.Post, uri);
+
+        return requests;
     }
 
     private static IReadOnlyList<FixtureRequest> BuildMine(FixtureContext context)

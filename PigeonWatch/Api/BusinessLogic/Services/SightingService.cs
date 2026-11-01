@@ -9,6 +9,13 @@ public class SightingService(
     IGeoDistanceCalculator geoDistanceCalculator,
     TimeProvider timeProvider) : ISightingService
 {
+    private static readonly HashSet<int> listPageSizes =
+    [
+        SightingRules.ListPageSizeSmall,
+        SightingRules.ListPageSizeMedium,
+        SightingRules.ListPageSizeLarge
+    ];
+
     public async Task<SightingCreateResult> CreateAsync(NewSighting sighting, CancellationToken cancellationToken = default)
     {
         NewSighting trimmed = sighting with
@@ -91,6 +98,31 @@ public class SightingService(
         return SightingNearbyResult.Success(nearby);
     }
 
+    public async Task<SightingListResult> GetListPageAsync(SightingListQuery query, CancellationToken cancellationToken = default)
+    {
+        List<SightingError> errors = ValidateListQuery(query);
+
+        if (errors.Count > 0)
+            return SightingListResult.Failure(errors);
+
+        List<SightingStatus> requestedStatuses = query.Statuses.Count == 0
+            ? Enum.GetValues<SightingStatus>().Where(status => !sightingStatusTransitionProvider.IsResolved(status)).ToList()
+            : query.Statuses.Distinct().ToList();
+        List<SightingCriticality> requestedCriticalities = query.Criticalities.Distinct().ToList();
+        GeoRadiusFilter radius = geoDistanceCalculator.GetRadiusFilter(query.Latitude, query.Longitude, SightingRules.NearbyRadiusKilometers);
+        int skip = (query.Page - 1) * query.PageSize;
+
+        SightingPage page = await sightingRepository.ListPageInRadiusAsync(
+            radius,
+            requestedStatuses,
+            requestedCriticalities,
+            skip,
+            query.PageSize,
+            cancellationToken);
+
+        return SightingListResult.Success(page);
+    }
+
     public async Task<IReadOnlyList<Sighting>> GetMineAsync(Guid reporterId, CancellationToken cancellationToken = default)
     {
         return await sightingRepository.ListByReporterAsync(reporterId, SightingRules.MineMaxResults, cancellationToken);
@@ -124,6 +156,25 @@ public class SightingService(
 
         if (criticalities.Any(criticality => !Enum.IsDefined(criticality)))
             errors.Add(new SightingError(SightingErrorCodes.InvalidFilterCriticality, "Criticality filter accepts only Monitor, Needs help soon or Urgent."));
+
+        return errors;
+    }
+
+    private static List<SightingError> ValidateListQuery(SightingListQuery query)
+    {
+        List<SightingError> errors = [];
+
+        if (query.Statuses.Any(status => !Enum.IsDefined(status)))
+            errors.Add(new SightingError(SightingErrorCodes.InvalidFilterStatus, "Status filter accepts only defined sighting statuses."));
+
+        if (query.Criticalities.Any(criticality => !Enum.IsDefined(criticality)))
+            errors.Add(new SightingError(SightingErrorCodes.InvalidFilterCriticality, "Criticality filter accepts only Monitor, Needs help soon or Urgent."));
+
+        if (query.Page < 1)
+            errors.Add(new SightingError(SightingErrorCodes.InvalidPage, "Page must be 1 or greater."));
+
+        if (!listPageSizes.Contains(query.PageSize))
+            errors.Add(new SightingError(SightingErrorCodes.InvalidPageSize, "Page size must be 10, 20 or 30."));
 
         return errors;
     }

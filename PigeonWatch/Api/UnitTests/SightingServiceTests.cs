@@ -420,6 +420,181 @@ public class SightingServiceTests
     }
 
     [Fact]
+    public async Task List_with_empty_statuses_asks_the_repository_for_the_open_statuses_in_the_radius()
+    {
+        GeoRadiusFilter radius = geoDistanceCalculator.GetRadiusFilter(centreLatitude, centreLongitude, SightingRules.NearbyRadiusKilometers);
+        SightingStatus[] openStatuses =
+            [SightingStatus.Spotted, SightingStatus.Caught, SightingStatus.AtTheVet, SightingStatus.InHomeCare, SightingStatus.AwaitingAdoption];
+        Sighting stored = SightingAt(centreLatitude, centreLongitude, now.UtcDateTime);
+        PageInRadius(new SightingPage([stored], 1));
+
+        SightingListResult result = await CreateService().GetListPageAsync(ListQuery(), cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Empty(result.Errors);
+        Assert.Equal([stored.Id], result.Page.Items.Select(sighting => sighting.Id));
+        Assert.Equal(1, result.Page.TotalCount);
+        await sightingRepository.Received(1).ListPageInRadiusAsync(
+            radius,
+            Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.Order().SequenceEqual(openStatuses)),
+            Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.Count == 0),
+            0,
+            SightingRules.ListDefaultPageSize,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task List_accepts_a_resolved_status_and_passes_it_through()
+    {
+        PageInRadius(new SightingPage([], 0));
+
+        SightingListResult result = await CreateService().GetListPageAsync(
+            ListQuery() with { Statuses = [SightingStatus.Adopted] },
+            cancellationToken);
+
+        Assert.True(result.Succeeded);
+        await sightingRepository.Received(1).ListPageInRadiusAsync(
+            Arg.Any<GeoRadiusFilter>(),
+            Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.SequenceEqual(new[] { SightingStatus.Adopted })),
+            Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.Count == 0),
+            Arg.Any<int>(),
+            Arg.Any<int>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task List_passes_the_requested_statuses_and_criticalities_without_duplicates()
+    {
+        PageInRadius(new SightingPage([], 0));
+
+        SightingListResult result = await CreateService().GetListPageAsync(
+            ListQuery() with
+            {
+                Statuses = [SightingStatus.Released, SightingStatus.Spotted, SightingStatus.Released],
+                Criticalities = [SightingCriticality.Urgent, SightingCriticality.Monitor, SightingCriticality.Urgent]
+            },
+            cancellationToken);
+
+        Assert.True(result.Succeeded);
+        await sightingRepository.Received(1).ListPageInRadiusAsync(
+            Arg.Any<GeoRadiusFilter>(),
+            Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses =>
+                statuses.Order().SequenceEqual(new[] { SightingStatus.Spotted, SightingStatus.Released })),
+            Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities =>
+                criticalities.Order().SequenceEqual(new[] { SightingCriticality.Monitor, SightingCriticality.Urgent })),
+            Arg.Any<int>(),
+            Arg.Any<int>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(1, 10, 0)]
+    [InlineData(2, 20, 20)]
+    [InlineData(3, 30, 60)]
+    public async Task List_skips_the_earlier_pages_and_takes_one_page(int page, int pageSize, int expectedSkip)
+    {
+        PageInRadius(new SightingPage([], 0));
+
+        SightingListResult result = await CreateService().GetListPageAsync(
+            ListQuery() with { Page = page, PageSize = pageSize },
+            cancellationToken);
+
+        Assert.True(result.Succeeded);
+        await sightingRepository.Received(1).ListPageInRadiusAsync(
+            Arg.Any<GeoRadiusFilter>(),
+            Arg.Any<IReadOnlyCollection<SightingStatus>>(),
+            Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
+            expectedSkip,
+            pageSize,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(10)]
+    [InlineData(42)]
+    public async Task List_rejects_an_undefined_status(int status)
+    {
+        SightingListResult result = await CreateService().GetListPageAsync(
+            ListQuery() with { Statuses = [SightingStatus.Spotted, (SightingStatus)status] },
+            cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([SightingErrorCodes.InvalidFilterStatus], result.Errors.Select(error => error.Code));
+        Assert.Empty(result.Page.Items);
+        await AssertNoPageQueryAsync();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(4)]
+    public async Task List_rejects_an_undefined_criticality(int criticality)
+    {
+        SightingListResult result = await CreateService().GetListPageAsync(
+            ListQuery() with { Criticalities = [SightingCriticality.Urgent, (SightingCriticality)criticality] },
+            cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([SightingErrorCodes.InvalidFilterCriticality], result.Errors.Select(error => error.Code));
+        await AssertNoPageQueryAsync();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task List_rejects_a_page_below_1(int page)
+    {
+        SightingListResult result = await CreateService().GetListPageAsync(
+            ListQuery() with { Page = page },
+            cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([SightingErrorCodes.InvalidPage], result.Errors.Select(error => error.Code));
+        await AssertNoPageQueryAsync();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(15)]
+    [InlineData(31)]
+    [InlineData(-10)]
+    public async Task List_rejects_a_page_size_other_than_10_20_or_30(int pageSize)
+    {
+        SightingListResult result = await CreateService().GetListPageAsync(
+            ListQuery() with { PageSize = pageSize },
+            cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([SightingErrorCodes.InvalidPageSize], result.Errors.Select(error => error.Code));
+        await AssertNoPageQueryAsync();
+    }
+
+    [Fact]
+    public async Task List_reports_every_rejected_value_together()
+    {
+        SightingListResult result = await CreateService().GetListPageAsync(
+            ListQuery() with
+            {
+                Statuses = [(SightingStatus)42],
+                Criticalities = [(SightingCriticality)9],
+                Page = 0,
+                PageSize = 15
+            },
+            cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(
+            [
+                SightingErrorCodes.InvalidFilterCriticality,
+                SightingErrorCodes.InvalidFilterStatus,
+                SightingErrorCodes.InvalidPage,
+                SightingErrorCodes.InvalidPageSize
+            ],
+            result.Errors.Select(error => error.Code).Order(StringComparer.Ordinal));
+        await AssertNoPageQueryAsync();
+    }
+
+    [Fact]
     public async Task Mine_asks_the_repository_for_the_reporters_50_newest_sightings()
     {
         Guid reporterId = Guid.NewGuid();
@@ -455,6 +630,35 @@ public class SightingServiceTests
             Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
             Arg.Any<int>(),
             Arg.Any<CancellationToken>());
+    }
+
+    private async Task AssertNoPageQueryAsync()
+    {
+        await sightingRepository.DidNotReceive().ListPageInRadiusAsync(
+            Arg.Any<GeoRadiusFilter>(),
+            Arg.Any<IReadOnlyCollection<SightingStatus>>(),
+            Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
+            Arg.Any<int>(),
+            Arg.Any<int>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    private void PageInRadius(SightingPage page)
+    {
+        sightingRepository
+            .ListPageInRadiusAsync(
+                Arg.Any<GeoRadiusFilter>(),
+                Arg.Any<IReadOnlyCollection<SightingStatus>>(),
+                Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
+                Arg.Any<int>(),
+                Arg.Any<int>(),
+                Arg.Any<CancellationToken>())
+            .Returns(page);
+    }
+
+    private static SightingListQuery ListQuery()
+    {
+        return new(centreLatitude, centreLongitude, [], [], 1, SightingRules.ListDefaultPageSize);
     }
 
     private void CandidatesInBox(IReadOnlyList<Sighting> candidates)

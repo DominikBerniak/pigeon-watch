@@ -29,4 +29,13 @@ public class SightingViewModelCreator : ISightingViewModelCreator
             Items = sightings.Select(Create).ToList()
         };
     }
+
+    public SightingPageModel CreatePage(SightingPage page)
+    {
+        return new()
+        {
+            Items = page.Items.Select(Create).ToList(),
+            TotalCount = page.TotalCount
+        };
+    }
 }
