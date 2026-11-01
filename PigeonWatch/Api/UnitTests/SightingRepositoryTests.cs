@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using PigeonWatch.BusinessLogic.Services;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data;
 using PigeonWatch.Data.Auditing;
@@ -16,6 +17,8 @@ public sealed class SightingRepositoryTests : IDisposable
 {
     private static readonly SightingStatus[] openStatuses =
         [SightingStatus.Spotted, SightingStatus.Caught, SightingStatus.AtTheVet, SightingStatus.InHomeCare, SightingStatus.AwaitingAdoption];
+
+    private const double kilometersPerDegreeOfLatitude = 111.19508;
 
     private readonly SqliteConnection connection = new("DataSource=:memory:");
     private readonly UpperInvariantLookupNormalizer normalizer = new();
@@ -216,6 +219,119 @@ public sealed class SightingRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task List_page_in_radius_returns_sightings_inside_the_circle_and_excludes_those_outside()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Sighting centre = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        Sighting justInside = (await CreateSightingAsync(NewSighting(reporterId, 52.0 + (9.9 / kilometersPerDegreeOfLatitude), 21.0, SightingStatus.Spotted)))!;
+        await CreateSightingAsync(NewSighting(reporterId, 52.0 + (10.1 / kilometersPerDegreeOfLatitude), 21.0, SightingStatus.Spotted));
+        await CreateSightingAsync(NewSighting(reporterId, 52.08, 21.13, SightingStatus.Spotted));
+
+        await using PigeonWatchDbContext db = CreateContext();
+        SightingPage page = await CreateRepository(db).ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 0, 50, cancellationToken);
+
+        Assert.Equal(new[] { centre.Id, justInside.Id }.Order(), page.Items.Select(sighting => sighting.Id).Order());
+        Assert.Equal(2, page.TotalCount);
+    }
+
+    [Fact]
+    public async Task List_page_in_radius_orders_by_criticality_descending_then_oldest_first_then_id()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Sighting oldMonitor = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted) with { Criticality = SightingCriticality.Monitor }))!;
+        Sighting oldUrgent = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(5);
+        Sighting needsHelpSoon = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted) with { Criticality = SightingCriticality.NeedsHelpSoon }))!;
+        Sighting tiedUrgentFirst = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        Sighting tiedUrgentSecond = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(5);
+        Sighting newUrgent = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        Guid[] tiedUrgentIds = new[] { tiedUrgentFirst.Id, tiedUrgentSecond.Id }.Order().ToArray();
+
+        await using PigeonWatchDbContext db = CreateContext();
+        SightingPage page = await CreateRepository(db).ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 0, 50, cancellationToken);
+
+        Assert.Equal(
+            [oldUrgent.Id, tiedUrgentIds[0], tiedUrgentIds[1], newUrgent.Id, needsHelpSoon.Id, oldMonitor.Id],
+            page.Items.Select(sighting => sighting.Id));
+    }
+
+    [Fact]
+    public async Task List_page_in_radius_counts_every_match_and_returns_one_page()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        List<Guid> ids = [];
+
+        for (int index = 0; index < 5; index++)
+        {
+            timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(1);
+            ids.Add((await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!.Id);
+        }
+
+        await using PigeonWatchDbContext db = CreateContext();
+        ISightingRepository repository = CreateRepository(db);
+        SightingPage firstPage = await repository.ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 0, 2, cancellationToken);
+        SightingPage secondPage = await repository.ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 2, 2, cancellationToken);
+        SightingPage lastPage = await repository.ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 4, 2, cancellationToken);
+
+        Assert.Equal([ids[0], ids[1]], firstPage.Items.Select(sighting => sighting.Id));
+        Assert.Equal([ids[2], ids[3]], secondPage.Items.Select(sighting => sighting.Id));
+        Assert.Equal([ids[4]], lastPage.Items.Select(sighting => sighting.Id));
+        Assert.All([firstPage, secondPage, lastPage], page => Assert.Equal(5, page.TotalCount));
+        Assert.All(firstPage.Items, sighting => Assert.Equal("Pidgey", sighting.ReporterDisplayName));
+    }
+
+    [Fact]
+    public async Task List_page_in_radius_past_the_end_returns_no_items_and_the_real_count()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted));
+        await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted));
+
+        await using PigeonWatchDbContext db = CreateContext();
+        SightingPage page = await CreateRepository(db).ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 10, 10, cancellationToken);
+
+        Assert.Empty(page.Items);
+        Assert.Equal(2, page.TotalCount);
+    }
+
+    [Fact]
+    public async Task List_page_in_radius_applies_the_status_and_criticality_predicates_before_the_count()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        SightingStatus[] requestedStatuses = [SightingStatus.Caught, SightingStatus.Adopted];
+        List<Guid> matchingIds = [];
+
+        foreach (SightingStatus status in Enum.GetValues<SightingStatus>())
+        {
+            foreach (SightingCriticality criticality in Enum.GetValues<SightingCriticality>())
+            {
+                Sighting created = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, status) with { Criticality = criticality }))!;
+
+                if (requestedStatuses.Contains(status) && criticality != SightingCriticality.Monitor)
+                    matchingIds.Add(created.Id);
+            }
+        }
+
+        await using PigeonWatchDbContext db = CreateContext();
+        ISightingRepository repository = CreateRepository(db);
+        SightingPage filtered = await repository.ListPageInRadiusAsync(
+            RadiusAroundCentre(),
+            requestedStatuses,
+            [SightingCriticality.NeedsHelpSoon, SightingCriticality.Urgent],
+            0,
+            2,
+            cancellationToken);
+        SightingPage withoutCriticalities = await repository.ListPageInRadiusAsync(RadiusAroundCentre(), requestedStatuses, [], 0, 50, cancellationToken);
+
+        Assert.Equal(4, filtered.TotalCount);
+        Assert.Equal(2, filtered.Items.Count);
+        Assert.All(filtered.Items, sighting => Assert.Contains(sighting.Id, matchingIds));
+        Assert.Equal(6, withoutCriticalities.TotalCount);
+        Assert.All(withoutCriticalities.Items, sighting => Assert.Contains(sighting.Status, requestedStatuses));
+    }
+
+    [Fact]
     public async Task List_by_reporter_returns_only_that_reporters_sightings_newest_first_up_to_the_take()
     {
         Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
@@ -279,6 +395,11 @@ public sealed class SightingRepositoryTests : IDisposable
     public void Dispose()
     {
         connection.Dispose();
+    }
+
+    private static GeoRadiusFilter RadiusAroundCentre()
+    {
+        return new GeoDistanceCalculator().GetRadiusFilter(52.0, 21.0, SightingRules.NearbyRadiusKilometers);
     }
 
     private static NewSighting NewSighting(Guid reporterId, double latitude, double longitude, SightingStatus status)

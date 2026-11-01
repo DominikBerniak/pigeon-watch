@@ -32,6 +32,15 @@ public class GeoDistanceCalculator : IGeoDistanceCalculator
             Math.Min(longitude + longitudeDelta, maxLongitude));
     }
 
+    public GeoRadiusFilter GetRadiusFilter(double latitude, double longitude, double radiusKilometers)
+    {
+        GeoBoundingBox box = GetBoundingBox(latitude, longitude, radiusKilometers);
+        double latitudeRadians = ToRadians(latitude);
+        double halfChordRoot = Math.Sin(radiusKilometers / (2 * earthRadiusKilometers));
+
+        return new GeoRadiusFilter(box, latitudeRadians, ToRadians(longitude), Math.Cos(latitudeRadians), halfChordRoot * halfChordRoot);
+    }
+
     public double GetDistanceKilometers(double fromLatitude, double fromLongitude, double toLatitude, double toLongitude)
     {
         double fromLatitudeRadians = ToRadians(fromLatitude);

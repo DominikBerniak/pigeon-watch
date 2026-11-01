@@ -111,4 +111,13 @@ public class SightingStatusTransitionProviderTests
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => provider.GetCriticalityRank((SightingCriticality)value));
     }
+
+    [Fact]
+    public void Ordering_criticality_values_ascending_matches_ordering_by_rank_ascending()
+    {
+        SightingCriticality[] byValue = Enum.GetValues<SightingCriticality>().OrderBy(criticality => (int)criticality).ToArray();
+        SightingCriticality[] byRank = Enum.GetValues<SightingCriticality>().OrderBy(provider.GetCriticalityRank).ToArray();
+
+        Assert.Equal(byRank, byValue);
+    }
 }
