@@ -467,20 +467,20 @@ No schema change and no data migration. The SPA and API ship together; an older 
 
 #### Automated
 
-- [x] 4.1 Frontend tests pass, including the list page, reporting, hand-over guard, kitchen-sink and label-coverage specs
-- [x] 4.2 Production build passes within budgets and the initial bundle is not grown
+- [x] 4.1 Frontend tests pass, including the list page, reporting, hand-over guard, kitchen-sink and label-coverage specs — d89abf2
+- [x] 4.2 Production build passes within budgets and the initial bundle is not grown — d89abf2
 
 #### Manual
 
-- [x] 4.3 List view from the map opens at the map centre with filters preselected, in urgency order
-- [x] 4.4 Direct open asks for location; blocked location shows the message and the map link
-- [x] 4.5 Paging, page size, filter reset to page 1, and Back from detail keep centre and filters
-- [x] 4.6 Map view returns to the map with its default state
-- [x] 4.7 Kitchen sink Sighting list group renders every cell
+- [x] 4.3 List view from the map opens at the map centre with filters preselected, in urgency order — d89abf2
+- [x] 4.4 Direct open asks for location; blocked location shows the message and the map link — d89abf2
+- [x] 4.5 Paging, page size, filter reset to page 1, and Back from detail keep centre and filters — d89abf2
+- [x] 4.6 Map view returns to the map with its default state — d89abf2
+- [x] 4.7 Kitchen sink Sighting list group renders every cell — d89abf2
 
 ### Phase 5: E2E — list opened from the map
 
 #### Automated
 
-- [ ] 5.1 The new sighting-list Playwright test passes
-- [ ] 5.2 The full E2E suite still passes
+- [x] 5.1 The new sighting-list Playwright test passes
+- [x] 5.2 The full E2E suite still passes
