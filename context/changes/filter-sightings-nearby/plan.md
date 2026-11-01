@@ -312,23 +312,23 @@ None. No schema or data change; requests without the new parameters behave as be
 
 #### Automated
 
-- [x] 3.1 The frontend builds and stays within the initial-bundle budget (initial warning 520 kB, 512.1 kB measured before this change) and the 4 kB component style budget: `npm run build` in `PigeonWatch/Frontend`
-- [x] 3.2 Specs pass, including the page, filter and kitchen-sink specs and the style-token and label coverage specs: `npm test -- --watch=false` in `PigeonWatch/Frontend`
+- [x] 3.1 The frontend builds and stays within the initial-bundle budget (initial warning 520 kB, 512.1 kB measured before this change) and the 4 kB component style budget: `npm run build` in `PigeonWatch/Frontend` — 2bd493e
+- [x] 3.2 Specs pass, including the page, filter and kitchen-sink specs and the style-token and label coverage specs: `npm test -- --watch=false` in `PigeonWatch/Frontend` — 2bd493e
 
 #### Manual
 
-- [x] 3.3 On a phone-sized viewport the two controls fit the toolbar without horizontal scroll and are usable by touch and keyboard
-- [x] 3.4 Choosing Urgent in the criticality control shows only Urgent markers, the count text matches, the detail card closes, and clearing the control restores the original markers
-- [x] 3.5 A filter with no match shows the no-match message, not the radius-only message
-- [x] 3.6 No new CSP violations appear in the browser console
+- [x] 3.3 On a phone-sized viewport the two controls fit the toolbar without horizontal scroll and are usable by touch and keyboard — 2bd493e
+- [x] 3.4 Choosing Urgent in the criticality control shows only Urgent markers, the count text matches, the detail card closes, and clearing the control restores the original markers — 2bd493e
+- [x] 3.5 A filter with no match shows the no-match message, not the radius-only message — 2bd493e
+- [x] 3.6 No new CSP violations appear in the browser console — 2bd493e
 
 ### Phase 4: E2E and docs wrap-up
 
 #### Automated
 
-- [ ] 4.1 The new Playwright test passes: `npx playwright test tests/e2e/nearby-filters.spec.ts` in `PigeonWatch/Frontend`
-- [ ] 4.2 The existing E2E tests still pass: `npx playwright test` in `PigeonWatch/Frontend`
+- [x] 4.1 The new Playwright test passes: `npx playwright test tests/e2e/nearby-filters.spec.ts` in `PigeonWatch/Frontend`
+- [x] 4.2 The existing E2E tests still pass: `npx playwright test` in `PigeonWatch/Frontend`
 
 #### Manual
 
-- [ ] 4.3 The documentation edits read correctly and no other file's status fields changed
+- [x] 4.3 The documentation edits read correctly and no other file's status fields changed
