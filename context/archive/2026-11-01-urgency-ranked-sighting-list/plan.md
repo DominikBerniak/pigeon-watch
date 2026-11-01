@@ -451,56 +451,56 @@ No schema change and no data migration. The SPA and API ship together; an older 
 
 #### Automated
 
-- [x] 1.1 The SQLite radius test passes, proving sin/cos translate on SQLite — 4638951
-- [x] 1.2 Unit tests pass — 4638951
-- [x] 1.3 Architecture tests pass — 4638951
-- [x] 1.4 Build passes with style rules — 4638951
-- [x] 1.5 No model change reported by has-pending-model-changes — 4638951
+- [x] 1.1 The SQLite radius test passes, proving sin/cos translate on SQLite — d3f10b1
+- [x] 1.2 Unit tests pass — d3f10b1
+- [x] 1.3 Architecture tests pass — d3f10b1
+- [x] 1.4 Build passes with style rules — d3f10b1
+- [x] 1.5 No model change reported by has-pending-model-changes — d3f10b1
 
 ### Phase 2: API endpoint — POST sightings/list
 
 #### Automated
 
-- [x] 2.1 Build passes with style rules — a45e796
-- [x] 2.2 Architecture tests pass — a45e796
-- [x] 2.3 Unit tests pass, including unchanged nearby tests — a45e796
-- [x] 2.4 Integration tests pass, including endpoint coverage and the privacy sweep over the new fixtures — a45e796
+- [x] 2.1 Build passes with style rules — d3f10b1
+- [x] 2.2 Architecture tests pass — d3f10b1
+- [x] 2.3 Unit tests pass, including unchanged nearby tests — d3f10b1
+- [x] 2.4 Integration tests pass, including endpoint coverage and the privacy sweep over the new fixtures — d3f10b1
 
 #### Manual
 
-- [x] 2.5 POST sightings/list on LocalDB returns in-radius sightings in urgency order with the right totalCount — a45e796
-- [x] 2.6 GET sightings/nearby returns the same sightings as before, newest first — a45e796
+- [x] 2.5 POST sightings/list on LocalDB returns in-radius sightings in urgency order with the right totalCount — d3f10b1
+- [x] 2.6 GET sightings/nearby returns the same sightings as before, newest first — d3f10b1
 
 ### Phase 3: SPA shared components — filters and sighting row
 
 #### Automated
 
-- [x] 3.1 Frontend tests pass, including label coverage and style-token coverage — 340ef79
-- [x] 3.2 Production build passes within budgets, initial bundle not grown — 340ef79
+- [x] 3.1 Frontend tests pass, including label coverage and style-token coverage — d3f10b1
+- [x] 3.2 Production build passes within budgets, initial bundle not grown — d3f10b1
 
 #### Manual
 
-- [x] 3.3 Map filters look and behave as before — 340ef79
-- [x] 3.4 My sightings shows relative ages with the full date on hover — 340ef79
+- [x] 3.3 Map filters look and behave as before — d3f10b1
+- [x] 3.4 My sightings shows relative ages with the full date on hover — d3f10b1
 
 ### Phase 4: SPA list page
 
 #### Automated
 
-- [x] 4.1 Frontend tests pass, including the list page, reporting, hand-over guard, kitchen-sink and label-coverage specs — d89abf2
-- [x] 4.2 Production build passes within budgets and the initial bundle is not grown — d89abf2 — note: build passes, but the initial bundle grew to 528.18 kB and the budget moved to 540 kB (A2)
+- [x] 4.1 Frontend tests pass, including the list page, reporting, hand-over guard, kitchen-sink and label-coverage specs — d3f10b1
+- [x] 4.2 Production build passes within budgets and the initial bundle is not grown — d3f10b1 — note: build passes, but the initial bundle grew to 528.18 kB and the budget moved to 540 kB (A2)
 
 #### Manual
 
-- [x] 4.3 List view from the map opens at the map centre with filters preselected, in urgency order — d89abf2
-- [x] 4.4 Direct open asks for location; blocked location shows the message and the map link — d89abf2
-- [x] 4.5 Paging, page size, filter reset to page 1, and Back from detail keep centre and filters — d89abf2
-- [x] 4.6 Map view returns to the map with its default state — d89abf2 — note: Map view restores the list's filters (A1), not the default state
-- [x] 4.7 Kitchen sink Sighting list group renders every cell — d89abf2
+- [x] 4.3 List view from the map opens at the map centre with filters preselected, in urgency order — d3f10b1
+- [x] 4.4 Direct open asks for location; blocked location shows the message and the map link — d3f10b1
+- [x] 4.5 Paging, page size, filter reset to page 1, and Back from detail keep centre and filters — d3f10b1
+- [x] 4.6 Map view returns to the map with its default state — d3f10b1 — note: Map view restores the list's filters (A1), not the default state
+- [x] 4.7 Kitchen sink Sighting list group renders every cell — d3f10b1
 
 ### Phase 5: E2E — list opened from the map
 
 #### Automated
 
-- [x] 5.1 The new sighting-list Playwright test passes — eec602e
-- [x] 5.2 The full E2E suite still passes — eec602e
+- [x] 5.1 The new sighting-list Playwright test passes — d3f10b1
+- [x] 5.2 The full E2E suite still passes — d3f10b1
