@@ -291,22 +291,22 @@ None. No schema or data change; requests without the new parameters behave as be
 
 #### Automated
 
-- [x] 1.1 The API solution builds with the `.editorconfig` style rules: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
-- [x] 1.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj`
-- [x] 1.3 Unit tests pass, including the new filter and validation cases: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj`
-- [x] 1.4 Integration tests pass, including the endpoint coverage and privacy sweeps with the new fixtures: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj`
+- [x] 1.1 The API solution builds with the `.editorconfig` style rules: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx` — 720dbb8
+- [x] 1.2 Architecture tests pass: `dotnet test PigeonWatch/Api/ArchitectureTests/PigeonWatch.ArchitectureTests.csproj` — 720dbb8
+- [x] 1.3 Unit tests pass, including the new filter and validation cases: `dotnet test PigeonWatch/Api/UnitTests/PigeonWatch.UnitTests.csproj` — 720dbb8
+- [x] 1.4 Integration tests pass, including the endpoint coverage and privacy sweeps with the new fixtures: `dotnet test PigeonWatch/Api/IntegrationTests/PigeonWatch.IntegrationTests.csproj` — 720dbb8
 
 #### Manual
 
-- [x] 1.5 With the API running on LocalDB and a token from `POST auth/login` (use `curl.exe`), `sightings/nearby` with `criticalities=3` returns only Urgent sightings, with `statuses=1` only Spotted ones, and with neither returns the same set as before
-- [x] 1.6 `statuses=6` (Adopted) and `criticalities=9` each return 400
+- [x] 1.5 With the API running on LocalDB and a token from `POST auth/login` (use `curl.exe`), `sightings/nearby` with `criticalities=3` returns only Urgent sightings, with `statuses=1` only Spotted ones, and with neither returns the same set as before — 720dbb8
+- [x] 1.6 `statuses=6` (Adopted) and `criticalities=9` each return 400 — 720dbb8
 
 ### Phase 2: SPA data layer and labels
 
 #### Automated
 
-- [ ] 2.1 Resource snapshots regenerate and the frontend builds within budget: `npm run build` in `PigeonWatch/Frontend`
-- [ ] 2.2 Specs pass, including the wrapper spec for the new parameters and the label coverage spec: `npm test -- --watch=false` in `PigeonWatch/Frontend`
+- [x] 2.1 Resource snapshots regenerate and the frontend builds within budget: `npm run build` in `PigeonWatch/Frontend`
+- [x] 2.2 Specs pass, including the wrapper spec for the new parameters and the label coverage spec: `npm test -- --watch=false` in `PigeonWatch/Frontend`
 
 ### Phase 3: Map page filters
 

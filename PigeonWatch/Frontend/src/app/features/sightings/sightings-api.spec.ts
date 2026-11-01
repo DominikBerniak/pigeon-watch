@@ -82,6 +82,38 @@ describe('SightingsApi', () => {
     );
   });
 
+  it('sends status and criticality filters as repeated query parameters', () => {
+    api
+      .nearby(
+        { latitude: 50.0614, longitude: 19.9366 },
+        {
+          statuses: [SightingStatus.spotted, SightingStatus.caught],
+          criticalities: [SightingCriticality.urgent],
+        },
+      )
+      .subscribe();
+    const request = httpMock.expectOne((candidate) => candidate.url === `${sightingsUrl}/nearby`);
+    request.flush({ items: [] });
+
+    expect(request.request.params.getAll('statuses')).toEqual(['1', '2']);
+    expect(request.request.params.getAll('criticalities')).toEqual(['3']);
+    expect(request.request.urlWithParams).toBe(
+      `${sightingsUrl}/nearby?latitude=50.0614&longitude=19.9366&statuses=1&statuses=2&criticalities=3`,
+    );
+  });
+
+  it('adds no filter parameters when the filter lists are empty', () => {
+    api
+      .nearby({ latitude: 50.0614, longitude: 19.9366 }, { statuses: [], criticalities: [] })
+      .subscribe();
+    const request = httpMock.expectOne((candidate) => candidate.url === `${sightingsUrl}/nearby`);
+    request.flush({ items: [] });
+
+    expect(request.request.urlWithParams).toBe(
+      `${sightingsUrl}/nearby?latitude=50.0614&longitude=19.9366`,
+    );
+  });
+
   it('lists the current user sightings', () => {
     let items: Sighting[] | undefined;
 
