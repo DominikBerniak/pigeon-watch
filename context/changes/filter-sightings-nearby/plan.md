@@ -326,9 +326,9 @@ None. No schema or data change; requests without the new parameters behave as be
 
 #### Automated
 
-- [x] 4.1 The new Playwright test passes: `npx playwright test tests/e2e/nearby-filters.spec.ts` in `PigeonWatch/Frontend`
-- [x] 4.2 The existing E2E tests still pass: `npx playwright test` in `PigeonWatch/Frontend`
+- [x] 4.1 The new Playwright test passes: `npx playwright test tests/e2e/nearby-filters.spec.ts` in `PigeonWatch/Frontend` — cc19de1
+- [x] 4.2 The existing E2E tests still pass: `npx playwright test` in `PigeonWatch/Frontend` — cc19de1
 
 #### Manual
 
-- [x] 4.3 The documentation edits read correctly and no other file's status fields changed
+- [x] 4.3 The documentation edits read correctly and no other file's status fields changed — cc19de1
