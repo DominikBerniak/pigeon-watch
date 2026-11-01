@@ -2,6 +2,8 @@ import { defaultLabels } from '../../core/resources/generated/snapshots';
 import {
   SightingCriticality,
   SightingStatus,
+  allSightingStatuses,
+  filterableSightingStatuses,
   initialSightingStatuses,
   selectableSightingCriticalities,
   sightingCriticalityLabel,
@@ -50,6 +52,13 @@ describe('sighting types', () => {
 
   it('offers only Spotted and Caught as initial statuses', () => {
     expect(initialSightingStatuses).toEqual([SightingStatus.spotted, SightingStatus.caught]);
+  });
+
+  it('lists all nine statuses in workflow order, the five open ones first', () => {
+    expect(allSightingStatuses).toEqual(Object.values(SightingStatus));
+    expect(allSightingStatuses.slice(0, filterableSightingStatuses.length)).toEqual(
+      filterableSightingStatuses,
+    );
   });
 
   it('offers the three criticality levels in rising order', () => {

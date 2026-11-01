@@ -40,12 +40,13 @@ import {
   SightingCriticality,
   SightingFilters,
   fallbackSightingRules,
+  filterableSightingStatuses,
   sightingCriticalityLabel,
   sightingCriticalityMarker,
   sightingStatusLabel,
 } from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
-import { NearbyMapFilters } from './nearby-map-filters';
+import { SightingFilterRow } from '../shared/sighting-filters/sighting-filters';
 
 type NearbyState =
   | { readonly kind: 'idle' }
@@ -101,7 +102,7 @@ let nextStatusId = 0;
     ErrorReference,
     LoadingIndicator,
     MapView,
-    NearbyMapFilters,
+    SightingFilterRow,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './nearby-map-page.html',
@@ -138,6 +139,7 @@ export class NearbyMapPage {
   protected readonly state = signal<NearbyState>({ kind: 'idle' });
   protected readonly sightings = signal<readonly Sighting[]>([]);
   protected readonly filtersOpen = signal(false);
+  protected readonly filterStatuses = filterableSightingStatuses;
   protected readonly activeFilterCount = computed(
     () => this.filters().statuses.length + this.filters().criticalities.length,
   );

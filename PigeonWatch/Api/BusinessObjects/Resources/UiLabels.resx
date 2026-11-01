@@ -402,6 +402,18 @@
   <data name="sighting.unnamed" xml:space="preserve">
     <value>Unnamed bird</value>
   </data>
+  <data name="sighting.age.justNow" xml:space="preserve">
+    <value>just now</value>
+  </data>
+  <data name="sighting.age.minutes" xml:space="preserve">
+    <value>{0} min ago</value>
+  </data>
+  <data name="sighting.age.hours" xml:space="preserve">
+    <value>{0} h ago</value>
+  </data>
+  <data name="sighting.age.days" xml:space="preserve">
+    <value>{0} d ago</value>
+  </data>
   <data name="sighting.unknown" xml:space="preserve">
     <value>Unknown</value>
   </data>

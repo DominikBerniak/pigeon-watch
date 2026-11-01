@@ -21,7 +21,7 @@ import {
   SightingStatus,
 } from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
-import { NearbyMapFilters } from './nearby-map-filters';
+import { SightingFilterRow } from '../shared/sighting-filters/sighting-filters';
 import { NearbyMapPage } from './nearby-map-page';
 
 const warsaw: GeoPoint = { latitude: 52.2297, longitude: 21.0122 };
@@ -160,8 +160,8 @@ describe('NearbyMapPage', () => {
   }
 
   async function applyFilters(filters: SightingFilters): Promise<void> {
-    const control = fixture.debugElement.query(By.directive(NearbyMapFilters))
-      .componentInstance as NearbyMapFilters;
+    const control = fixture.debugElement.query(By.directive(SightingFilterRow))
+      .componentInstance as SightingFilterRow;
 
     control.filtersChange.emit(filters);
     await settle();
@@ -741,7 +741,7 @@ describe('NearbyMapPage', () => {
     await render({ status: 'ok', ...warsaw });
 
     const toolbar = root().querySelector('.nearby-toolbar')!;
-    const filters = root().querySelector<HTMLElement>('app-nearby-map-filters')!;
+    const filters = root().querySelector<HTMLElement>('app-sighting-filters')!;
     const toggle = button('Show filters');
 
     expect(filters.previousElementSibling).toBe(toolbar);
@@ -789,7 +789,7 @@ describe('NearbyMapPage', () => {
     const pending = new Subject<GeolocationOutcome>();
     await render(pending);
 
-    const selects = () => [...root().querySelectorAll('app-nearby-map-filters mat-select')];
+    const selects = () => [...root().querySelectorAll('app-sighting-filters mat-select')];
 
     expect(selects().map((select) => select.getAttribute('aria-disabled'))).toEqual([
       'true',

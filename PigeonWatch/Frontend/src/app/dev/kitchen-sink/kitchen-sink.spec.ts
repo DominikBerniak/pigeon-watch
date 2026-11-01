@@ -283,7 +283,7 @@ describe('KitchenSink', () => {
 
     await eventually(() => expect(mapOf(id).markers()).toHaveLength(sinkSightings.length));
 
-    expect(cell(id).querySelector('app-nearby-map-filters')).not.toBeNull();
+    expect(cell(id).querySelector('app-sighting-filters')).not.toBeNull();
 
     cell(id).querySelector<HTMLButtonElement>('header button')?.click();
 
@@ -294,14 +294,14 @@ describe('KitchenSink', () => {
           .map((marker) => marker.id),
       ).toEqual(['sink-urgent']);
       expect(statusOf(id)).toBe(label('map.found', 1, 10));
-      expect(cell(id).querySelector<HTMLElement>('app-nearby-map-filters')?.hidden).toBe(false);
+      expect(cell(id).querySelector<HTMLElement>('app-sighting-filters')?.hidden).toBe(false);
       expect(
         [...cell(id).querySelectorAll('button')].some(
           (button) => button.textContent?.trim() === label('map.filters.hide'),
         ),
       ).toBe(true);
       expect(
-        [...cell(id).querySelectorAll('app-nearby-map-filters mat-select')].map((select) =>
+        [...cell(id).querySelectorAll('app-sighting-filters mat-select')].map((select) =>
           select.getAttribute('aria-expanded'),
         ),
       ).toEqual(['false', 'false']);
@@ -527,6 +527,9 @@ describe('KitchenSink', () => {
 
       expect(items).toHaveLength(sinkSightings.length);
       items.forEach((item) => expect(item.querySelector('app-criticality-badge')).not.toBeNull());
+      expect(
+        new Set([...items].map((item) => item.querySelector('time')?.textContent?.trim())).size,
+      ).toBe(sinkSightings.length);
     });
   });
 

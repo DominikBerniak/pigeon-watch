@@ -113,6 +113,18 @@ export const filterableSightingStatuses: readonly SightingStatus[] = [
   SightingStatus.awaitingAdoption,
 ];
 
+export const allSightingStatuses: readonly SightingStatus[] = [
+  SightingStatus.spotted,
+  SightingStatus.caught,
+  SightingStatus.atTheVet,
+  SightingStatus.inHomeCare,
+  SightingStatus.awaitingAdoption,
+  SightingStatus.adopted,
+  SightingStatus.released,
+  SightingStatus.passedAway,
+  SightingStatus.notFound,
+];
+
 export interface SightingFilters {
   statuses: readonly SightingStatus[];
   criticalities: readonly SightingCriticality[];

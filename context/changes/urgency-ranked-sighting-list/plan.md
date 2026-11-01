@@ -441,27 +441,27 @@ No schema change and no data migration. The SPA and API ship together; an older 
 
 #### Automated
 
-- [x] 2.1 Build passes with style rules
-- [x] 2.2 Architecture tests pass
-- [x] 2.3 Unit tests pass, including unchanged nearby tests
-- [x] 2.4 Integration tests pass, including endpoint coverage and the privacy sweep over the new fixtures
+- [x] 2.1 Build passes with style rules — a45e796
+- [x] 2.2 Architecture tests pass — a45e796
+- [x] 2.3 Unit tests pass, including unchanged nearby tests — a45e796
+- [x] 2.4 Integration tests pass, including endpoint coverage and the privacy sweep over the new fixtures — a45e796
 
 #### Manual
 
-- [x] 2.5 POST sightings/list on LocalDB returns in-radius sightings in urgency order with the right totalCount
-- [x] 2.6 GET sightings/nearby returns the same sightings as before, newest first
+- [x] 2.5 POST sightings/list on LocalDB returns in-radius sightings in urgency order with the right totalCount — a45e796
+- [x] 2.6 GET sightings/nearby returns the same sightings as before, newest first — a45e796
 
 ### Phase 3: SPA shared components — filters and sighting row
 
 #### Automated
 
-- [ ] 3.1 Frontend tests pass, including label coverage and style-token coverage
-- [ ] 3.2 Production build passes within budgets, initial bundle not grown
+- [x] 3.1 Frontend tests pass, including label coverage and style-token coverage
+- [x] 3.2 Production build passes within budgets, initial bundle not grown
 
 #### Manual
 
-- [ ] 3.3 Map filters look and behave as before
-- [ ] 3.4 My sightings shows relative ages with the full date on hover
+- [x] 3.3 Map filters look and behave as before
+- [x] 3.4 My sightings shows relative ages with the full date on hover
 
 ### Phase 4: SPA list page
 

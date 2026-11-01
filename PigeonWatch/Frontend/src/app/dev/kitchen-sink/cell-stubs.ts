@@ -72,11 +72,15 @@ export const sinkUser: CurrentUser = {
 
 export const sinkPosition: GeoPoint = { latitude: 52.2297, longitude: 21.0122 };
 
+const sinkLoadedAt = Date.now();
+const minuteMilliseconds = 60_000;
+
 function sinkSighting(
   id: string,
   name: string | null,
   criticality: SightingCriticality,
   offset: GeoPoint,
+  ageMinutes: number,
 ): Sighting {
   return {
     id,
@@ -88,27 +92,39 @@ function sinkSighting(
     status: SightingStatus.spotted,
     criticality,
     reporterDisplayName: sinkUser.displayName,
-    createdAt: '2026-10-11T12:00:00Z',
+    createdAt: new Date(sinkLoadedAt - ageMinutes * minuteMilliseconds).toISOString(),
   };
 }
 
 export const sinkSightings: readonly Sighting[] = [
-  sinkSighting('sink-urgent', 'Limpy', SightingCriticality.urgent, {
-    latitude: 0.004,
-    longitude: -0.006,
-  }),
-  sinkSighting('sink-needs-help-soon', 'Limpy', SightingCriticality.needsHelpSoon, {
-    latitude: -0.005,
-    longitude: 0.008,
-  }),
-  sinkSighting('sink-monitor', 'Fluffy', SightingCriticality.monitor, {
-    latitude: 0.009,
-    longitude: 0.012,
-  }),
-  sinkSighting('sink-unnamed', null, SightingCriticality.monitor, {
-    latitude: -0.008,
-    longitude: -0.013,
-  }),
+  sinkSighting(
+    'sink-urgent',
+    'Limpy',
+    SightingCriticality.urgent,
+    { latitude: 0.004, longitude: -0.006 },
+    5,
+  ),
+  sinkSighting(
+    'sink-needs-help-soon',
+    'Limpy',
+    SightingCriticality.needsHelpSoon,
+    { latitude: -0.005, longitude: 0.008 },
+    3 * 60,
+  ),
+  sinkSighting(
+    'sink-monitor',
+    'Fluffy',
+    SightingCriticality.monitor,
+    { latitude: 0.009, longitude: 0.012 },
+    2 * 24 * 60,
+  ),
+  sinkSighting(
+    'sink-unnamed',
+    null,
+    SightingCriticality.monitor,
+    { latitude: -0.008, longitude: -0.013 },
+    0,
+  ),
 ];
 
 export const sinkLongNameSighting: Sighting = sinkSighting(
@@ -116,6 +132,7 @@ export const sinkLongNameSighting: Sighting = sinkSighting(
   'Grey pigeon with a ruffled left wing from the bus stop on Marszalkowska Street',
   SightingCriticality.urgent,
   { latitude: 0.004, longitude: -0.006 },
+  45,
 );
 
 const busyHoldMilliseconds = 30000;

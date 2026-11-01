@@ -3,27 +3,52 @@ import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatSelectHarness } from '@angular/material/select/testing';
-import { SightingCriticality, SightingFilters, SightingStatus } from '../sighting.types';
-import { NearbyMapFilters } from './nearby-map-filters';
+import {
+  SightingCriticality,
+  SightingFilters,
+  SightingStatus,
+  allSightingStatuses,
+  filterableSightingStatuses,
+} from '../../sighting.types';
+import { SightingFilterRow } from './sighting-filters';
 
 @Component({
-  imports: [NearbyMapFilters],
-  template: `<app-nearby-map-filters
+  imports: [SightingFilterRow],
+  template: `<app-sighting-filters
+    [statusOptions]="statusOptions"
     [disabled]="disabled()"
     (filtersChange)="emitted.push($event)"
   />`,
 })
-class NearbyMapFiltersHost {
+class SightingFiltersHost {
+  readonly statusOptions = filterableSightingStatuses;
   readonly disabled = signal(false);
   readonly emitted: SightingFilters[] = [];
 }
 
-describe('NearbyMapFilters', () => {
-  let fixture: ComponentFixture<NearbyMapFiltersHost>;
+@Component({
+  imports: [SightingFilterRow],
+  template: `<app-sighting-filters
+    [statusOptions]="statusOptions"
+    [initial]="initial"
+    (filtersChange)="emitted.push($event)"
+  />`,
+})
+class SightingFiltersWithInitialHost {
+  readonly statusOptions = allSightingStatuses;
+  readonly initial: SightingFilters = {
+    statuses: [SightingStatus.adopted],
+    criticalities: [SightingCriticality.urgent],
+  };
+  readonly emitted: SightingFilters[] = [];
+}
+
+describe('SightingFilterRow', () => {
+  let fixture: ComponentFixture<SightingFiltersHost>;
   let loader: HarnessLoader;
 
   beforeEach(async () => {
-    fixture = TestBed.createComponent(NearbyMapFiltersHost);
+    fixture = TestBed.createComponent(SightingFiltersHost);
     loader = TestbedHarnessEnvironment.loader(fixture);
     await fixture.whenStable();
   });
@@ -71,7 +96,7 @@ describe('NearbyMapFilters', () => {
     expect(emitted()).toEqual([]);
   });
 
-  it('offers the five open statuses in workflow order', async () => {
+  it('offers the statuses the host passes, here the five open ones in workflow order', async () => {
     const [status] = await selects();
 
     expect(await optionLabels(status)).toEqual([
@@ -135,7 +160,7 @@ describe('NearbyMapFilters', () => {
   });
 
   function clearButton(): HTMLButtonElement {
-    return root().querySelector<HTMLButtonElement>('.nearby-filters__clear')!;
+    return root().querySelector<HTMLButtonElement>('.sighting-filters__clear')!;
   }
 
   it('keeps Clear filters disabled while nothing is selected', () => {
@@ -198,5 +223,72 @@ describe('NearbyMapFilters', () => {
     await fixture.whenStable();
 
     expect(await status.isDisabled()).toBe(false);
+  });
+});
+
+describe('SightingFilterRow with all statuses and an initial selection', () => {
+  let fixture: ComponentFixture<SightingFiltersWithInitialHost>;
+  let loader: HarnessLoader;
+
+  beforeEach(async () => {
+    fixture = TestBed.createComponent(SightingFiltersWithInitialHost);
+    loader = TestbedHarnessEnvironment.loader(fixture);
+    await fixture.whenStable();
+  });
+
+  function clearButton(): HTMLButtonElement {
+    return (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '.sighting-filters__clear',
+    )!;
+  }
+
+  it('offers all nine statuses in workflow order', async () => {
+    const [status] = await loader.getAllHarnesses(MatSelectHarness);
+
+    await status.open();
+
+    const labels = await Promise.all((await status.getOptions()).map((option) => option.getText()));
+
+    await status.close();
+
+    expect(labels).toEqual([
+      'Spotted',
+      'Caught',
+      'At the vet',
+      'In home care',
+      'Awaiting adoption',
+      'Adopted',
+      'Released',
+      'Passed away',
+      'Not found',
+    ]);
+  });
+
+  it('starts from the initial selection without emitting it', async () => {
+    const [status, criticality] = await loader.getAllHarnesses(MatSelectHarness);
+
+    expect(await status.getValueText()).toBe('Adopted');
+    expect(await criticality.getValueText()).toBe('Urgent');
+    expect(clearButton().hasAttribute('aria-disabled')).toBe(false);
+    expect(fixture.componentInstance.emitted).toEqual([]);
+  });
+
+  it('changes and clears from the initial selection', async () => {
+    const [status, criticality] = await loader.getAllHarnesses(MatSelectHarness);
+
+    await criticality.open();
+    await criticality.clickOptions({ text: 'Monitor' });
+    await criticality.close();
+
+    expect(fixture.componentInstance.emitted.at(-1)).toEqual({
+      statuses: [SightingStatus.adopted],
+      criticalities: [SightingCriticality.monitor, SightingCriticality.urgent],
+    });
+
+    clearButton().click();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.emitted.at(-1)).toEqual({ statuses: [], criticalities: [] });
+    expect(await status.getValueText()).toBe('All');
   });
 });

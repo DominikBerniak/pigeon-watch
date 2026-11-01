@@ -190,8 +190,8 @@ const marker = '.pw-map-marker--urgent';
 const status = '[role="status"]';
 const zoomIn = '.leaflet-control-zoom-in';
 const countryToSearchZoomSteps = 4;
-const statusFilter = 'app-nearby-map-filters mat-form-field:first-of-type mat-select';
-const criticalityFilter = 'app-nearby-map-filters mat-form-field:last-of-type mat-select';
+const statusFilter = 'app-sighting-filters mat-form-field:first-of-type mat-select';
+const criticalityFilter = 'app-sighting-filters mat-form-field:last-of-type mat-select';
 
 const nearbyMapCells: readonly NearbyMapCell[] = [
   {

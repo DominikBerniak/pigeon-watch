@@ -92,10 +92,11 @@
       }
     </div>
   </div>
-  <app-nearby-map-filters
+  <app-sighting-filters
     id="nearby-filters"
     class="nearby-filters-row"
     [hidden]="!filtersOpen()"
+    [statusOptions]="filterStatuses"
     [disabled]="locating()"
     (filtersChange)="changeFilters($event)"
   />

@@ -141,7 +141,7 @@ button.nearby-filters-toggle[aria-expanded='true'] {
   );
 }
 
-app-nearby-map-filters {
+app-sighting-filters {
   @include mat.form-field-overrides(
     (
       container-height: var(--pw-control-height),
