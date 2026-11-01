@@ -12,7 +12,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
 import { Subject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ConfigurationService } from '../../../core/configuration/configuration.service';
 import { GeoPoint } from '../../../core/geolocation/geo-point';
@@ -47,6 +48,11 @@ import {
 } from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
 import { SightingFilterRow } from '../shared/sighting-filters/sighting-filters';
+import {
+  NearbyMapReturn,
+  SightingListHandOver,
+  readNearbyMapFilters,
+} from '../sighting-list-page/sighting-list-hand-over';
 
 type NearbyState =
   | { readonly kind: 'idle' }
@@ -115,19 +121,22 @@ export class NearbyMapPage {
   private readonly resources = inject(ResourceService);
   private readonly reporting = inject(ErrorReportingService);
   private readonly injector = inject(Injector);
+  private readonly location = inject(Location);
   private readonly searches = new Subject<NearbySearch>();
   private readonly locationRequests = new Subject<void>();
   private readonly mapCentre = signal<GeoPoint>(neutralMapView.centre);
   private readonly mapZoom = signal<number>(neutralMapView.zoom);
   private readonly awaitingSearch = signal(false);
   private readonly locationStatus = signal<LocationStatus | null>(null);
-  private readonly filters = signal<SightingFilters>(noFilters);
+  private readonly filters = signal<SightingFilters>(
+    readNearbyMapFilters(inject(Router).currentNavigation()?.extras.state) ?? noFilters,
+  );
   private readonly mapView = viewChild<MapView>('mapView');
   private readonly selectedHeading = viewChild<ElementRef<HTMLElement>>('selectedHeading');
   private readonly searchButton = viewChild('searchButton', {
     read: ElementRef<HTMLButtonElement>,
   });
-  private lastSearchCentre: GeoPoint | null = null;
+  private readonly lastSearchCentre = signal<GeoPoint | null>(null);
 
   protected readonly statusId = `nearby-status-${nextStatusId++}`;
   protected readonly selectedId = signal<string | null>(null);
@@ -138,11 +147,20 @@ export class NearbyMapPage {
   protected readonly positionUnknown = signal(false);
   protected readonly state = signal<NearbyState>({ kind: 'idle' });
   protected readonly sightings = signal<readonly Sighting[]>([]);
+  protected readonly initialFilters = this.filters();
   protected readonly filtersOpen = signal(false);
   protected readonly filterStatuses = filterableSightingStatuses;
   protected readonly activeFilterCount = computed(
     () => this.filters().statuses.length + this.filters().criticalities.length,
   );
+  protected readonly mapReturn = computed<NearbyMapReturn>(() => ({
+    mapFilters: this.filters(),
+  }));
+  protected readonly listHandOver = computed<SightingListHandOver | undefined>(() => {
+    const centre = this.lastSearchCentre();
+
+    return centre ? { centre, filters: this.filters() } : undefined;
+  });
   protected readonly statusLabel = sightingStatusLabel;
   protected readonly criticalityLabel = sightingCriticalityLabel;
   protected readonly criticalityKind = sightingCriticalityMarker;
@@ -270,9 +288,11 @@ export class NearbyMapPage {
   }
 
   protected retry(): void {
-    if (!this.lastSearchCentre) return;
+    const centre = this.lastSearchCentre();
 
-    this.search(this.lastSearchCentre);
+    if (!centre) return;
+
+    this.search(centre);
     this.focusSearch();
   }
 
@@ -282,10 +302,13 @@ export class NearbyMapPage {
 
   protected changeFilters(filters: SightingFilters): void {
     this.filters.set(filters);
+    this.rememberFilters(filters);
 
-    if (!this.lastSearchCentre || this.zoomedOut() || this.mapFailed()) return;
+    const centre = this.lastSearchCentre();
 
-    this.search(this.lastSearchCentre);
+    if (!centre || this.zoomedOut() || this.mapFailed()) return;
+
+    this.search(centre);
   }
 
   protected select(id: string): void {
@@ -317,6 +340,16 @@ export class NearbyMapPage {
     const traceId = unexpectedTraceId(error);
 
     return traceId === undefined ? { kind: 'error' } : { kind: 'error', traceId };
+  }
+
+  private rememberFilters(filters: SightingFilters): void {
+    const state = this.location.getState();
+    const mapReturn: NearbyMapReturn = { mapFilters: filters };
+
+    this.location.replaceState(this.location.path(), '', {
+      ...(typeof state === 'object' && state !== null ? state : {}),
+      ...mapReturn,
+    });
   }
 
   private applyLocation(outcome: GeolocationOutcome): void {
@@ -351,7 +384,7 @@ export class NearbyMapPage {
   }
 
   private search(centre: GeoPoint): void {
-    this.lastSearchCentre = centre;
+    this.lastSearchCentre.set(centre);
     this.awaitingSearch.set(false);
     this.selectedId.set(null);
     this.searches.next({ centre, filters: this.filters() });

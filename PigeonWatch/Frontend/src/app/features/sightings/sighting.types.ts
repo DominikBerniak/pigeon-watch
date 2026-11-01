@@ -40,6 +40,24 @@ export interface SightingList {
   items: Sighting[];
 }
 
+export interface SightingPage {
+  items: Sighting[];
+  totalCount: number;
+}
+
+export interface SightingListRequest {
+  latitude: number;
+  longitude: number;
+  statuses: readonly SightingStatus[];
+  criticalities: readonly SightingCriticality[];
+  page: number;
+  pageSize: number;
+}
+
+export const sightingListPageSizes: readonly number[] = [10, 20, 30];
+
+export const defaultSightingListPageSize = 10;
+
 export interface NewSighting {
   name: string | null;
   description: string;

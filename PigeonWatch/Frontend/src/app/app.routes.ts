@@ -38,6 +38,15 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'sightings/list',
+    canActivate: [authGuard],
+    data: { layout: 'wide' },
+    loadComponent: () =>
+      import('./features/sightings/sighting-list-page/sighting-list-page').then(
+        (m) => m.SightingListPage,
+      ),
+  },
+  {
     path: 'sightings/:id',
     canActivate: [authGuard],
     data: { layout: 'wide' },

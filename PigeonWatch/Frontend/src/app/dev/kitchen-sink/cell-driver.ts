@@ -39,6 +39,13 @@ export function press(labelKey: string): CellStep {
     until(() => buttonWithText(root, text(labelKey))).pipe(tap((button) => button.click()));
 }
 
+export function pressLabelled(labelKey: string): CellStep {
+  return ({ root, text }) =>
+    until(() =>
+      root.querySelector<HTMLButtonElement>(`button[aria-label="${text(labelKey)}"]`),
+    ).pipe(tap((button) => button.click()));
+}
+
 export function click(selector: string): CellStep {
   return ({ root }) =>
     until(() => root.querySelector<HTMLElement>(selector)).pipe(tap((element) => element.click()));

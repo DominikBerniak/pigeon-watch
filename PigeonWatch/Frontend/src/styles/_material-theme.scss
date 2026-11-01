@@ -150,6 +150,28 @@ app-sighting-filters {
   );
 }
 
+.sighting-list__page-size {
+  @include mat.form-field-overrides(
+    (
+      container-height: var(--pw-pager-control-height),
+      container-vertical-padding: var(--pw-space-2),
+    )
+  );
+  @include mat.select-overrides(
+    (
+      trigger-text-size: var(--pw-font-size-sm),
+    )
+  );
+}
+
+.sighting-list__page-actions {
+  @include mat.icon-button-overrides(
+    (
+      focus-state-layer-opacity: 0,
+    )
+  );
+}
+
 button.app-header__user-button.app-header__user-button--open {
   @include mat.button-overrides(
     (

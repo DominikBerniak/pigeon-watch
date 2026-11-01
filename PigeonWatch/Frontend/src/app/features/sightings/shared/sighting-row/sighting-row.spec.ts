@@ -1,7 +1,8 @@
 import { formatDate } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { By } from '@angular/platform-browser';
+import { RouterLink, provideRouter } from '@angular/router';
 import { Sighting, SightingCriticality, SightingStatus } from '../../sighting.types';
 import { SightingRow } from './sighting-row';
 
@@ -23,12 +24,13 @@ const named: Sighting = {
 @Component({
   imports: [SightingRow],
   template: `<ul>
-    <li app-sighting-row [sighting]="sighting()" [now]="now()"></li>
+    <li app-sighting-row [sighting]="sighting()" [now]="now()" [linkState]="linkState()"></li>
   </ul>`,
 })
 class SightingRowHost {
   readonly sighting = signal<Sighting>(named);
   readonly now = signal<Date>(now);
+  readonly linkState = signal<object | undefined>(undefined);
 }
 
 describe('SightingRow', () => {
@@ -43,24 +45,40 @@ describe('SightingRow', () => {
     return (fixture.nativeElement as HTMLElement).querySelector('li')!;
   }
 
-  it('links the name to the detail page', async () => {
+  it('makes the whole row one link to the detail page', async () => {
     const row = await render(named);
-    const link = row.querySelector('a');
+    const links = row.querySelectorAll('a');
 
-    expect(link?.textContent?.trim()).toBe('Limpy');
-    expect(link?.getAttribute('href')).toBe('/sightings/sighting-1');
+    expect(links).toHaveLength(1);
+    expect(links[0].getAttribute('href')).toBe('/sightings/sighting-1');
+    expect(links[0].querySelector('.sighting-row__name')?.textContent?.trim()).toBe('Limpy');
+    expect(links[0].querySelector('time')).not.toBeNull();
+    expect(links[0].querySelector('app-criticality-badge')).not.toBeNull();
+  });
+
+  it('sends no navigation state by default and the given state when the parent passes one', async () => {
+    await render(named);
+    const link = (): RouterLink =>
+      fixture.debugElement.query(By.css('li a')).injector.get(RouterLink);
+
+    expect(link().state).toBeUndefined();
+
+    fixture.componentInstance.linkState.set({ returnToList: 'state' });
+    await fixture.whenStable();
+
+    expect(link().state).toEqual({ returnToList: 'state' });
   });
 
   it('shows the unnamed label for a sighting without a name', async () => {
     const row = await render({ ...named, name: null });
 
-    expect(row.querySelector('a')?.textContent?.trim()).toBe('Unnamed bird');
+    expect(row.querySelector('.sighting-row__name')?.textContent?.trim()).toBe('Unnamed bird');
   });
 
   it('shows the status and the criticality as a badge', async () => {
     const row = await render(named);
 
-    expect(row.querySelector('p')?.textContent).toContain('At the vet');
+    expect(row.querySelector('.sighting-row__meta')?.textContent).toContain('At the vet');
     expect(row.querySelector('app-criticality-badge')?.textContent?.trim()).toBe('Urgent');
     expect(row.querySelector('app-criticality-badge')?.classList).toContain(
       'criticality-badge--urgent',

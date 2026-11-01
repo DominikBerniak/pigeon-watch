@@ -3,7 +3,14 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { GeoPoint } from '../../core/geolocation/geo-point';
-import { NewSighting, Sighting, SightingFilters, SightingList } from './sighting.types';
+import {
+  NewSighting,
+  Sighting,
+  SightingFilters,
+  SightingList,
+  SightingListRequest,
+  SightingPage,
+} from './sighting.types';
 
 @Injectable({ providedIn: 'root' })
 export class SightingsApi {
@@ -29,6 +36,10 @@ export class SightingsApi {
     }
 
     return this.http.get<SightingList>(`${environment.apiUrl}/sightings/nearby`, { params });
+  }
+
+  list(request: SightingListRequest): Observable<SightingPage> {
+    return this.http.post<SightingPage>(`${environment.apiUrl}/sightings/list`, request);
   }
 
   mine(): Observable<SightingList> {

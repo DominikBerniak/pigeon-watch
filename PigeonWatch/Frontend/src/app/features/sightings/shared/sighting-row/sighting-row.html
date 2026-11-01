@@ -1,13 +1,15 @@
-<a class="sighting-row__link" [routerLink]="['/sightings', sighting().id]">
-  {{ sighting().name ?? ('sighting.unnamed' | translate) }}
+<a class="sighting-row__link" [routerLink]="['/sightings', sighting().id]" [state]="linkState()">
+  <span class="sighting-row__name">
+    {{ sighting().name ?? ('sighting.unnamed' | translate) }}
+  </span>
+  <span class="sighting-row__meta pw-text-muted pw-text-small">
+    {{ statusLabel(sighting().status) | translate }} ·
+    <app-criticality-badge [kind]="criticalityKind(sighting().criticality)">{{
+      criticalityLabel(sighting().criticality) | translate
+    }}</app-criticality-badge>
+    ·
+    <time [attr.datetime]="sighting().createdAt" [title]="sighting().createdAt | date: 'medium'">{{
+      age().key | translate: age().value
+    }}</time>
+  </span>
 </a>
-<p class="pw-text-muted pw-text-small">
-  {{ statusLabel(sighting().status) | translate }} ·
-  <app-criticality-badge [kind]="criticalityKind(sighting().criticality)">{{
-    criticalityLabel(sighting().criticality) | translate
-  }}</app-criticality-badge>
-  ·
-  <time [attr.datetime]="sighting().createdAt" [title]="sighting().createdAt | date: 'medium'">{{
-    age().key | translate: age().value
-  }}</time>
-</p>

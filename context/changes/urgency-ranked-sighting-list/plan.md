@@ -455,28 +455,28 @@ No schema change and no data migration. The SPA and API ship together; an older 
 
 #### Automated
 
-- [x] 3.1 Frontend tests pass, including label coverage and style-token coverage
-- [x] 3.2 Production build passes within budgets, initial bundle not grown
+- [x] 3.1 Frontend tests pass, including label coverage and style-token coverage — 340ef79
+- [x] 3.2 Production build passes within budgets, initial bundle not grown — 340ef79
 
 #### Manual
 
-- [x] 3.3 Map filters look and behave as before
-- [x] 3.4 My sightings shows relative ages with the full date on hover
+- [x] 3.3 Map filters look and behave as before — 340ef79
+- [x] 3.4 My sightings shows relative ages with the full date on hover — 340ef79
 
 ### Phase 4: SPA list page
 
 #### Automated
 
-- [ ] 4.1 Frontend tests pass, including the list page, reporting, hand-over guard, kitchen-sink and label-coverage specs
-- [ ] 4.2 Production build passes within budgets and the initial bundle is not grown
+- [x] 4.1 Frontend tests pass, including the list page, reporting, hand-over guard, kitchen-sink and label-coverage specs
+- [x] 4.2 Production build passes within budgets and the initial bundle is not grown
 
 #### Manual
 
-- [ ] 4.3 List view from the map opens at the map centre with filters preselected, in urgency order
-- [ ] 4.4 Direct open asks for location; blocked location shows the message and the map link
-- [ ] 4.5 Paging, page size, filter reset to page 1, and Back from detail keep centre and filters
-- [ ] 4.6 Map view returns to the map with its default state
-- [ ] 4.7 Kitchen sink Sighting list group renders every cell
+- [x] 4.3 List view from the map opens at the map centre with filters preselected, in urgency order
+- [x] 4.4 Direct open asks for location; blocked location shows the message and the map link
+- [x] 4.5 Paging, page size, filter reset to page 1, and Back from detail keep centre and filters
+- [x] 4.6 Map view returns to the map with its default state
+- [x] 4.7 Kitchen sink Sighting list group renders every cell
 
 ### Phase 5: E2E — list opened from the map
 

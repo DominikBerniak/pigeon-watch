@@ -107,10 +107,9 @@ describe('MySightings', () => {
     const items = [...root.querySelectorAll('li')];
 
     expect(items.length).toBe(2);
-    expect(items.map((item) => item.querySelector('a')?.textContent?.trim())).toEqual([
-      'Limpy',
-      'Unnamed bird',
-    ]);
+    expect(
+      items.map((item) => item.querySelector('.sighting-row__name')?.textContent?.trim()),
+    ).toEqual(['Limpy', 'Unnamed bird']);
     expect(items.map((item) => item.querySelector('a')?.getAttribute('href'))).toEqual([
       '/sightings/sighting-1',
       '/sightings/sighting-2',

@@ -16,6 +16,8 @@ import {
   SightingCriticality,
   SightingFilters,
   SightingList,
+  SightingListRequest,
+  SightingPage,
   SightingStatus,
 } from '../../features/sightings/sighting.types';
 
@@ -27,6 +29,8 @@ export type NearbyMode =
 export type NextLocationMode = 'ok' | 'timeout' | 'pending';
 export type GeolocationMode = 'ok' | 'denied' | 'timeoutThenNext' | NextLocationMode;
 export type LeafletMode = 'tileless' | 'failure';
+export type ListMode = 'items' | 'paged' | 'empty' | 'failure' | 'pending';
+export type ListGeolocationMode = Exclude<GeolocationMode, 'timeoutThenNext'>;
 export type DetailMode =
   | 'loaded'
   | 'loadedUnnamed'
@@ -57,7 +61,13 @@ export interface SightingDetailModes {
   readonly leaflet: LeafletMode;
 }
 
-export type StubModes = ProfileModes | NearbyMapModes | SightingDetailModes;
+export interface SightingListModes {
+  readonly group: 'sightingList';
+  readonly list: ListMode;
+  readonly geolocation: ListGeolocationMode;
+}
+
+export type StubModes = ProfileModes | NearbyMapModes | SightingDetailModes | SightingListModes;
 
 type LeafletModule = typeof Leaflet;
 
@@ -133,6 +143,48 @@ export const sinkLongNameSighting: Sighting = sinkSighting(
   SightingCriticality.urgent,
   { latitude: 0.004, longitude: -0.006 },
   45,
+);
+
+const listCriticalities: readonly SightingCriticality[] = [
+  SightingCriticality.urgent,
+  SightingCriticality.urgent,
+  SightingCriticality.urgent,
+  SightingCriticality.needsHelpSoon,
+  SightingCriticality.needsHelpSoon,
+  SightingCriticality.needsHelpSoon,
+  SightingCriticality.needsHelpSoon,
+  SightingCriticality.monitor,
+  SightingCriticality.monitor,
+  SightingCriticality.monitor,
+  SightingCriticality.monitor,
+  SightingCriticality.monitor,
+  SightingCriticality.monitor,
+];
+
+const listAgesMinutes: readonly number[] = [
+  3 * 24 * 60,
+  5 * 60,
+  20,
+  2 * 24 * 60,
+  10 * 60,
+  90,
+  5,
+  4 * 24 * 60,
+  24 * 60,
+  8 * 60,
+  60,
+  15,
+  0,
+];
+
+export const sinkListSightings: readonly Sighting[] = listCriticalities.map((criticality, index) =>
+  sinkSighting(
+    `sink-list-${index + 1}`,
+    index === 4 ? null : `Pigeon ${index + 1}`,
+    criticality,
+    { latitude: index * 0.001, longitude: -index * 0.001 },
+    listAgesMinutes[index],
+  ),
 );
 
 const busyHoldMilliseconds = 30000;
@@ -212,6 +264,7 @@ export class CellStubs {
     nearby: (_centre: GeoPoint, filters?: SightingFilters): Observable<SightingList> =>
       this.nearbyResult(filters),
     get: (): Observable<Sighting> => this.detailResult(),
+    list: (request: SightingListRequest): Observable<SightingPage> => this.listResult(request),
   };
   readonly geolocation = {
     currentPosition: (): Observable<GeolocationOutcome> => this.positionResult(),
@@ -236,7 +289,9 @@ export class CellStubs {
   leafletLoader(load: LeafletLoader): LeafletLoader {
     return () => {
       const modes = this.modes();
-      const failing = modes.group !== 'profile' && modes.leaflet === 'failure';
+      const failing =
+        (modes.group === 'nearbyMap' || modes.group === 'sightingDetail') &&
+        modes.leaflet === 'failure';
 
       if (failing) return throwError(() => new Error('Leaflet stubbed to fail'));
 
@@ -302,6 +357,30 @@ export class CellStubs {
     }
   }
 
+  private listResult(request: SightingListRequest): Observable<SightingPage> {
+    const modes = this.modes();
+    const mode = modes.group === 'sightingList' ? modes.list : 'empty';
+
+    switch (mode) {
+      case 'failure':
+        return throwError(() => new HttpErrorResponse({ status: 500 }));
+      case 'pending':
+        return NEVER;
+      case 'empty':
+        return of({ items: [], totalCount: 0 });
+      default: {
+        const source = mode === 'paged' ? sinkListSightings : sinkSightings;
+        const matching = source.filter((sighting) => matches(sighting, request));
+        const start = (request.page - 1) * request.pageSize;
+
+        return of({
+          items: matching.slice(start, start + request.pageSize),
+          totalCount: matching.length,
+        });
+      }
+    }
+  }
+
   private detailResult(): Observable<Sighting> {
     const modes = this.modes();
     const firstRequest = this.detailRequests++ === 0;
@@ -328,6 +407,8 @@ export class CellStubs {
 
   private positionResult(): Observable<GeolocationOutcome> {
     const modes = this.modes();
+    if (modes.group === 'sightingList') return outcomeOf(modes.geolocation);
+
     const mode = modes.group === 'nearbyMap' ? modes.geolocation : 'denied';
     const firstRequest = this.locationRequests++ === 0;
 

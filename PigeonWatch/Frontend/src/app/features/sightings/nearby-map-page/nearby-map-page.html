@@ -32,6 +32,9 @@
           {{ 'map.filters.show' | translate }}
         }
       </button>
+      <a mat-stroked-button routerLink="/sightings/list" [state]="listHandOver()">
+        {{ 'map.listView' | translate }}
+      </a>
       @if (status() === 'error') {
         <button mat-stroked-button type="button" (click)="retry()">
           {{ 'map.retry' | translate }}
@@ -97,6 +100,7 @@
     class="nearby-filters-row"
     [hidden]="!filtersOpen()"
     [statusOptions]="filterStatuses"
+    [initial]="initialFilters"
     [disabled]="locating()"
     (filtersChange)="changeFilters($event)"
   />
@@ -146,7 +150,7 @@
               </div>
             </dl>
             <div class="pw-cluster">
-              <a mat-flat-button [routerLink]="['/sightings', sighting.id]">
+              <a mat-flat-button [routerLink]="['/sightings', sighting.id]" [state]="mapReturn()">
                 {{ 'map.selected.openDetails' | translate }}
               </a>
               <button mat-button type="button" (click)="clearSelection()">

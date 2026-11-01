@@ -21,6 +21,7 @@ import { sightingAge } from '../sighting-age';
 export class SightingRow {
   readonly sighting = input.required<Sighting>();
   readonly now = input.required<Date>();
+  readonly linkState = input<object | undefined>(undefined);
 
   protected readonly age = computed(() => sightingAge(this.sighting().createdAt, this.now()));
   protected readonly statusLabel = sightingStatusLabel;

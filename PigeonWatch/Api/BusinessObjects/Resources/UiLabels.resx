@@ -369,6 +369,9 @@
   <data name="sighting.detail.back" xml:space="preserve">
     <value>Back to map</value>
   </data>
+  <data name="sighting.detail.backToList" xml:space="preserve">
+    <value>Back to list</value>
+  </data>
   <data name="sighting.detail.retry" xml:space="preserve">
     <value>Try again</value>
   </data>
@@ -518,5 +521,59 @@
   </data>
   <data name="map.filters.clear" xml:space="preserve">
     <value>Clear filters</value>
+  </data>
+  <data name="map.listView" xml:space="preserve">
+    <value>List view</value>
+  </data>
+  <data name="list.page.title" xml:space="preserve">
+    <value>Sightings nearby</value>
+  </data>
+  <data name="list.page.titleWithCount" xml:space="preserve">
+    <value>Sightings nearby ({0})</value>
+  </data>
+  <data name="list.page.subtitle" xml:space="preserve">
+    <value>Within {0} km, most urgent first</value>
+  </data>
+  <data name="list.page.mapView" xml:space="preserve">
+    <value>Map view</value>
+  </data>
+  <data name="list.page.locating" xml:space="preserve">
+    <value>Finding your location…</value>
+  </data>
+  <data name="list.page.locationUnavailable" xml:space="preserve">
+    <value>We couldn't get your location, so the list can't be shown. Open the map and search an area, then choose List view.</value>
+  </data>
+  <data name="list.page.openMap" xml:space="preserve">
+    <value>Open the map</value>
+  </data>
+  <data name="list.page.error" xml:space="preserve">
+    <value>We couldn't load the sighting list.</value>
+  </data>
+  <data name="list.page.retry" xml:space="preserve">
+    <value>Try again</value>
+  </data>
+  <data name="list.page.empty" xml:space="preserve">
+    <value>No open sightings within {0} km.</value>
+  </data>
+  <data name="list.page.noMatch" xml:space="preserve">
+    <value>No sightings within {0} km match the selected filters.</value>
+  </data>
+  <data name="list.paginator.itemsPerPage" xml:space="preserve">
+    <value>Sightings per page</value>
+  </data>
+  <data name="list.paginator.firstPage" xml:space="preserve">
+    <value>First page</value>
+  </data>
+  <data name="list.paginator.previousPage" xml:space="preserve">
+    <value>Previous page</value>
+  </data>
+  <data name="list.paginator.nextPage" xml:space="preserve">
+    <value>Next page</value>
+  </data>
+  <data name="list.paginator.lastPage" xml:space="preserve">
+    <value>Last page</value>
+  </data>
+  <data name="list.paginator.range" xml:space="preserve">
+    <value>{0} / {1}</value>
   </data>
 </root>
