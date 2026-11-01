@@ -480,4 +480,31 @@
   <data name="map.legend.title" xml:space="preserve">
     <value>Criticality</value>
   </data>
+  <data name="map.filters.title" xml:space="preserve">
+    <value>Filter sightings</value>
+  </data>
+  <data name="map.filters.status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="map.filters.criticality" xml:space="preserve">
+    <value>Criticality</value>
+  </data>
+  <data name="map.filters.all" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="map.filters.noMatch" xml:space="preserve">
+    <value>No open sightings within {0} km match the selected filters.</value>
+  </data>
+  <data name="map.filters.show" xml:space="preserve">
+    <value>Show filters</value>
+  </data>
+  <data name="map.filters.showActive" xml:space="preserve">
+    <value>Show filters ({0})</value>
+  </data>
+  <data name="map.filters.hide" xml:space="preserve">
+    <value>Hide filters</value>
+  </data>
+  <data name="map.filters.clear" xml:space="preserve">
+    <value>Clear filters</value>
+  </data>
 </root>

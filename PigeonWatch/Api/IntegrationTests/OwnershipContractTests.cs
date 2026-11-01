@@ -199,6 +199,61 @@ public sealed class OwnershipContractTests : IDisposable
     }
 
     [Fact]
+    public async Task Nearby_filters_return_only_matching_sightings_and_log_no_coordinates()
+    {
+        TestUser alice = await SeedUserAsync(aliceEmail, alicePassword, aliceDisplayName);
+        TestUser bob = await SeedUserAsync(bobEmail, bobPassword, bobDisplayName);
+        Guid aliceUrgentSpottedId = await alice.CreateSightingAsync(status: 1, criticality: 3, cancellationToken: cancellationToken);
+        Guid bobMonitorCaughtId = await bob.CreateSightingAsync(status: 2, criticality: 1, cancellationToken: cancellationToken);
+        factory.ClearLogs();
+
+        using HttpResponseMessage urgent = await bob.Client.GetAsync($"{nearbyUri}&criticalities=3", cancellationToken);
+        List<SightingSummary> urgentSightings = await ReadSightingsAsync(urgent);
+        using HttpResponseMessage caught = await bob.Client.GetAsync($"{nearbyUri}&statuses=2", cancellationToken);
+        List<SightingSummary> caughtSightings = await ReadSightingsAsync(caught);
+        using HttpResponseMessage combined = await bob.Client.GetAsync($"{nearbyUri}&statuses=1&criticalities=1", cancellationToken);
+        List<SightingSummary> combinedSightings = await ReadSightingsAsync(combined);
+        using HttpResponseMessage unfiltered = await bob.Client.GetAsync(nearbyUri, cancellationToken);
+        List<SightingSummary> unfilteredSightings = await ReadSightingsAsync(unfiltered);
+
+        Assert.Equal(HttpStatusCode.OK, urgent.StatusCode);
+        Assert.Equal([new SightingSummary(aliceUrgentSpottedId, aliceDisplayName)], urgentSightings);
+        Assert.Equal(HttpStatusCode.OK, caught.StatusCode);
+        Assert.Equal([new SightingSummary(bobMonitorCaughtId, bobDisplayName)], caughtSightings);
+        Assert.Equal(HttpStatusCode.OK, combined.StatusCode);
+        Assert.Empty(combinedSightings);
+        Assert.Equal(HttpStatusCode.OK, unfiltered.StatusCode);
+        Assert.Equal(
+            new[] { aliceUrgentSpottedId, bobMonitorCaughtId }.Order(),
+            unfilteredSightings.Select(sighting => sighting.Id).Order());
+        Assert.All(factory.Logs.GetSnapshot(), record =>
+        {
+            Assert.DoesNotContain("52.2297", record.Message);
+            Assert.DoesNotContain("21.0122", record.Message);
+            Assert.DoesNotContain(record.StructuredState ?? [], pair => (pair.Value ?? string.Empty).Contains("52.2297"));
+        });
+    }
+
+    [Fact]
+    public async Task Nearby_rejects_a_resolved_status_and_an_undefined_criticality_filter_with_400_and_logs_no_coordinates()
+    {
+        TestUser bob = await SeedUserAsync(bobEmail, bobPassword, bobDisplayName);
+        factory.ClearLogs();
+
+        using HttpResponseMessage response = await bob.Client.GetAsync($"{nearbyUri}&statuses=6&criticalities=9", cancellationToken);
+        string[] errorCodes = await new AccountApiClient(bob.Client).ReadErrorCodesAsync(response, cancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(["InvalidFilterCriticality", "InvalidFilterStatus"], errorCodes.Order(StringComparer.Ordinal));
+        Assert.All(factory.Logs.GetSnapshot(), record =>
+        {
+            Assert.DoesNotContain("52.2297", record.Message);
+            Assert.DoesNotContain("21.0122", record.Message);
+            Assert.DoesNotContain(record.StructuredState ?? [], pair => (pair.Value ?? string.Empty).Contains("52.2297"));
+        });
+    }
+
+    [Fact]
     public async Task Open_reads_by_design_still_answer_unauthorized_to_an_anonymous_caller()
     {
         TestUser alice = await SeedUserAsync(aliceEmail, alicePassword, aliceDisplayName);

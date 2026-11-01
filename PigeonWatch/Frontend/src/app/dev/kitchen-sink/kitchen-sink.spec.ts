@@ -278,6 +278,50 @@ describe('KitchenSink', () => {
     });
   });
 
+  it('narrows the markers to Urgent when the filter is chosen from the cell header', async () => {
+    const id = 'map-filtered';
+
+    await eventually(() => expect(mapOf(id).markers()).toHaveLength(sinkSightings.length));
+
+    expect(cell(id).querySelector('app-nearby-map-filters')).not.toBeNull();
+
+    cell(id).querySelector<HTMLButtonElement>('header button')?.click();
+
+    await eventually(() => {
+      expect(
+        mapOf(id)
+          .markers()
+          .map((marker) => marker.id),
+      ).toEqual(['sink-urgent']);
+      expect(statusOf(id)).toBe(label('map.found', 1, 10));
+      expect(cell(id).querySelector<HTMLElement>('app-nearby-map-filters')?.hidden).toBe(false);
+      expect(
+        [...cell(id).querySelectorAll('button')].some(
+          (button) => button.textContent?.trim() === label('map.filters.hide'),
+        ),
+      ).toBe(true);
+      expect(
+        [...cell(id).querySelectorAll('app-nearby-map-filters mat-select')].map((select) =>
+          select.getAttribute('aria-expanded'),
+        ),
+      ).toEqual(['false', 'false']);
+    });
+  });
+
+  it('shows the no-match text when the chosen filter matches nothing', async () => {
+    const id = 'map-filtered-no-match';
+
+    await eventually(() => expect(mapOf(id).markers()).toHaveLength(sinkSightings.length));
+
+    cell(id).querySelector<HTMLButtonElement>('header button')?.click();
+
+    await eventually(() => {
+      expect(statusOf(id)).toBe(label('map.filters.noMatch', 10));
+      expect(statusOf(id)).not.toBe(label('map.empty', 10));
+      expect(mapOf(id).markers()).toEqual([]);
+    });
+  });
+
   it('shows the empty text when nothing is nearby', async () => {
     await eventually(() => {
       expect(textOf(cell('map-empty').querySelector('[role="status"]'))).toBe(

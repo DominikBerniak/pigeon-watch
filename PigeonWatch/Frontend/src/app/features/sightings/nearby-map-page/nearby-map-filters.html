@@ -1,0 +1,46 @@
+<div class="nearby-filters" role="group" [attr.aria-label]="'map.filters.title' | translate">
+  <mat-form-field class="nearby-filters__field" floatLabel="always">
+    <mat-label>{{ 'map.filters.status' | translate }}</mat-label>
+    <mat-select
+      multiple
+      panelClass="pw-select-panel"
+      [value]="statuses()"
+      [disabled]="disabled()"
+      [placeholder]="'map.filters.all' | translate"
+      (selectionChange)="changeStatuses($event.value)"
+    >
+      @for (status of statusOptions; track status) {
+        <mat-option [value]="status">{{ statusLabel(status) | translate }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field class="nearby-filters__field" floatLabel="always">
+    <mat-label>{{ 'map.filters.criticality' | translate }}</mat-label>
+    <mat-select
+      multiple
+      panelClass="pw-select-panel"
+      [value]="criticalities()"
+      [disabled]="disabled()"
+      [placeholder]="'map.filters.all' | translate"
+      (selectionChange)="changeCriticalities($event.value)"
+    >
+      @for (criticality of criticalityOptions; track criticality) {
+        <mat-option [value]="criticality">
+          <app-criticality-badge [kind]="criticalityKind(criticality)">
+            {{ criticalityLabel(criticality) | translate }}
+          </app-criticality-badge>
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <button
+    mat-stroked-button
+    type="button"
+    class="nearby-filters__clear"
+    [disabled]="disabled() || !active()"
+    disabledInteractive
+    (click)="clear()"
+  >
+    {{ 'map.filters.clear' | translate }}
+  </button>
+</div>

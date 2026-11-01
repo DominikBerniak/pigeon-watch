@@ -6,6 +6,11 @@ public interface ISightingService
 {
     Task<SightingCreateResult> CreateAsync(NewSighting sighting, CancellationToken cancellationToken = default);
     Task<Sighting?> GetAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<Sighting>> GetNearbyAsync(double latitude, double longitude, CancellationToken cancellationToken = default);
+    Task<SightingNearbyResult> GetNearbyAsync(
+        double latitude,
+        double longitude,
+        IReadOnlyCollection<SightingStatus> statuses,
+        IReadOnlyCollection<SightingCriticality> criticalities,
+        CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Sighting>> GetMineAsync(Guid reporterId, CancellationToken cancellationToken = default);
 }

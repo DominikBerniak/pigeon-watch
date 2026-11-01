@@ -16,6 +16,7 @@ namespace PigeonWatch.WebApi.Controllers;
 public class SightingsController(
     ISightingService sightingService,
     ICreateSightingRequestMapper createSightingRequestMapper,
+    INearbySightingsRequestMapper nearbySightingsRequestMapper,
     ISightingViewModelCreator sightingViewModelCreator,
     ILogger<SightingsController> logger) : FailureLoggingControllerBase(logger)
 {
@@ -25,7 +26,9 @@ public class SightingsController(
     [
         SightingErrorCodes.InvalidLocation,
         SightingErrorCodes.InvalidInitialStatus,
-        SightingErrorCodes.InvalidCriticality
+        SightingErrorCodes.InvalidCriticality,
+        SightingErrorCodes.InvalidFilterStatus,
+        SightingErrorCodes.InvalidFilterCriticality
     ];
 
     [HttpPost]
@@ -71,9 +74,18 @@ public class SightingsController(
     {
         Response.Headers.CacheControl = noStoreCacheControl;
 
-        IReadOnlyList<Sighting> sightings = await sightingService.GetNearbyAsync(request.Latitude, request.Longitude, cancellationToken);
+        NearbySightingFilters filters = nearbySightingsRequestMapper.MapFilters(request);
+        SightingNearbyResult result = await sightingService.GetNearbyAsync(request.Latitude, request.Longitude, filters.Statuses, filters.Criticalities, cancellationToken);
 
-        return Ok(sightingViewModelCreator.CreateList(sightings));
+        if (!result.Succeeded)
+        {
+            foreach (SightingError error in result.Errors.Where(error => loggedErrorCodes.Contains(error.Code)))
+                LogInvalidInput(error.Code);
+
+            return GetValidationProblem<SightingListModel>(result.Errors.Select(error => (error.Code, error.Description)));
+        }
+
+        return Ok(sightingViewModelCreator.CreateList(result.Sightings));
     }
 
     [HttpGet("mine")]

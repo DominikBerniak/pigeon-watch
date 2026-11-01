@@ -205,7 +205,10 @@ public sealed class EndpointFixtureRegistry
             Make(key, "in range", new HttpRequestMessage(HttpMethod.Get, "/sightings/nearby?latitude=52.2297&longitude=21.0122")),
             Make(key, "latitude out of range", new HttpRequestMessage(HttpMethod.Get, "/sightings/nearby?latitude=999&longitude=21.0122")),
             Make(key, "missing coordinates", new HttpRequestMessage(HttpMethod.Get, "/sightings/nearby")),
-            Make(key, "non numeric coordinates", new HttpRequestMessage(HttpMethod.Get, "/sightings/nearby?latitude=abc&longitude=def"))
+            Make(key, "non numeric coordinates", new HttpRequestMessage(HttpMethod.Get, "/sightings/nearby?latitude=abc&longitude=def")),
+            Make(key, "valid status and criticality filter", new HttpRequestMessage(HttpMethod.Get, "/sightings/nearby?latitude=52.2297&longitude=21.0122&statuses=1&statuses=2&criticalities=3")),
+            Make(key, "resolved status and undefined criticality filter", new HttpRequestMessage(HttpMethod.Get, "/sightings/nearby?latitude=52.2297&longitude=21.0122&statuses=6&criticalities=9")),
+            Make(key, "non numeric filter value", new HttpRequestMessage(HttpMethod.Get, "/sightings/nearby?latitude=52.2297&longitude=21.0122&statuses=abc"))
         ];
     }
 

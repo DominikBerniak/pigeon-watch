@@ -1,5 +1,6 @@
 import {
   CellStep,
+  choose,
   click,
   fill,
   keydown,
@@ -189,6 +190,8 @@ const marker = '.pw-map-marker--urgent';
 const status = '[role="status"]';
 const zoomIn = '.leaflet-control-zoom-in';
 const countryToSearchZoomSteps = 4;
+const statusFilter = 'app-nearby-map-filters mat-form-field:first-of-type mat-select';
+const criticalityFilter = 'app-nearby-map-filters mat-form-field:last-of-type mat-select';
 
 const nearbyMapCells: readonly NearbyMapCell[] = [
   {
@@ -286,6 +289,35 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
     manual: {
       action: 'Press Enter on a marker',
       steps: [keydown(marker, 'Enter'), waitFor('mat-card')],
+    },
+  },
+  {
+    id: 'map-filtered',
+    label: 'Filtered by criticality (filter row opened, Urgent chosen from the cell header)',
+    group: 'nearbyMap',
+    geolocation: 'ok',
+    nearby: 'filtered',
+    leaflet: 'tileless',
+    steps: [],
+    manual: {
+      action: 'Choose Urgent',
+      steps: [
+        press('map.filters.show'),
+        choose(criticalityFilter, 'sighting.criticality.urgent'),
+      ],
+    },
+  },
+  {
+    id: 'map-filtered-no-match',
+    label: 'Filter with no match (At the vet chosen from the cell header)',
+    group: 'nearbyMap',
+    geolocation: 'ok',
+    nearby: 'filtered',
+    leaflet: 'tileless',
+    steps: [],
+    manual: {
+      action: 'Choose At the vet',
+      steps: [press('map.filters.show'), choose(statusFilter, 'sighting.status.atTheVet')],
     },
   },
   {

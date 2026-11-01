@@ -105,6 +105,19 @@ export const selectableSightingCriticalities: readonly SightingCriticality[] = [
   SightingCriticality.urgent,
 ];
 
+export const filterableSightingStatuses: readonly SightingStatus[] = [
+  SightingStatus.spotted,
+  SightingStatus.caught,
+  SightingStatus.atTheVet,
+  SightingStatus.inHomeCare,
+  SightingStatus.awaitingAdoption,
+];
+
+export interface SightingFilters {
+  statuses: readonly SightingStatus[];
+  criticalities: readonly SightingCriticality[];
+}
+
 export const fallbackSightingRules: SightingRules = {
   nameMaxLength: 60,
   descriptionMaxLength: 1000,

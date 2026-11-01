@@ -3,7 +3,7 @@ project: PigeonWatch
 version: 1
 status: draft
 created: 2026-10-03
-updated: 2026-10-11
+updated: 2026-11-01
 prd_version: 2
 main_goal: speed
 top_blocker: decisions
@@ -46,7 +46,7 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 | S-02 | edit-profile-name           | view and edit their own profile name, and change their password, from a profile page opened through a header user menu | S-01          | FR-002, FR-022                 | done     |
 | S-03 | report-sighting-on-map      | report a sighting and see it on the nearby map and its detail page          | S-01          | US-01, FR-004, FR-005, FR-019  | done |
 | S-04 | attach-sighting-photo       | attach an optional photo to a sighting                                      | S-03          | FR-005                         | proposed |
-| S-05 | filter-sightings-nearby     | scope the map to their nearby area and filter by status and criticality     | S-03          | FR-004                         | proposed |
+| S-05 | filter-sightings-nearby     | scope the map to their nearby area and filter by status and criticality     | S-03          | FR-004                         | in-progress |
 | S-06 | urgency-ranked-sighting-list | browse nearby sightings as a list ordered by urgency                       | S-03          | FR-020                         | proposed |
 | S-07 | comment-on-sighting         | add comments to a sighting                                                  | S-03          | FR-009, FR-019                 | proposed |
 | S-08 | sighting-message-threads    | contact a sighting's owner and continue the conversation in a per-sighting thread | S-03    | FR-012, FR-013                 | proposed |
@@ -154,9 +154,9 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-02, S-04, S-06, S-07, S-08, S-10
 - **Blockers:** —
 - **Unknowns:**
-  - Which refinements of the S-03 "nearby" rule (10 km around the map centre) are needed: a user-changeable radius, or a named city instead of a radius? — Owner: user. Block: no.
+  - S-05 shipped the status and criticality filters only; "nearby" stays the S-03 rule (10 km around the map centre). Still open: which refinements of that rule are needed, a user-changeable radius or a named city instead of a radius? — Owner: user. Block: no.
 - **Risk:** "Nearby" is defined once in `S-03` and shared with `S-06`; a refinement here changes both, so it changes the one rule rather than adding a second.
-- **Status:** proposed
+- **Status:** in-progress
 
 ### S-06: Urgency-ranked sighting list
 

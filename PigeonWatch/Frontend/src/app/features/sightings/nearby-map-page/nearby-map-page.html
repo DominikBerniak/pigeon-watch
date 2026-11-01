@@ -16,6 +16,22 @@
       >
         {{ 'map.searchArea' | translate }}
       </button>
+      <button
+        mat-stroked-button
+        class="nearby-filters-toggle"
+        type="button"
+        aria-controls="nearby-filters"
+        [attr.aria-expanded]="filtersOpen()"
+        (click)="toggleFilters()"
+      >
+        @if (filtersOpen()) {
+          {{ 'map.filters.hide' | translate }}
+        } @else if (activeFilterCount() > 0) {
+          {{ 'map.filters.showActive' | translate: activeFilterCount() }}
+        } @else {
+          {{ 'map.filters.show' | translate }}
+        }
+      </button>
       @if (status() === 'error') {
         <button mat-stroked-button type="button" (click)="retry()">
           {{ 'map.retry' | translate }}
@@ -63,6 +79,9 @@
           @case ('empty') {
             {{ 'map.empty' | translate: radiusKm() }}
           }
+          @case ('noMatch') {
+            {{ 'map.filters.noMatch' | translate: radiusKm() }}
+          }
         }
       </div>
       @if (status() === 'error') {
@@ -73,6 +92,13 @@
       }
     </div>
   </div>
+  <app-nearby-map-filters
+    id="nearby-filters"
+    class="nearby-filters-row"
+    [hidden]="!filtersOpen()"
+    [disabled]="locating()"
+    (filtersChange)="changeFilters($event)"
+  />
   <div class="nearby-body">
     <app-map-view
       #mapView

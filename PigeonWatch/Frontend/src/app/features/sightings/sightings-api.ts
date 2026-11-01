@@ -1,9 +1,9 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { GeoPoint } from '../../core/geolocation/geo-point';
-import { NewSighting, Sighting, SightingList } from './sighting.types';
+import { NewSighting, Sighting, SightingFilters, SightingList } from './sighting.types';
 
 @Injectable({ providedIn: 'root' })
 export class SightingsApi {
@@ -17,10 +17,18 @@ export class SightingsApi {
     return this.http.get<Sighting>(`${environment.apiUrl}/sightings/${encodeURIComponent(id)}`);
   }
 
-  nearby(centre: GeoPoint): Observable<SightingList> {
-    return this.http.get<SightingList>(`${environment.apiUrl}/sightings/nearby`, {
-      params: { latitude: centre.latitude, longitude: centre.longitude },
-    });
+  nearby(centre: GeoPoint, filters?: SightingFilters): Observable<SightingList> {
+    let params = new HttpParams()
+      .set('latitude', centre.latitude)
+      .set('longitude', centre.longitude);
+
+    for (const status of filters?.statuses ?? []) params = params.append('statuses', status);
+
+    for (const criticality of filters?.criticalities ?? []) {
+      params = params.append('criticalities', criticality);
+    }
+
+    return this.http.get<SightingList>(`${environment.apiUrl}/sightings/nearby`, { params });
   }
 
   mine(): Observable<SightingList> {

@@ -215,7 +215,7 @@ public class SightingServiceTests
             [SightingStatus.Spotted, SightingStatus.Caught, SightingStatus.AtTheVet, SightingStatus.InHomeCare, SightingStatus.AwaitingAdoption];
         CandidatesInBox([]);
 
-        await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, cancellationToken);
+        await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], cancellationToken);
 
         await sightingRepository.Received(1).ListInBoxAsync(
             box.MinLatitude,
@@ -223,6 +223,7 @@ public class SightingServiceTests
             box.MinLongitude,
             box.MaxLongitude,
             Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.Order().SequenceEqual(openStatuses)),
+            Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.Count == 0),
             SightingRules.NearbyBoxMaxRows,
             Arg.Any<CancellationToken>());
     }
@@ -234,7 +235,7 @@ public class SightingServiceTests
         Sighting outside = SightingAt(centreLatitude + (10.01 / kilometersPerLatitudeDegree), centreLongitude, now.UtcDateTime);
         CandidatesInBox([inside, outside]);
 
-        IReadOnlyList<Sighting> nearby = await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, cancellationToken);
+        IReadOnlyList<Sighting> nearby = (await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], cancellationToken)).Sightings;
 
         Assert.Equal([inside.Id], nearby.Select(sighting => sighting.Id));
     }
@@ -248,7 +249,7 @@ public class SightingServiceTests
         Sighting corner = SightingAt(cornerLatitude, cornerLongitude, now.UtcDateTime);
         CandidatesInBox([corner]);
 
-        IReadOnlyList<Sighting> nearby = await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, cancellationToken);
+        IReadOnlyList<Sighting> nearby = (await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], cancellationToken)).Sightings;
 
         Assert.InRange(cornerLatitude, box.MinLatitude, box.MaxLatitude);
         Assert.InRange(cornerLongitude, box.MinLongitude, box.MaxLongitude);
@@ -263,7 +264,7 @@ public class SightingServiceTests
             .ToList();
         CandidatesInBox(candidates);
 
-        IReadOnlyList<Sighting> nearby = await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, cancellationToken);
+        IReadOnlyList<Sighting> nearby = (await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], cancellationToken)).Sightings;
 
         List<DateTime> expected = candidates
             .Select(sighting => sighting.CreatedAt)
@@ -272,6 +273,150 @@ public class SightingServiceTests
             .ToList();
         Assert.Equal(SightingRules.NearbyMaxResults, nearby.Count);
         Assert.Equal(expected, nearby.Select(sighting => sighting.CreatedAt));
+    }
+
+    [Fact]
+    public async Task Nearby_with_empty_filters_succeeds_and_returns_the_sightings_in_the_circle()
+    {
+        Sighting inside = SightingAt(centreLatitude, centreLongitude, now.UtcDateTime);
+        CandidatesInBox([inside]);
+
+        SightingNearbyResult result = await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Empty(result.Errors);
+        Assert.Equal([inside.Id], result.Sightings.Select(sighting => sighting.Id));
+    }
+
+    [Fact]
+    public async Task Nearby_with_a_status_filter_queries_only_the_requested_statuses_and_no_criticality_predicate()
+    {
+        CandidatesInBox([]);
+
+        SightingNearbyResult result = await CreateService().GetNearbyAsync(
+            centreLatitude,
+            centreLongitude,
+            [SightingStatus.Caught, SightingStatus.Spotted],
+            [],
+            cancellationToken);
+
+        Assert.True(result.Succeeded);
+        await sightingRepository.Received(1).ListInBoxAsync(
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.Order().SequenceEqual(new[] { SightingStatus.Spotted, SightingStatus.Caught })),
+            Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.Count == 0),
+            SightingRules.NearbyBoxMaxRows,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Nearby_with_a_criticality_filter_queries_every_open_status_and_only_the_requested_criticalities()
+    {
+        SightingStatus[] openStatuses =
+            [SightingStatus.Spotted, SightingStatus.Caught, SightingStatus.AtTheVet, SightingStatus.InHomeCare, SightingStatus.AwaitingAdoption];
+        CandidatesInBox([]);
+
+        SightingNearbyResult result = await CreateService().GetNearbyAsync(
+            centreLatitude,
+            centreLongitude,
+            [],
+            [SightingCriticality.Urgent],
+            cancellationToken);
+
+        Assert.True(result.Succeeded);
+        await sightingRepository.Received(1).ListInBoxAsync(
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.Order().SequenceEqual(openStatuses)),
+            Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.SequenceEqual(new[] { SightingCriticality.Urgent })),
+            SightingRules.NearbyBoxMaxRows,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Nearby_with_both_filters_queries_the_requested_statuses_and_criticalities_without_duplicates()
+    {
+        CandidatesInBox([]);
+
+        SightingNearbyResult result = await CreateService().GetNearbyAsync(
+            centreLatitude,
+            centreLongitude,
+            [SightingStatus.AtTheVet, SightingStatus.AtTheVet],
+            [SightingCriticality.Monitor, SightingCriticality.NeedsHelpSoon, SightingCriticality.Monitor],
+            cancellationToken);
+
+        Assert.True(result.Succeeded);
+        await sightingRepository.Received(1).ListInBoxAsync(
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.SequenceEqual(new[] { SightingStatus.AtTheVet })),
+            Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities =>
+                criticalities.Order().SequenceEqual(new[] { SightingCriticality.Monitor, SightingCriticality.NeedsHelpSoon })),
+            SightingRules.NearbyBoxMaxRows,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(6)]
+    [InlineData(7)]
+    [InlineData(8)]
+    [InlineData(9)]
+    [InlineData(42)]
+    public async Task Nearby_rejects_a_status_filter_value_that_is_undefined_or_resolved(int status)
+    {
+        SightingNearbyResult result = await CreateService().GetNearbyAsync(
+            centreLatitude,
+            centreLongitude,
+            [SightingStatus.Spotted, (SightingStatus)status],
+            [],
+            cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([SightingErrorCodes.InvalidFilterStatus], result.Errors.Select(error => error.Code));
+        Assert.Empty(result.Sightings);
+        await AssertNoBoxQueryAsync();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(4)]
+    [InlineData(9)]
+    public async Task Nearby_rejects_a_criticality_filter_value_outside_1_to_3(int criticality)
+    {
+        SightingNearbyResult result = await CreateService().GetNearbyAsync(
+            centreLatitude,
+            centreLongitude,
+            [],
+            [SightingCriticality.Urgent, (SightingCriticality)criticality],
+            cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([SightingErrorCodes.InvalidFilterCriticality], result.Errors.Select(error => error.Code));
+        await AssertNoBoxQueryAsync();
+    }
+
+    [Fact]
+    public async Task Nearby_reports_a_rejected_status_and_a_rejected_criticality_together()
+    {
+        SightingNearbyResult result = await CreateService().GetNearbyAsync(
+            centreLatitude,
+            centreLongitude,
+            [SightingStatus.Adopted],
+            [(SightingCriticality)9],
+            cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(
+            [SightingErrorCodes.InvalidFilterCriticality, SightingErrorCodes.InvalidFilterStatus],
+            result.Errors.Select(error => error.Code).Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -299,6 +444,19 @@ public class SightingServiceTests
             .Returns(createdAt.UtcDateTime);
     }
 
+    private async Task AssertNoBoxQueryAsync()
+    {
+        await sightingRepository.DidNotReceive().ListInBoxAsync(
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Any<IReadOnlyCollection<SightingStatus>>(),
+            Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
+            Arg.Any<int>(),
+            Arg.Any<CancellationToken>());
+    }
+
     private void CandidatesInBox(IReadOnlyList<Sighting> candidates)
     {
         sightingRepository
@@ -308,6 +466,7 @@ public class SightingServiceTests
                 Arg.Any<double>(),
                 Arg.Any<double>(),
                 Arg.Any<IReadOnlyCollection<SightingStatus>>(),
+                Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
                 Arg.Any<int>(),
                 Arg.Any<CancellationToken>())
             .Returns(candidates);

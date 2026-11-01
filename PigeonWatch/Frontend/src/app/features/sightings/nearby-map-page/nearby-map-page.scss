@@ -10,7 +10,7 @@
   gap: var(--pw-space-3);
 
   @include bp.from(md) {
-    flex-direction: row;
+    flex-flow: row wrap;
     align-items: center;
   }
 }
@@ -25,12 +25,26 @@
   flex-direction: column;
   min-width: 0;
   min-height: var(--pw-control-height);
+
+  @include bp.from(md) {
+    flex-basis: var(--pw-map-aside-width);
+  }
 }
 
 .nearby-status {
   display: flex;
   align-items: center;
   min-height: var(--pw-control-height);
+}
+
+.nearby-filters-toggle[aria-expanded='true'] {
+  background-color: var(--pw-color-info-surface);
+}
+
+.nearby-filters-row {
+  @include bp.from(lg) {
+    margin-inline-end: calc(var(--pw-map-aside-width) + var(--pw-stack-gap));
+  }
 }
 
 .nearby-body {

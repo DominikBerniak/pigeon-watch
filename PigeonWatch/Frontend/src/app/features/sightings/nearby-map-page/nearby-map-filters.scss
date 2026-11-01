@@ -1,0 +1,24 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+:host([hidden]) {
+  display: none;
+}
+
+.nearby-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--pw-space-3);
+}
+
+.nearby-filters__clear {
+  flex: none;
+}
+
+.nearby-filters__field {
+  flex: 1 1 var(--pw-map-filter-width);
+  min-width: 0;
+}

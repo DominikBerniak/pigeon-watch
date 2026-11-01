@@ -96,7 +96,7 @@ public sealed class SightingRepositoryTests : IDisposable
         await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.5001, SightingStatus.Spotted));
 
         await using PigeonWatchDbContext db = CreateContext();
-        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, 50, cancellationToken);
+        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, cancellationToken);
 
         Assert.Equal(
             new[] { minCorner.Id, maxCorner.Id, centre.Id }.Order(),
@@ -118,7 +118,7 @@ public sealed class SightingRepositoryTests : IDisposable
         }
 
         await using PigeonWatchDbContext db = CreateContext();
-        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, 50, cancellationToken);
+        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, cancellationToken);
 
         Assert.Equal(openIds.Order(), found.Select(sighting => sighting.Id).Order());
         Assert.All(found, sighting => Assert.Contains(sighting.Status, openStatuses));
@@ -136,11 +136,83 @@ public sealed class SightingRepositoryTests : IDisposable
 
         await using PigeonWatchDbContext db = CreateContext();
         ISightingRepository repository = CreateRepository(db);
-        IReadOnlyList<Sighting> all = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, 50, cancellationToken);
-        IReadOnlyList<Sighting> firstTwo = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, 2, cancellationToken);
+        IReadOnlyList<Sighting> all = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, cancellationToken);
+        IReadOnlyList<Sighting> firstTwo = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 2, cancellationToken);
 
         Assert.Equal([newest.Id, middle.Id, oldest.Id], all.Select(sighting => sighting.Id));
         Assert.Equal([newest.Id, middle.Id], firstTwo.Select(sighting => sighting.Id));
+    }
+
+    [Fact]
+    public async Task List_in_box_with_criticalities_returns_only_sightings_of_those_criticalities()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        List<Guid> matchingIds = [];
+
+        foreach (SightingCriticality criticality in Enum.GetValues<SightingCriticality>())
+        {
+            Sighting created = (await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.25, SightingStatus.Spotted) with { Criticality = criticality }))!;
+
+            if (criticality != SightingCriticality.Monitor)
+                matchingIds.Add(created.Id);
+        }
+
+        await using PigeonWatchDbContext db = CreateContext();
+        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(
+            52.0,
+            52.5,
+            21.0,
+            21.5,
+            openStatuses,
+            [SightingCriticality.NeedsHelpSoon, SightingCriticality.Urgent],
+            50,
+            cancellationToken);
+
+        Assert.Equal(matchingIds.Order(), found.Select(sighting => sighting.Id).Order());
+    }
+
+    [Fact]
+    public async Task List_in_box_with_empty_criticalities_applies_no_criticality_predicate()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        List<Guid> allIds = [];
+
+        foreach (SightingCriticality criticality in Enum.GetValues<SightingCriticality>())
+        {
+            Sighting created = (await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.25, SightingStatus.Spotted) with { Criticality = criticality }))!;
+            allIds.Add(created.Id);
+        }
+
+        await using PigeonWatchDbContext db = CreateContext();
+        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, cancellationToken);
+
+        Assert.Equal(allIds.Order(), found.Select(sighting => sighting.Id).Order());
+    }
+
+    [Fact]
+    public async Task List_in_box_applies_the_take_after_the_criticality_predicate()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Sighting olderUrgent = (await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.25, SightingStatus.Spotted)))!;
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(5);
+        Sighting newerUrgent = (await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.25, SightingStatus.Spotted)))!;
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(5);
+        await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.25, SightingStatus.Spotted) with { Criticality = SightingCriticality.Monitor });
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(5);
+        await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.25, SightingStatus.Spotted) with { Criticality = SightingCriticality.Monitor });
+
+        await using PigeonWatchDbContext db = CreateContext();
+        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(
+            52.0,
+            52.5,
+            21.0,
+            21.5,
+            openStatuses,
+            [SightingCriticality.Urgent],
+            2,
+            cancellationToken);
+
+        Assert.Equal([newerUrgent.Id, olderUrgent.Id], found.Select(sighting => sighting.Id));
     }
 
     [Fact]
