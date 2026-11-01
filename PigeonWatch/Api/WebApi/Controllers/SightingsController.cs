@@ -25,7 +25,9 @@ public class SightingsController(
     [
         SightingErrorCodes.InvalidLocation,
         SightingErrorCodes.InvalidInitialStatus,
-        SightingErrorCodes.InvalidCriticality
+        SightingErrorCodes.InvalidCriticality,
+        SightingErrorCodes.InvalidFilterStatus,
+        SightingErrorCodes.InvalidFilterCriticality
     ];
 
     [HttpPost]
@@ -71,9 +73,19 @@ public class SightingsController(
     {
         Response.Headers.CacheControl = noStoreCacheControl;
 
-        IReadOnlyList<Sighting> sightings = await sightingService.GetNearbyAsync(request.Latitude, request.Longitude, cancellationToken);
+        List<SightingStatus> statuses = request.Statuses.Select(status => (SightingStatus)status).ToList();
+        List<SightingCriticality> criticalities = request.Criticalities.Select(criticality => (SightingCriticality)criticality).ToList();
+        SightingNearbyResult result = await sightingService.GetNearbyAsync(request.Latitude, request.Longitude, statuses, criticalities, cancellationToken);
 
-        return Ok(sightingViewModelCreator.CreateList(sightings));
+        if (!result.Succeeded)
+        {
+            foreach (SightingError error in result.Errors.Where(error => loggedErrorCodes.Contains(error.Code)))
+                LogInvalidInput(error.Code);
+
+            return GetValidationProblem<SightingListModel>(result.Errors.Select(error => (error.Code, error.Description)));
+        }
+
+        return Ok(sightingViewModelCreator.CreateList(result.Sightings));
     }
 
     [HttpGet("mine")]

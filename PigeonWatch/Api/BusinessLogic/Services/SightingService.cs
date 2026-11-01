@@ -53,27 +53,42 @@ public class SightingService(
         return await sightingRepository.GetByIdAsync(id, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Sighting>> GetNearbyAsync(double latitude, double longitude, CancellationToken cancellationToken = default)
+    public async Task<SightingNearbyResult> GetNearbyAsync(
+        double latitude,
+        double longitude,
+        IReadOnlyCollection<SightingStatus> statuses,
+        IReadOnlyCollection<SightingCriticality> criticalities,
+        CancellationToken cancellationToken = default)
     {
-        GeoBoundingBox box = geoDistanceCalculator.GetBoundingBox(latitude, longitude, SightingRules.NearbyRadiusKilometers);
         List<SightingStatus> openStatuses = Enum.GetValues<SightingStatus>()
             .Where(status => !sightingStatusTransitionProvider.IsResolved(status))
             .ToList();
+        List<SightingError> errors = ValidateNearbyFilters(statuses, criticalities, openStatuses);
+
+        if (errors.Count > 0)
+            return SightingNearbyResult.Failure(errors);
+
+        GeoBoundingBox box = geoDistanceCalculator.GetBoundingBox(latitude, longitude, SightingRules.NearbyRadiusKilometers);
+        List<SightingStatus> requestedStatuses = statuses.Count == 0 ? openStatuses : statuses.Distinct().ToList();
+        List<SightingCriticality> requestedCriticalities = criticalities.Distinct().ToList();
 
         IReadOnlyList<Sighting> candidates = await sightingRepository.ListInBoxAsync(
             box.MinLatitude,
             box.MaxLatitude,
             box.MinLongitude,
             box.MaxLongitude,
-            openStatuses,
+            requestedStatuses,
+            requestedCriticalities,
             SightingRules.NearbyBoxMaxRows,
             cancellationToken);
 
-        return candidates
+        List<Sighting> nearby = candidates
             .Where(candidate => geoDistanceCalculator.GetDistanceKilometers(latitude, longitude, candidate.Latitude, candidate.Longitude) <= SightingRules.NearbyRadiusKilometers)
             .OrderByDescending(candidate => candidate.CreatedAt)
             .Take(SightingRules.NearbyMaxResults)
             .ToList();
+
+        return SightingNearbyResult.Success(nearby);
     }
 
     public async Task<IReadOnlyList<Sighting>> GetMineAsync(Guid reporterId, CancellationToken cancellationToken = default)
@@ -93,6 +108,22 @@ public class SightingService(
 
         if (!IsValidLocation(sighting.Latitude, sighting.Longitude))
             errors.Add(new SightingError(SightingErrorCodes.InvalidLocation, "Latitude must be between -90 and 90 and longitude between -180 and 180."));
+
+        return errors;
+    }
+
+    private static List<SightingError> ValidateNearbyFilters(
+        IReadOnlyCollection<SightingStatus> statuses,
+        IReadOnlyCollection<SightingCriticality> criticalities,
+        IReadOnlyCollection<SightingStatus> openStatuses)
+    {
+        List<SightingError> errors = [];
+
+        if (statuses.Any(status => !openStatuses.Contains(status)))
+            errors.Add(new SightingError(SightingErrorCodes.InvalidFilterStatus, "Status filter accepts only Spotted, Caught, At the vet, In home care or Awaiting adoption."));
+
+        if (criticalities.Any(criticality => !Enum.IsDefined(criticality)))
+            errors.Add(new SightingError(SightingErrorCodes.InvalidFilterCriticality, "Criticality filter accepts only Monitor, Needs help soon or Urgent."));
 
         return errors;
     }

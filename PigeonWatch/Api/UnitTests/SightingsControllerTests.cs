@@ -157,7 +157,14 @@ public class SightingsControllerTests
     public async Task Nearby_returns_the_sightings_around_the_requested_centre_without_caching()
     {
         Sighting stored = Sighting();
-        sightingService.GetNearbyAsync(52.1, 21.1, Arg.Any<CancellationToken>()).Returns([stored]);
+        sightingService
+            .GetNearbyAsync(
+                52.1,
+                21.1,
+                Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.Count == 0),
+                Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.Count == 0),
+                Arg.Any<CancellationToken>())
+            .Returns(SightingNearbyResult.Success([stored]));
         SightingsController controller = CreateController(Authenticated(Guid.NewGuid()));
 
         ActionResult<SightingListModel> result = await controller.Nearby(
@@ -166,6 +173,61 @@ public class SightingsControllerTests
 
         SightingListModel model = Assert.IsType<SightingListModel>(Assert.IsType<OkObjectResult>(result.Result).Value);
         Assert.Equal([stored.Id], model.Items.Select(item => item.Id));
+        Assert.Equal("private, no-store", controller.Response.Headers.CacheControl.ToString());
+    }
+
+    [Fact]
+    public async Task Nearby_passes_the_status_and_criticality_filters_to_the_service()
+    {
+        Sighting stored = Sighting();
+        sightingService
+            .GetNearbyAsync(
+                Arg.Any<double>(),
+                Arg.Any<double>(),
+                Arg.Any<IReadOnlyCollection<SightingStatus>>(),
+                Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(SightingNearbyResult.Success([stored]));
+        SightingsController controller = CreateController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingListModel> result = await controller.Nearby(
+            new NearbySightingsRequestModel { Latitude = 52.1, Longitude = 21.1, Statuses = [1, 2], Criticalities = [3] },
+            cancellationToken);
+
+        Assert.IsType<OkObjectResult>(result.Result);
+        await sightingService.Received(1).GetNearbyAsync(
+            52.1,
+            21.1,
+            Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.SequenceEqual(new[] { SightingStatus.Spotted, SightingStatus.Caught })),
+            Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.SequenceEqual(new[] { SightingCriticality.Urgent })),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Nearby_returns_400_keyed_by_code_for_a_rejected_filter_value()
+    {
+        sightingService
+            .GetNearbyAsync(
+                Arg.Any<double>(),
+                Arg.Any<double>(),
+                Arg.Any<IReadOnlyCollection<SightingStatus>>(),
+                Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(SightingNearbyResult.Failure(
+            [
+                new SightingError(SightingErrorCodes.InvalidFilterStatus, "status"),
+                new SightingError(SightingErrorCodes.InvalidFilterCriticality, "criticality")
+            ]));
+        SightingsController controller = CreateController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingListModel> result = await controller.Nearby(
+            new NearbySightingsRequestModel { Latitude = 52.1, Longitude = 21.1, Statuses = [6], Criticalities = [9] },
+            cancellationToken);
+
+        ValidationProblemDetails problem = Assert.IsType<ValidationProblemDetails>(Assert.IsType<BadRequestObjectResult>(result.Result).Value);
+        Assert.Equal(
+            [SightingErrorCodes.InvalidFilterCriticality, SightingErrorCodes.InvalidFilterStatus],
+            problem.Errors.Keys.Order(StringComparer.Ordinal));
         Assert.Equal("private, no-store", controller.Response.Headers.CacheControl.ToString());
     }
 

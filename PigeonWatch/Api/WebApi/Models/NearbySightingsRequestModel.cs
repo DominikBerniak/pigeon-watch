@@ -12,4 +12,8 @@ public sealed class NearbySightingsRequestModel
     [BindRequired]
     [Range(-180.0, 180.0)]
     public required double Longitude { get; init; }
+
+    public List<int> Statuses { get; init; } = [];
+
+    public List<int> Criticalities { get; init; } = [];
 }

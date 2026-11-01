@@ -38,18 +38,27 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
         double minLongitude,
         double maxLongitude,
         IReadOnlyCollection<SightingStatus> statuses,
+        IReadOnlyCollection<SightingCriticality>? criticalities,
         int take,
         CancellationToken cancellationToken = default)
     {
         List<SightingStatus> statusList = statuses.ToList();
-        List<SightingEntity> entities = await db.Sightings
+        IQueryable<SightingEntity> query = db.Sightings
             .AsNoTracking()
             .Include(e => e.Reporter)
             .Where(e => e.Latitude >= minLatitude
                 && e.Latitude <= maxLatitude
                 && e.Longitude >= minLongitude
                 && e.Longitude <= maxLongitude
-                && statusList.Contains(e.Status))
+                && statusList.Contains(e.Status));
+
+        if (criticalities is { Count: > 0 })
+        {
+            List<SightingCriticality> criticalityList = criticalities.ToList();
+            query = query.Where(e => criticalityList.Contains(e.Criticality));
+        }
+
+        List<SightingEntity> entities = await query
             .OrderByDescending(e => e.CreateDate)
             .Take(take)
             .ToListAsync(cancellationToken);
