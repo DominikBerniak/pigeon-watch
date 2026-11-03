@@ -14,7 +14,9 @@ public class PigeonWatchServices
         IConfiguration configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:Default"] = ConnectionString
+                ["ConnectionStrings:Default"] = ConnectionString,
+                ["BlobStorage:ServiceUri"] = "https://pigeonwatcharchitecturetests.blob.core.windows.net",
+                ["BlobStorage:ContainerName"] = "sighting-photos"
             })
             .Build();
 

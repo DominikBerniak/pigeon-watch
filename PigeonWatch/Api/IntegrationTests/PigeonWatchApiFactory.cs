@@ -6,6 +6,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -136,6 +137,13 @@ public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null) : W
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureLogging(logging => logging.AddProvider(new FakeLoggerProvider(logs)));
+
+        builder.ConfigureAppConfiguration(configuration => configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["BlobStorage:ServiceUri"] = "https://pigeonwatchtests.blob.core.windows.net",
+            ["BlobStorage:ContainerName"] = "sighting-photos",
+            ["BlobStorage:LocalDirectory"] = null,
+        }));
 
         builder.ConfigureServices(services =>
         {

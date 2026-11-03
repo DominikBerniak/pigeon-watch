@@ -11,4 +11,5 @@ public static class SightingErrorCodes
     public const string InvalidPage = "InvalidPage";
     public const string InvalidPageSize = "InvalidPageSize";
     public const string ReporterNotFound = "ReporterNotFound";
+    public const string PhotoStorageUnavailable = "PhotoStorageUnavailable";
 }

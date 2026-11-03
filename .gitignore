@@ -10,6 +10,9 @@ obj/
 .DS_Store
 Thumbs.db
 
+# Local sighting photos written by the Development photo store
+PigeonWatch/Api/WebApi.Host/LocalPhotos/
+
 # Local deployment secrets (never commit)
 context/deployment/*.local.md
 # Playwright CLI output (may contain credentials)
