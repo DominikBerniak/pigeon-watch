@@ -563,21 +563,21 @@ After the merge deploys, check on Azure the parts that only exist there: the man
 
 #### Automated
 
-- [x] 1.1 Solution builds with style enforcement
-- [x] 1.2 Architecture tests pass
-- [x] 1.3 Unit tests cover local-folder store, options validator and 503 handler
-- [x] 1.4 No vulnerable packages
+- [x] 1.1 Solution builds with style enforcement — 75cba79
+- [x] 1.2 Architecture tests pass — 75cba79
+- [x] 1.3 Unit tests cover local-folder store, options validator and 503 handler — 75cba79
+- [x] 1.4 No vulnerable packages — 75cba79
 
 #### Manual
 
-- [x] 1.5 Development starts with LocalDirectory; Production without BlobStorage fails at start-up
+- [x] 1.5 Development starts with LocalDirectory; Production without BlobStorage fails at start-up — 75cba79
 
 ### Phase 2: Server-side photo normalization (test-first)
 
 #### Automated
 
-- [ ] 2.1 Normalization unit tests written first and passing
-- [ ] 2.2 Architecture tests pass
+- [x] 2.1 Normalization unit tests written first and passing
+- [x] 2.2 Architecture tests pass
 
 ### Phase 3: API create and read
 
