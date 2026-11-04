@@ -16,6 +16,11 @@ public sealed class LocalFolderSightingPhotoStoreTests : IDisposable
         $"{Guid.NewGuid()}",
         $"../{Guid.NewGuid()}.jpg",
         $"sub/{Guid.NewGuid()}.jpg",
+        $"{Guid.NewGuid()}-thumb.png",
+        $"{Guid.NewGuid()}-small.jpg",
+        "not-a-guid-thumb.jpg",
+        $"{Guid.NewGuid()}-thumb-thumb.jpg",
+        $"../{Guid.NewGuid()}-thumb.jpg",
         string.Empty
     };
 
@@ -40,6 +45,35 @@ public sealed class LocalFolderSightingPhotoStoreTests : IDisposable
         await store.DeleteAsync(blobName, cancellationToken);
 
         Assert.Null(await store.OpenReadAsync(blobName, cancellationToken));
+    }
+
+    [Fact]
+    public async Task A_thumbnail_blob_name_round_trips_next_to_its_photo()
+    {
+        LocalFolderSightingPhotoStore store = new(directory);
+        Guid id = Guid.NewGuid();
+        string photoName = $"{id}.jpg";
+        string thumbnailName = $"{id}-thumb.jpg";
+
+        using (MemoryStream photo = new([1, 2, 3]))
+            await store.SaveAsync(photoName, photo, cancellationToken);
+
+        using (MemoryStream thumbnail = new([4, 5]))
+            await store.SaveAsync(thumbnailName, thumbnail, cancellationToken);
+
+        await using (Stream? opened = await store.OpenReadAsync(thumbnailName, cancellationToken))
+        {
+            Assert.NotNull(opened);
+            using MemoryStream copy = new();
+            await opened.CopyToAsync(copy, cancellationToken);
+            Assert.Equal([4, 5], copy.ToArray());
+        }
+
+        await store.DeleteAsync(thumbnailName, cancellationToken);
+
+        Assert.Null(await store.OpenReadAsync(thumbnailName, cancellationToken));
+        await using Stream? remaining = await store.OpenReadAsync(photoName, cancellationToken);
+        Assert.NotNull(remaining);
     }
 
     [Fact]

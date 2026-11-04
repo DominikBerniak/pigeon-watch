@@ -270,17 +270,17 @@ Rows with a photo load and show the thumbnail when they scroll into view.
 
 #### Automated
 
-- [x] 1.1 Thumbnail provider tests written first and passing
-- [x] 1.2 Architecture tests pass
+- [x] 1.1 Thumbnail provider tests written first and passing — 3579f15
+- [x] 1.2 Architecture tests pass — 3579f15
 
 ### Phase 2: API create and thumbnail endpoint
 
 #### Automated
 
-- [ ] 2.1 Solution builds with style enforcement
-- [ ] 2.2 Architecture tests pass, including the binary-action rule
-- [ ] 2.3 Unit tests pass
-- [ ] 2.4 Integration tests pass, including the sweeps
+- [x] 2.1 Solution builds with style enforcement
+- [x] 2.2 Architecture tests pass, including the binary-action rule
+- [x] 2.3 Unit tests pass
+- [x] 2.4 Integration tests pass, including the sweeps
 
 ### Phase 3: SPA lazy row thumbnail
 

@@ -7,7 +7,9 @@ namespace PigeonWatch.IntegrationTests;
 public sealed class InMemorySightingPhotoStore : ISightingPhotoStore
 {
     private readonly ConcurrentDictionary<string, byte[]> blobs = new(StringComparer.Ordinal);
+    private readonly ConcurrentQueue<string> savedBlobNames = new();
     private volatile bool isUnavailable;
+    private volatile Func<string, bool>? failSaveWhen;
 
     public bool IsUnavailable
     {
@@ -19,6 +21,27 @@ public sealed class InMemorySightingPhotoStore : ISightingPhotoStore
         set
         {
             isUnavailable = value;
+        }
+    }
+
+    public Func<string, bool>? FailSaveWhen
+    {
+        get
+        {
+            return failSaveWhen;
+        }
+
+        set
+        {
+            failSaveWhen = value;
+        }
+    }
+
+    public IReadOnlyList<string> SavedBlobNames
+    {
+        get
+        {
+            return savedBlobNames.ToList();
         }
     }
 
@@ -34,9 +57,13 @@ public sealed class InMemorySightingPhotoStore : ISightingPhotoStore
     {
         ThrowIfUnavailable("save", blobName);
 
+        if (failSaveWhen?.Invoke(blobName) == true)
+            throw Unavailable("save", blobName);
+
         using MemoryStream copy = new();
         await jpeg.CopyToAsync(copy, cancellationToken);
         blobs[blobName] = copy.ToArray();
+        savedBlobNames.Enqueue(blobName);
     }
 
     public Task<Stream?> OpenReadAsync(string blobName, CancellationToken cancellationToken = default)
@@ -65,13 +92,21 @@ public sealed class InMemorySightingPhotoStore : ISightingPhotoStore
         blobs.TryRemove(blobName, out byte[]? _);
     }
 
+    public byte[]? Read(string blobName)
+    {
+        return blobs.TryGetValue(blobName, out byte[]? bytes) ? bytes : null;
+    }
+
     private void ThrowIfUnavailable(string operation, string blobName)
     {
         if (isUnavailable)
-        {
-            throw new PhotoStorageUnavailableException(
-                $"Photo storage could not {operation} blob {blobName}.",
-                new IOException("The in-memory photo store is switched to fail."));
-        }
+            throw Unavailable(operation, blobName);
+    }
+
+    private static PhotoStorageUnavailableException Unavailable(string operation, string blobName)
+    {
+        return new PhotoStorageUnavailableException(
+            $"Photo storage could not {operation} blob {blobName}.",
+            new IOException("The in-memory photo store is switched to fail."));
     }
 }

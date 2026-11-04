@@ -15,4 +15,5 @@ public interface ISightingService
     Task<SightingListResult> GetListPageAsync(SightingListQuery query, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Sighting>> GetMineAsync(Guid reporterId, CancellationToken cancellationToken = default);
     Task<Stream?> OpenPhotoAsync(Guid sightingId, CancellationToken cancellationToken = default);
+    Task<Stream?> OpenPhotoThumbnailAsync(Guid sightingId, CancellationToken cancellationToken = default);
 }

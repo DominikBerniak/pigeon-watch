@@ -40,6 +40,7 @@ public sealed class EndpointFixtureRegistry
         new(["POST sightings"], BuildCreateSighting),
         new(["GET sightings/{id:guid}"], BuildGetSighting),
         new(["GET sightings/{id:guid}/photo"], BuildGetSightingPhoto),
+        new(["GET sightings/{id:guid}/photo/thumbnail"], BuildGetSightingPhotoThumbnail),
         new(["GET sightings/nearby"], BuildNearby),
         new(["POST sightings/list"], BuildList),
         new(["GET sightings/mine"], BuildMine),
@@ -209,6 +210,17 @@ public sealed class EndpointFixtureRegistry
         [
             Make(key, "existing sighting with a photo", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}/photo")),
             Make(key, "unknown sighting", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{Guid.NewGuid()}/photo"))
+        ];
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildGetSightingPhotoThumbnail(FixtureContext context)
+    {
+        const string key = "GET sightings/{id:guid}/photo/thumbnail";
+
+        return
+        [
+            Make(key, "existing sighting with a photo", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}/photo/thumbnail")),
+            Make(key, "unknown sighting", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{Guid.NewGuid()}/photo/thumbnail"))
         ];
     }
 

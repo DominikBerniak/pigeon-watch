@@ -74,7 +74,99 @@ public sealed class SightingPhotoContractTests : IDisposable
         Assert.True(photo.Headers.CacheControl is { Private: true, NoStore: true });
         Assert.True(TestPhotos.IsJpeg(downloaded));
         Assert.False(TestPhotos.ContainsExifSegment(downloaded));
-        Assert.Equal([factory.ReadPhotoBlobName(sightingId)], factory.PhotoStore.BlobNames);
+        string blobName = factory.ReadPhotoBlobName(sightingId)!;
+        Assert.Equal(
+            new HashSet<string> { blobName, ThumbnailNameOf(blobName) },
+            factory.PhotoStore.BlobNames.ToHashSet());
+    }
+
+    [Fact]
+    public async Task Thumbnail_of_a_new_upload_streams_the_stored_square_jpeg_privately_without_storing_again()
+    {
+        TestUser alice = await SeedUserAsync(aliceEmail, aliceDisplayName);
+        TestUser bob = await SeedUserAsync(bobEmail, bobDisplayName);
+        Guid sightingId = await alice.CreateSightingAsync(photo: TestPhotos.JpegWithExif(), cancellationToken: cancellationToken);
+        string thumbnailName = ThumbnailNameOf(factory.ReadPhotoBlobName(sightingId)!);
+        int savesBefore = factory.PhotoStore.SavedBlobNames.Count;
+
+        using HttpResponseMessage response = await bob.Client.GetAsync($"/sightings/{sightingId}/photo/thumbnail", cancellationToken);
+        byte[] downloaded = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("image/jpeg", response.Content.Headers.ContentType?.MediaType);
+        Assert.True(response.Headers.CacheControl is { Private: true, NoStore: true });
+        Assert.Equal(factory.PhotoStore.Read(thumbnailName), downloaded);
+        (int width, int height) = TestPhotos.Dimensions(downloaded);
+        Assert.Equal(width, height);
+        Assert.InRange(width, 1, 160);
+        Assert.Equal(savesBefore, factory.PhotoStore.SavedBlobNames.Count);
+    }
+
+    [Fact]
+    public async Task Missing_thumbnail_of_an_older_photo_is_created_from_the_photo_and_stored_once()
+    {
+        TestUser alice = await SeedUserAsync(aliceEmail, aliceDisplayName);
+        Guid sightingId = await alice.CreateSightingAsync(photo: TestPhotos.JpegWithExif(), cancellationToken: cancellationToken);
+        string thumbnailName = ThumbnailNameOf(factory.ReadPhotoBlobName(sightingId)!);
+        factory.PhotoStore.Remove(thumbnailName);
+        int savesBefore = factory.PhotoStore.SavedBlobNames.Count;
+
+        using HttpResponseMessage first = await alice.Client.GetAsync($"/sightings/{sightingId}/photo/thumbnail", cancellationToken);
+        byte[] firstBytes = await first.Content.ReadAsByteArrayAsync(cancellationToken);
+        using HttpResponseMessage second = await alice.Client.GetAsync($"/sightings/{sightingId}/photo/thumbnail", cancellationToken);
+        byte[] secondBytes = await second.Content.ReadAsByteArrayAsync(cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        Assert.True(TestPhotos.IsJpeg(firstBytes));
+        Assert.Equal(firstBytes, secondBytes);
+        Assert.Equal(firstBytes, factory.PhotoStore.Read(thumbnailName));
+        Assert.Equal([thumbnailName], factory.PhotoStore.SavedBlobNames.Skip(savesBefore));
+    }
+
+    [Fact]
+    public async Task Thumbnail_of_a_sighting_without_a_photo_is_404()
+    {
+        TestUser alice = await SeedUserAsync(aliceEmail, aliceDisplayName);
+        Guid sightingId = await alice.CreateSightingAsync(cancellationToken: cancellationToken);
+
+        using HttpResponseMessage response = await alice.Client.GetAsync($"/sightings/{sightingId}/photo/thumbnail", cancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(404, await ReadProblemStatusAsync(response));
+    }
+
+    [Fact]
+    public async Task Thumbnail_whose_photo_blob_is_missing_is_404_and_logs_a_warning_with_the_blob_name()
+    {
+        TestUser alice = await SeedUserAsync(aliceEmail, aliceDisplayName);
+        Guid sightingId = await alice.CreateSightingAsync(photo: TestPhotos.JpegWithExif(), cancellationToken: cancellationToken);
+        string blobName = factory.ReadPhotoBlobName(sightingId)!;
+        factory.PhotoStore.Remove(blobName);
+        factory.PhotoStore.Remove(ThumbnailNameOf(blobName));
+        factory.ClearLogs();
+
+        using HttpResponseMessage response = await alice.Client.GetAsync($"/sightings/{sightingId}/photo/thumbnail", cancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        FakeLogRecord warning = Assert.Single(factory.Logs.GetSnapshot(), record => record.Level == LogLevel.Warning);
+        Assert.Equal(blobName, State(warning, "BlobName"));
+        Assert.Equal(sightingId.ToString(), State(warning, "SightingId"));
+        Assert.Empty(factory.PhotoStore.BlobNames);
+    }
+
+    [Fact]
+    public async Task Anonymous_thumbnail_request_is_unauthorized()
+    {
+        TestUser alice = await SeedUserAsync(aliceEmail, aliceDisplayName);
+        Guid sightingId = await alice.CreateSightingAsync(photo: TestPhotos.JpegWithExif(), cancellationToken: cancellationToken);
+        using HttpRequestMessage request = new(HttpMethod.Get, $"/sightings/{sightingId}/photo/thumbnail");
+
+        using HttpResponseMessage response = await factory.SendFromFreshAddressAsync(request, null, cancellationToken);
+        byte[] body = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Empty(body);
     }
 
     [Fact]
@@ -207,6 +299,22 @@ public sealed class SightingPhotoContractTests : IDisposable
     }
 
     [Fact]
+    public async Task Failing_thumbnail_save_is_503_photo_storage_unavailable_and_keeps_no_blob_and_no_row()
+    {
+        TestUser alice = await SeedUserAsync(aliceEmail, aliceDisplayName);
+        factory.PhotoStore.FailSaveWhen = blobName => blobName.EndsWith("-thumb.jpg", StringComparison.Ordinal);
+
+        using HttpResponseMessage response = await PostAsync(alice, TestPhotos.JpegWithExif());
+        string[] codes = await new AccountApiClient(alice.Client).ReadErrorCodesAsync(response, cancellationToken);
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal(["PhotoStorageUnavailable"], codes);
+        Assert.Equal(0, factory.CountSightings());
+        Assert.Single(factory.PhotoStore.SavedBlobNames);
+        Assert.Empty(factory.PhotoStore.BlobNames);
+    }
+
+    [Fact]
     public async Task List_nearby_mine_and_get_responses_carry_has_photo()
     {
         TestUser alice = await SeedUserAsync(aliceEmail, aliceDisplayName);
@@ -295,6 +403,11 @@ public sealed class SightingPhotoContractTests : IDisposable
             .ToDictionary(item => item.GetProperty("id").GetGuid(), item => item.GetProperty("hasPhoto").GetBoolean());
 
         return hasPhoto;
+    }
+
+    private static string ThumbnailNameOf(string blobName)
+    {
+        return $"{blobName[..^4]}-thumb.jpg";
     }
 
     private static string? State(FakeLogRecord record, string key)

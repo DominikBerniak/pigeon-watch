@@ -31,6 +31,16 @@ public sealed class TestPhotos
         return bytes.Length > 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[^2] == 0xFF && bytes[^1] == 0xD9;
     }
 
+    public static (int Width, int Height) Dimensions(byte[] jpeg)
+    {
+        using SKCodec? codec = SKCodec.Create(new MemoryStream(jpeg));
+
+        if (codec is null)
+            throw new InvalidOperationException("The bytes are not a readable image.");
+
+        return (codec.Info.Width, codec.Info.Height);
+    }
+
     public static bool ContainsExifSegment(byte[] bytes)
     {
         for (int i = 0; i + 4 + exifIdentifier.Length <= bytes.Length; i++)

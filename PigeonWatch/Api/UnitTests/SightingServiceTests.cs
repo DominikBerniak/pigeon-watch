@@ -17,6 +17,7 @@ public class SightingServiceTests
 
     private readonly ISightingRepository sightingRepository = Substitute.For<ISightingRepository>();
     private readonly IPhotoNormalizationProvider photoNormalizationProvider = Substitute.For<IPhotoNormalizationProvider>();
+    private readonly IPhotoThumbnailProvider photoThumbnailProvider = Substitute.For<IPhotoThumbnailProvider>();
     private readonly ISightingPhotoStore sightingPhotoStore = Substitute.For<ISightingPhotoStore>();
     private readonly ManualTimeProvider timeProvider = new(now);
     private readonly GeoDistanceCalculator geoDistanceCalculator = new();
@@ -632,6 +633,7 @@ public class SightingServiceTests
             new SightingStatusTransitionProvider(),
             geoDistanceCalculator,
             photoNormalizationProvider,
+            photoThumbnailProvider,
             sightingPhotoStore,
             timeProvider,
             NullLogger<SightingService>.Instance);

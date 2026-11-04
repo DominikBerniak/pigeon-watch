@@ -1,3 +1,5 @@
+using PigeonWatch.BusinessObjects;
+
 namespace PigeonWatch.Data.Storage;
 
 internal sealed class LocalFolderSightingPhotoStore(string localDirectory) : ISightingPhotoStore
@@ -39,7 +41,7 @@ internal sealed class LocalFolderSightingPhotoStore(string localDirectory) : ISi
     private string GetPath(string blobName)
     {
         if (!IsValidBlobName(blobName))
-            throw new ArgumentException($"Blob name must be a GUID followed by {jpegExtension}.", nameof(blobName));
+            throw new ArgumentException($"Blob name must be a GUID followed by {jpegExtension} or {SightingRules.PhotoThumbnailBlobSuffix}{jpegExtension}.", nameof(blobName));
 
         return Path.Combine(rootDirectory, blobName);
     }
@@ -50,6 +52,9 @@ internal sealed class LocalFolderSightingPhotoStore(string localDirectory) : ISi
             return false;
 
         string stem = blobName[..^jpegExtension.Length];
+
+        if (stem.EndsWith(SightingRules.PhotoThumbnailBlobSuffix, StringComparison.Ordinal))
+            stem = stem[..^SightingRules.PhotoThumbnailBlobSuffix.Length];
 
         return Guid.TryParseExact(stem, "D", out _);
     }

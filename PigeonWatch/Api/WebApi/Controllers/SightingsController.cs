@@ -94,6 +94,20 @@ public class SightingsController(
         return File(photo, jpegContentType);
     }
 
+    [HttpGet("{id:guid}/photo/thumbnail")]
+    [Produces(jpegContentType)]
+    public async Task<ActionResult> GetPhotoThumbnail(Guid id, CancellationToken cancellationToken)
+    {
+        Response.Headers.CacheControl = noStoreCacheControl;
+
+        Stream? thumbnail = await sightingService.OpenPhotoThumbnailAsync(id, cancellationToken);
+
+        if (thumbnail is null)
+            return NotFoundForSighting(id);
+
+        return File(thumbnail, jpegContentType);
+    }
+
     [HttpGet("nearby")]
     public async Task<ActionResult<SightingListModel>> Nearby([FromQuery] NearbySightingsRequestModel request, CancellationToken cancellationToken)
     {
