@@ -646,22 +646,46 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
     });
   });
 
-  it('marks only the list rows of sightings with a photo with the camera label', async () => {
+  it('shows a thumbnail only in the list rows of sightings with a photo, keeping the photo label', async () => {
     const id = 'list-loaded';
 
     await eventually(() => {
       const photoLabel = label('sighting.row.hasPhoto');
-      const labelled = listRowsOf(id).filter(
+      const rows = listRowsOf(id);
+      const labelled = rows.filter(
         (row) => textOf(row.querySelector('.pw-visually-hidden')) === photoLabel,
       );
+      const withThumbnail = rows.filter((row) => row.querySelector('.sighting-row__thumb img'));
 
       expect(labelled).toHaveLength(sinkSightings.filter((sighting) => sighting.hasPhoto).length);
       expect(labelled.length).toBeGreaterThan(0);
-      labelled.forEach((row) =>
-        expect(row.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true'),
-      );
+      expect(withThumbnail).toEqual(labelled);
+      withThumbnail.forEach((row) => {
+        const image = row.querySelector('.sighting-row__thumb img');
+
+        expect(image?.getAttribute('src')).toBe(sinkPhotoUrl);
+        expect(image?.getAttribute('alt')).toBe('');
+        expect(row.querySelector('.sighting-row__thumb svg')).toBeNull();
+      });
     });
   });
+
+  it.each(['list-thumbnails-loading', 'list-thumbnails-error'])(
+    'keeps the camera icon and no image in the photo rows of %s',
+    async (id) => {
+      await eventually(() => {
+        const thumbs = listRowsOf(id)
+          .map((row) => row.querySelector('.sighting-row__thumb'))
+          .filter((thumb) => thumb !== null);
+
+        expect(thumbs).toHaveLength(sinkSightings.filter((sighting) => sighting.hasPhoto).length);
+        thumbs.forEach((thumb) => {
+          expect(thumb.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+          expect(thumb.querySelector('img')).toBeNull();
+        });
+      });
+    },
+  );
 
   it('shows the second page of the paged fixtures after Next page', async () => {
     const id = 'list-second-page';
@@ -719,6 +743,11 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
 
       expect(items).toHaveLength(sinkSightings.length);
       items.forEach((item) => expect(item.querySelector('app-criticality-badge')).not.toBeNull());
+      expect(
+        [...items].filter(
+          (item) => item.querySelector('.sighting-row__thumb img')?.getAttribute('src') === sinkPhotoUrl,
+        ),
+      ).toHaveLength(sinkSightings.filter((sighting) => sighting.hasPhoto).length);
       expect(
         new Set([...items].map((item) => item.querySelector('time')?.textContent?.trim())).size,
       ).toBe(sinkSightings.length);

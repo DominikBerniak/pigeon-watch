@@ -68,6 +68,7 @@ export interface SightingListModes {
   readonly group: 'sightingList';
   readonly list: ListMode;
   readonly geolocation: ListGeolocationMode;
+  readonly thumbnail?: PhotoMode;
 }
 
 export type StubModes = ProfileModes | NearbyMapModes | SightingDetailModes | SightingListModes;
@@ -291,6 +292,7 @@ export class CellStubs {
       this.nearbyResult(filters),
     get: (): Observable<Sighting> => this.detailResult(),
     photo: (): Observable<Blob> => this.photoResult(),
+    photoThumbnail: (): Observable<Blob> => this.thumbnailResult(),
     list: (request: SightingListRequest): Observable<SightingPage> => this.listResult(request),
   };
   readonly geolocation = {
@@ -438,6 +440,19 @@ export class CellStubs {
     const modes = this.modes();
 
     switch (modes.group === 'sightingDetail' ? (modes.photo ?? 'image') : 'image') {
+      case 'pending':
+        return NEVER;
+      case 'failure':
+        return throwError(() => new HttpErrorResponse({ status: 500 }));
+      default:
+        return of(sinkPhoto());
+    }
+  }
+
+  private thumbnailResult(): Observable<Blob> {
+    const modes = this.modes();
+
+    switch (modes.group === 'sightingList' ? (modes.thumbnail ?? 'image') : 'image') {
       case 'pending':
         return NEVER;
       case 'failure':

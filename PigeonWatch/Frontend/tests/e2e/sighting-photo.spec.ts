@@ -9,7 +9,7 @@ test.use({
 
 const photoFixture = join(__dirname, 'fixtures', 'pigeon.jpg');
 
-test('a sighting reported with a photo shows the photo on its detail page and a camera icon in My sightings', async ({
+test('a sighting reported with a photo shows the photo on its detail page and a thumbnail in My sightings', async ({
   page,
 }) => {
   const stamp = Date.now();
@@ -65,8 +65,14 @@ test('a sighting reported with a photo shows the photo on its detail page and a 
 
   const row = page.locator('li[app-sighting-row]').filter({ hasText: birdName });
 
+  const thumbnail = row.locator('.sighting-row__thumb img');
+
   await expect(row).toBeVisible();
-  await expect(row.locator('.sighting-row__photo svg')).toBeVisible();
-  await expect(row.locator('.sighting-row__photo svg')).toHaveAttribute('aria-hidden', 'true');
+  await expect(thumbnail).toBeVisible();
+  await expect(thumbnail).toHaveAttribute('src', /^blob:/);
+  await expect
+    .poll(() => thumbnail.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
+  await expect(row.locator('.sighting-row__thumb svg')).toHaveCount(0);
   await expect(row.getByRole('link')).toContainText('Has a photo');
 });

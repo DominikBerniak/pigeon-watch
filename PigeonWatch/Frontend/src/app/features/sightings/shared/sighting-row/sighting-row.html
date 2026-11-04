@@ -1,8 +1,14 @@
-<a class="sighting-row__link" [routerLink]="['/sightings', sighting().id]" [state]="linkState()">
-  <span class="sighting-row__name">
-    {{ sighting().name ?? ('sighting.unnamed' | translate) }}
-    @if (sighting().hasPhoto) {
-      <span class="sighting-row__photo">
+<a
+  class="sighting-row__link"
+  [class.sighting-row__link--photo]="sighting().hasPhoto"
+  [routerLink]="['/sightings', sighting().id]"
+  [state]="linkState()"
+>
+  @if (sighting().hasPhoto) {
+    <span class="sighting-row__thumb">
+      @if (thumbnailUrl(); as url) {
+        <img class="sighting-row__thumb-image" [src]="url" alt="" />
+      } @else {
         <svg
           class="sighting-row__photo-icon"
           viewBox="0 0 24 24"
@@ -14,18 +20,25 @@
             d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
           />
         </svg>
+      }
+    </span>
+  }
+  <span class="sighting-row__text">
+    <span class="sighting-row__name">
+      {{ sighting().name ?? ('sighting.unnamed' | translate) }}
+      @if (sighting().hasPhoto) {
         <span class="pw-visually-hidden">{{ 'sighting.row.hasPhoto' | translate }}</span>
-      </span>
-    }
-  </span>
-  <span class="sighting-row__meta pw-text-muted pw-text-small">
-    {{ statusLabel(sighting().status) | translate }} ·
-    <app-criticality-badge [kind]="criticalityKind(sighting().criticality)">{{
-      criticalityLabel(sighting().criticality) | translate
-    }}</app-criticality-badge>
-    ·
-    <time [attr.datetime]="sighting().createdAt" [title]="sighting().createdAt | date: 'medium'">{{
-      age().key | translate: age().value
-    }}</time>
+      }
+    </span>
+    <span class="sighting-row__meta pw-text-muted pw-text-small">
+      {{ statusLabel(sighting().status) | translate }} ·
+      <app-criticality-badge [kind]="criticalityKind(sighting().criticality)">{{
+        criticalityLabel(sighting().criticality) | translate
+      }}</app-criticality-badge>
+      ·
+      <time [attr.datetime]="sighting().createdAt" [title]="sighting().createdAt | date: 'medium'">{{
+        age().key | translate: age().value
+      }}</time>
+    </span>
   </span>
 </a>

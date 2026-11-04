@@ -120,6 +120,19 @@ describe('SightingsApi', () => {
     expect(result).toBe(photo);
   });
 
+  it('downloads the thumbnail of a sighting as a blob', () => {
+    const thumbnail = new Blob(['jpeg-bytes'], { type: 'image/jpeg' });
+    let result: Blob | undefined;
+
+    api.photoThumbnail('a/b').subscribe((value) => (result = value));
+    const request = httpMock.expectOne(`${sightingsUrl}/a%2Fb/photo/thumbnail`);
+    request.flush(thumbnail);
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.responseType).toBe('blob');
+    expect(result).toBe(thumbnail);
+  });
+
   it('gets one sighting by id', () => {
     api.get(sighting.id).subscribe();
     const request = httpMock.expectOne(`${sightingsUrl}/${sighting.id}`);

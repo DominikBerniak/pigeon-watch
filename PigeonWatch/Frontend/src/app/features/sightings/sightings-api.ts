@@ -30,6 +30,13 @@ export class SightingsApi {
     });
   }
 
+  photoThumbnail(id: string): Observable<Blob> {
+    return this.http.get(
+      `${environment.apiUrl}/sightings/${encodeURIComponent(id)}/photo/thumbnail`,
+      { responseType: 'blob' },
+    );
+  }
+
   nearby(centre: GeoPoint, filters?: SightingFilters): Observable<SightingList> {
     let params = new HttpParams()
       .set('latitude', centre.latitude)
