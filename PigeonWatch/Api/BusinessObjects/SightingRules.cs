@@ -19,4 +19,6 @@ public static class SightingRules
     public const int PhotoMaxPixels = 40_000_000;
     public const int PhotoJpegQuality = 85;
     public const string PhotoAllowedContentTypes = "image/jpeg,image/png,image/webp";
+    public const int PhotoRequestMaxBytes = PhotoMaxBytes + 512 * 1024;
+    public const int PhotoBlobNameMaxLength = 64;
 }

@@ -10,4 +10,5 @@ public sealed record Sighting(
     SightingStatus Status,
     SightingCriticality Criticality,
     string ReporterDisplayName,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    bool HasPhoto = false);

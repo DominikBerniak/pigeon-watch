@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -13,14 +14,16 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using PigeonWatch.Data;
+using PigeonWatch.Data.Storage;
 using PigeonWatch.WebApi.Host;
 
 namespace PigeonWatch.IntegrationTests;
 
-public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null) : WebApplicationFactory<Program>
+public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null, CultureInfo? requestCulture = null) : WebApplicationFactory<Program>
 {
     private readonly SqliteConnection connection = OpenConnection();
     private readonly FakeLogCollector logs = new();
+    private readonly InMemorySightingPhotoStore photoStore = new();
     private int nextClientNumber;
 
     public FakeLogCollector Logs
@@ -28,6 +31,14 @@ public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null) : W
         get
         {
             return logs;
+        }
+    }
+
+    public InMemorySightingPhotoStore PhotoStore
+    {
+        get
+        {
+            return photoStore;
         }
     }
 
@@ -94,6 +105,25 @@ public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null) : W
         return count;
     }
 
+    public int CountSightings()
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM SIGHTING";
+        int count = Convert.ToInt32(command.ExecuteScalar());
+
+        return count;
+    }
+
+    public string? ReadPhotoBlobName(Guid sightingId)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = "SELECT PHOTO_BLOB_NAME FROM SIGHTING WHERE ID = $id";
+        command.Parameters.AddWithValue("$id", sightingId);
+        object? value = command.ExecuteScalar();
+
+        return value is null or DBNull ? null : (string)value;
+    }
+
     public int DeleteUserAccount(Guid id)
     {
         using SqliteCommand command = connection.CreateCommand();
@@ -156,6 +186,13 @@ public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null) : W
                     .UseSqlite(connection));
 
             services.AddTransient<IStartupFilter, ClientAddressStartupFilter>();
+            services.AddTransient<IStartupFilter, RequestBodySizeStartupFilter>();
+
+            if (requestCulture is not null)
+                services.AddTransient<IStartupFilter>(_ => new RequestCultureStartupFilter(requestCulture));
+
+            services.RemoveAll<ISightingPhotoStore>();
+            services.AddSingleton<ISightingPhotoStore>(photoStore);
 
             if (timeProvider is not null)
             {

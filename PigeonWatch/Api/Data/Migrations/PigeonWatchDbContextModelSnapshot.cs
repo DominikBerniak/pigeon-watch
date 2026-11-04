@@ -68,6 +68,11 @@ namespace PigeonWatch.Data.Migrations
                         .HasColumnType("nvarchar(60)")
                         .HasColumnName("NAME");
 
+                    b.Property<string>("PhotoBlobName")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasColumnName("PHOTO_BLOB_NAME");
+
                     b.Property<Guid>("ReporterId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("REPORTER_ID");

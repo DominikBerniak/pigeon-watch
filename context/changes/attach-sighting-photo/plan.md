@@ -576,22 +576,22 @@ After the merge deploys, check on Azure the parts that only exist there: the man
 
 #### Automated
 
-- [x] 2.1 Normalization unit tests written first and passing
-- [x] 2.2 Architecture tests pass
+- [x] 2.1 Normalization unit tests written first and passing — 3381194
+- [x] 2.2 Architecture tests pass — 3381194
 
 ### Phase 3: API create and read
 
 #### Automated
 
-- [ ] 3.1 Build passes
-- [ ] 3.2 Migration matches the model
-- [ ] 3.3 Architecture tests pass, including the binary-action rule
-- [ ] 3.4 Service orchestration unit tests pass
-- [ ] 3.5 Integration tests pass
+- [x] 3.1 Build passes
+- [x] 3.2 Migration matches the model
+- [x] 3.3 Architecture tests pass, including the binary-action rule
+- [x] 3.4 Service orchestration unit tests pass
+- [x] 3.5 Integration tests pass
 
 #### Manual
 
-- [ ] 3.6 Local multipart create stores a file and GET photo returns it
+- [x] 3.6 Local multipart create stores a file and GET photo returns it
 
 ### Phase 4: SPA reporting
 

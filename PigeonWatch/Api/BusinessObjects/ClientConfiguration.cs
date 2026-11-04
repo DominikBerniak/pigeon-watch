@@ -12,4 +12,7 @@ public sealed record ClientConfiguration(
     int SightingDescriptionMaxLength,
     int SightingBehaviourMaxLength,
     int SightingCooldownSeconds,
-    int SightingNearbyRadiusKilometers);
+    int SightingNearbyRadiusKilometers,
+    int SightingPhotoMaxBytes,
+    int SightingPhotoMaxDimension,
+    IReadOnlyList<string> SightingPhotoAllowedContentTypes);

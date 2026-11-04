@@ -1,7 +1,9 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using PigeonWatch.BusinessLogic.Services;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data.Repositories;
+using PigeonWatch.Data.Storage;
 
 namespace PigeonWatch.UnitTests;
 
@@ -14,6 +16,8 @@ public class SightingServiceTests
     private static readonly DateTimeOffset now = new(2026, 10, 11, 12, 0, 0, TimeSpan.Zero);
 
     private readonly ISightingRepository sightingRepository = Substitute.For<ISightingRepository>();
+    private readonly IPhotoNormalizationProvider photoNormalizationProvider = Substitute.For<IPhotoNormalizationProvider>();
+    private readonly ISightingPhotoStore sightingPhotoStore = Substitute.For<ISightingPhotoStore>();
     private readonly ManualTimeProvider timeProvider = new(now);
     private readonly GeoDistanceCalculator geoDistanceCalculator = new();
     private readonly CancellationToken cancellationToken = TestContext.Current.CancellationToken;
@@ -623,7 +627,14 @@ public class SightingServiceTests
 
     private SightingService CreateService()
     {
-        return new(sightingRepository, new SightingStatusTransitionProvider(), geoDistanceCalculator, timeProvider);
+        return new(
+            sightingRepository,
+            new SightingStatusTransitionProvider(),
+            geoDistanceCalculator,
+            photoNormalizationProvider,
+            sightingPhotoStore,
+            timeProvider,
+            NullLogger<SightingService>.Instance);
     }
 
     private void LatestCreateDate(Guid reporterId, DateTimeOffset createdAt)

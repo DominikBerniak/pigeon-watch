@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace PigeonWatch.IntegrationTests;
@@ -31,21 +30,11 @@ public sealed class TestUser(
         int criticality = 2,
         double latitude = 52.2297,
         double longitude = 21.0122,
+        byte[]? photo = null,
         CancellationToken cancellationToken = default)
     {
-        HttpResponseMessage response = await Client.PostAsJsonAsync(
-            "/sightings",
-            new
-            {
-                name = "Test pigeon",
-                description = "A pigeon with a bent wing near the fountain.",
-                behaviour = "Hops instead of flying.",
-                latitude,
-                longitude,
-                status,
-                criticality
-            },
-            cancellationToken);
+        using MultipartFormDataContent content = SightingForm.Content(SightingForm.Fields(status, criticality, latitude, longitude), photo);
+        using HttpResponseMessage response = await Client.PostAsync("/sightings", content, cancellationToken);
 
         response.EnsureSuccessStatusCode();
 

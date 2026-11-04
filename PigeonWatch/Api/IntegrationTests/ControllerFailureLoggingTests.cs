@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
@@ -28,7 +27,7 @@ public sealed class ControllerFailureLoggingTests : IDisposable
         factory.DeleteUserAccount(user.Id);
         factory.ClearLogs();
 
-        using HttpResponseMessage response = await user.Client.PostAsJsonAsync("/sightings", ValidSighting(), cancellationToken);
+        using HttpResponseMessage response = await PostSightingAsync(user, ValidSighting());
 
         FakeLogRecord warning = Assert.Single(factory.Logs.GetSnapshot(), record => record.Level == LogLevel.Warning);
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -43,7 +42,7 @@ public sealed class ControllerFailureLoggingTests : IDisposable
         using TestUser user = await factory.CreateUserAsync(email, password, displayName, cancellationToken);
         factory.ClearLogs();
 
-        using HttpResponseMessage response = await user.Client.PostAsJsonAsync("/sightings", ValidSighting(latitude: 200), cancellationToken);
+        using HttpResponseMessage response = await PostSightingAsync(user, ValidSighting(latitude: 200));
 
         FakeLogRecord warning = Assert.Single(factory.Logs.GetSnapshot(), record => record.Level == LogLevel.Warning);
         string[] codes = await new AccountApiClient(user.Client).ReadErrorCodesAsync(response, cancellationToken);
@@ -58,11 +57,11 @@ public sealed class ControllerFailureLoggingTests : IDisposable
     public async Task Cooldown_rejection_logs_no_warning_or_error()
     {
         using TestUser user = await factory.CreateUserAsync(email, password, displayName, cancellationToken);
-        using HttpResponseMessage first = await user.Client.PostAsJsonAsync("/sightings", ValidSighting(), cancellationToken);
+        using HttpResponseMessage first = await PostSightingAsync(user, ValidSighting());
         first.EnsureSuccessStatusCode();
         factory.ClearLogs();
 
-        using HttpResponseMessage second = await user.Client.PostAsJsonAsync("/sightings", ValidSighting(), cancellationToken);
+        using HttpResponseMessage second = await PostSightingAsync(user, ValidSighting());
 
         string[] codes = await new AccountApiClient(user.Client).ReadErrorCodesAsync(second, cancellationToken);
         Assert.Equal(HttpStatusCode.BadRequest, second.StatusCode);
@@ -102,18 +101,17 @@ public sealed class ControllerFailureLoggingTests : IDisposable
         return status;
     }
 
-    private static object ValidSighting(double latitude = 52.2297)
+    private async Task<HttpResponseMessage> PostSightingAsync(TestUser user, Dictionary<string, string> fields)
     {
-        return new
-        {
-            name = "Grey",
-            description = "Limping near the fountain",
-            behaviour = "Cannot fly",
-            latitude,
-            longitude = 21.0122,
-            status = 1,
-            criticality = 2
-        };
+        using MultipartFormDataContent content = SightingForm.Content(fields);
+        HttpResponseMessage response = await user.Client.PostAsync("/sightings", content, cancellationToken);
+
+        return response;
+    }
+
+    private static Dictionary<string, string> ValidSighting(double latitude = 52.2297)
+    {
+        return SightingForm.Fields(latitude: latitude, name: "Grey", description: "Limping near the fountain", behaviour: "Cannot fly");
     }
 
     private static string? State(FakeLogRecord record, string key)

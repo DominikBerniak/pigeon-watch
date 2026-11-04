@@ -22,6 +22,7 @@ public class SightingsController(
     ILogger<SightingsController> logger) : FailureLoggingControllerBase(logger)
 {
     private const string noStoreCacheControl = "private, no-store";
+    private const string jpegContentType = "image/jpeg";
 
     private static readonly HashSet<string> loggedErrorCodes =
     [
@@ -31,16 +32,23 @@ public class SightingsController(
         SightingErrorCodes.InvalidFilterStatus,
         SightingErrorCodes.InvalidFilterCriticality,
         SightingErrorCodes.InvalidPage,
-        SightingErrorCodes.InvalidPageSize
+        SightingErrorCodes.InvalidPageSize,
+        SightingErrorCodes.PhotoTooLarge,
+        SightingErrorCodes.PhotoUnsupportedType,
+        SightingErrorCodes.PhotoUnreadable
     ];
 
     [HttpPost]
-    public async Task<ActionResult<SightingModel>> Create(CreateSightingRequestModel request, CancellationToken cancellationToken)
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(SightingRules.PhotoRequestMaxBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = SightingRules.PhotoRequestMaxBytes)]
+    public async Task<ActionResult<SightingModel>> Create([FromForm] CreateSightingRequestModel request, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
             return UnauthorizedForInvalidIdentity();
 
         NewSighting sighting = createSightingRequestMapper.Map(userId, request);
+        await using Stream? photoContent = sighting.Photo?.Content;
         SightingCreateResult result = await sightingService.CreateAsync(sighting, cancellationToken);
 
         if (result.Errors.Any(error => error.Code == SightingErrorCodes.ReporterNotFound))
@@ -70,6 +78,20 @@ public class SightingsController(
             return NotFoundForSighting(id);
 
         return Ok(sightingViewModelCreator.Create(sighting));
+    }
+
+    [HttpGet("{id:guid}/photo")]
+    [Produces(jpegContentType)]
+    public async Task<ActionResult> GetPhoto(Guid id, CancellationToken cancellationToken)
+    {
+        Response.Headers.CacheControl = noStoreCacheControl;
+
+        Stream? photo = await sightingService.OpenPhotoAsync(id, cancellationToken);
+
+        if (photo is null)
+            return NotFoundForSighting(id);
+
+        return File(photo, jpegContentType);
     }
 
     [HttpGet("nearby")]

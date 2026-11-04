@@ -18,7 +18,8 @@ public class SightingViewModelCreator : ISightingViewModelCreator
             Status = (int)sighting.Status,
             Criticality = (int)sighting.Criticality,
             ReporterDisplayName = sighting.ReporterDisplayName,
-            CreatedAt = sighting.CreatedAt
+            CreatedAt = sighting.CreatedAt,
+            HasPhoto = sighting.HasPhoto
         };
     }
 

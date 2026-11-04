@@ -6,6 +6,7 @@ namespace PigeonWatch.ArchitectureTests;
 public class ControllerActionTests
 {
     private const string modelsNamespace = "PigeonWatch.WebApi.Models";
+    private const string imageContentTypePrefix = "image/";
 
     [Fact]
     public void Controller_actions_return_task_of_action_result_of_api_model()
@@ -16,14 +17,35 @@ public class ControllerActionTests
             .ToList();
 
         List<string> offenders = actions
-            .Where(action => !ReturnsTaskOfActionResultOfApiModel(action.ReturnType))
+            .Where(action => !ReturnsTaskOfActionResultOfApiModel(action.ReturnType) && !IsBinaryImageAction(action))
             .Select(action => $"{action.DeclaringType!.FullName}.{action.Name} returns {FormatType(action.ReturnType)}")
             .ToList();
 
         Assert.NotEmpty(actions);
         Assert.True(
             offenders.Count == 0,
-            $"Every public controller action must return Task<ActionResult<T>> with T in {modelsNamespace}. Offenders:{Environment.NewLine}"
+            $"Every public controller action must return Task<ActionResult<T>> with T in {modelsNamespace}, or Task<ActionResult> with [Produces] naming a single image/* content type. Offenders:{Environment.NewLine}"
+            + PigeonWatchAssemblies.Describe(offenders));
+    }
+
+    [Fact]
+    public void Controller_actions_returning_untyped_action_results_produce_a_single_image_content_type()
+    {
+        List<MethodInfo> untypedActions = ControllerTypes()
+            .SelectMany(controller => controller.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+            .Where(IsControllerAction)
+            .Where(action => action.ReturnType == typeof(Task<ActionResult>))
+            .ToList();
+
+        List<string> offenders = untypedActions
+            .Where(action => !ProducesSingleImageContentType(action))
+            .Select(action => $"{action.DeclaringType!.FullName}.{action.Name} returns {FormatType(action.ReturnType)} without [Produces] naming a single image/* content type")
+            .ToList();
+
+        Assert.NotEmpty(untypedActions);
+        Assert.True(
+            offenders.Count == 0,
+            $"A controller action may return Task<ActionResult> only when it carries [Produces] with a single image/* content type. Offenders:{Environment.NewLine}"
             + PigeonWatchAssemblies.Describe(offenders));
     }
 
@@ -79,6 +101,21 @@ public class ControllerActionTests
         Type model = actionResult.GetGenericArguments()[0];
 
         return model.Namespace == modelsNamespace && model.Assembly == PigeonWatchAssemblies.WebApi;
+    }
+
+    private static bool IsBinaryImageAction(MethodInfo action)
+    {
+        return action.ReturnType == typeof(Task<ActionResult>) && ProducesSingleImageContentType(action);
+    }
+
+    private static bool ProducesSingleImageContentType(MethodInfo action)
+    {
+        List<ProducesAttribute> produces = action.GetCustomAttributes<ProducesAttribute>(true).ToList();
+
+        if (produces.Count != 1 || produces[0].ContentTypes.Count != 1)
+            return false;
+
+        return produces[0].ContentTypes[0].StartsWith(imageContentTypePrefix, StringComparison.OrdinalIgnoreCase);
     }
 
     private static IEnumerable<Type> ForbiddenWireTypes(Type type, HashSet<Type> visited)

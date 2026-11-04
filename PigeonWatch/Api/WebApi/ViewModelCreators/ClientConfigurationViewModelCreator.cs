@@ -28,7 +28,10 @@ public class ClientConfigurationViewModelCreator : IClientConfigurationViewModel
                 DescriptionMaxLength = configuration.SightingDescriptionMaxLength,
                 BehaviourMaxLength = configuration.SightingBehaviourMaxLength,
                 CooldownSeconds = configuration.SightingCooldownSeconds,
-                NearbyRadiusKm = configuration.SightingNearbyRadiusKilometers
+                NearbyRadiusKm = configuration.SightingNearbyRadiusKilometers,
+                PhotoMaxBytes = configuration.SightingPhotoMaxBytes,
+                PhotoMaxDimension = configuration.SightingPhotoMaxDimension,
+                PhotoAllowedContentTypes = configuration.SightingPhotoAllowedContentTypes.ToList()
             }
         };
     }

@@ -25,4 +25,7 @@ internal class SightingEntity : AuditableEntity
     public SightingStatus Status { get; set; }
 
     public SightingCriticality Criticality { get; set; }
+
+    [MaxLength(SightingRules.PhotoBlobNameMaxLength)]
+    public string? PhotoBlobName { get; set; }
 }

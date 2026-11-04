@@ -1,5 +1,8 @@
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data.Repositories;
+using PigeonWatch.Data.Storage;
 
 namespace PigeonWatch.BusinessLogic.Services;
 
@@ -7,8 +10,13 @@ public class SightingService(
     ISightingRepository sightingRepository,
     ISightingStatusTransitionProvider sightingStatusTransitionProvider,
     IGeoDistanceCalculator geoDistanceCalculator,
-    TimeProvider timeProvider) : ISightingService
+    IPhotoNormalizationProvider photoNormalizationProvider,
+    ISightingPhotoStore sightingPhotoStore,
+    TimeProvider timeProvider,
+    ILogger<SightingService> logger) : ISightingService
 {
+    private const string photoBlobExtension = ".jpg";
+
     private static readonly HashSet<int> listPageSizes =
     [
         SightingRules.ListPageSizeSmall,
@@ -47,12 +55,52 @@ public class SightingService(
             }
         }
 
-        Sighting? created = await sightingRepository.CreateAsync(trimmed, cancellationToken);
+        if (trimmed.Photo is null)
+            return await InsertAsync(trimmed, cancellationToken);
 
-        if (created is null)
-            return SightingCreateResult.Failure([new SightingError(SightingErrorCodes.ReporterNotFound, "The reporting user does not exist.")]);
+        PhotoNormalizationResult normalized = await photoNormalizationProvider.NormalizeAsync(trimmed.Photo.Content, trimmed.Photo.Length, cancellationToken);
 
-        return SightingCreateResult.Success(created);
+        if (!normalized.Succeeded || normalized.Jpeg is null)
+        {
+            SightingError error = normalized.Error ?? new SightingError(SightingErrorCodes.PhotoUnreadable, "The photo could not be read.");
+
+            return SightingCreateResult.Failure([error]);
+        }
+
+        string blobName = $"{Guid.NewGuid():D}{photoBlobExtension}";
+
+        using (MemoryStream jpeg = new(normalized.Jpeg, writable: false))
+            await sightingPhotoStore.SaveAsync(blobName, jpeg, cancellationToken);
+
+        bool inserted = false;
+
+        try
+        {
+            SightingCreateResult result = await InsertAsync(trimmed with { Photo = null, PhotoBlobName = blobName }, cancellationToken);
+            inserted = result.Succeeded;
+
+            return result;
+        }
+        finally
+        {
+            if (!inserted)
+                await DeleteOrphanedPhotoAsync(blobName, CancellationToken.None);
+        }
+    }
+
+    public async Task<Stream?> OpenPhotoAsync(Guid sightingId, CancellationToken cancellationToken = default)
+    {
+        string? blobName = await sightingRepository.GetPhotoBlobNameAsync(sightingId, cancellationToken);
+
+        if (blobName is null)
+            return null;
+
+        Stream? photo = await sightingPhotoStore.OpenReadAsync(blobName, cancellationToken);
+
+        if (photo is null)
+            logger.LogWarning("Photo blob {BlobName} of sighting {SightingId} is missing from photo storage", blobName, sightingId);
+
+        return photo;
     }
 
     public async Task<Sighting?> GetAsync(Guid id, CancellationToken cancellationToken = default)
@@ -126,6 +174,33 @@ public class SightingService(
     public async Task<IReadOnlyList<Sighting>> GetMineAsync(Guid reporterId, CancellationToken cancellationToken = default)
     {
         return await sightingRepository.ListByReporterAsync(reporterId, SightingRules.MineMaxResults, cancellationToken);
+    }
+
+    private async Task<SightingCreateResult> InsertAsync(NewSighting sighting, CancellationToken cancellationToken = default)
+    {
+        Sighting? created = await sightingRepository.CreateAsync(sighting, cancellationToken);
+
+        if (created is null)
+            return SightingCreateResult.Failure([new SightingError(SightingErrorCodes.ReporterNotFound, "The reporting user does not exist.")]);
+
+        return SightingCreateResult.Success(created);
+    }
+
+    private async Task DeleteOrphanedPhotoAsync(string blobName, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await sightingPhotoStore.DeleteAsync(blobName, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            string traceId = Activity.Current?.TraceId.ToString() ?? "none";
+            logger.LogError(
+                exception,
+                "Photo blob {BlobName} could not be deleted after the sighting was not saved (trace {TraceId}); the blob is left orphaned",
+                blobName,
+                traceId);
+        }
     }
 
     private List<SightingError> Validate(NewSighting sighting)
