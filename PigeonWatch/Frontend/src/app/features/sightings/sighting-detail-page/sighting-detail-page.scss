@@ -6,6 +6,89 @@
   gap: var(--pw-stack-gap);
 }
 
+.sighting-detail__details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-stack-gap);
+  min-width: 0;
+}
+
+.sighting-detail__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--pw-space-5);
+}
+
+.sighting-detail__photo,
+.sighting-detail__photo-placeholder {
+  flex: 0 0 auto;
+  width: var(--pw-photo-thumb-size);
+  height: var(--pw-photo-thumb-size);
+  border-radius: var(--pw-radius-md);
+}
+
+.sighting-detail__photo {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background-color: var(--pw-color-info-surface);
+  box-shadow: var(--pw-shadow-sm);
+  cursor: pointer;
+  transition: box-shadow var(--pw-duration-fast) var(--pw-easing-standard);
+}
+
+.sighting-detail__photo-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform var(--pw-duration-normal) var(--pw-easing-standard);
+}
+
+.sighting-detail__photo-hint {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  padding: var(--pw-space-2) var(--pw-space-3);
+  color: var(--pw-color-on-photo-scrim);
+  background-color: var(--pw-color-photo-scrim);
+  font-weight: var(--pw-font-weight-semibold);
+  text-align: center;
+  opacity: 0;
+  transition: opacity var(--pw-duration-fast) var(--pw-easing-standard);
+}
+
+.sighting-detail__photo:hover,
+.sighting-detail__photo:focus-visible {
+  box-shadow: var(--pw-shadow-md);
+
+  .sighting-detail__photo-image {
+    transform: scale(1.05);
+  }
+
+  .sighting-detail__photo-hint {
+    opacity: 1;
+  }
+}
+
+.sighting-detail__photo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--pw-color-info-surface);
+}
+
+.sighting-detail__facts {
+  display: grid;
+  flex: 1 1 var(--pw-detail-fact-min-width);
+  grid-template-columns: repeat(auto-fill, minmax(var(--pw-detail-fact-min-width), 1fr));
+  gap: var(--pw-space-4) var(--pw-space-5);
+  min-width: 0;
+}
+
 @include bp.from(xl) {
   .sighting-detail.sighting-detail--map {
     display: grid;

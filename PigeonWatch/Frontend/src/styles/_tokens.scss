@@ -10,6 +10,8 @@
   --pw-color-focus: #3b5bdb;
   --pw-color-overlay: rgba(244, 246, 251, 0.94);
   --pw-color-header: rgba(255, 255, 255, 0.82);
+  --pw-color-photo-scrim: rgba(27, 36, 48, 0.62);
+  --pw-color-on-photo-scrim: #ffffff;
   --pw-color-accent-teal: #14b8a6;
   --pw-color-accent-violet: #8b5cf6;
   --pw-color-danger: #b3261e;
@@ -80,6 +82,11 @@
   --pw-user-button-width: var(--pw-user-menu-width);
   --pw-textarea-max-height: 16rem;
   --pw-photo-preview-max-height: 16rem;
+  --pw-photo-thumb-size: 12.5rem;
+  --pw-photo-dialog-max-height: 60vh;
+  --pw-photo-dialog-max-width: min(92vw, 64rem);
+  --pw-detail-fact-min-width: 10rem;
+  --pw-row-icon-size: 1rem;
   --pw-brand-mark-size-md: 2rem;
   --pw-brand-mark-size-lg: 3rem;
   --pw-map-height: 24rem;

@@ -41,28 +41,57 @@
   @if (sighting(); as sighting) {
     <div class="sighting-detail" [class.sighting-detail--map]="mapShown()">
       <div class="sighting-detail__details">
+        @if (photo().kind === 'error') {
+          <app-alert kind="info">{{ 'sighting.detail.photoError' | translate }}</app-alert>
+        }
+        <div class="sighting-detail__summary">
+          @if (photo().kind === 'loading') {
+            <div class="sighting-detail__photo-placeholder">
+              <app-loading-indicator [label]="'sighting.detail.photoLoading' | translate" />
+            </div>
+          }
+          @if (photoUrl(); as url) {
+            <button
+              type="button"
+              class="sighting-detail__photo"
+              [attr.aria-label]="'sighting.detail.photoOpen' | translate"
+              (click)="openPhoto(url)"
+            >
+              <img
+                class="sighting-detail__photo-image"
+                [src]="url"
+                [alt]="'sighting.detail.photoAlt' | translate: title()"
+              />
+              <span class="sighting-detail__photo-hint pw-text-small" aria-hidden="true">
+                {{ 'sighting.detail.photoOpen' | translate }}
+              </span>
+            </button>
+          }
+          <dl app-detail-list class="sighting-detail__facts">
+            <div app-detail-item [label]="'sighting.detail.status' | translate">
+              {{ statusLabel(sighting.status) | translate }}
+            </div>
+            <div app-detail-item [label]="'sighting.detail.criticality' | translate">
+              <app-criticality-badge [kind]="criticalityKind(sighting.criticality)">
+                {{ criticalityLabel(sighting.criticality) | translate }}
+              </app-criticality-badge>
+            </div>
+            <div app-detail-item [label]="'sighting.detail.reporter' | translate">
+              {{ sighting.reporterDisplayName }}
+            </div>
+            <div app-detail-item [label]="'sighting.detail.reportedAt' | translate">
+              <time [attr.datetime]="sighting.createdAt">{{
+                sighting.createdAt | date: 'medium'
+              }}</time>
+            </div>
+          </dl>
+        </div>
         <dl app-detail-list>
-          <div app-detail-item [label]="'sighting.detail.status' | translate">
-            {{ statusLabel(sighting.status) | translate }}
-          </div>
-          <div app-detail-item [label]="'sighting.detail.criticality' | translate">
-            <app-criticality-badge [kind]="criticalityKind(sighting.criticality)">
-              {{ criticalityLabel(sighting.criticality) | translate }}
-            </app-criticality-badge>
-          </div>
           <div app-detail-item value="text" [label]="'sighting.detail.description' | translate">
             {{ sighting.description }}
           </div>
           <div app-detail-item value="text" [label]="'sighting.detail.behaviour' | translate">
             {{ sighting.behaviour }}
-          </div>
-          <div app-detail-item [label]="'sighting.detail.reporter' | translate">
-            {{ sighting.reporterDisplayName }}
-          </div>
-          <div app-detail-item [label]="'sighting.detail.reportedAt' | translate">
-            <time [attr.datetime]="sighting.createdAt">{{
-              sighting.createdAt | date: 'medium'
-            }}</time>
           </div>
           <div app-detail-item value="numeric" [label]="'sighting.detail.location' | translate">
             {{ coordinatesText() }}

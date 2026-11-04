@@ -105,6 +105,23 @@ describe('SightingRow', () => {
     expect(row.querySelector('time')?.textContent?.trim()).toBe(text);
   });
 
+  it('shows no camera icon for a sighting without a photo', async () => {
+    const row = await render(named);
+
+    expect(row.querySelector('svg')).toBeNull();
+    expect(row.textContent).not.toContain('Has a photo');
+  });
+
+  it('shows a hidden camera glyph with a visually hidden label for a sighting with a photo', async () => {
+    const row = await render({ ...named, hasPhoto: true });
+    const icon = row.querySelector('a .sighting-row__name svg');
+
+    expect(icon?.getAttribute('aria-hidden')).toBe('true');
+    expect(icon?.getAttribute('focusable')).toBe('false');
+    expect(row.querySelector('a .pw-visually-hidden')?.textContent?.trim()).toBe('Has a photo');
+    expect(row.querySelector('a')?.textContent).toContain('Has a photo');
+  });
+
   it('follows a new now from the parent', async () => {
     const row = await render(named);
 

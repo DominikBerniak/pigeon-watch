@@ -87,10 +87,11 @@ export function choose(selector: string, labelKey: string): CellStep {
   return ({ root, text }) =>
     until(() => root.querySelector<HTMLElement>(selector)).pipe(
       tap((select) => select.querySelector<HTMLElement>('[cdk-overlay-origin]')?.click()),
-      switchMap((select) => until(() => optionWithText(`${select.id}-panel`, text(labelKey)))),
-      tap((option) => option.click()),
-      switchMap(() =>
-        until(() => document.querySelector<HTMLElement>('.cdk-overlay-backdrop-showing')),
+      switchMap((select) =>
+        until(() => optionWithText(`${select.id}-panel`, text(labelKey))).pipe(
+          tap((option) => option.click()),
+          switchMap(() => until(() => backdropOf(document.getElementById(`${select.id}-panel`)))),
+        ),
       ),
       tap((backdrop) => backdrop.click()),
     );
@@ -125,6 +126,20 @@ function optionWithText(panelId: string, label: string): HTMLElement | null {
       (option) => option.textContent?.trim() === label,
     ) ?? null
   );
+}
+
+function backdropOf(panel: HTMLElement | null): HTMLElement | null {
+  const host = panel?.closest('.cdk-overlay-pane')?.parentElement;
+
+  if (!host) return null;
+
+  const backdrop = host.classList.contains('cdk-overlay-popover')
+    ? host.querySelector(':scope > .cdk-overlay-backdrop')
+    : host.previousElementSibling;
+
+  return backdrop instanceof HTMLElement && backdrop.classList.contains('cdk-overlay-backdrop')
+    ? backdrop
+    : null;
 }
 
 function setValue(input: HTMLInputElement, value: string): void {

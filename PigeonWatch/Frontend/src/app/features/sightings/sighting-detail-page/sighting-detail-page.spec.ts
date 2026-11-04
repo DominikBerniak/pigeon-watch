@@ -1,13 +1,16 @@
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { By } from '@angular/platform-browser';
 import { Router, RouterLink, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { NEVER, Observable, Subject, of, throwError } from 'rxjs';
+import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { MapView } from '../../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../../shared/map/testing/map-view-stub';
 import { Sighting, SightingCriticality, SightingStatus } from '../sighting.types';
+import { PhotoEncoder } from '../report-sighting-page/photo-picker/photo-encoder';
 import { SightingsApi } from '../sightings-api';
 import { SightingDetailPage } from './sighting-detail-page';
 
@@ -25,18 +28,33 @@ const sighting: Sighting = {
   hasPhoto: false,
 };
 
+const withPhoto: Sighting = { ...sighting, hasPhoto: true };
+const photoBlob = new Blob(['jpeg'], { type: 'image/jpeg' });
+
 describe('SightingDetailPage', () => {
   let get: ReturnType<typeof vi.fn<(id: string) => Observable<Sighting>>>;
+  let photo: ReturnType<typeof vi.fn<(id: string) => Observable<Blob>>>;
+  let createPreviewUrl: ReturnType<typeof vi.fn<(blob: Blob) => string>>;
+  let revokePreviewUrl: ReturnType<typeof vi.fn<(url: string) => void>>;
+  let report: ReturnType<typeof vi.fn>;
   let harness: RouterTestingHarness;
 
   beforeEach(async () => {
+    let previews = 0;
+
     get = vi.fn<(id: string) => Observable<Sighting>>(() => of(sighting));
+    photo = vi.fn<(id: string) => Observable<Blob>>(() => of(photoBlob));
+    createPreviewUrl = vi.fn<(blob: Blob) => string>(() => `blob:photo-${++previews}`);
+    revokePreviewUrl = vi.fn<(url: string) => void>();
+    report = vi.fn();
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([{ path: 'sightings/:id', component: SightingDetailPage }]),
-        { provide: SightingsApi, useValue: { get } },
+        { provide: SightingsApi, useValue: { get, photo } },
+        { provide: PhotoEncoder, useValue: { createPreviewUrl, revokePreviewUrl } },
+        { provide: ErrorReportingService, useValue: { report } },
       ],
     });
     TestBed.overrideComponent(SightingDetailPage, {
@@ -94,9 +112,9 @@ describe('SightingDetailPage', () => {
     expect(rows(root).filter(([label]) => label !== 'Reported')).toEqual([
       ['Status', 'Caught'],
       ['Criticality', 'Needs help soon'],
+      ['Reported by', 'Jan K'],
       ['Description', 'Grey pigeon with a ruffled wing'],
       ['Behaviour', 'Cannot fly'],
-      ['Reported by', 'Jan K'],
       ['Location', '52.22970, 21.01220'],
     ]);
     expect(root.querySelector('time')?.getAttribute('datetime')).toBe(sighting.createdAt);
@@ -455,5 +473,121 @@ describe('SightingDetailPage', () => {
 
     expect(root.querySelector('app-page-card h1')?.textContent?.trim()).toBe('Second');
     expect(document.title).toBe('Second – PigeonWatch');
+  });
+
+  it('sends no photo request and shows no photo when the sighting has none', async () => {
+    const root = await open();
+
+    expect(photo).not.toHaveBeenCalled();
+    expect(root.querySelector('.sighting-detail__photo')).toBeNull();
+    expect(root.querySelector('.sighting-detail__photo-placeholder')).toBeNull();
+  });
+
+  it('shows the photo as a button beside the key facts with translated alt text', async () => {
+    get.mockReturnValue(of(withPhoto));
+
+    const root = await open();
+    const image = root.querySelector<HTMLImageElement>('.sighting-detail__photo img');
+
+    expect(photo).toHaveBeenCalledExactlyOnceWith('sighting-1');
+    expect(createPreviewUrl).toHaveBeenCalledExactlyOnceWith(photoBlob);
+    expect(image?.getAttribute('src')).toBe('blob:photo-1');
+    expect(image?.getAttribute('alt')).toBe('Photo of Limpy');
+    expect(root.querySelector('.sighting-detail__photo + dl.sighting-detail__facts')).not.toBeNull();
+    expect(report).not.toHaveBeenCalled();
+  });
+
+  it('opens the full photo in a dialog from the photo button and closes it again', async () => {
+    get.mockReturnValue(of(withPhoto));
+
+    const root = await open();
+    const trigger = root.querySelector<HTMLButtonElement>('button.sighting-detail__photo');
+
+    expect(trigger?.getAttribute('aria-label')).toBe('Open the full photo');
+
+    const opened = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+    trigger?.click();
+    await settle();
+
+    const dialog = document.querySelector<HTMLElement>('app-photo-dialog');
+    const full = dialog?.querySelector<HTMLImageElement>('img');
+
+    expect(dialog?.querySelector('h2')?.textContent?.trim()).toBe('Limpy');
+    expect(full?.getAttribute('src')).toBe('blob:photo-1');
+    expect(full?.getAttribute('alt')).toBe('Photo of Limpy');
+    expect(opened.mock.calls[0]?.[1]?.autoFocus).toBe('dialog');
+
+    button(dialog!, 'Close').click();
+    await settle();
+    await vi.waitFor(() => expect(document.querySelector('app-photo-dialog')).toBeNull());
+    expect(revokePreviewUrl).not.toHaveBeenCalled();
+  });
+
+  it('names an unnamed sighting in the photo alt text', async () => {
+    get.mockReturnValue(of({ ...withPhoto, name: null }));
+
+    const root = await open();
+
+    expect(root.querySelector('.sighting-detail__photo img')?.getAttribute('alt')).toBe('Photo of Unnamed bird');
+  });
+
+  it('shows a placeholder while the photo loads and the details without waiting for it', async () => {
+    get.mockReturnValue(of(withPhoto));
+    photo.mockReturnValue(NEVER);
+
+    const root = await open();
+    const spinner = root.querySelector(
+      '.sighting-detail__photo-placeholder app-loading-indicator mat-progress-spinner',
+    );
+
+    expect(spinner?.getAttribute('aria-label')).toBe('Loading the photo…');
+    expect(root.querySelector('.sighting-detail__photo')).toBeNull();
+    expect(rows(root)).toHaveLength(7);
+    expect(root.querySelector('app-page-card h1')?.textContent?.trim()).toBe('Limpy');
+  });
+
+  it('shows an inline message and reports when the photo fails to load', async () => {
+    const error = new HttpErrorResponse({ status: 500 });
+
+    get.mockReturnValue(of(withPhoto));
+    photo.mockReturnValue(throwError(() => error));
+
+    const root = await open();
+
+    expect(root.querySelector('.sighting-detail__details app-alert')?.textContent?.trim()).toBe(
+      "We couldn't load the photo right now.",
+    );
+    expect(root.querySelector('.sighting-detail__photo')).toBeNull();
+    expect(rows(root)).toHaveLength(7);
+    expect(report).toHaveBeenCalledExactlyOnceWith('api-failure', 'sighting.detail.photo', error);
+  });
+
+  it('revokes the photo URL when the route moves to another sighting', async () => {
+    get.mockImplementation((id) => of({ ...withPhoto, id, hasPhoto: id === 'a' }));
+
+    const root = await open('a');
+
+    expect(root.querySelector('.sighting-detail__photo img')?.getAttribute('src')).toBe('blob:photo-1');
+    expect(revokePreviewUrl).not.toHaveBeenCalled();
+
+    await harness.navigateByUrl('/sightings/b');
+    await settle();
+
+    expect(revokePreviewUrl).toHaveBeenCalledExactlyOnceWith('blob:photo-1');
+    expect(photo).toHaveBeenCalledExactlyOnceWith('a');
+    expect(root.querySelector('.sighting-detail__photo')).toBeNull();
+  });
+
+  it('revokes the photo URL when the page is destroyed', async () => {
+    get.mockReturnValue(of(withPhoto));
+
+    await open();
+
+    expect(revokePreviewUrl).not.toHaveBeenCalled();
+
+    harness.fixture.destroy();
+
+    expect(revokePreviewUrl).toHaveBeenCalledExactlyOnceWith('blob:photo-1');
   });
 });

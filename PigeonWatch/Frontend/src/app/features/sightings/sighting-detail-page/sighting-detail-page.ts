@@ -13,13 +13,25 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Subject, catchError, combineLatest, map, of, startWith, switchMap, tap } from 'rxjs';
+import {
+  Observable,
+  Subject,
+  catchError,
+  combineLatest,
+  map,
+  of,
+  startWith,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { GeoPoint } from '../../../core/geolocation/geo-point';
 import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
+import { PhotoEncoder } from '../report-sighting-page/photo-picker/photo-encoder';
 import { pickerMapZoom } from '../../../shared/map/map-config';
 import { MapMarker } from '../../../shared/map/map-marker';
 import { MapView } from '../../../shared/map/map-view/map-view';
@@ -47,12 +59,19 @@ import {
   readSightingDetailReturn,
 } from '../sighting-list-page/sighting-list-hand-over';
 import { SightingsApi } from '../sightings-api';
+import { PhotoDialog, PhotoDialogData } from './photo-dialog/photo-dialog';
 
 type DetailState =
   | { readonly kind: 'loading' }
   | { readonly kind: 'notFound' }
   | { readonly kind: 'error'; readonly traceId?: string }
   | { readonly kind: 'loaded'; readonly sighting: Sighting };
+
+type PhotoState =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'loading' }
+  | { readonly kind: 'error' }
+  | { readonly kind: 'loaded'; readonly url: string };
 
 const coordinateDecimals = 5;
 
@@ -82,11 +101,14 @@ export class SightingDetailPage {
   private readonly sightingsApi = inject(SightingsApi);
   private readonly resources = inject(ResourceService);
   private readonly reporting = inject(ErrorReportingService);
+  private readonly photoUrls = inject(PhotoEncoder);
+  private readonly dialog = inject(MatDialog);
   private readonly pageTitle = inject(Title);
   private readonly injector = inject(Injector);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly reloads = new Subject<void>();
+  private readonly shownSightings = new Subject<Sighting | null>();
   private readonly card = viewChild(PageCard);
   private focusOnSettle = this.router.currentNavigation() !== null;
 
@@ -99,6 +121,12 @@ export class SightingDetailPage {
   protected readonly mapZoom = pickerMapZoom;
   protected readonly state = signal<DetailState>({ kind: 'loading' });
   protected readonly mapShown = signal(false);
+  protected readonly photo = signal<PhotoState>({ kind: 'none' });
+  protected readonly photoUrl = computed(() => {
+    const photo = this.photo();
+
+    return photo.kind === 'loaded' ? photo.url : null;
+  });
   protected readonly statusLabel = sightingStatusLabel;
   protected readonly criticalityLabel = sightingCriticalityLabel;
   protected readonly criticalityKind = sightingCriticalityMarker;
@@ -170,6 +198,13 @@ export class SightingDetailPage {
       this.pageTitle.setTitle(this.resources.translate('common.appName')),
     );
 
+    this.shownSightings
+      .pipe(
+        switchMap((sighting) => this.photoOf(sighting)),
+        takeUntilDestroyed(),
+      )
+      .subscribe((photo) => this.photo.set(photo));
+
     combineLatest([
       this.route.paramMap.pipe(map((params) => params.get('id') ?? '')),
       this.reloads.pipe(startWith(undefined)),
@@ -196,6 +231,17 @@ export class SightingDetailPage {
     this.mapShown.update((shown) => !shown);
   }
 
+  protected openPhoto(url: string): void {
+    const title = this.title();
+
+    this.dialog.open<PhotoDialog, PhotoDialogData>(PhotoDialog, {
+      autoFocus: 'dialog',
+      width: 'var(--pw-photo-dialog-max-width)',
+      maxWidth: 'var(--pw-photo-dialog-max-width)',
+      data: { url, title, alt: this.resources.translate('sighting.detail.photoAlt', title) },
+    });
+  }
+
   private failureState(error: unknown): DetailState {
     const failure = sightingFailure(error);
 
@@ -210,10 +256,36 @@ export class SightingDetailPage {
       : { kind: 'error' };
   }
 
+  private photoOf(sighting: Sighting | null): Observable<PhotoState> {
+    if (!sighting?.hasPhoto) return of<PhotoState>({ kind: 'none' });
+
+    return this.sightingsApi.photo(sighting.id).pipe(
+      switchMap((blob) => this.objectUrlOf(blob)),
+      map((url): PhotoState => ({ kind: 'loaded', url })),
+      catchError((error: unknown) => {
+        this.reporting.report('api-failure', 'sighting.detail.photo', error);
+
+        return of<PhotoState>({ kind: 'error' });
+      }),
+      startWith<PhotoState>({ kind: 'loading' }),
+    );
+  }
+
+  private objectUrlOf(blob: Blob): Observable<string> {
+    return new Observable<string>((subscriber) => {
+      const url = this.photoUrls.createPreviewUrl(blob);
+
+      subscriber.next(url);
+
+      return () => this.photoUrls.revokePreviewUrl(url);
+    });
+  }
+
   private applyState(state: DetailState): void {
     const previous = this.state();
 
     this.state.set(state);
+    this.shownSightings.next(state.kind === 'loaded' ? state.sighting : null);
 
     if (state.kind === 'loading') {
       if (previous.kind !== 'loading') this.focusOnSettle = true;

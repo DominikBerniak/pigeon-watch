@@ -459,6 +459,33 @@ const detailCells: readonly SightingDetailCell[] = [
     leaflet: 'failure',
     steps: [press('sighting.detail.showMap'), waitFor(detailMap)],
   },
+  {
+    id: 'detail-photo-loaded',
+    label: 'Photo loaded (generated 4:3 image)',
+    group: 'sightingDetail',
+    detail: 'loadedWithPhoto',
+    photo: 'image',
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'detail-photo-loading',
+    label: 'Photo loading (request never completes, details shown)',
+    group: 'sightingDetail',
+    detail: 'loadedWithPhoto',
+    photo: 'pending',
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'detail-photo-error',
+    label: 'Photo failed to load (500, inline message)',
+    group: 'sightingDetail',
+    detail: 'loadedWithPhoto',
+    photo: 'failure',
+    leaflet: 'tileless',
+    steps: [],
+  },
 ];
 
 const listRow = 'li[app-sighting-row]';

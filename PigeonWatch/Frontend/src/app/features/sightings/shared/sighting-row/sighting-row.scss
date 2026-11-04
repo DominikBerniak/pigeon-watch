@@ -25,3 +25,16 @@
   font-weight: var(--pw-font-weight-semibold);
   overflow-wrap: anywhere;
 }
+
+.sighting-row__photo {
+  position: relative;
+  display: inline-flex;
+  margin-inline-start: var(--pw-space-1);
+  color: var(--pw-color-text-muted);
+  vertical-align: middle;
+}
+
+.sighting-row__photo-icon {
+  width: var(--pw-row-icon-size);
+  height: var(--pw-row-icon-size);
+}

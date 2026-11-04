@@ -597,26 +597,26 @@ After the merge deploys, check on Azure the parts that only exist there: the man
 
 #### Automated
 
-- [x] 4.1 Frontend specs pass
-- [x] 4.2 Build passes within the initial-bundle budget
+- [x] 4.1 Frontend specs pass — 0ed0136
+- [x] 4.2 Build passes within the initial-bundle budget — 0ed0136
 
 #### Manual
 
-- [x] 4.3 Phone-width report with a large photo; stored file is at most 1600 px with no EXIF
-- [x] 4.4 Storage failure keeps the form filled with the retry-or-remove message
+- [x] 4.3 Phone-width report with a large photo; stored file is at most 1600 px with no EXIF — 0ed0136
+- [x] 4.4 Storage failure keeps the form filled with the retry-or-remove message — 0ed0136
 
 ### Phase 5: SPA display
 
 #### Automated
 
-- [ ] 5.1 Frontend specs pass (detail photo, row icon, kitchen sink, tokens)
-- [ ] 5.2 Build passes within the initial-bundle budget
-- [ ] 5.3 Playwright photo spec passes
+- [x] 5.1 Frontend specs pass (detail photo, row icon, kitchen sink, tokens)
+- [x] 5.2 Build passes within the initial-bundle budget
+- [x] 5.3 Playwright photo spec passes
 
 #### Manual
 
-- [ ] 5.4 Kitchen-sink photo cells look right at both widths and in dark mode
-- [ ] 5.5 Portrait and landscape photos render without layout shift
+- [x] 5.4 Kitchen-sink photo cells look right at both widths and in dark mode
+- [x] 5.5 Portrait and landscape photos render without layout shift
 
 ### Phase 6: Live verification after deploy
 

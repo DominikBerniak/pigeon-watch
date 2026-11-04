@@ -411,6 +411,24 @@
   <data name="sighting.detail.pageTitle" xml:space="preserve">
     <value>{0} – {1}</value>
   </data>
+  <data name="sighting.detail.photoAlt" xml:space="preserve">
+    <value>Photo of {0}</value>
+  </data>
+  <data name="sighting.detail.photoLoading" xml:space="preserve">
+    <value>Loading the photo…</value>
+  </data>
+  <data name="sighting.detail.photoError" xml:space="preserve">
+    <value>We couldn't load the photo right now.</value>
+  </data>
+  <data name="sighting.detail.photoOpen" xml:space="preserve">
+    <value>Open the full photo</value>
+  </data>
+  <data name="sighting.detail.photoClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="sighting.row.hasPhoto" xml:space="preserve">
+    <value>Has a photo</value>
+  </data>
   <data name="sighting.mine.title" xml:space="preserve">
     <value>My sightings</value>
   </data>

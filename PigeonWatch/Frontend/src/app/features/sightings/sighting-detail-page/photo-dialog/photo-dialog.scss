@@ -1,0 +1,7 @@
+.photo-dialog__image {
+  display: block;
+  max-width: 100%;
+  max-height: var(--pw-photo-dialog-max-height);
+  margin-inline: auto;
+  border-radius: var(--pw-radius-md);
+}

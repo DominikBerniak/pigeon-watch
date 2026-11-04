@@ -35,10 +35,12 @@ export type DetailMode =
   | 'loaded'
   | 'loadedUnnamed'
   | 'loadedLongName'
+  | 'loadedWithPhoto'
   | 'notFound'
   | 'failure'
   | 'pending'
   | 'failureThenLoaded';
+export type PhotoMode = 'image' | 'pending' | 'failure';
 
 export interface ProfileModes {
   readonly group: 'profile';
@@ -59,6 +61,7 @@ export interface SightingDetailModes {
   readonly group: 'sightingDetail';
   readonly detail: DetailMode;
   readonly leaflet: LeafletMode;
+  readonly photo?: PhotoMode;
 }
 
 export interface SightingListModes {
@@ -91,6 +94,7 @@ function sinkSighting(
   criticality: SightingCriticality,
   offset: GeoPoint,
   ageMinutes: number,
+  hasPhoto = false,
 ): Sighting {
   return {
     id,
@@ -103,7 +107,7 @@ function sinkSighting(
     criticality,
     reporterDisplayName: sinkUser.displayName,
     createdAt: new Date(sinkLoadedAt - ageMinutes * minuteMilliseconds).toISOString(),
-    hasPhoto: false,
+    hasPhoto,
   };
 }
 
@@ -128,6 +132,7 @@ export const sinkSightings: readonly Sighting[] = [
     SightingCriticality.monitor,
     { latitude: 0.009, longitude: 0.012 },
     2 * 24 * 60,
+    true,
   ),
   sinkSighting(
     'sink-unnamed',
@@ -185,8 +190,28 @@ export const sinkListSightings: readonly Sighting[] = listCriticalities.map((cri
     criticality,
     { latitude: index * 0.001, longitude: -index * 0.001 },
     listAgesMinutes[index],
+    index % 4 === 1,
   ),
 );
+
+export const sinkPhotoSighting: Sighting = {
+  ...sinkSightings[0],
+  id: 'sink-photo',
+  hasPhoto: true,
+};
+
+const sinkPhotoSvg = [
+  '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">',
+  '<rect width="1600" height="1200" fill="lightsteelblue"/>',
+  '<ellipse cx="800" cy="720" rx="420" ry="300" fill="slategray"/>',
+  '<circle cx="1080" cy="420" r="170" fill="slategray"/>',
+  '<circle cx="1130" cy="390" r="24" fill="black"/>',
+  '</svg>',
+].join('');
+
+export function sinkPhoto(): Blob {
+  return new Blob([sinkPhotoSvg], { type: 'image/svg+xml' });
+}
 
 const busyHoldMilliseconds = 30000;
 
@@ -265,6 +290,7 @@ export class CellStubs {
     nearby: (_centre: GeoPoint, filters?: SightingFilters): Observable<SightingList> =>
       this.nearbyResult(filters),
     get: (): Observable<Sighting> => this.detailResult(),
+    photo: (): Observable<Blob> => this.photoResult(),
     list: (request: SightingListRequest): Observable<SightingPage> => this.listResult(request),
   };
   readonly geolocation = {
@@ -391,6 +417,8 @@ export class CellStubs {
         return of(sinkSightings[3]);
       case 'loadedLongName':
         return of(sinkLongNameSighting);
+      case 'loadedWithPhoto':
+        return of(sinkPhotoSighting);
       case 'notFound':
         return throwError(() => new HttpErrorResponse({ status: 404 }));
       case 'failure':
@@ -403,6 +431,19 @@ export class CellStubs {
           : of(sinkSightings[0]);
       default:
         return of(sinkSightings[0]);
+    }
+  }
+
+  private photoResult(): Observable<Blob> {
+    const modes = this.modes();
+
+    switch (modes.group === 'sightingDetail' ? (modes.photo ?? 'image') : 'image') {
+      case 'pending':
+        return NEVER;
+      case 'failure':
+        return throwError(() => new HttpErrorResponse({ status: 500 }));
+      default:
+        return of(sinkPhoto());
     }
   }
 
