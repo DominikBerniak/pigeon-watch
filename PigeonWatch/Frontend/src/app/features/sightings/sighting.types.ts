@@ -34,6 +34,7 @@ export interface Sighting {
   criticality: SightingCriticality;
   reporterDisplayName: string;
   createdAt: string;
+  hasPhoto: boolean;
 }
 
 export interface SightingList {
@@ -66,6 +67,7 @@ export interface NewSighting {
   longitude: number;
   status: SightingStatus;
   criticality: SightingCriticality;
+  photo: Blob | null;
 }
 
 export const sightingStatusLabels: Readonly<Record<SightingStatus, string>> = {
@@ -154,4 +156,7 @@ export const fallbackSightingRules: SightingRules = {
   behaviourMaxLength: 500,
   cooldownSeconds: 60,
   nearbyRadiusKm: 10,
+  photoMaxBytes: 2097152,
+  photoMaxDimension: 1600,
+  photoAllowedContentTypes: ['image/jpeg', 'image/png', 'image/webp'],
 };

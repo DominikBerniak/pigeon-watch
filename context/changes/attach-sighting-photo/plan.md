@@ -583,27 +583,27 @@ After the merge deploys, check on Azure the parts that only exist there: the man
 
 #### Automated
 
-- [x] 3.1 Build passes
-- [x] 3.2 Migration matches the model
-- [x] 3.3 Architecture tests pass, including the binary-action rule
-- [x] 3.4 Service orchestration unit tests pass
-- [x] 3.5 Integration tests pass
+- [x] 3.1 Build passes — 2d25b9a
+- [x] 3.2 Migration matches the model — 2d25b9a
+- [x] 3.3 Architecture tests pass, including the binary-action rule — 2d25b9a
+- [x] 3.4 Service orchestration unit tests pass — 2d25b9a
+- [x] 3.5 Integration tests pass — 2d25b9a
 
 #### Manual
 
-- [x] 3.6 Local multipart create stores a file and GET photo returns it
+- [x] 3.6 Local multipart create stores a file and GET photo returns it — 2d25b9a
 
 ### Phase 4: SPA reporting
 
 #### Automated
 
-- [ ] 4.1 Frontend specs pass
-- [ ] 4.2 Build passes within the initial-bundle budget
+- [x] 4.1 Frontend specs pass
+- [x] 4.2 Build passes within the initial-bundle budget
 
 #### Manual
 
-- [ ] 4.3 Phone-width report with a large photo; stored file is at most 1600 px with no EXIF
-- [ ] 4.4 Storage failure keeps the form filled with the retry-or-remove message
+- [x] 4.3 Phone-width report with a large photo; stored file is at most 1600 px with no EXIF
+- [x] 4.4 Storage failure keeps the form filled with the retry-or-remove message
 
 ### Phase 5: SPA display
 

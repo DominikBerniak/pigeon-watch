@@ -18,10 +18,12 @@ import { MapView } from '../../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../../shared/map/testing/map-view-stub';
 import { NewSighting, Sighting } from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
+import { PhotoEncoder } from './photo-picker/photo-encoder';
 import { ReportSightingPage } from './report-sighting-page';
 
 const warsaw: GeoPoint = { latitude: 52.2297, longitude: 21.0122 };
 const traceId = '00-abc123-def456-01';
+const encodedPhoto = new Blob(['encoded-jpeg'], { type: 'image/jpeg' });
 
 describe('ReportSightingPage failure reporting', () => {
   let create: ReturnType<typeof vi.fn<(sighting: NewSighting) => Observable<Sighting>>>;
@@ -44,6 +46,14 @@ describe('ReportSightingPage failure reporting', () => {
           },
         },
         { provide: SightingsApi, useValue: { create } },
+        {
+          provide: PhotoEncoder,
+          useValue: {
+            encode: (): Observable<Blob> => of(encodedPhoto),
+            createPreviewUrl: (): string => 'blob:preview',
+            revokePreviewUrl: vi.fn(),
+          },
+        },
         { provide: ErrorReportingService, useValue: { report } },
       ],
     });
@@ -72,6 +82,43 @@ describe('ReportSightingPage failure reporting', () => {
     element.dispatchEvent(new Event('input'));
     element.dispatchEvent(new Event('change'));
     element.dispatchEvent(new Event('blur'));
+  }
+
+  async function attachPhoto(): Promise<void> {
+    const input = root().querySelector<HTMLInputElement>('app-photo-picker input[type="file"]');
+
+    if (!input) throw new Error('No photo input');
+
+    const file = new File(['original'], 'IMG_0001.jpg', { type: 'image/jpeg' });
+
+    Object.defineProperty(input, 'files', {
+      configurable: true,
+      value: { length: 1, item: () => file },
+    });
+    input.dispatchEvent(new Event('change'));
+    await settle();
+  }
+
+  function photoError(): string | undefined {
+    return root().querySelector('.photo-picker__error')?.textContent?.trim();
+  }
+
+  function submitButton(): HTMLButtonElement {
+    const button = root().querySelector<HTMLButtonElement>('app-submit-button button');
+
+    if (!button) throw new Error('No submit button');
+
+    return button;
+  }
+
+  async function resubmit(): Promise<void> {
+    root().querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true }));
+    await settle();
+  }
+
+  async function submitWithPhoto(error: HttpErrorResponse): Promise<void> {
+    await attachPhoto();
+    await submitWith(error);
   }
 
   async function submitWith(error: HttpErrorResponse): Promise<void> {
@@ -159,5 +206,74 @@ describe('ReportSightingPage failure reporting', () => {
 
     expect(alertText()).not.toContain('Reference');
     expect(report).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['PhotoTooLarge', 'This photo is too large. Choose a smaller one or remove it.'],
+    ['PhotoUnsupportedType', "This file type isn't supported. Choose a JPEG, PNG or WebP photo."],
+    ['PhotoUnreadable', "We couldn't read this photo. Choose another one or remove it."],
+  ])('shows %s as a photo field error without reporting it', async (code, message) => {
+    await submitWithPhoto(
+      new HttpErrorResponse({
+        status: 400,
+        error: { status: 400, traceId, errors: { [code]: ['x'] } },
+      }),
+    );
+
+    expect(create.mock.calls[0][0].photo).toBe(encodedPhoto);
+    expect(photoError()).toBe(message);
+    expect(alertText()).toBeUndefined();
+    expect(report).not.toHaveBeenCalled();
+  });
+
+  it('blocks a resend of the rejected photo and submits again once it is removed', async () => {
+    await submitWithPhoto(
+      new HttpErrorResponse({
+        status: 400,
+        error: { status: 400, errors: { PhotoTooLarge: ['x'] } },
+      }),
+    );
+
+    await resubmit();
+
+    expect(create).toHaveBeenCalledOnce();
+
+    const remove = [...root().querySelectorAll<HTMLButtonElement>('app-photo-picker button')].find(
+      (button) => button.textContent?.trim() === 'Remove photo',
+    );
+
+    remove!.click();
+    await settle();
+    await resubmit();
+
+    expect(photoError()).toBe('');
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create.mock.calls[1][0].photo).toBeNull();
+  });
+
+  it('keeps the form filled, says retry or remove and reports a photo storage outage', async () => {
+    const error = new HttpErrorResponse({
+      status: 503,
+      error: { status: 503, traceId, errors: { PhotoStorageUnavailable: ['x'] } },
+    });
+
+    await submitWithPhoto(error);
+
+    expect(alertText()).toContain(
+      "We couldn't save the photo right now. Try again, or remove the photo and report without it.",
+    );
+    expect(alertText()).toContain(`Reference: ${traceId}`);
+    expect(report).toHaveBeenCalledExactlyOnceWith('api-failure', 'sighting.report', error);
+    expect(root().querySelector<HTMLInputElement>('input[type="text"]')?.value).toBe('Limpy');
+    expect(root().querySelectorAll<HTMLTextAreaElement>('textarea')[0].value).toBe('Grey pigeon');
+    expect(root().querySelector('app-photo-picker img')).not.toBeNull();
+    expect(photoError()).toBe('');
+    expect(submitButton().disabled).toBe(false);
+
+    create.mockReturnValue(throwError(() => error));
+    await resubmit();
+
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create.mock.calls[1][0].photo).toBe(encodedPhoto);
   });
 });

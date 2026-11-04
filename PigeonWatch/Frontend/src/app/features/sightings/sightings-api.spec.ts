@@ -25,6 +25,7 @@ const sighting: Sighting = {
   criticality: SightingCriticality.urgent,
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T12:00:00Z',
+  hasPhoto: false,
 };
 
 describe('SightingsApi', () => {
@@ -41,16 +42,18 @@ describe('SightingsApi', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('creates a sighting with a POST of the new sighting', () => {
-    const created: NewSighting = {
-      name: null,
-      description: sighting.description,
-      behaviour: sighting.behaviour,
-      latitude: sighting.latitude,
-      longitude: sighting.longitude,
-      status: SightingStatus.spotted,
-      criticality: SightingCriticality.urgent,
-    };
+  const newSighting: NewSighting = {
+    name: 'Limpy',
+    description: sighting.description,
+    behaviour: sighting.behaviour,
+    latitude: 52.2297,
+    longitude: -21.0122,
+    status: SightingStatus.spotted,
+    criticality: SightingCriticality.urgent,
+    photo: null,
+  };
+
+  function sentForm(created: NewSighting): FormData {
     let result: Sighting | undefined;
 
     api.create(created).subscribe((value) => (result = value));
@@ -58,8 +61,63 @@ describe('SightingsApi', () => {
     request.flush(sighting);
 
     expect(request.request.method).toBe('POST');
-    expect(request.request.body).toEqual(created);
+    expect(request.request.headers.has('Content-Type')).toBe(false);
+    expect(request.request.body).toBeInstanceOf(FormData);
     expect(result).toEqual(sighting);
+
+    return request.request.body as FormData;
+  }
+
+  it('creates a sighting with a multipart POST of the fields and no photo part', () => {
+    const form = sentForm(newSighting);
+
+    expect([...form.keys()]).toEqual([
+      'name',
+      'description',
+      'behaviour',
+      'latitude',
+      'longitude',
+      'status',
+      'criticality',
+    ]);
+    expect(form.get('name')).toBe('Limpy');
+    expect(form.get('description')).toBe(sighting.description);
+    expect(form.get('behaviour')).toBe(sighting.behaviour);
+    expect(form.get('latitude')).toBe('52.2297');
+    expect(form.get('longitude')).toBe('-21.0122');
+    expect(form.get('status')).toBe('1');
+    expect(form.get('criticality')).toBe('3');
+    expect(form.has('photo')).toBe(false);
+  });
+
+  it('leaves out the name part when the name is null', () => {
+    const form = sentForm({ ...newSighting, name: null });
+
+    expect(form.has('name')).toBe(false);
+  });
+
+  it('sends the photo as a part named photo.jpg', () => {
+    const photo = new Blob(['jpeg-bytes'], { type: 'image/jpeg' });
+    const form = sentForm({ ...newSighting, photo });
+    const part = form.get('photo');
+
+    expect(part).toBeInstanceOf(File);
+    expect((part as File).name).toBe('photo.jpg');
+    expect((part as File).type).toBe('image/jpeg');
+    expect((part as File).size).toBe(photo.size);
+  });
+
+  it('downloads the photo of a sighting as a blob', () => {
+    const photo = new Blob(['jpeg-bytes'], { type: 'image/jpeg' });
+    let result: Blob | undefined;
+
+    api.photo('a/b').subscribe((value) => (result = value));
+    const request = httpMock.expectOne(`${sightingsUrl}/a%2Fb/photo`);
+    request.flush(photo);
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.responseType).toBe('blob');
+    expect(result).toBe(photo);
   });
 
   it('gets one sighting by id', () => {

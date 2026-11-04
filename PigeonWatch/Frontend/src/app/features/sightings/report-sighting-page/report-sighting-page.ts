@@ -31,7 +31,9 @@ import {
   provideFormFieldDefaults,
 } from '../../../shared/ui';
 import {
+  PhotoProblem,
   SightingFailure,
+  isPhotoProblem,
   isReportableSightingFailure,
   sightingErrorMessage,
   sightingFailure,
@@ -47,6 +49,7 @@ import {
   sightingStatusLabels,
 } from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
+import { PhotoPicker } from './photo-picker/photo-picker';
 
 interface ReportModel {
   name: string;
@@ -55,6 +58,12 @@ interface ReportModel {
   status: string;
   criticality: string;
   location: GeoPoint | null;
+  photo: Blob | null;
+}
+
+interface PhotoRejection {
+  readonly photo: Blob;
+  readonly problem: PhotoProblem;
 }
 
 const emptyReport: ReportModel = {
@@ -64,6 +73,7 @@ const emptyReport: ReportModel = {
   status: '',
   criticality: '',
   location: null,
+  photo: null,
 };
 
 @Component({
@@ -83,6 +93,7 @@ const emptyReport: ReportModel = {
     FormActions,
     LocationPicker,
     PageCard,
+    PhotoPicker,
     SubmitButton,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -98,6 +109,7 @@ export class ReportSightingPage {
   private readonly router = inject(Router);
   private readonly model = signal<ReportModel>({ ...emptyReport });
   private readonly failure = signal<SightingFailure | null>(null);
+  private readonly photoRejection = signal<PhotoRejection | null>(null);
 
   protected readonly statuses = initialSightingStatuses;
   protected readonly criticalities = selectableSightingCriticalities;
@@ -117,8 +129,16 @@ export class ReportSightingPage {
     required(path.status);
     required(path.criticality);
     required(path.location);
+    validate(path.photo, ({ value }) => {
+      const rejection = this.photoRejection();
+
+      return rejection !== null && rejection.photo === value()
+        ? { kind: rejection.problem }
+        : undefined;
+    });
   });
   protected readonly busy = signal(false);
+  protected readonly photoProcessing = signal(false);
   protected readonly errorText = computed(() => {
     const failure = this.failure();
 
@@ -127,7 +147,9 @@ export class ReportSightingPage {
   protected readonly errorTraceId = computed(() => {
     const failure = this.failure();
 
-    return failure?.kind === 'generic' ? (failure.traceId ?? null) : null;
+    return failure?.kind === 'generic' || failure?.kind === 'photoStorageUnavailable'
+      ? (failure.traceId ?? null)
+      : null;
   });
   protected readonly nameMessages = computed(() => ({
     maxLength: this.maxLengthMessage(this.rules().nameMaxLength),
@@ -152,7 +174,7 @@ export class ReportSightingPage {
     this.submitState.markSubmitted();
     this.failure.set(null);
 
-    if (this.busy() || this.reportForm().invalid()) return;
+    if (this.busy() || this.photoProcessing() || this.reportForm().invalid()) return;
 
     const sighting = newSightingOf(this.model());
 
@@ -164,12 +186,18 @@ export class ReportSightingPage {
       .pipe(finalize(() => this.busy.set(false)))
       .subscribe({
         next: (created) => void this.router.navigate(['/sightings', created.id]),
-        error: (error: unknown) => this.handleFailure(error),
+        error: (error: unknown) => this.handleFailure(error, sighting.photo),
       });
   }
 
-  private handleFailure(error: unknown): void {
+  private handleFailure(error: unknown, photo: Blob | null): void {
     const failure = sightingFailure(error);
+
+    if (isPhotoProblem(failure) && photo !== null) {
+      this.photoRejection.set({ photo, problem: failure.kind });
+
+      return;
+    }
 
     this.failure.set(failure);
 
@@ -202,5 +230,6 @@ function newSightingOf(report: ReportModel): NewSighting | null {
     longitude: location.longitude,
     status: Number(report.status) as SightingStatus,
     criticality: Number(report.criticality) as SightingCriticality,
+    photo: report.photo,
   };
 }

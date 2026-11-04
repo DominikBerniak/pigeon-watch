@@ -22,6 +22,7 @@ const sighting: Sighting = {
   criticality: SightingCriticality.needsHelpSoon,
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T12:00:00Z',
+  hasPhoto: false,
 };
 
 describe('SightingDetailPage', () => {

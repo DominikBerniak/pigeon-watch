@@ -32,6 +32,7 @@ const created: Sighting = {
   criticality: SightingCriticality.urgent,
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T12:00:00Z',
+  hasPhoto: false,
 };
 
 function spyOnNavigate() {
@@ -161,6 +162,9 @@ describe('ReportSightingPage', () => {
       root().querySelector('app-form-actions app-submit-button button')?.textContent?.trim(),
     ).toBe('Report sighting');
     expect(root().querySelector('app-location-picker')).not.toBeNull();
+    expect(root().querySelector('app-photo-picker legend')?.textContent?.trim()).toBe(
+      'Photo (optional)',
+    );
     expect(root().querySelector('app-page-card')?.classList).toContain('page-card-host--wide');
     expect(fields().map((field) => field.querySelector('mat-label')?.textContent?.trim())).toEqual([
       'Name (optional)',
@@ -279,6 +283,7 @@ describe('ReportSightingPage', () => {
       longitude: warsaw.longitude,
       status: SightingStatus.caught,
       criticality: SightingCriticality.urgent,
+      photo: null,
     });
     expect(navigate).toHaveBeenCalledExactlyOnceWith(['/sightings', 'sighting-7']);
   });

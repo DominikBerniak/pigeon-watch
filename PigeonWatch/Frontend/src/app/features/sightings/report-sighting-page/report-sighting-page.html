@@ -91,6 +91,10 @@
           <app-field-errors [field]="reportForm.criticality" [messages]="choiceMessages()" />
         </mat-error>
       </mat-form-field>
+      <app-photo-picker
+        [formField]="reportForm.photo"
+        (processingChange)="photoProcessing.set($event)"
+      />
     </div>
     <div>
       <app-location-picker [formField]="reportForm.location" />
@@ -112,7 +116,7 @@
         >
           {{ 'sighting.form.cancel' | translate }}
         </button>
-        <app-submit-button [busy]="busy()">{{
+        <app-submit-button [busy]="busy()" [disabled]="photoProcessing()">{{
           'sighting.form.submit' | translate
         }}</app-submit-button>
       </app-form-actions>

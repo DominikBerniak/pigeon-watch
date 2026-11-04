@@ -103,6 +103,7 @@ function sinkSighting(
     criticality,
     reporterDisplayName: sinkUser.displayName,
     createdAt: new Date(sinkLoadedAt - ageMinutes * minuteMilliseconds).toISOString(),
+    hasPhoto: false,
   };
 }
 

@@ -41,6 +41,7 @@ const urgent: Sighting = {
   criticality: SightingCriticality.urgent,
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T12:00:00Z',
+  hasPhoto: false,
 };
 
 const monitor: Sighting = {
@@ -50,6 +51,7 @@ const monitor: Sighting = {
   status: SightingStatus.spotted,
   criticality: SightingCriticality.monitor,
   createdAt: '2026-10-11T11:00:00Z',
+  hasPhoto: false,
 };
 
 function requestAt(

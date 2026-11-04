@@ -19,6 +19,7 @@ const named: Sighting = {
   criticality: SightingCriticality.urgent,
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T11:55:00Z',
+  hasPhoto: false,
 };
 
 @Component({

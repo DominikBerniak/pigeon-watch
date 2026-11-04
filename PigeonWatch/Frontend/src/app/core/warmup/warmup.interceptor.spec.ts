@@ -145,6 +145,43 @@ describe('warmupInterceptor', () => {
     expect(state.status()).toBe('idle');
   });
 
+  it('passes a photo storage outage 503 straight through without warming or retrying', () => {
+    const errors: unknown[] = [];
+    http.post(url, {}).subscribe({ error: (error) => errors.push(error) });
+
+    httpMock
+      .expectOne(url)
+      .flush(
+        { status: 503, errors: { PhotoStorageUnavailable: ['Photo storage is unavailable.'] } },
+        { status: 503, statusText: 'Service Unavailable', headers: { 'Retry-After': '10' } },
+      );
+    vi.advanceTimersByTime(60_000);
+
+    httpMock.expectNone(url);
+    expect(errors.length).toBe(1);
+    expect((errors[0] as { status: number }).status).toBe(503);
+    expect(state.status()).toBe('idle');
+  });
+
+  it('still retries a 503 whose problem body carries other error codes', () => {
+    const results: unknown[] = [];
+    http.post(url, {}).subscribe((body) => results.push(body));
+
+    httpMock
+      .expectOne(url)
+      .flush(
+        { status: 503, errors: { DatabaseUnavailable: ['x'] } },
+        { status: 503, statusText: 'Service Unavailable', headers: { 'Retry-After': '5' } },
+      );
+    expect(state.status()).toBe('warming');
+
+    vi.advanceTimersByTime(5_000);
+    httpMock.expectOne(url).flush({ ok: true });
+
+    expect(results).toEqual([{ ok: true }]);
+    expect(state.status()).toBe('idle');
+  });
+
   it('does not retry a 429 and never shows warming', () => {
     const errors: unknown[] = [];
     http.post(url, {}).subscribe({ error: (error) => errors.push(error) });
