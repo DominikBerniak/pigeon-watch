@@ -428,26 +428,26 @@ Additive migration only (two new tables); no data backfill. `SightingModel.isMin
 
 #### Automated
 
-- [x] 1.1 API builds with style rules
-- [x] 1.2 Architecture tests pass, including table naming and service registration
-- [x] 1.3 Unit tests pass, including SightingThreadRepositoryTests
-- [x] 1.4 Migration matches the model
+- [x] 1.1 API builds with style rules — da04df4
+- [x] 1.2 Architecture tests pass, including table naming and service registration — da04df4
+- [x] 1.3 Unit tests pass, including SightingThreadRepositoryTests — da04df4
+- [x] 1.4 Migration matches the model — da04df4
 
 #### Manual
 
-- [x] 1.5 Migration applied to LocalDB creates SIGHTING_THREAD and SIGHTING_MESSAGE with the unique index and Restrict FKs
+- [x] 1.5 Migration applied to LocalDB creates SIGHTING_THREAD and SIGHTING_MESSAGE with the unique index and Restrict FKs — da04df4
 
 ### Phase 2: Messaging API
 
 #### Automated
 
-- [ ] 2.1 API builds with style rules
-- [ ] 2.2 Architecture tests pass, including controller action shape
-- [ ] 2.3 Unit tests pass, including the new service, controller and view-model creator tests
+- [x] 2.1 API builds with style rules
+- [x] 2.2 Architecture tests pass, including controller action shape
+- [x] 2.3 Unit tests pass, including the new service, controller and view-model creator tests
 
 #### Manual
 
-- [ ] 2.4 Bob starts a thread on Alice's sighting via curl.exe and Alice lists it via GET threads
+- [x] 2.4 Bob starts a thread on Alice's sighting via curl.exe and Alice lists it via GET threads
 
 ### Phase 3: Privacy and access contract tests
 

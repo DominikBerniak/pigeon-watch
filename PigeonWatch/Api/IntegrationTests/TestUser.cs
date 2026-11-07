@@ -59,6 +59,26 @@ public sealed class TestUser(
         return commentId;
     }
 
+    public async Task<Guid> StartThreadAsync(Guid sightingId, string text, CancellationToken cancellationToken = default)
+    {
+        using HttpResponseMessage response = await Client.PostAsJsonAsync($"/sightings/{sightingId}/threads", new { text }, cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        string body = await response.Content.ReadAsStringAsync(cancellationToken);
+        using JsonDocument document = JsonDocument.Parse(body);
+        Guid threadId = document.RootElement.GetProperty("thread").GetProperty("id").GetGuid();
+
+        return threadId;
+    }
+
+    public async Task ReplyAsync(Guid sightingId, Guid threadId, string text, CancellationToken cancellationToken = default)
+    {
+        using HttpResponseMessage response = await Client.PostAsJsonAsync($"/sightings/{sightingId}/threads/{threadId}/messages", new { text }, cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+    }
+
     public void Dispose()
     {
         Client.Dispose();

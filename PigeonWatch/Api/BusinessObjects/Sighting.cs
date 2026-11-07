@@ -9,6 +9,7 @@ public sealed record Sighting(
     double Longitude,
     SightingStatus Status,
     SightingCriticality Criticality,
+    Guid ReporterId,
     string ReporterDisplayName,
     DateTime CreatedAt,
     bool HasPhoto = false);

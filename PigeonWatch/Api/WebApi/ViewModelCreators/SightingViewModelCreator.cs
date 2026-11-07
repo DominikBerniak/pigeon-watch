@@ -5,7 +5,7 @@ namespace PigeonWatch.WebApi.ViewModelCreators;
 
 public class SightingViewModelCreator : ISightingViewModelCreator
 {
-    public SightingModel Create(Sighting sighting)
+    public SightingModel Create(Sighting sighting, Guid currentUserId)
     {
         return new()
         {
@@ -19,23 +19,24 @@ public class SightingViewModelCreator : ISightingViewModelCreator
             Criticality = (int)sighting.Criticality,
             ReporterDisplayName = sighting.ReporterDisplayName,
             CreatedAt = sighting.CreatedAt,
-            HasPhoto = sighting.HasPhoto
+            HasPhoto = sighting.HasPhoto,
+            IsMine = sighting.ReporterId == currentUserId
         };
     }
 
-    public SightingListModel CreateList(IReadOnlyList<Sighting> sightings)
+    public SightingListModel CreateList(IReadOnlyList<Sighting> sightings, Guid currentUserId)
     {
         return new()
         {
-            Items = sightings.Select(Create).ToList()
+            Items = sightings.Select(sighting => Create(sighting, currentUserId)).ToList()
         };
     }
 
-    public SightingPageModel CreatePage(SightingPage page)
+    public SightingPageModel CreatePage(SightingPage page, Guid currentUserId)
     {
         return new()
         {
-            Items = page.Items.Select(Create).ToList(),
+            Items = page.Items.Select(sighting => Create(sighting, currentUserId)).ToList(),
             TotalCount = page.TotalCount
         };
     }

@@ -43,6 +43,13 @@ public abstract class FailureLoggingControllerBase(ILogger logger) : ControllerB
         return NotFound();
     }
 
+    protected NotFoundResult NotFoundForThread(Guid sightingId, Guid threadId)
+    {
+        logger.LogInformation("Thread {ThreadId} of sighting {SightingId} was not found", threadId, sightingId);
+
+        return NotFound();
+    }
+
     protected StatusCodeResult ForbiddenForNonAuthor()
     {
         logger.LogWarning("Request rejected because the current user is not the author on {Route}", GetRoute());

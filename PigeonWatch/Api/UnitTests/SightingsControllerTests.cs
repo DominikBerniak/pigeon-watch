@@ -47,6 +47,22 @@ public class SightingsControllerTests
         Assert.Equal(3, model.Criticality);
         Assert.Equal("Pidgey", model.ReporterDisplayName);
         Assert.Equal(created.CreatedAt, model.CreatedAt);
+        Assert.False(model.IsMine);
+    }
+
+    [Fact]
+    public async Task Create_marks_the_created_sighting_as_mine_for_its_reporter()
+    {
+        Guid userId = Guid.NewGuid();
+        sightingService
+            .CreateAsync(Arg.Any<NewSighting>(), Arg.Any<CancellationToken>())
+            .Returns(SightingCreateResult.Success(Sighting(userId)));
+        SightingsController controller = CreateController(Authenticated(userId));
+
+        ActionResult<SightingModel> result = await controller.Create(Request(), cancellationToken);
+
+        SightingModel model = Assert.IsType<SightingModel>(Assert.IsType<CreatedAtActionResult>(result.Result).Value);
+        Assert.True(model.IsMine);
     }
 
     [Fact]
@@ -142,6 +158,34 @@ public class SightingsControllerTests
     }
 
     [Fact]
+    public async Task Get_marks_the_sighting_as_mine_only_for_its_reporter()
+    {
+        Guid userId = Guid.NewGuid();
+        Sighting own = Sighting(userId);
+        Sighting foreign = Sighting();
+        sightingService.GetAsync(own.Id, Arg.Any<CancellationToken>()).Returns(own);
+        sightingService.GetAsync(foreign.Id, Arg.Any<CancellationToken>()).Returns(foreign);
+        SightingsController controller = CreateController(Authenticated(userId));
+
+        ActionResult<SightingModel> ownResult = await controller.Get(own.Id, cancellationToken);
+        ActionResult<SightingModel> foreignResult = await controller.Get(foreign.Id, cancellationToken);
+
+        Assert.True(Assert.IsType<SightingModel>(Assert.IsType<OkObjectResult>(ownResult.Result).Value).IsMine);
+        Assert.False(Assert.IsType<SightingModel>(Assert.IsType<OkObjectResult>(foreignResult.Result).Value).IsMine);
+    }
+
+    [Fact]
+    public async Task Get_returns_401_when_the_name_identifier_claim_is_missing()
+    {
+        SightingsController controller = CreateController(new ClaimsPrincipal(new ClaimsIdentity()));
+
+        ActionResult<SightingModel> result = await controller.Get(Guid.NewGuid(), cancellationToken);
+
+        Assert.IsType<UnauthorizedResult>(result.Result);
+        await sightingService.DidNotReceive().GetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Get_returns_404_for_an_unknown_id()
     {
         Guid unknownId = Guid.NewGuid();
@@ -174,6 +218,48 @@ public class SightingsControllerTests
         SightingListModel model = Assert.IsType<SightingListModel>(Assert.IsType<OkObjectResult>(result.Result).Value);
         Assert.Equal([stored.Id], model.Items.Select(item => item.Id));
         Assert.Equal("private, no-store", controller.Response.Headers.CacheControl.ToString());
+    }
+
+    [Fact]
+    public async Task Nearby_marks_only_the_callers_sightings_as_mine()
+    {
+        Guid userId = Guid.NewGuid();
+        Sighting own = Sighting(userId);
+        Sighting foreign = Sighting();
+        sightingService
+            .GetNearbyAsync(
+                Arg.Any<double>(),
+                Arg.Any<double>(),
+                Arg.Any<IReadOnlyCollection<SightingStatus>>(),
+                Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(SightingNearbyResult.Success([own, foreign]));
+        SightingsController controller = CreateController(Authenticated(userId));
+
+        ActionResult<SightingListModel> result = await controller.Nearby(
+            new NearbySightingsRequestModel { Latitude = 52.1, Longitude = 21.1 },
+            cancellationToken);
+
+        SightingListModel model = Assert.IsType<SightingListModel>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal([true, false], model.Items.Select(item => item.IsMine));
+    }
+
+    [Fact]
+    public async Task Nearby_returns_401_when_the_name_identifier_claim_is_missing()
+    {
+        SightingsController controller = CreateController(new ClaimsPrincipal(new ClaimsIdentity()));
+
+        ActionResult<SightingListModel> result = await controller.Nearby(
+            new NearbySightingsRequestModel { Latitude = 52.1, Longitude = 21.1 },
+            cancellationToken);
+
+        Assert.IsType<UnauthorizedResult>(result.Result);
+        await sightingService.DidNotReceive().GetNearbyAsync(
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Any<IReadOnlyCollection<SightingStatus>>(),
+            Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -252,6 +338,38 @@ public class SightingsControllerTests
     }
 
     [Fact]
+    public async Task List_marks_only_the_callers_sightings_as_mine()
+    {
+        Guid userId = Guid.NewGuid();
+        Sighting own = Sighting(userId);
+        Sighting foreign = Sighting();
+        sightingService
+            .GetListPageAsync(Arg.Any<SightingListQuery>(), Arg.Any<CancellationToken>())
+            .Returns(SightingListResult.Success(new SightingPage([foreign, own], 2)));
+        SightingsController controller = CreateController(Authenticated(userId));
+
+        ActionResult<SightingPageModel> result = await controller.List(
+            new SightingListRequestModel { Latitude = 52.1, Longitude = 21.1 },
+            cancellationToken);
+
+        SightingPageModel model = Assert.IsType<SightingPageModel>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal([false, true], model.Items.Select(item => item.IsMine));
+    }
+
+    [Fact]
+    public async Task List_returns_401_when_the_name_identifier_claim_is_missing()
+    {
+        SightingsController controller = CreateController(new ClaimsPrincipal(new ClaimsIdentity()));
+
+        ActionResult<SightingPageModel> result = await controller.List(
+            new SightingListRequestModel { Latitude = 52.1, Longitude = 21.1 },
+            cancellationToken);
+
+        Assert.IsType<UnauthorizedResult>(result.Result);
+        await sightingService.DidNotReceive().GetListPageAsync(Arg.Any<SightingListQuery>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task List_passes_the_mapped_query_to_the_service()
     {
         sightingService
@@ -325,6 +443,19 @@ public class SightingsControllerTests
     }
 
     [Fact]
+    public async Task Mine_marks_the_reporters_own_sightings_as_mine()
+    {
+        Guid userId = Guid.NewGuid();
+        sightingService.GetMineAsync(userId, Arg.Any<CancellationToken>()).Returns([Sighting(userId)]);
+        SightingsController controller = CreateController(Authenticated(userId));
+
+        ActionResult<SightingListModel> result = await controller.Mine(cancellationToken);
+
+        SightingListModel model = Assert.IsType<SightingListModel>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.True(Assert.Single(model.Items).IsMine);
+    }
+
+    [Fact]
     public async Task Mine_returns_401_when_the_name_identifier_claim_is_missing()
     {
         SightingsController controller = CreateController(new ClaimsPrincipal(new ClaimsIdentity()));
@@ -382,7 +513,7 @@ public class SightingsControllerTests
         };
     }
 
-    private static Sighting Sighting()
+    private static Sighting Sighting(Guid? reporterId = null)
     {
         return new(
             Guid.NewGuid(),
@@ -393,6 +524,7 @@ public class SightingsControllerTests
             21.0122,
             SightingStatus.Caught,
             SightingCriticality.Urgent,
+            reporterId ?? Guid.NewGuid(),
             "Pidgey",
             new DateTime(2026, 10, 11, 12, 0, 0, DateTimeKind.Utc));
     }

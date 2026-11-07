@@ -5,7 +5,7 @@ namespace PigeonWatch.WebApi.ViewModelCreators;
 
 public interface ISightingViewModelCreator
 {
-    SightingModel Create(Sighting sighting);
-    SightingListModel CreateList(IReadOnlyList<Sighting> sightings);
-    SightingPageModel CreatePage(SightingPage page);
+    SightingModel Create(Sighting sighting, Guid currentUserId);
+    SightingListModel CreateList(IReadOnlyList<Sighting> sightings, Guid currentUserId);
+    SightingPageModel CreatePage(SightingPage page, Guid currentUserId);
 }

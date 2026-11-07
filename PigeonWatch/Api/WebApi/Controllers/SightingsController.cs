@@ -62,7 +62,7 @@ public class SightingsController(
             return GetValidationProblem<SightingModel>(result.Errors.Select(error => (error.Code, error.Description)), result.RetryAfterSeconds);
         }
 
-        SightingModel model = sightingViewModelCreator.Create(result.Sighting);
+        SightingModel model = sightingViewModelCreator.Create(result.Sighting, userId);
 
         return CreatedAtAction(nameof(Get), new { id = model.Id }, model);
     }
@@ -72,12 +72,15 @@ public class SightingsController(
     {
         Response.Headers.CacheControl = noStoreCacheControl;
 
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+            return UnauthorizedForInvalidIdentity();
+
         Sighting? sighting = await sightingService.GetAsync(id, cancellationToken);
 
         if (sighting is null)
             return NotFoundForSighting(id);
 
-        return Ok(sightingViewModelCreator.Create(sighting));
+        return Ok(sightingViewModelCreator.Create(sighting, userId));
     }
 
     [HttpGet("{id:guid}/photo")]
@@ -113,6 +116,9 @@ public class SightingsController(
     {
         Response.Headers.CacheControl = noStoreCacheControl;
 
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+            return UnauthorizedForInvalidIdentity();
+
         NearbySightingFilters filters = nearbySightingsRequestMapper.MapFilters(request);
         SightingNearbyResult result = await sightingService.GetNearbyAsync(request.Latitude, request.Longitude, filters.Statuses, filters.Criticalities, cancellationToken);
 
@@ -124,13 +130,16 @@ public class SightingsController(
             return GetValidationProblem<SightingListModel>(result.Errors.Select(error => (error.Code, error.Description)));
         }
 
-        return Ok(sightingViewModelCreator.CreateList(result.Sightings));
+        return Ok(sightingViewModelCreator.CreateList(result.Sightings, userId));
     }
 
     [HttpPost("list")]
     public async Task<ActionResult<SightingPageModel>> List([FromBody] SightingListRequestModel request, CancellationToken cancellationToken)
     {
         Response.Headers.CacheControl = noStoreCacheControl;
+
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+            return UnauthorizedForInvalidIdentity();
 
         SightingListQuery query = sightingListRequestMapper.Map(request);
         SightingListResult result = await sightingService.GetListPageAsync(query, cancellationToken);
@@ -143,7 +152,7 @@ public class SightingsController(
             return GetValidationProblem<SightingPageModel>(result.Errors.Select(error => (error.Code, error.Description)));
         }
 
-        return Ok(sightingViewModelCreator.CreatePage(result.Page));
+        return Ok(sightingViewModelCreator.CreatePage(result.Page, userId));
     }
 
     [HttpGet("mine")]
@@ -156,6 +165,6 @@ public class SightingsController(
 
         IReadOnlyList<Sighting> sightings = await sightingService.GetMineAsync(userId, cancellationToken);
 
-        return Ok(sightingViewModelCreator.CreateList(sightings));
+        return Ok(sightingViewModelCreator.CreateList(sightings, userId));
     }
 }

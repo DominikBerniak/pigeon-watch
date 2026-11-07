@@ -4,4 +4,5 @@ public sealed record FixtureContext(
     IReadOnlyList<string> RegisteredEmails,
     IReadOnlyList<string> RegisteredDisplayNames,
     Guid SightingId,
-    Guid CommentId);
+    Guid CommentId,
+    Guid ThreadId);
