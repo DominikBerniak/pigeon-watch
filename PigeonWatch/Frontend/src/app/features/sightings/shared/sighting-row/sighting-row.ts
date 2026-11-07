@@ -16,7 +16,7 @@ import { Observable, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ErrorReportingService } from '../../../../core/error-reporting/error-reporting.service';
 import { TranslatePipe } from '../../../../core/resources/translate.pipe';
 import { CriticalityBadge } from '../../../../shared/ui';
-import { PhotoEncoder } from '../../report-sighting-page/photo-picker/photo-encoder';
+import { PhotoEncoder } from '../photo-encoder';
 import {
   Sighting,
   sightingCriticalityLabel,

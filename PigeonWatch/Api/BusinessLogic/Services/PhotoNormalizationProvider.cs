@@ -67,11 +67,9 @@ public class PhotoNormalizationProvider : IPhotoNormalizationProvider
         if ((long)encodedInfo.Width * encodedInfo.Height > SightingRules.PhotoMaxPixels)
             return Unreadable($"The photo must not exceed {SightingRules.PhotoMaxPixels} pixels.");
 
-        SKImageInfo decodeInfo = new(encodedInfo.Width, encodedInfo.Height, SKColorType.Rgba8888, SKAlphaType.Premul);
-        using SKBitmap source = new(decodeInfo);
-        SKCodecResult decodeResult = codec.GetPixels(decodeInfo, source.GetPixels());
+        using SKBitmap? source = Decode(codec);
 
-        if (decodeResult != SKCodecResult.Success)
+        if (source is null)
             return Unreadable("The photo could not be decoded.");
 
         SKEncodedOrigin origin = codec.EncodedOrigin;
@@ -99,6 +97,51 @@ public class PhotoNormalizationProvider : IPhotoNormalizationProvider
             throw new InvalidOperationException("SkiaSharp failed to encode the normalized photo as JPEG.");
 
         return PhotoNormalizationResult.Success(encoded.ToArray());
+    }
+
+    private static SKBitmap? Decode(SKCodec codec)
+    {
+        SKSizeI scaled = ScaledDecodeSize(codec);
+
+        if (scaled.Width != codec.Info.Width || scaled.Height != codec.Info.Height)
+        {
+            SKBitmap? reduced = DecodeAt(codec, scaled, out SKCodecResult reducedResult);
+
+            if (reduced is not null || reducedResult != SKCodecResult.InvalidScale)
+                return reduced;
+        }
+
+        return DecodeAt(codec, codec.Info.Size, out _);
+    }
+
+    private static SKSizeI ScaledDecodeSize(SKCodec codec)
+    {
+        if (Math.Max(codec.Info.Width, codec.Info.Height) <= SightingRules.PhotoMaxDimension)
+            return codec.Info.Size;
+
+        for (int eighths = 1; eighths < 8; eighths++)
+        {
+            SKSizeI scaled = codec.GetScaledDimensions(eighths / 8f);
+
+            if (Math.Max(scaled.Width, scaled.Height) >= SightingRules.PhotoMaxDimension)
+                return scaled;
+        }
+
+        return codec.Info.Size;
+    }
+
+    private static SKBitmap? DecodeAt(SKCodec codec, SKSizeI size, out SKCodecResult result)
+    {
+        SKImageInfo info = new(size.Width, size.Height, SKColorType.Rgba8888, SKAlphaType.Premul);
+        SKBitmap bitmap = new(info);
+        result = codec.GetPixels(info, bitmap.GetPixels());
+
+        if (result == SKCodecResult.Success)
+            return bitmap;
+
+        bitmap.Dispose();
+
+        return null;
     }
 
     private static bool SwapsAxes(SKEncodedOrigin origin)

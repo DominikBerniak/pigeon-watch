@@ -6,7 +6,7 @@ import { FormField, form } from '@angular/forms/signals';
 import { Observable, Subject, of, throwError } from 'rxjs';
 import { ErrorReportingService } from '../../../../core/error-reporting/error-reporting.service';
 import { FormSubmitState } from '../../../../shared/ui/form-field/form-submit-state';
-import { PhotoDecodeError, PhotoEncodeError, PhotoEncoder } from './photo-encoder';
+import { PhotoDecodeError, PhotoEncodeError, PhotoEncoder } from '../../shared/photo-encoder';
 import { PhotoPicker } from './photo-picker';
 
 interface ReportModel {
