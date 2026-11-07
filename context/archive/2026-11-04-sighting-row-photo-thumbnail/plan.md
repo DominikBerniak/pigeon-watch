@@ -270,26 +270,26 @@ Rows with a photo load and show the thumbnail when they scroll into view.
 
 #### Automated
 
-- [x] 1.1 Thumbnail provider tests written first and passing — 3579f15
-- [x] 1.2 Architecture tests pass — 3579f15
+- [x] 1.1 Thumbnail provider tests written first and passing — 6c1715f
+- [x] 1.2 Architecture tests pass — 6c1715f
 
 ### Phase 2: API create and thumbnail endpoint
 
 #### Automated
 
-- [x] 2.1 Solution builds with style enforcement — 06c9213
-- [x] 2.2 Architecture tests pass, including the binary-action rule — 06c9213
-- [x] 2.3 Unit tests pass — 06c9213
-- [x] 2.4 Integration tests pass, including the sweeps — 06c9213
+- [x] 2.1 Solution builds with style enforcement — 6c1715f
+- [x] 2.2 Architecture tests pass, including the binary-action rule — 6c1715f
+- [x] 2.3 Unit tests pass — 6c1715f
+- [x] 2.4 Integration tests pass, including the sweeps — 6c1715f
 
 ### Phase 3: SPA lazy row thumbnail
 
 #### Automated
 
-- [x] 3.1 Frontend specs pass — cd05f24
-- [x] 3.2 Build passes within the initial-bundle budget — cd05f24
+- [x] 3.1 Frontend specs pass — 6c1715f
+- [x] 3.2 Build passes within the initial-bundle budget — 6c1715f
 
 #### Manual
 
-- [x] 3.3 List and My sightings rows show thumbnails at phone width, with no layout shift while they load — cd05f24
-- [x] 3.4 Scrolling a long list requests thumbnails only for rows that come into view — cd05f24
+- [x] 3.3 List and My sightings rows show thumbnails at phone width, with no layout shift while they load — 6c1715f
+- [x] 3.4 Scrolling a long list requests thumbnails only for rows that come into view — 6c1715f
