@@ -35,6 +35,16 @@ describe('SubmitErrorStateMatcher', () => {
     expect(matcher.isSignalErrorState(profile.name)).toBe(false);
   });
 
+  it('hides the errors again after a reset', () => {
+    const { profile, matcher, submitState } = setup();
+
+    submitState.markSubmitted();
+    submitState.reset();
+
+    expect(submitState.submitted()).toBe(false);
+    expect(matcher.isSignalErrorState(profile.name)).toBe(false);
+  });
+
   it('reports no error without a field', () => {
     const { matcher, submitState } = setup();
 

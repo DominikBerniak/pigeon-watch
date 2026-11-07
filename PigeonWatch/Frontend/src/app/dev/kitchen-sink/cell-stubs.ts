@@ -13,6 +13,8 @@ import { GeolocationOutcome } from '../../core/geolocation/geolocation.service';
 import { UpdatedProfile } from '../../features/profile/profile-api';
 import {
   Sighting,
+  SightingComment,
+  SightingCommentPage,
   SightingCriticality,
   SightingFilters,
   SightingList,
@@ -41,6 +43,8 @@ export type DetailMode =
   | 'pending'
   | 'failureThenLoaded';
 export type PhotoMode = 'image' | 'pending' | 'failure';
+export type CommentsMode = 'empty' | 'items' | 'failure' | 'pending';
+export type AddCommentMode = 'success' | 'cooldown';
 
 export interface ProfileModes {
   readonly group: 'profile';
@@ -62,6 +66,8 @@ export interface SightingDetailModes {
   readonly detail: DetailMode;
   readonly leaflet: LeafletMode;
   readonly photo?: PhotoMode;
+  readonly comments?: CommentsMode;
+  readonly addComment?: AddCommentMode;
 }
 
 export interface SightingListModes {
@@ -214,6 +220,51 @@ export function sinkPhoto(): Blob {
   return new Blob([sinkPhotoSvg], { type: 'image/svg+xml' });
 }
 
+function sinkComment(index: number, overrides: Partial<SightingComment> = {}): SightingComment {
+  return {
+    id: `sink-comment-${index}`,
+    text: `Still by the bus stop, update ${index}.`,
+    authorDisplayName: 'Ola N',
+    createdAt: new Date(sinkLoadedAt - (index * 37 + 2) * minuteMilliseconds).toISOString(),
+    editedAt: null,
+    isDeleted: false,
+    isMine: false,
+    ...overrides,
+  };
+}
+
+export const sinkCommentPageSize = 20;
+export const sinkCommentTotal = 23;
+
+export const sinkComments: readonly SightingComment[] = Array.from(
+  { length: sinkCommentTotal },
+  (_, index) => {
+    switch (index) {
+      case 0:
+        return sinkComment(index, {
+          text: 'Caught it with a towel.\nTaking it to the vet now.',
+          authorDisplayName: sinkUser.displayName,
+          isMine: true,
+        });
+      case 1:
+        return sinkComment(index, {
+          text: 'The left wing looks worse than yesterday.',
+          editedAt: new Date(sinkLoadedAt - minuteMilliseconds).toISOString(),
+        });
+      case 2:
+        return sinkComment(index, {
+          text: null,
+          authorDisplayName: null,
+          isDeleted: true,
+        });
+      default:
+        return sinkComment(index);
+    }
+  },
+);
+
+export const sinkCommentCooldownSeconds = 42;
+
 const busyHoldMilliseconds = 30000;
 
 function badRequest(errors: Record<string, string[]>): HttpErrorResponse {
@@ -294,6 +345,26 @@ export class CellStubs {
     photo: (): Observable<Blob> => this.photoResult(),
     photoThumbnail: (): Observable<Blob> => this.thumbnailResult(),
     list: (request: SightingListRequest): Observable<SightingPage> => this.listResult(request),
+    comments: (_sightingId: string, page: number): Observable<SightingCommentPage> =>
+      this.commentsResult(page),
+    addComment: (_sightingId: string, text: string): Observable<SightingComment> =>
+      this.addCommentResult(text),
+    editComment: (_sightingId: string, commentId: string, text: string): Observable<SightingComment> =>
+      of({
+        ...(sinkComments.find((comment) => comment.id === commentId) ?? sinkComment(0)),
+        id: commentId,
+        text,
+        editedAt: new Date().toISOString(),
+      }),
+    deleteComment: (_sightingId: string, commentId: string): Observable<SightingComment> =>
+      of(
+        sinkComment(0, {
+          id: commentId,
+          text: null,
+          authorDisplayName: null,
+          isDeleted: true,
+        }),
+      ),
   };
   readonly geolocation = {
     currentPosition: (): Observable<GeolocationOutcome> => this.positionResult(),
@@ -447,6 +518,55 @@ export class CellStubs {
       default:
         return of(sinkPhoto());
     }
+  }
+
+  private commentsResult(page: number): Observable<SightingCommentPage> {
+    const modes = this.modes();
+
+    switch (modes.group === 'sightingDetail' ? (modes.comments ?? 'empty') : 'empty') {
+      case 'items': {
+        const start = (page - 1) * sinkCommentPageSize;
+
+        return of({
+          items: sinkComments.slice(start, start + sinkCommentPageSize),
+          totalCount: sinkComments.length,
+        });
+      }
+      case 'failure':
+        return throwError(() => new HttpErrorResponse({ status: 500 }));
+      case 'pending':
+        return NEVER;
+      default:
+        return of({ items: [], totalCount: 0 });
+    }
+  }
+
+  private addCommentResult(text: string): Observable<SightingComment> {
+    const modes = this.modes();
+
+    if (modes.group === 'sightingDetail' && modes.addComment === 'cooldown') {
+      return throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 400,
+            error: {
+              status: 400,
+              errors: { CooldownActive: ['Wait before posting another comment.'] },
+              retryAfterSeconds: sinkCommentCooldownSeconds,
+            },
+          }),
+      );
+    }
+
+    return of(
+      sinkComment(0, {
+        id: `sink-comment-new-${Date.now()}`,
+        text,
+        authorDisplayName: sinkUser.displayName,
+        createdAt: new Date().toISOString(),
+        isMine: true,
+      }),
+    );
   }
 
   private thumbnailResult(): Observable<Blob> {

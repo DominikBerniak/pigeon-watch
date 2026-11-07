@@ -15,4 +15,7 @@ public sealed record ClientConfiguration(
     int SightingNearbyRadiusKilometers,
     int SightingPhotoMaxBytes,
     int SightingPhotoMaxDimension,
-    IReadOnlyList<string> SightingPhotoAllowedContentTypes);
+    IReadOnlyList<string> SightingPhotoAllowedContentTypes,
+    int CommentTextMaxLength,
+    int CommentCooldownSeconds,
+    int CommentPageSize);

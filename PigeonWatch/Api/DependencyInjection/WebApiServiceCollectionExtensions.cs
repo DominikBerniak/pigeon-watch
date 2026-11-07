@@ -28,6 +28,7 @@ public static class WebApiServiceCollectionExtensions
         services.AddScoped<INearbySightingsRequestMapper, NearbySightingsRequestMapper>();
         services.AddScoped<ISightingListRequestMapper, SightingListRequestMapper>();
         services.AddScoped<ISightingViewModelCreator, SightingViewModelCreator>();
+        services.AddScoped<ISightingCommentViewModelCreator, SightingCommentViewModelCreator>();
 
         services.PostConfigure<MvcOptions>(options =>
         {

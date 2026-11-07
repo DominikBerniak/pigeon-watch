@@ -22,6 +22,67 @@ namespace PigeonWatch.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("PigeonWatch.Data.Entities.SightingCommentEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ID");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("AUTHOR_ID");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CREATE_DATE");
+
+                    b.Property<string>("CreateUser")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("CREATE_USER");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DELETED_AT");
+
+                    b.Property<DateTime?>("EditedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("EDITED_AT");
+
+                    b.Property<Guid>("SightingId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("SIGHTING_ID");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("TEXT");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("UPDATE_DATE");
+
+                    b.Property<string>("UpdateUser")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("UPDATE_USER");
+
+                    b.HasKey("Id")
+                        .HasName("PK_SIGHTING_COMMENT");
+
+                    b.HasIndex("AuthorId", "CreateDate")
+                        .HasDatabaseName("IX_SIGHTING_COMMENT_AUTHOR_ID_CREATE_DATE");
+
+                    b.HasIndex("SightingId", "CreateDate")
+                        .HasDatabaseName("IX_SIGHTING_COMMENT_SIGHTING_ID_CREATE_DATE");
+
+                    b.ToTable("SIGHTING_COMMENT", (string)null);
+                });
+
             modelBuilder.Entity("PigeonWatch.Data.Entities.SightingEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -210,6 +271,27 @@ namespace PigeonWatch.Data.Migrations
                         .HasDatabaseName("IX_USER_ACCOUNT_NORMALIZED_USER_NAME");
 
                     b.ToTable("USER_ACCOUNT", (string)null);
+                });
+
+            modelBuilder.Entity("PigeonWatch.Data.Entities.SightingCommentEntity", b =>
+                {
+                    b.HasOne("PigeonWatch.Data.Entities.UserAccountEntity", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_SIGHTING_COMMENT_USER_ACCOUNT_AUTHOR_ID");
+
+                    b.HasOne("PigeonWatch.Data.Entities.SightingEntity", "Sighting")
+                        .WithMany()
+                        .HasForeignKey("SightingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_SIGHTING_COMMENT_SIGHTING_SIGHTING_ID");
+
+                    b.Navigation("Author");
+
+                    b.Navigation("Sighting");
                 });
 
             modelBuilder.Entity("PigeonWatch.Data.Entities.SightingEntity", b =>

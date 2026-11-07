@@ -9,7 +9,12 @@ import { NEVER, Observable, Subject, of, throwError } from 'rxjs';
 import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { MapView } from '../../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../../shared/map/testing/map-view-stub';
-import { Sighting, SightingCriticality, SightingStatus } from '../sighting.types';
+import {
+  Sighting,
+  SightingCommentPage,
+  SightingCriticality,
+  SightingStatus,
+} from '../sighting.types';
 import { PhotoEncoder } from '../shared/photo-encoder';
 import { SightingsApi } from '../sightings-api';
 import { SightingDetailPage } from './sighting-detail-page';
@@ -52,7 +57,14 @@ describe('SightingDetailPage', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([{ path: 'sightings/:id', component: SightingDetailPage }]),
-        { provide: SightingsApi, useValue: { get, photo } },
+        {
+          provide: SightingsApi,
+          useValue: {
+            get,
+            photo,
+            comments: (): Observable<SightingCommentPage> => of({ items: [], totalCount: 0 }),
+          },
+        },
         { provide: PhotoEncoder, useValue: { createPreviewUrl, revokePreviewUrl } },
         { provide: ErrorReportingService, useValue: { report } },
       ],
@@ -91,8 +103,28 @@ describe('SightingDetailPage', () => {
     return match;
   }
 
+  function pageAlert(root: HTMLElement): Element | null {
+    return (
+      [...root.querySelectorAll('app-alert')].find(
+        (alert) => !alert.closest('app-sighting-comments'),
+      ) ?? null
+    );
+  }
+
+  function pageLinks(root: HTMLElement): HTMLAnchorElement[] {
+    return [...root.querySelectorAll('a')].filter((link) => !link.closest('app-sighting-comments'));
+  }
+
+  function sightingReports(): unknown[][] {
+    return report.mock.calls.filter(([, context]) => !String(context).startsWith('sighting.comments.'));
+  }
+
   function rows(root: HTMLElement): (string | undefined)[][] {
-    return [...root.querySelectorAll('dl > div')].map((row) => [
+    return [
+      ...root.querySelectorAll(
+        '.sighting-detail__summary > dl > div, .sighting-detail__details > dl > div',
+      ),
+    ].map((row) => [
       row.querySelector('dt')?.textContent?.trim(),
       row.querySelector('dd')?.textContent?.trim(),
     ]);
@@ -208,7 +240,7 @@ describe('SightingDetailPage', () => {
     await settle();
 
     expect(get).toHaveBeenCalledTimes(2);
-    expect(root.querySelector('app-alert')).toBeNull();
+    expect(pageAlert(root)).toBeNull();
     expect(root.querySelector('app-page-card h1')?.textContent?.trim()).toBe('Limpy');
   });
 
@@ -218,7 +250,7 @@ describe('SightingDetailPage', () => {
 
     expect(back?.textContent?.trim()).toBe('Back to map');
     expect(back?.getAttribute('href')).toBe('/');
-    expect(root.querySelectorAll('a').length).toBe(1);
+    expect(pageLinks(root)).toHaveLength(1);
     expect(backLink().state).toBeUndefined();
   });
 
@@ -257,7 +289,7 @@ describe('SightingDetailPage', () => {
     expect(back?.textContent?.trim()).toBe('Back to list');
     expect(back?.getAttribute('href')).toBe('/sightings/list');
     expect(link.state).toEqual(returnToList);
-    expect(root.querySelectorAll('a').length).toBe(1);
+    expect(pageLinks(root)).toHaveLength(1);
   });
 
   it('keeps the map link when the list state is not a valid hand-over', async () => {
@@ -494,7 +526,7 @@ describe('SightingDetailPage', () => {
     expect(image?.getAttribute('src')).toBe('blob:photo-1');
     expect(image?.getAttribute('alt')).toBe('Photo of Limpy');
     expect(root.querySelector('.sighting-detail__photo + dl.sighting-detail__facts')).not.toBeNull();
-    expect(report).not.toHaveBeenCalled();
+    expect(sightingReports()).toEqual([]);
   });
 
   it('opens the full photo in a dialog from the photo button and closes it again', async () => {
@@ -555,12 +587,12 @@ describe('SightingDetailPage', () => {
 
     const root = await open();
 
-    expect(root.querySelector('.sighting-detail__details app-alert')?.textContent?.trim()).toBe(
+    expect(root.querySelector('.sighting-detail__details > app-alert')?.textContent?.trim()).toBe(
       "We couldn't load the photo right now.",
     );
     expect(root.querySelector('.sighting-detail__photo')).toBeNull();
     expect(rows(root)).toHaveLength(7);
-    expect(report).toHaveBeenCalledExactlyOnceWith('api-failure', 'sighting.detail.photo', error);
+    expect(sightingReports()).toEqual([['api-failure', 'sighting.detail.photo', error]]);
   });
 
   it.each([400, 401, 429])(
@@ -571,10 +603,10 @@ describe('SightingDetailPage', () => {
 
       const root = await open();
 
-      expect(root.querySelector('.sighting-detail__details app-alert')?.textContent?.trim()).toBe(
+      expect(root.querySelector('.sighting-detail__details > app-alert')?.textContent?.trim()).toBe(
         "We couldn't load the photo right now.",
       );
-      expect(report).not.toHaveBeenCalled();
+      expect(sightingReports()).toEqual([]);
     },
   );
 
@@ -586,7 +618,7 @@ describe('SightingDetailPage', () => {
 
     await open();
 
-    expect(report).toHaveBeenCalledExactlyOnceWith('api-failure', 'sighting.detail.photo', error);
+    expect(sightingReports()).toEqual([['api-failure', 'sighting.detail.photo', error]]);
   });
 
   it('revokes the photo URL when the route moves to another sighting', async () => {

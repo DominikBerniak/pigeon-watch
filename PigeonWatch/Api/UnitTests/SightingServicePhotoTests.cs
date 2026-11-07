@@ -435,7 +435,7 @@ public class SightingServicePhotoTests
             photoNormalizationProvider,
             photoThumbnailProvider,
             sightingPhotoStore,
-            timeProvider,
+            new SubmissionCooldownProvider(timeProvider),
             logger);
     }
 

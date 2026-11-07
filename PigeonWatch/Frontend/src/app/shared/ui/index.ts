@@ -14,6 +14,7 @@ export type { FieldErrorMessages } from './field-errors/field-errors';
 export { FormActions } from './form-actions/form-actions';
 export { formFieldDefaults, provideFormFieldDefaults } from './form-field/form-field-defaults';
 export { FormSubmitState, SubmitErrorStateMatcher } from './form-field/form-submit-state';
+export { FormSubmitScope } from './form-field/form-submit-scope';
 export { LoadingIndicator } from './loading-indicator/loading-indicator';
 export type { LoadingIndicatorLayout } from './loading-indicator/loading-indicator';
 export { PageCard } from './page-card/page-card';

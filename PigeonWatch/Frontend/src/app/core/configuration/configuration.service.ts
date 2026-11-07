@@ -28,10 +28,17 @@ export interface SightingRules {
   photoAllowedContentTypes: readonly string[];
 }
 
+export interface CommentRules {
+  textMaxLength: number;
+  cooldownSeconds: number;
+  pageSize: number;
+}
+
 export interface ClientConfiguration {
   passwordRules: PasswordRules;
   displayNameRules: DisplayNameRules;
   sightingRules: SightingRules;
+  commentRules: CommentRules;
 }
 
 export interface CurrentUser {

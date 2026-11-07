@@ -6,6 +6,8 @@ import { GeoPoint } from '../../core/geolocation/geo-point';
 import {
   NewSighting,
   Sighting,
+  SightingComment,
+  SightingCommentPage,
   SightingFilters,
   SightingList,
   SightingListRequest,
@@ -58,9 +60,35 @@ export class SightingsApi {
   mine(): Observable<SightingList> {
     return this.http.get<SightingList>(`${environment.apiUrl}/sightings/mine`);
   }
+
+  comments(sightingId: string, page: number): Observable<SightingCommentPage> {
+    return this.http.get<SightingCommentPage>(commentsUrl(sightingId), {
+      params: new HttpParams().set('page', page),
+    });
+  }
+
+  addComment(sightingId: string, text: string): Observable<SightingComment> {
+    return this.http.post<SightingComment>(commentsUrl(sightingId), { text });
+  }
+
+  editComment(sightingId: string, commentId: string, text: string): Observable<SightingComment> {
+    return this.http.put<SightingComment>(commentUrl(sightingId, commentId), { text });
+  }
+
+  deleteComment(sightingId: string, commentId: string): Observable<SightingComment> {
+    return this.http.delete<SightingComment>(commentUrl(sightingId, commentId));
+  }
 }
 
 export const sightingPhotoFileName = 'photo.jpg';
+
+function commentsUrl(sightingId: string): string {
+  return `${environment.apiUrl}/sightings/${encodeURIComponent(sightingId)}/comments`;
+}
+
+function commentUrl(sightingId: string, commentId: string): string {
+  return `${commentsUrl(sightingId)}/${encodeURIComponent(commentId)}`;
+}
 
 function sightingForm(sighting: NewSighting): FormData {
   const form = new FormData();

@@ -5,6 +5,8 @@ import { environment } from '../../../environments/environment';
 import {
   NewSighting,
   Sighting,
+  SightingComment,
+  SightingCommentPage,
   SightingCriticality,
   SightingListRequest,
   SightingPage,
@@ -221,5 +223,59 @@ describe('SightingsApi', () => {
 
     expect(request.request.method).toBe('GET');
     expect(items).toEqual([sighting]);
+  });
+
+  const comment: SightingComment = {
+    id: 'c/1',
+    text: 'Still there',
+    authorDisplayName: 'Jan K',
+    createdAt: '2026-11-07T12:00:00Z',
+    editedAt: null,
+    isDeleted: false,
+    isMine: true,
+  };
+
+  it('asks for a page of comments with encoded ids', () => {
+    let page: SightingCommentPage | undefined;
+
+    api.comments('a/b', 2).subscribe((value) => (page = value));
+    const request = httpMock.expectOne(
+      (candidate) => candidate.url === `${sightingsUrl}/a%2Fb/comments`,
+    );
+    request.flush({ items: [comment], totalCount: 21 });
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('page')).toBe('2');
+    expect(page).toEqual({ items: [comment], totalCount: 21 });
+  });
+
+  it('posts a new comment as JSON', () => {
+    api.addComment('a/b', 'Still there').subscribe();
+    const request = httpMock.expectOne(`${sightingsUrl}/a%2Fb/comments`);
+    request.flush(comment);
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ text: 'Still there' });
+  });
+
+  it('puts the edited text to the comment', () => {
+    api.editComment('a/b', 'c/1', 'Gone now').subscribe();
+    const request = httpMock.expectOne(`${sightingsUrl}/a%2Fb/comments/c%2F1`);
+    request.flush(comment);
+
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ text: 'Gone now' });
+  });
+
+  it('deletes the comment and returns the placeholder', () => {
+    let deleted: SightingComment | undefined;
+    const placeholder = { ...comment, text: null, authorDisplayName: null, isDeleted: true };
+
+    api.deleteComment('a/b', 'c/1').subscribe((value) => (deleted = value));
+    const request = httpMock.expectOne(`${sightingsUrl}/a%2Fb/comments/c%2F1`);
+    request.flush(placeholder);
+
+    expect(request.request.method).toBe('DELETE');
+    expect(deleted).toEqual(placeholder);
   });
 });

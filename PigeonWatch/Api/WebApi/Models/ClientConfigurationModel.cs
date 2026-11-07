@@ -7,4 +7,6 @@ public sealed class ClientConfigurationModel
     public required DisplayNameRulesModel DisplayNameRules { get; init; }
 
     public required SightingRulesModel SightingRules { get; init; }
+
+    public required CommentRulesModel CommentRules { get; init; }
 }

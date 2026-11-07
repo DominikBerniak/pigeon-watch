@@ -635,7 +635,7 @@ public class SightingServiceTests
             photoNormalizationProvider,
             photoThumbnailProvider,
             sightingPhotoStore,
-            timeProvider,
+            new SubmissionCooldownProvider(timeProvider),
             NullLogger<SightingService>.Instance);
     }
 

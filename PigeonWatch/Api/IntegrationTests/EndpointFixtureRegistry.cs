@@ -44,6 +44,10 @@ public sealed class EndpointFixtureRegistry
         new(["GET sightings/nearby"], BuildNearby),
         new(["POST sightings/list"], BuildList),
         new(["GET sightings/mine"], BuildMine),
+        new(["GET sightings/{sightingId:guid}/comments"], BuildListComments),
+        new(["POST sightings/{sightingId:guid}/comments"], BuildCreateComment),
+        new(["PUT sightings/{sightingId:guid}/comments/{commentId:guid}"], BuildUpdateComment),
+        new(["DELETE sightings/{sightingId:guid}/comments/{commentId:guid}"], BuildDeleteComment),
         new(["POST auth/login"], BuildLogin),
         new(["POST auth/refresh"], BuildRefresh),
         new([.. NotFoundStubKeys, .. ManageStubKeys], BuildStubs)
@@ -265,6 +269,67 @@ public sealed class EndpointFixtureRegistry
     private static IReadOnlyList<FixtureRequest> BuildMine(FixtureContext context)
     {
         return [Make("GET sightings/mine", "own sightings", new HttpRequestMessage(HttpMethod.Get, "/sightings/mine"))];
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildListComments(FixtureContext context)
+    {
+        const string key = "GET sightings/{sightingId:guid}/comments";
+
+        return
+        [
+            Make(key, "first page", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}/comments")),
+            Make(key, "page 2", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}/comments?page=2")),
+            Make(key, "page 0", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}/comments?page=0")),
+            Make(key, "non numeric page", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}/comments?page=abc")),
+            Make(key, "unknown sighting", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{Guid.NewGuid()}/comments"))
+        ];
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildCreateComment(FixtureContext context)
+    {
+        const string key = "POST sightings/{sightingId:guid}/comments";
+        string uri = $"/sightings/{context.SightingId}/comments";
+        List<FixtureRequest> requests =
+        [
+            Make(key, "valid comment", JsonOf(HttpMethod.Post, uri, new { text = "Sweep comment" })),
+            Make(key, "second valid comment", JsonOf(HttpMethod.Post, uri, new { text = "Another sweep comment" })),
+            Make(key, "whitespace only text", JsonOf(HttpMethod.Post, uri, new { text = "   " })),
+            Make(key, "text over the limit", JsonOf(HttpMethod.Post, uri, new { text = new string('x', 501) })),
+            Make(key, "unknown sighting", JsonOf(HttpMethod.Post, $"/sightings/{Guid.NewGuid()}/comments", new { text = "Sweep comment" }))
+        ];
+
+        AddMalformed(requests, key, HttpMethod.Post, uri);
+
+        return requests;
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildUpdateComment(FixtureContext context)
+    {
+        const string key = "PUT sightings/{sightingId:guid}/comments/{commentId:guid}";
+        string uri = $"/sightings/{context.SightingId}/comments/{context.CommentId}";
+        List<FixtureRequest> requests =
+        [
+            Make(key, "seeded comment", JsonOf(HttpMethod.Put, uri, new { text = "Edited sweep comment" })),
+            Make(key, "whitespace only text", JsonOf(HttpMethod.Put, uri, new { text = "   " })),
+            Make(key, "unknown comment", JsonOf(HttpMethod.Put, $"/sightings/{context.SightingId}/comments/{Guid.NewGuid()}", new { text = "Edited sweep comment" })),
+            Make(key, "seeded comment under an unknown sighting", JsonOf(HttpMethod.Put, $"/sightings/{Guid.NewGuid()}/comments/{context.CommentId}", new { text = "Edited sweep comment" }))
+        ];
+
+        AddMalformed(requests, key, HttpMethod.Put, uri);
+
+        return requests;
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildDeleteComment(FixtureContext context)
+    {
+        const string key = "DELETE sightings/{sightingId:guid}/comments/{commentId:guid}";
+
+        return
+        [
+            Make(key, "unknown comment", new HttpRequestMessage(HttpMethod.Delete, $"/sightings/{context.SightingId}/comments/{Guid.NewGuid()}")),
+            Make(key, "seeded comment", new HttpRequestMessage(HttpMethod.Delete, $"/sightings/{context.SightingId}/comments/{context.CommentId}")),
+            Make(key, "seeded comment again", new HttpRequestMessage(HttpMethod.Delete, $"/sightings/{context.SightingId}/comments/{context.CommentId}"))
+        ];
     }
 
     private static IReadOnlyList<FixtureRequest> BuildLogin(FixtureContext context)

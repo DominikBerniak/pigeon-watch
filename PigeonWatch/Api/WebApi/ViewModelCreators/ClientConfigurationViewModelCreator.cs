@@ -32,6 +32,12 @@ public class ClientConfigurationViewModelCreator : IClientConfigurationViewModel
                 PhotoMaxBytes = configuration.SightingPhotoMaxBytes,
                 PhotoMaxDimension = configuration.SightingPhotoMaxDimension,
                 PhotoAllowedContentTypes = configuration.SightingPhotoAllowedContentTypes.ToList()
+            },
+            CommentRules = new CommentRulesModel
+            {
+                TextMaxLength = configuration.CommentTextMaxLength,
+                CooldownSeconds = configuration.CommentCooldownSeconds,
+                PageSize = configuration.CommentPageSize
             }
         };
     }
