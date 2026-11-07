@@ -315,6 +315,24 @@ describe('SightingComments', () => {
     expect(root.querySelector('form.sighting-comments__add mat-error')).toBeNull();
   });
 
+  it('reloads the thread after a successful post when the first page had failed', async () => {
+    comments.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 500 })));
+    const root = await open();
+
+    expect(root.querySelector('app-error-retry')).not.toBeNull();
+
+    comments.mockReturnValue(
+      of({ items: [commentOf('new', { text: 'Seen again by the bench' }), mine, other], totalCount: 3 }),
+    );
+    await post(root, 'Seen again by the bench');
+
+    expect(comments).toHaveBeenCalledTimes(2);
+    expect(root.querySelector('app-error-retry')).toBeNull();
+    expect(items(root).map((element) => element.dataset['commentId'])).toEqual(['new', 'mine', 'other']);
+    expect(root.querySelector('h2')?.textContent?.trim()).toBe('Comments (3)');
+    expect(addField(root).value).toBe('');
+  });
+
   it('shows the cooldown seconds and keeps the text', async () => {
     addComment.mockReturnValue(
       throwError(

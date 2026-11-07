@@ -24,6 +24,7 @@ describe('SightingComments failure reporting', () => {
   let comments: ReturnType<typeof vi.fn<() => Observable<SightingCommentPage>>>;
   let addComment: ReturnType<typeof vi.fn<() => Observable<SightingComment>>>;
   let editComment: ReturnType<typeof vi.fn<() => Observable<SightingComment>>>;
+  let deleteComment: ReturnType<typeof vi.fn<() => Observable<SightingComment>>>;
   let fixture: ComponentFixture<SightingComments>;
 
   beforeEach(() => {
@@ -31,14 +32,19 @@ describe('SightingComments failure reporting', () => {
     comments = vi.fn(() => of({ items: [mine], totalCount: 1 }));
     addComment = vi.fn();
     editComment = vi.fn();
+    deleteComment = vi.fn();
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: SightingsApi, useValue: { comments, addComment, editComment } },
+        { provide: SightingsApi, useValue: { comments, addComment, editComment, deleteComment } },
         { provide: ErrorReportingService, useValue: { report } },
       ],
     });
+  });
+
+  afterEach(() => {
+    document.querySelectorAll('app-delete-comment-dialog').forEach((dialog) => dialog.remove());
   });
 
   async function open(): Promise<HTMLElement> {
@@ -81,6 +87,53 @@ describe('SightingComments failure reporting', () => {
     root.querySelector('li form')!.dispatchEvent(new Event('submit', { cancelable: true }));
     await settle();
   }
+
+  async function confirmDelete(root: HTMLElement): Promise<void> {
+    [...root.querySelectorAll<HTMLButtonElement>('li button')]
+      .find((candidate) => candidate.textContent?.trim() === 'Delete')
+      ?.click();
+    await settle();
+
+    [...document.querySelectorAll<HTMLButtonElement>('app-delete-comment-dialog button')]
+      .find((candidate) => candidate.textContent?.trim() === 'Delete comment')
+      ?.click();
+    await settle();
+    await vi.waitFor(() =>
+      expect(document.querySelector('app-delete-comment-dialog')).toBeNull(),
+    );
+    await settle();
+  }
+
+  it('reports a 500 on delete with its context and shows the reference', async () => {
+    const error = new HttpErrorResponse({ status: 500, error: { traceId } });
+
+    deleteComment.mockReturnValue(throwError(() => error));
+
+    const root = await open();
+
+    await confirmDelete(root);
+
+    expect(deleteComment).toHaveBeenCalledExactlyOnceWith('sighting-1', 'mine');
+    expect(root.querySelector('li app-alert')?.textContent).toContain(`Reference: ${traceId}`);
+    expect(report).toHaveBeenCalledExactlyOnceWith('api-failure', 'sighting.comments.delete', error);
+  });
+
+  it('does not report a 404 on delete', async () => {
+    deleteComment.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 404, error: { traceId } })),
+    );
+
+    const root = await open();
+
+    await confirmDelete(root);
+
+    expect(deleteComment).toHaveBeenCalledExactlyOnceWith('sighting-1', 'mine');
+    expect(root.querySelector('li app-alert')?.textContent).toContain(
+      'This comment no longer exists.',
+    );
+    expect(root.textContent).not.toContain('Reference');
+    expect(report).not.toHaveBeenCalled();
+  });
 
   it('reports a 500 on load with its context and shows the reference', async () => {
     const error = new HttpErrorResponse({ status: 500, error: { traceId } });

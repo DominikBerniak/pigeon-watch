@@ -50,11 +50,11 @@ public class SightingCommentRepository(PigeonWatchDbContext db, ISightingComment
         return new SightingCommentPage(entities.Select(sightingCommentMapper.ToComment).ToList(), totalCount);
     }
 
-    public async Task<SightingComment?> UpdateTextAsync(Guid commentId, string text, DateTime editedAt, CancellationToken cancellationToken = default)
+    public async Task<SightingComment?> UpdateTextAsync(Guid sightingId, Guid commentId, Guid authorId, string text, DateTime editedAt, CancellationToken cancellationToken = default)
     {
         SightingCommentEntity? entity = await db.SightingComments
             .Include(e => e.Author)
-            .FirstOrDefaultAsync(e => e.Id == commentId, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == commentId && e.SightingId == sightingId && e.AuthorId == authorId && e.DeletedAt == null, cancellationToken);
 
         if (entity is null)
             return null;
@@ -66,11 +66,11 @@ public class SightingCommentRepository(PigeonWatchDbContext db, ISightingComment
         return sightingCommentMapper.ToComment(entity);
     }
 
-    public async Task<SightingComment?> SoftDeleteAsync(Guid commentId, DateTime deletedAt, CancellationToken cancellationToken = default)
+    public async Task<SightingComment?> SoftDeleteAsync(Guid sightingId, Guid commentId, Guid authorId, DateTime deletedAt, CancellationToken cancellationToken = default)
     {
         SightingCommentEntity? entity = await db.SightingComments
             .Include(e => e.Author)
-            .FirstOrDefaultAsync(e => e.Id == commentId, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == commentId && e.SightingId == sightingId && e.AuthorId == authorId && e.DeletedAt == null, cancellationToken);
 
         if (entity is null)
             return null;

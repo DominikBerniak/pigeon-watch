@@ -150,13 +150,13 @@ public class SightingCommentServiceTests
     {
         SightingComment existing = StoreComment(authorId);
         repository
-            .UpdateTextAsync(existing.Id, Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .UpdateTextAsync(sightingId, existing.Id, authorId, Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(existing with { Text = "Edited", EditedAt = now.UtcDateTime });
 
         SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, " Edited ", cancellationToken);
 
         Assert.True(result.Succeeded);
-        await repository.Received(1).UpdateTextAsync(existing.Id, "Edited", now.UtcDateTime, Arg.Any<CancellationToken>());
+        await repository.Received(1).UpdateTextAsync(sightingId, existing.Id, authorId, "Edited", now.UtcDateTime, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -218,21 +218,46 @@ public class SightingCommentServiceTests
     }
 
     [Fact]
+    public async Task Update_with_unchanged_text_returns_the_comment_without_a_write_or_a_cooldown_check()
+    {
+        SightingComment existing = StoreComment(authorId);
+        LatestSubmission(now.UtcDateTime.AddSeconds(-10));
+
+        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, "  Original ", cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(existing, result.Comment);
+        await repository.DidNotReceive().GetLatestSubmissionDateByAuthorAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await AssertNoWriteAsync();
+    }
+
+    [Fact]
+    public async Task Update_with_unchanged_text_by_another_user_is_still_rejected()
+    {
+        SightingComment existing = StoreComment(Guid.NewGuid());
+
+        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, "Original", cancellationToken);
+
+        Assert.Equal([SightingCommentErrorCodes.NotCommentAuthor], result.Errors.Select(error => error.Code));
+        await AssertNoWriteAsync();
+    }
+
+    [Fact]
     public async Task Delete_sets_the_deletion_time_without_a_cooldown_check()
     {
         SightingComment existing = StoreComment(authorId);
         LatestSubmission(now.UtcDateTime);
         repository
-            .SoftDeleteAsync(existing.Id, Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .SoftDeleteAsync(sightingId, existing.Id, authorId, Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(existing with { DeletedAt = now.UtcDateTime });
 
         SightingCommentResult result = await CreateService().DeleteAsync(sightingId, existing.Id, authorId, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.Equal(now.UtcDateTime, result.Comment!.DeletedAt);
-        await repository.Received(1).SoftDeleteAsync(existing.Id, now.UtcDateTime, Arg.Any<CancellationToken>());
+        await repository.Received(1).SoftDeleteAsync(sightingId, existing.Id, authorId, now.UtcDateTime, Arg.Any<CancellationToken>());
         await repository.DidNotReceive().GetLatestSubmissionDateByAuthorAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
-        await repository.DidNotReceive().UpdateTextAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>());
+        await repository.DidNotReceive().UpdateTextAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -285,7 +310,7 @@ public class SightingCommentServiceTests
     private async Task AssertNoWriteAsync()
     {
         await repository.DidNotReceive().CreateAsync(Arg.Any<NewSightingComment>(), Arg.Any<CancellationToken>());
-        await repository.DidNotReceive().UpdateTextAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>());
-        await repository.DidNotReceive().SoftDeleteAsync(Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>());
+        await repository.DidNotReceive().UpdateTextAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>());
+        await repository.DidNotReceive().SoftDeleteAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>());
     }
 }

@@ -64,12 +64,15 @@ public class SightingCommentService(
         if (existing.AuthorId != userId)
             return SightingCommentResult.Failure([NotCommentAuthor()]);
 
+        if (existing.Text == trimmed)
+            return SightingCommentResult.Success(existing);
+
         SightingCommentResult? cooldown = await CheckCooldownAsync(userId, cancellationToken);
 
         if (cooldown is not null)
             return cooldown;
 
-        SightingComment? updated = await sightingCommentRepository.UpdateTextAsync(commentId, trimmed, timeProvider.GetUtcNow().UtcDateTime, cancellationToken);
+        SightingComment? updated = await sightingCommentRepository.UpdateTextAsync(sightingId, commentId, userId, trimmed, timeProvider.GetUtcNow().UtcDateTime, cancellationToken);
 
         if (updated is null)
             return SightingCommentResult.Failure([CommentNotFound()]);
@@ -87,7 +90,7 @@ public class SightingCommentService(
         if (existing.AuthorId != userId)
             return SightingCommentResult.Failure([NotCommentAuthor()]);
 
-        SightingComment? deleted = await sightingCommentRepository.SoftDeleteAsync(commentId, timeProvider.GetUtcNow().UtcDateTime, cancellationToken);
+        SightingComment? deleted = await sightingCommentRepository.SoftDeleteAsync(sightingId, commentId, userId, timeProvider.GetUtcNow().UtcDateTime, cancellationToken);
 
         if (deleted is null)
             return SightingCommentResult.Failure([CommentNotFound()]);

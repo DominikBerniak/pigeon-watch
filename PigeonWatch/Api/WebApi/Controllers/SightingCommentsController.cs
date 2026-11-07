@@ -21,8 +21,7 @@ public class SightingCommentsController(
 
     private static readonly HashSet<string> loggedErrorCodes =
     [
-        SightingCommentErrorCodes.InvalidPage,
-        SightingCommentErrorCodes.CommentTextTooLong
+        SightingCommentErrorCodes.InvalidPage
     ];
 
     [HttpGet]

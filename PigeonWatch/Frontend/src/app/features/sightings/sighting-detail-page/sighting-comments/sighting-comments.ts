@@ -261,9 +261,14 @@ export class SightingComments {
       )
       .subscribe({
         next: (comment) => {
-          this.items.update((items) => [comment, ...items.filter((item) => item.id !== comment.id)]);
-          this.totalCount.update((count) => count + 1);
-          this.now.set(new Date());
+          if (this.state().kind === 'loaded') {
+            this.items.update((items) => [comment, ...items.filter((item) => item.id !== comment.id)]);
+            this.totalCount.update((count) => count + 1);
+            this.now.set(new Date());
+          } else {
+            this.reloads.next();
+          }
+
           this.addModel.set({ text: '' });
           this.addForm().reset();
           this.submitState.reset();

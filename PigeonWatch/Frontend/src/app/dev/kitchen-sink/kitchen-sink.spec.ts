@@ -458,7 +458,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
   it('shows the loaded sighting with its heading and seven rows', async () => {
     await eventually(() => {
       expect(headingOf('detail-loaded')).toBe('Limpy');
-      expect(cell('detail-loaded').querySelectorAll('dl > div')).toHaveLength(7);
+      expect(factRowsOf('detail-loaded')).toHaveLength(7);
       expect(cell('detail-loaded').querySelector('app-criticality-badge')).not.toBeNull();
       expect(cell('detail-loaded').querySelector('app-map-view')).toBeNull();
       expect(buttonOf('detail-loaded', 'sighting.detail.showMap')).not.toBeNull();
@@ -472,7 +472,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
   it('shows a long sighting name in the heading', async () => {
     await eventually(() => {
       expect(headingOf('detail-long-name')).toBe(sinkLongNameSighting.name);
-      expect(cell('detail-long-name').querySelectorAll('dl > div')).toHaveLength(7);
+      expect(factRowsOf('detail-long-name')).toHaveLength(7);
     });
   });
 
@@ -531,8 +531,8 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
 
     await eventually(() => {
       expect(headingOf(id)).toBe('Limpy');
-      expect(cell(id).querySelector('app-alert')).toBeNull();
-      expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
+      expect(pageAlertOf(id)).toBeNull();
+      expect(factRowsOf(id)).toHaveLength(7);
       expect(document.activeElement).toBe(cell(id).querySelector('app-page-card h1'));
     });
   });
@@ -564,7 +564,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
         label('sighting.detail.photoAlt', sinkPhotoSighting.name),
       );
       expect(cell(id).querySelector('.sighting-detail__photo + dl.sighting-detail__facts')).not.toBeNull();
-      expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
+      expect(factRowsOf(id)).toHaveLength(7);
     });
   });
 
@@ -578,7 +578,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
 
       expect(spinner?.getAttribute('aria-label')).toBe(label('sighting.detail.photoLoading'));
       expect(cell(id).querySelector('figure')).toBeNull();
-      expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
+      expect(factRowsOf(id)).toHaveLength(7);
     });
   });
 
@@ -586,13 +586,27 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
     const id = 'detail-photo-error';
 
     await eventually(() => {
-      expect(textOf(cell(id).querySelector('.sighting-detail__details app-alert'))).toBe(
+      expect(textOf(cell(id).querySelector('.sighting-detail__details > app-alert'))).toBe(
         label('sighting.detail.photoError'),
       );
       expect(cell(id).querySelector('figure')).toBeNull();
-      expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
+      expect(factRowsOf(id)).toHaveLength(7);
     });
   });
+
+  function factRowsOf(id: string): NodeListOf<Element> {
+    return cell(id).querySelectorAll(
+      '.sighting-detail__summary > dl > div, .sighting-detail__details > dl > div',
+    );
+  }
+
+  function pageAlertOf(id: string): Element | null {
+    return (
+      [...cell(id).querySelectorAll('app-alert')].find(
+        (alert) => !alert.closest('app-sighting-comments'),
+      ) ?? null
+    );
+  }
 
   function commentsOf(id: string): HTMLElement {
     const section = cell(id).querySelector<HTMLElement>('app-sighting-comments');
@@ -610,7 +624,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
     const id = 'detail-comments-loading';
 
     await eventually(() => {
-      expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
+      expect(factRowsOf(id)).toHaveLength(7);
       expect(
         commentsOf(id)
           .querySelector('app-loading-indicator mat-progress-spinner')
@@ -682,7 +696,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
       expect(textOf(items[2])).toBe(label('sighting.comments.deleted'));
       expect(items[2].querySelector('button')).toBeNull();
       expect(showOlder).toBeDefined();
-      expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
+      expect(factRowsOf(id)).toHaveLength(7);
     });
   });
 
@@ -698,7 +712,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
           (button) => textOf(button) === label('sighting.comments.retry'),
         ),
       ).toBe(true);
-      expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
+      expect(factRowsOf(id)).toHaveLength(7);
     });
   });
 

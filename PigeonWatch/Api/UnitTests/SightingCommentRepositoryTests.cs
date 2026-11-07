@@ -85,7 +85,7 @@ public sealed class SightingCommentRepositoryTests : IDisposable
         Guid sightingId = await CreateSightingAsync(authorId);
         SightingComment created = (await CreateCommentAsync(sightingId, authorId, "Still there"))!;
         DateTime deletedAt = timeProvider.UtcNow.UtcDateTime.AddMinutes(1);
-        await SoftDeleteAsync(created.Id, deletedAt);
+        await SoftDeleteAsync(created, deletedAt);
 
         await using PigeonWatchDbContext db = CreateContext();
         SightingComment? loaded = await CreateRepository(db).GetAsync(sightingId, created.Id, cancellationToken);
@@ -122,7 +122,7 @@ public sealed class SightingCommentRepositoryTests : IDisposable
         SightingComment kept = (await CreateCommentAsync(sightingId, authorId, "Kept"))!;
         timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(1);
         SightingComment deleted = (await CreateCommentAsync(sightingId, authorId, "Deleted"))!;
-        await SoftDeleteAsync(deleted.Id, timeProvider.UtcNow.UtcDateTime.AddMinutes(1));
+        await SoftDeleteAsync(deleted, timeProvider.UtcNow.UtcDateTime.AddMinutes(1));
 
         await using PigeonWatchDbContext db = CreateContext();
         SightingCommentPage page = await CreateRepository(db).ListPageAsync(sightingId, 1, SightingCommentRules.PageSize, cancellationToken);
@@ -184,7 +184,7 @@ public sealed class SightingCommentRepositoryTests : IDisposable
         timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(2);
         DateTime editedAt = timeProvider.UtcNow.UtcDateTime;
 
-        SightingComment? updated = await UpdateTextAsync(created.Id, "Gone now", editedAt);
+        SightingComment? updated = await UpdateTextAsync(created, "Gone now", editedAt);
 
         Assert.NotNull(updated);
         Assert.Equal("Gone now", updated.Text);
@@ -207,7 +207,7 @@ public sealed class SightingCommentRepositoryTests : IDisposable
         SightingComment created = (await CreateCommentAsync(sightingId, authorId, "Still there"))!;
         DateTime deletedAt = timeProvider.UtcNow.UtcDateTime.AddMinutes(3);
 
-        SightingComment? deleted = await SoftDeleteAsync(created.Id, deletedAt);
+        SightingComment? deleted = await SoftDeleteAsync(created, deletedAt);
 
         Assert.NotNull(deleted);
         Assert.Equal(deletedAt, deleted.DeletedAt);
@@ -221,8 +221,50 @@ public sealed class SightingCommentRepositoryTests : IDisposable
         await using PigeonWatchDbContext db = CreateContext();
         ISightingCommentRepository repository = CreateRepository(db);
 
-        Assert.Null(await repository.UpdateTextAsync(Guid.NewGuid(), "Text", timeProvider.UtcNow.UtcDateTime, cancellationToken));
-        Assert.Null(await repository.SoftDeleteAsync(Guid.NewGuid(), timeProvider.UtcNow.UtcDateTime, cancellationToken));
+        Assert.Null(await repository.UpdateTextAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Text", timeProvider.UtcNow.UtcDateTime, cancellationToken));
+        Assert.Null(await repository.SoftDeleteAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), timeProvider.UtcNow.UtcDateTime, cancellationToken));
+    }
+
+    [Fact]
+    public async Task Update_text_and_soft_delete_write_nothing_for_another_sighting_or_another_author()
+    {
+        Guid authorId = await CreateUserAsync("author@example.com", "Pidgey");
+        Guid otherUserId = await CreateUserAsync("other@example.com", "Rocky");
+        Guid sightingId = await CreateSightingAsync(authorId);
+        Guid otherSightingId = await CreateSightingAsync(authorId);
+        SightingComment created = (await CreateCommentAsync(sightingId, authorId, "Still there"))!;
+        DateTime now = timeProvider.UtcNow.UtcDateTime.AddMinutes(1);
+
+        await using (PigeonWatchDbContext db = CreateContext())
+        {
+            ISightingCommentRepository repository = CreateRepository(db);
+
+            Assert.Null(await repository.UpdateTextAsync(otherSightingId, created.Id, authorId, "Moved", now, cancellationToken));
+            Assert.Null(await repository.UpdateTextAsync(sightingId, created.Id, otherUserId, "Hijacked", now, cancellationToken));
+            Assert.Null(await repository.SoftDeleteAsync(otherSightingId, created.Id, authorId, now, cancellationToken));
+            Assert.Null(await repository.SoftDeleteAsync(sightingId, created.Id, otherUserId, now, cancellationToken));
+        }
+
+        await using PigeonWatchDbContext readDb = CreateContext();
+
+        Assert.Equal(created, await CreateRepository(readDb).GetAsync(sightingId, created.Id, cancellationToken));
+    }
+
+    [Fact]
+    public async Task Update_text_and_soft_delete_write_nothing_on_an_already_deleted_comment()
+    {
+        Guid authorId = await CreateUserAsync("author@example.com", "Pidgey");
+        Guid sightingId = await CreateSightingAsync(authorId);
+        SightingComment created = (await CreateCommentAsync(sightingId, authorId, "Still there"))!;
+        SightingComment deleted = (await SoftDeleteAsync(created, timeProvider.UtcNow.UtcDateTime.AddMinutes(1)))!;
+        DateTime later = timeProvider.UtcNow.UtcDateTime.AddMinutes(2);
+
+        Assert.Null(await UpdateTextAsync(created, "Edited after delete", later));
+        Assert.Null(await SoftDeleteAsync(created, later));
+
+        await using PigeonWatchDbContext db = CreateContext();
+
+        Assert.Equal(deleted, await CreateRepository(db).GetAsync(sightingId, created.Id, cancellationToken));
     }
 
     [Fact]
@@ -264,7 +306,7 @@ public sealed class SightingCommentRepositoryTests : IDisposable
         timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(5);
         await CreateCommentAsync(sightingId, authorId, "Second");
         DateTime editedAt = timeProvider.UtcNow.UtcDateTime.AddMinutes(5);
-        await UpdateTextAsync(older.Id, "First, edited", editedAt);
+        await UpdateTextAsync(older, "First, edited", editedAt);
 
         await using PigeonWatchDbContext db = CreateContext();
         DateTime? latest = await CreateRepository(db).GetLatestSubmissionDateByAuthorAsync(authorId, cancellationToken);
@@ -279,7 +321,7 @@ public sealed class SightingCommentRepositoryTests : IDisposable
         Guid authorId = await CreateUserAsync("author@example.com", "Pidgey");
         Guid sightingId = await CreateSightingAsync(authorId);
         SightingComment older = (await CreateCommentAsync(sightingId, authorId, "First"))!;
-        await UpdateTextAsync(older.Id, "First, edited", timeProvider.UtcNow.UtcDateTime.AddMinutes(1));
+        await UpdateTextAsync(older, "First, edited", timeProvider.UtcNow.UtcDateTime.AddMinutes(1));
         timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(5);
         await CreateCommentAsync(sightingId, authorId, "Second");
         DateTime expected = timeProvider.UtcNow.UtcDateTime;
@@ -295,7 +337,7 @@ public sealed class SightingCommentRepositoryTests : IDisposable
         Guid authorId = await CreateUserAsync("author@example.com", "Pidgey");
         Guid sightingId = await CreateSightingAsync(authorId);
         SightingComment created = (await CreateCommentAsync(sightingId, authorId, "Gone soon"))!;
-        await SoftDeleteAsync(created.Id, timeProvider.UtcNow.UtcDateTime.AddMinutes(10));
+        await SoftDeleteAsync(created, timeProvider.UtcNow.UtcDateTime.AddMinutes(10));
 
         await using PigeonWatchDbContext db = CreateContext();
         DateTime? latest = await CreateRepository(db).GetLatestSubmissionDateByAuthorAsync(authorId, cancellationToken);
@@ -310,8 +352,8 @@ public sealed class SightingCommentRepositoryTests : IDisposable
         Guid sightingId = await CreateSightingAsync(authorId);
         SightingComment created = (await CreateCommentAsync(sightingId, authorId, "Edited, then deleted"))!;
         DateTime editedAt = timeProvider.UtcNow.UtcDateTime.AddMinutes(2);
-        await UpdateTextAsync(created.Id, "Edited", editedAt);
-        await SoftDeleteAsync(created.Id, timeProvider.UtcNow.UtcDateTime.AddMinutes(3));
+        await UpdateTextAsync(created, "Edited", editedAt);
+        await SoftDeleteAsync(created, timeProvider.UtcNow.UtcDateTime.AddMinutes(3));
 
         await using PigeonWatchDbContext db = CreateContext();
 
@@ -343,18 +385,18 @@ public sealed class SightingCommentRepositoryTests : IDisposable
         return await CreateRepository(db).CreateAsync(new NewSightingComment(sightingId, authorId, text), cancellationToken);
     }
 
-    private async Task<SightingComment?> UpdateTextAsync(Guid commentId, string text, DateTime editedAt)
+    private async Task<SightingComment?> UpdateTextAsync(SightingComment comment, string text, DateTime editedAt)
     {
         await using PigeonWatchDbContext db = CreateContext();
 
-        return await CreateRepository(db).UpdateTextAsync(commentId, text, editedAt, cancellationToken);
+        return await CreateRepository(db).UpdateTextAsync(comment.SightingId, comment.Id, comment.AuthorId, text, editedAt, cancellationToken);
     }
 
-    private async Task<SightingComment?> SoftDeleteAsync(Guid commentId, DateTime deletedAt)
+    private async Task<SightingComment?> SoftDeleteAsync(SightingComment comment, DateTime deletedAt)
     {
         await using PigeonWatchDbContext db = CreateContext();
 
-        return await CreateRepository(db).SoftDeleteAsync(commentId, deletedAt, cancellationToken);
+        return await CreateRepository(db).SoftDeleteAsync(comment.SightingId, comment.Id, comment.AuthorId, deletedAt, cancellationToken);
     }
 
     private async Task<Guid> CreateSightingAsync(Guid reporterId)
