@@ -522,9 +522,9 @@ The additive migration `AddSightingComment` creates a new table with no data bac
 
 #### Automated
 
-- [x] 4.1 E2E suite passes, including sighting-comments.spec.ts
-- [x] 4.2 SPA unit tests still pass
+- [x] 4.1 E2E suite passes, including sighting-comments.spec.ts — 3f43e64
+- [x] 4.2 SPA unit tests still pass — 3f43e64
 
 #### Manual
 
-- [x] 4.3 Docs read correctly: endpoint list, cooldown description and fixed visual-notes path match the code
+- [x] 4.3 Docs read correctly: endpoint list, cooldown description and fixed visual-notes path match the code — 3f43e64
