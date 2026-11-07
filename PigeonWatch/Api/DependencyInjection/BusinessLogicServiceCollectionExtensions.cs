@@ -15,6 +15,7 @@ public static class BusinessLogicServiceCollectionExtensions
         services.AddScoped<IPhotoThumbnailProvider, PhotoThumbnailProvider>();
         services.AddScoped<ISightingService, SightingService>();
         services.AddScoped<ISightingStatusTransitionProvider, SightingStatusTransitionProvider>();
+        services.AddScoped<ISubmissionCooldownProvider, SubmissionCooldownProvider>();
         services.AddScoped<IUiResourceService, UiResourceService>();
 
         return services;

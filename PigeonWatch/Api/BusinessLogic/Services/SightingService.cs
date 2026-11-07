@@ -13,7 +13,7 @@ public class SightingService(
     IPhotoNormalizationProvider photoNormalizationProvider,
     IPhotoThumbnailProvider photoThumbnailProvider,
     ISightingPhotoStore sightingPhotoStore,
-    TimeProvider timeProvider,
+    ISubmissionCooldownProvider submissionCooldownProvider,
     ILogger<SightingService> logger) : ISightingService
 {
     private static readonly HashSet<int> listPageSizes =
@@ -38,20 +38,13 @@ public class SightingService(
             return SightingCreateResult.Failure(errors);
 
         DateTime? latestCreateDate = await sightingRepository.GetLatestCreateDateByReporterAsync(trimmed.ReporterId, cancellationToken);
+        int? retryAfterSeconds = submissionCooldownProvider.GetRetryAfterSeconds(latestCreateDate);
 
-        if (latestCreateDate is not null)
+        if (retryAfterSeconds is not null)
         {
-            TimeSpan cooldown = TimeSpan.FromSeconds(SightingRules.CooldownSeconds);
-            TimeSpan elapsed = timeProvider.GetUtcNow().UtcDateTime - latestCreateDate.Value;
-
-            if (elapsed < cooldown)
-            {
-                int retryAfterSeconds = (int)Math.Min(Math.Ceiling((cooldown - elapsed).TotalSeconds), SightingRules.CooldownSeconds);
-
-                return SightingCreateResult.CooldownFailure(
-                    new SightingError(SightingErrorCodes.CooldownActive, $"Wait {retryAfterSeconds} seconds before reporting another sighting."),
-                    retryAfterSeconds);
-            }
+            return SightingCreateResult.CooldownFailure(
+                new SightingError(SightingErrorCodes.CooldownActive, $"Wait {retryAfterSeconds} seconds before reporting another sighting."),
+                retryAfterSeconds.Value);
         }
 
         if (trimmed.Photo is null)

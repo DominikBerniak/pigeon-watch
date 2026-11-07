@@ -59,6 +59,8 @@ public static class DataServiceCollectionExtensions
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<ISightingMapper, SightingMapper>();
         services.AddScoped<ISightingRepository, SightingRepository>();
+        services.AddScoped<ISightingCommentMapper, SightingCommentMapper>();
+        services.AddScoped<ISightingCommentRepository, SightingCommentRepository>();
 
         return services;
     }

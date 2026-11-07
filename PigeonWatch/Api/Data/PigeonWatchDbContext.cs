@@ -10,6 +10,8 @@ public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options
 
     internal DbSet<SightingEntity> Sightings => Set<SightingEntity>();
 
+    internal DbSet<SightingCommentEntity> SightingComments => Set<SightingCommentEntity>();
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder.Conventions.Add(_ => new UpperSnakeCaseNamingConvention());
@@ -37,6 +39,22 @@ public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.Latitude, e.Longitude });
             entity.HasIndex(e => new { e.ReporterId, e.CreateDate });
+        });
+
+        modelBuilder.Entity<SightingCommentEntity>(entity =>
+        {
+            entity.ToTable("SightingComment");
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Sighting)
+                .WithMany()
+                .HasForeignKey(e => e.SightingId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Author)
+                .WithMany()
+                .HasForeignKey(e => e.AuthorId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => new { e.SightingId, e.CreateDate });
+            entity.HasIndex(e => new { e.AuthorId, e.CreateDate });
         });
     }
 }
