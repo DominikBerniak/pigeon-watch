@@ -622,9 +622,9 @@ After the merge deploys, check on Azure the parts that only exist there: the man
 
 #### Manual
 
-- [x] 6.1 Deploy workflow green and probe returns photo limits
-- [x] 6.2 Deployed report with photo shows it with no CSP violation
-- [x] 6.3 Blob present in sighting-photos and has no EXIF
-- [x] 6.4 allowBlobPublicAccess is false
-- [x] 6.5 Anonymous photo request returns 401
-- [x] 6.6 No SkiaSharp native-library errors in App Service logs
+- [x] 6.1 Deploy workflow green and probe returns photo limits — 818a8ab
+- [x] 6.2 Deployed report with photo shows it with no CSP violation — 818a8ab
+- [x] 6.3 Blob present in sighting-photos and has no EXIF — 818a8ab
+- [x] 6.4 allowBlobPublicAccess is false — 818a8ab
+- [x] 6.5 Anonymous photo request returns 401 — 818a8ab
+- [x] 6.6 No SkiaSharp native-library errors in App Service logs — 818a8ab

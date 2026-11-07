@@ -1,9 +1,9 @@
 ---
 change_id: attach-sighting-photo
 title: Attach sighting photo
-status: implementing
+status: implemented
 created: 2026-11-03
-updated: 2026-11-03
+updated: 2026-11-07
 archived_at: null
 ---
 
