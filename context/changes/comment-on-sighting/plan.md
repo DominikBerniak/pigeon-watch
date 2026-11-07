@@ -508,23 +508,23 @@ The additive migration `AddSightingComment` creates a new table with no data bac
 
 #### Automated
 
-- [x] 3.1 SPA unit tests pass, including the new comment specs, kitchen-sink markers, label coverage and style-token coverage
-- [x] 3.2 Production build passes within the bundle budget
-- [x] 3.3 API resource tests still pass with the new keys
+- [x] 3.1 SPA unit tests pass, including the new comment specs, kitchen-sink markers, label coverage and style-token coverage — 4bd9142
+- [x] 3.2 Production build passes within the bundle budget — 4bd9142
+- [x] 3.3 API resource tests still pass with the new keys — 4bd9142
 
 #### Manual
 
-- [x] 3.4 On the detail page: post, edit cooldown, delete placeholder, and Show older appends inside the box without moving the page
-- [x] 3.5 Keyboard: the list region scrolls, actions are reachable by Tab, and the dialog returns focus
-- [x] 3.6 Kitchen sink: the comment cells render at form and wide widths with no layout jump
+- [x] 3.4 On the detail page: post, edit cooldown, delete placeholder, and Show older appends inside the box without moving the page — 4bd9142
+- [x] 3.5 Keyboard: the list region scrolls, actions are reachable by Tab, and the dialog returns focus — 4bd9142
+- [x] 3.6 Kitchen sink: the comment cells render at form and wide widths with no layout jump — 4bd9142
 
 ### Phase 4: E2E and documentation
 
 #### Automated
 
-- [ ] 4.1 E2E suite passes, including sighting-comments.spec.ts
-- [ ] 4.2 SPA unit tests still pass
+- [x] 4.1 E2E suite passes, including sighting-comments.spec.ts
+- [x] 4.2 SPA unit tests still pass
 
 #### Manual
 
-- [ ] 4.3 Docs read correctly: endpoint list, cooldown description and fixed visual-notes path match the code
+- [x] 4.3 Docs read correctly: endpoint list, cooldown description and fixed visual-notes path match the code
