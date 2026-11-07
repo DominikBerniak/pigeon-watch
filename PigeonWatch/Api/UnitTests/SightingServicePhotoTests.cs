@@ -167,6 +167,28 @@ public class SightingServicePhotoTests
     }
 
     [Fact]
+    public async Task Create_cancelled_during_the_thumbnail_save_still_deletes_both_blobs_with_an_uncancelled_token()
+    {
+        using CancellationTokenSource request = new();
+        sightingPhotoStore
+            .SaveAsync(Arg.Is<string>(name => name.EndsWith("-thumb.jpg", StringComparison.Ordinal)), Arg.Any<Stream>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                request.Cancel();
+
+                return Task.FromCanceled(request.Token);
+            });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => CreateService().CreateAsync(NewSighting(Photo()), request.Token));
+
+        await AssertNoInsertAsync();
+        string blobName = savedBlobNames[0];
+        await sightingPhotoStore.Received(1).DeleteAsync(blobName, Arg.Is<CancellationToken>(token => !token.IsCancellationRequested));
+        await sightingPhotoStore.Received(1).DeleteAsync(ThumbnailNameOf(blobName), Arg.Is<CancellationToken>(token => !token.IsCancellationRequested));
+    }
+
+    [Fact]
     public async Task Create_deletes_both_blobs_and_rethrows_the_original_exception_when_the_insert_throws()
     {
         InvalidOperationException insertFailure = new("Insert failed.");
@@ -346,6 +368,43 @@ public class SightingServicePhotoTests
         Assert.Same(saveFailure, call.Exception);
         Assert.Equal(ThumbnailNameOf(blobName), call.State["BlobName"]);
         Assert.Equal(sightingId, call.State["SightingId"]);
+    }
+
+    [Fact]
+    public async Task Open_thumbnail_rethrows_a_storage_outage_while_reading_the_stored_thumbnail()
+    {
+        Guid sightingId = Guid.NewGuid();
+        string blobName = $"{Guid.NewGuid():D}.jpg";
+        PhotoStorageUnavailableException outage = new("Read failed.", new IOException("Connection reset."));
+        sightingRepository.GetPhotoBlobNameAsync(sightingId, Arg.Any<CancellationToken>()).Returns(blobName);
+        sightingPhotoStore.OpenReadAsync(ThumbnailNameOf(blobName), Arg.Any<CancellationToken>()).ThrowsAsync(outage);
+
+        PhotoStorageUnavailableException thrown = await Assert.ThrowsAsync<PhotoStorageUnavailableException>(
+            () => CreateService().OpenPhotoThumbnailAsync(sightingId, cancellationToken));
+
+        Assert.Same(outage, thrown);
+        photoThumbnailProvider.DidNotReceive().CreateThumbnail(Arg.Any<byte[]>());
+        await sightingPhotoStore.DidNotReceive().SaveAsync(Arg.Any<string>(), Arg.Any<Stream>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Open_thumbnail_lets_a_save_fault_that_is_not_a_storage_outage_fail_the_request()
+    {
+        Guid sightingId = Guid.NewGuid();
+        string blobName = $"{Guid.NewGuid():D}.jpg";
+        ArgumentException saveFault = new("Blob name rejected.", "blobName");
+        sightingRepository.GetPhotoBlobNameAsync(sightingId, Arg.Any<CancellationToken>()).Returns(blobName);
+        sightingPhotoStore.OpenReadAsync(ThumbnailNameOf(blobName), Arg.Any<CancellationToken>()).Returns((Stream?)null);
+        sightingPhotoStore.OpenReadAsync(blobName, Arg.Any<CancellationToken>()).Returns(new MemoryStream(normalizedJpeg));
+        sightingPhotoStore
+            .SaveAsync(Arg.Any<string>(), Arg.Any<Stream>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(saveFault);
+
+        ArgumentException thrown = await Assert.ThrowsAsync<ArgumentException>(
+            () => CreateService().OpenPhotoThumbnailAsync(sightingId, cancellationToken));
+
+        Assert.Same(saveFault, thrown);
+        Assert.Empty(LogCalls());
     }
 
     [Fact]

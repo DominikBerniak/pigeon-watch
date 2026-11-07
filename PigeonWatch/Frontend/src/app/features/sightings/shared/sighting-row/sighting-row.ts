@@ -24,6 +24,7 @@ import {
   sightingStatusLabel,
 } from '../../sighting.types';
 import { SightingsApi } from '../../sightings-api';
+import { isReportablePhotoFailure } from '../../sighting-errors';
 import { sightingAge } from '../sighting-age';
 
 type ThumbnailState =
@@ -109,7 +110,9 @@ export class SightingRow {
       switchMap((blob) => this.objectUrlOf(blob)),
       map((url): ThumbnailState => ({ kind: 'loaded', url })),
       catchError((error: unknown) => {
-        this.reporting.report('api-failure', 'sighting.row.photo', error);
+        if (isReportablePhotoFailure(error)) {
+          this.reporting.report('api-failure', 'sighting.row.photo', error);
+        }
 
         return of<ThumbnailState>({ kind: 'error' });
       }),

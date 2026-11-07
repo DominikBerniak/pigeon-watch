@@ -1,5 +1,4 @@
 import { DatePipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -36,7 +35,6 @@ import { PhotoEncoder } from '../shared/photo-encoder';
 import { pickerMapZoom } from '../../../shared/map/map-config';
 import { MapMarker } from '../../../shared/map/map-marker';
 import { MapView } from '../../../shared/map/map-view/map-view';
-import { isExpectedClientStatus } from '../../../shared/http/problem-details';
 import {
   Alert,
   CriticalityBadge,
@@ -47,7 +45,11 @@ import {
   LoadingIndicator,
   PageCard,
 } from '../../../shared/ui';
-import { isReportableSightingFailure, sightingFailure } from '../sighting-errors';
+import {
+  isReportablePhotoFailure,
+  isReportableSightingFailure,
+  sightingFailure,
+} from '../sighting-errors';
 import {
   Sighting,
   SightingFilters,
@@ -265,7 +267,7 @@ export class SightingDetailPage {
       switchMap((blob) => this.objectUrlOf(blob)),
       map((url): PhotoState => ({ kind: 'loaded', url })),
       catchError((error: unknown) => {
-        if (isMissingPhotoBlob(error) || !isExpectedClientStatus(error)) {
+        if (isReportablePhotoFailure(error)) {
           this.reporting.report('api-failure', 'sighting.detail.photo', error);
         }
 
@@ -309,8 +311,4 @@ export class SightingDetailPage {
 
 function mapReturnOf(filters: SightingFilters | null): NearbyMapReturn | undefined {
   return filters ? { mapFilters: filters } : undefined;
-}
-
-function isMissingPhotoBlob(error: unknown): boolean {
-  return error instanceof HttpErrorResponse && error.status === 404;
 }

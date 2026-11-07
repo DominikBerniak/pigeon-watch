@@ -222,6 +222,27 @@ describe('SightingRow', () => {
     expect(createPreviewUrl).not.toHaveBeenCalled();
   });
 
+  it.each([400, 401, 429])(
+    'keeps the camera glyph without reporting when the thumbnail fails with the expected status %i',
+    async (status) => {
+      photoThumbnail.mockReturnValue(throwError(() => new HttpErrorResponse({ status })));
+
+      const row = await render(withPhoto);
+
+      expect(row.querySelector('.sighting-row__thumb svg')).not.toBeNull();
+      expect(report).not.toHaveBeenCalled();
+    },
+  );
+
+  it('reports a missing thumbnail because the sighting says it has a photo', async () => {
+    const failure = new HttpErrorResponse({ status: 404 });
+    photoThumbnail.mockReturnValue(throwError(() => failure));
+
+    await render(withPhoto);
+
+    expect(report).toHaveBeenCalledWith('api-failure', 'sighting.row.photo', failure);
+  });
+
   it('revokes the thumbnail URL when the row is destroyed', async () => {
     await render(withPhoto);
 
