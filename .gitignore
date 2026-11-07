@@ -17,3 +17,5 @@ PigeonWatch/Api/WebApi.Host/LocalPhotos/
 context/deployment/*.local.md
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+# Angular CLI cache (created when hooks run ng from the repo root)
+/.angular/

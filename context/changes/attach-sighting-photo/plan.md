@@ -609,22 +609,22 @@ After the merge deploys, check on Azure the parts that only exist there: the man
 
 #### Automated
 
-- [x] 5.1 Frontend specs pass (detail photo, row icon, kitchen sink, tokens)
-- [x] 5.2 Build passes within the initial-bundle budget
-- [x] 5.3 Playwright photo spec passes
+- [x] 5.1 Frontend specs pass (detail photo, row icon, kitchen sink, tokens) — 53d7e07
+- [x] 5.2 Build passes within the initial-bundle budget — 53d7e07
+- [x] 5.3 Playwright photo spec passes — 53d7e07
 
 #### Manual
 
-- [x] 5.4 Kitchen-sink photo cells look right at both widths and in dark mode
-- [x] 5.5 Portrait and landscape photos render without layout shift
+- [x] 5.4 Kitchen-sink photo cells look right at both widths and in dark mode — 53d7e07
+- [x] 5.5 Portrait and landscape photos render without layout shift — 53d7e07
 
 ### Phase 6: Live verification after deploy
 
 #### Manual
 
-- [ ] 6.1 Deploy workflow green and probe returns photo limits
-- [ ] 6.2 Deployed report with photo shows it with no CSP violation
-- [ ] 6.3 Blob present in sighting-photos and has no EXIF
-- [ ] 6.4 allowBlobPublicAccess is false
-- [ ] 6.5 Anonymous photo request returns 401
-- [ ] 6.6 No SkiaSharp native-library errors in App Service logs
+- [x] 6.1 Deploy workflow green and probe returns photo limits
+- [x] 6.2 Deployed report with photo shows it with no CSP violation
+- [x] 6.3 Blob present in sighting-photos and has no EXIF
+- [x] 6.4 allowBlobPublicAccess is false
+- [x] 6.5 Anonymous photo request returns 401
+- [x] 6.6 No SkiaSharp native-library errors in App Service logs
