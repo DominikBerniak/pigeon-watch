@@ -13,6 +13,7 @@ public static class BusinessLogicServiceCollectionExtensions
         services.AddScoped<IGeneralConfigurationService, GeneralConfigurationService>();
         services.AddScoped<IPhotoNormalizationProvider, PhotoNormalizationProvider>();
         services.AddScoped<IPhotoThumbnailProvider, PhotoThumbnailProvider>();
+        services.AddScoped<ISightingCommentService, SightingCommentService>();
         services.AddScoped<ISightingService, SightingService>();
         services.AddScoped<ISightingStatusTransitionProvider, SightingStatusTransitionProvider>();
         services.AddScoped<ISubmissionCooldownProvider, SubmissionCooldownProvider>();

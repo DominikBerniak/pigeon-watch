@@ -480,29 +480,29 @@ The additive migration `AddSightingComment` creates a new table with no data bac
 
 #### Automated
 
-- [x] 1.1 API builds with style rules
-- [x] 1.2 Architecture tests pass
-- [x] 1.3 Unit tests pass, including the new provider and repository tests and the unchanged sighting cooldown tests
-- [x] 1.4 Migration matches the model
-- [x] 1.5 Integration tests still pass
+- [x] 1.1 API builds with style rules — f101e37
+- [x] 1.2 Architecture tests pass — f101e37
+- [x] 1.3 Unit tests pass, including the new provider and repository tests and the unchanged sighting cooldown tests — f101e37
+- [x] 1.4 Migration matches the model — f101e37
+- [x] 1.5 Integration tests still pass — f101e37
 
 #### Manual
 
-- [x] 1.6 Generated migration creates SIGHTING_COMMENT with the two FKs, both indexes, nullable EDITED_AT/DELETED_AT and UPPER_SNAKE_CASE names
+- [x] 1.6 Generated migration creates SIGHTING_COMMENT with the two FKs, both indexes, nullable EDITED_AT/DELETED_AT and UPPER_SNAKE_CASE names — f101e37
 
 ### Phase 2: Comment API
 
 #### Automated
 
-- [ ] 2.1 API builds
-- [ ] 2.2 Architecture tests pass
-- [ ] 2.3 Unit tests pass, including the comment service, controller, view model creator and configuration tests
-- [ ] 2.4 Integration tests pass, including SightingCommentContractTests, endpoint coverage, protection and the privacy sweep
-- [ ] 2.5 No pending model changes
+- [x] 2.1 API builds
+- [x] 2.2 Architecture tests pass
+- [x] 2.3 Unit tests pass, including the comment service, controller, view model creator and configuration tests
+- [x] 2.4 Integration tests pass, including SightingCommentContractTests, endpoint coverage, protection and the privacy sweep
+- [x] 2.5 No pending model changes
 
 #### Manual
 
-- [ ] 2.6 Against the local API, post, list, edit within 60 s (blocked), delete and list as two users, confirming the placeholder and no author id or email
+- [x] 2.6 Against the local API, post, list, edit within 60 s (blocked), delete and list as two users, confirming the placeholder and no author id or email
 
 ### Phase 3: SPA comments section
 

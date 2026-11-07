@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace PigeonWatch.IntegrationTests;
@@ -43,6 +44,19 @@ public sealed class TestUser(
         Guid sightingId = document.RootElement.GetProperty("id").GetGuid();
 
         return sightingId;
+    }
+
+    public async Task<Guid> CreateCommentAsync(Guid sightingId, string text, CancellationToken cancellationToken = default)
+    {
+        using HttpResponseMessage response = await Client.PostAsJsonAsync($"/sightings/{sightingId}/comments", new { text }, cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        string body = await response.Content.ReadAsStringAsync(cancellationToken);
+        using JsonDocument document = JsonDocument.Parse(body);
+        Guid commentId = document.RootElement.GetProperty("id").GetGuid();
+
+        return commentId;
     }
 
     public void Dispose()

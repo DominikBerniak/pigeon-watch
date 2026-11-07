@@ -50,6 +50,21 @@ public class ConfigurationTests
     }
 
     [Fact]
+    public async Task Client_configuration_matches_comment_rules()
+    {
+        ClientConfiguration configuration = await new ClientConfigurationService().GetAsync(TestContext.Current.CancellationToken);
+
+        ClientConfigurationModel model = new ClientConfigurationViewModelCreator().Create(configuration);
+
+        Assert.Equal(SightingCommentRules.TextMaxLength, model.CommentRules.TextMaxLength);
+        Assert.Equal(SightingRules.CooldownSeconds, model.CommentRules.CooldownSeconds);
+        Assert.Equal(SightingCommentRules.PageSize, model.CommentRules.PageSize);
+        Assert.Equal(500, model.CommentRules.TextMaxLength);
+        Assert.Equal(60, model.CommentRules.CooldownSeconds);
+        Assert.Equal(20, model.CommentRules.PageSize);
+    }
+
+    [Fact]
     public async Task General_configuration_service_returns_null_for_an_unknown_id()
     {
         Guid unknownId = Guid.NewGuid();
