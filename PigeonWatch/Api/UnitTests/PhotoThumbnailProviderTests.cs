@@ -54,6 +54,34 @@ public class PhotoThumbnailProviderTests
         Assert.True(thumbnail.Length < input.Length);
     }
 
+    [Theory]
+    [InlineData(1600, 1200, 400, 300)]
+    [InlineData(1200, 1600, 300, 400)]
+    [InlineData(1200, 400, 600, 200)]
+    [InlineData(150, 50, 150, 50)]
+    public void A_jpeg_is_decoded_at_the_smallest_eighth_scale_that_still_covers_the_thumbnail(int width, int height, int decodedWidth, int decodedHeight)
+    {
+        byte[] input = CreateBandedJpeg(width, height, horizontal: width >= height);
+        using SKCodec? codec = SKCodec.Create(new MemoryStream(input));
+        Assert.NotNull(codec);
+
+        SKSizeI size = PhotoThumbnailProvider.DecodeSize(codec);
+
+        Assert.Equal(new SKSizeI(decodedWidth, decodedHeight), size);
+    }
+
+    [Fact]
+    public void A_full_size_normalized_photo_still_becomes_a_centred_thumbnail()
+    {
+        byte[] input = CreateBandedJpeg(1600, 1200, horizontal: true);
+
+        byte[] thumbnail = provider.CreateThumbnail(input);
+
+        using SKBitmap bitmap = Decode(thumbnail, SightingRules.PhotoThumbnailSize, SightingRules.PhotoThumbnailSize);
+        Assert.True(IsReddish(bitmap.GetPixel(4, 4)));
+        Assert.True(IsReddish(bitmap.GetPixel(bitmap.Width - 5, bitmap.Height - 5)));
+    }
+
     [Fact]
     public void Unreadable_bytes_throw()
     {

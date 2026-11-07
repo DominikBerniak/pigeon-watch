@@ -563,68 +563,68 @@ After the merge deploys, check on Azure the parts that only exist there: the man
 
 #### Automated
 
-- [x] 1.1 Solution builds with style enforcement — 75cba79
-- [x] 1.2 Architecture tests pass — 75cba79
-- [x] 1.3 Unit tests cover local-folder store, options validator and 503 handler — 75cba79
-- [x] 1.4 No vulnerable packages — 75cba79
+- [x] 1.1 Solution builds with style enforcement — 6c1715f
+- [x] 1.2 Architecture tests pass — 6c1715f
+- [x] 1.3 Unit tests cover local-folder store, options validator and 503 handler — 6c1715f
+- [x] 1.4 No vulnerable packages — 6c1715f
 
 #### Manual
 
-- [x] 1.5 Development starts with LocalDirectory; Production without BlobStorage fails at start-up — 75cba79
+- [x] 1.5 Development starts with LocalDirectory; Production without BlobStorage fails at start-up — 6c1715f
 
 ### Phase 2: Server-side photo normalization (test-first)
 
 #### Automated
 
-- [x] 2.1 Normalization unit tests written first and passing — 3381194
-- [x] 2.2 Architecture tests pass — 3381194
+- [x] 2.1 Normalization unit tests written first and passing — 6c1715f
+- [x] 2.2 Architecture tests pass — 6c1715f
 
 ### Phase 3: API create and read
 
 #### Automated
 
-- [x] 3.1 Build passes — 2d25b9a
-- [x] 3.2 Migration matches the model — 2d25b9a
-- [x] 3.3 Architecture tests pass, including the binary-action rule — 2d25b9a
-- [x] 3.4 Service orchestration unit tests pass — 2d25b9a
-- [x] 3.5 Integration tests pass — 2d25b9a
+- [x] 3.1 Build passes — 6c1715f
+- [x] 3.2 Migration matches the model — 6c1715f
+- [x] 3.3 Architecture tests pass, including the binary-action rule — 6c1715f
+- [x] 3.4 Service orchestration unit tests pass — 6c1715f
+- [x] 3.5 Integration tests pass — 6c1715f
 
 #### Manual
 
-- [x] 3.6 Local multipart create stores a file and GET photo returns it — 2d25b9a
+- [x] 3.6 Local multipart create stores a file and GET photo returns it — 6c1715f
 
 ### Phase 4: SPA reporting
 
 #### Automated
 
-- [x] 4.1 Frontend specs pass — 0ed0136
-- [x] 4.2 Build passes within the initial-bundle budget — 0ed0136
+- [x] 4.1 Frontend specs pass — 6c1715f
+- [x] 4.2 Build passes within the initial-bundle budget — 6c1715f
 
 #### Manual
 
-- [x] 4.3 Phone-width report with a large photo; stored file is at most 1600 px with no EXIF — 0ed0136
-- [x] 4.4 Storage failure keeps the form filled with the retry-or-remove message — 0ed0136
+- [x] 4.3 Phone-width report with a large photo; stored file is at most 1600 px with no EXIF — 6c1715f
+- [x] 4.4 Storage failure keeps the form filled with the retry-or-remove message — 6c1715f
 
 ### Phase 5: SPA display
 
 #### Automated
 
-- [x] 5.1 Frontend specs pass (detail photo, row icon, kitchen sink, tokens) — 53d7e07
-- [x] 5.2 Build passes within the initial-bundle budget — 53d7e07
-- [x] 5.3 Playwright photo spec passes — 53d7e07
+- [x] 5.1 Frontend specs pass (detail photo, row icon, kitchen sink, tokens) — 6c1715f
+- [x] 5.2 Build passes within the initial-bundle budget — 6c1715f
+- [x] 5.3 Playwright photo spec passes — 6c1715f
 
 #### Manual
 
-- [x] 5.4 Kitchen-sink photo cells look right at both widths and in dark mode — 53d7e07
-- [x] 5.5 Portrait and landscape photos render without layout shift — 53d7e07
+- [x] 5.4 Kitchen-sink photo cells look right at both widths and in dark mode — 6c1715f
+- [x] 5.5 Portrait and landscape photos render without layout shift — 6c1715f
 
 ### Phase 6: Live verification after deploy
 
 #### Manual
 
-- [x] 6.1 Deploy workflow green and probe returns photo limits — 818a8ab
-- [x] 6.2 Deployed report with photo shows it with no CSP violation — 818a8ab
-- [x] 6.3 Blob present in sighting-photos and has no EXIF — 818a8ab
-- [x] 6.4 allowBlobPublicAccess is false — 818a8ab
-- [x] 6.5 Anonymous photo request returns 401 — 818a8ab
-- [x] 6.6 No SkiaSharp native-library errors in App Service logs — 818a8ab
+- [x] 6.1 Deploy workflow green and probe returns photo limits — b1b5a90
+- [x] 6.2 Deployed report with photo shows it with no CSP violation — b1b5a90
+- [x] 6.3 Blob present in sighting-photos and has no EXIF — b1b5a90
+- [x] 6.4 allowBlobPublicAccess is false — b1b5a90
+- [x] 6.5 Anonymous photo request returns 401 — b1b5a90
+- [x] 6.6 No SkiaSharp native-library errors in App Service logs — b1b5a90

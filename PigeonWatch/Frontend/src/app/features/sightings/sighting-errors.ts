@@ -67,6 +67,12 @@ export function isReportableSightingFailure(error: unknown, failure: SightingFai
   return failure.kind === 'generic' && !isExpectedClientStatus(error);
 }
 
+export function isReportablePhotoFailure(error: unknown): boolean {
+  if (error instanceof HttpErrorResponse && error.status === 404) return true;
+
+  return !isExpectedClientStatus(error);
+}
+
 export function sightingErrorMessage(resources: ResourceService, failure: SightingFailure): string {
   if (failure.kind === 'cooldown') {
     return resources.translate('sighting.errors.cooldown', failure.retryAfterSeconds);

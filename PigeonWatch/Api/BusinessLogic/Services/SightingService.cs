@@ -261,7 +261,7 @@ public class SightingService(
             using MemoryStream jpeg = new(thumbnail, writable: false);
             await sightingPhotoStore.SaveAsync(thumbnailBlobName, jpeg, cancellationToken);
         }
-        catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        catch (PhotoStorageUnavailableException exception)
         {
             logger.LogError(
                 exception,
