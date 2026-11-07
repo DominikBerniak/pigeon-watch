@@ -1,0 +1,99 @@
+<section class="message-thread" aria-labelledby="message-thread-title">
+  <h3 #heading id="message-thread-title" class="message-thread__title" tabindex="-1">
+    {{ 'sighting.messages.thread.title' | translate: counterpartDisplayName() }}
+  </h3>
+  <form class="message-thread__reply" [formRoot]="replyForm" (submit)="send()">
+    <mat-form-field class="pw-full-width">
+      <mat-label>{{
+        'sighting.messages.thread.replyLabel' | translate: counterpartDisplayName()
+      }}</mat-label>
+      <textarea matInput rows="3" [formField]="replyForm.text"></textarea>
+      <mat-hint>{{ 'sighting.messages.hint' | translate: rules().textMaxLength }}</mat-hint>
+      <mat-error>
+        <app-field-errors [field]="replyForm.text" [messages]="textMessages()" />
+      </mat-error>
+    </mat-form-field>
+    @if (sendErrorText(); as text) {
+      <app-alert kind="error">
+        {{ text }}
+        <app-error-reference [traceId]="sendErrorTraceId()" />
+      </app-alert>
+    }
+    <div class="message-thread__submit">
+      <app-submit-button [busy]="sending()">{{
+        'sighting.messages.thread.send' | translate
+      }}</app-submit-button>
+    </div>
+  </form>
+  @switch (state().kind) {
+    @case ('loading') {
+      <app-loading-indicator [label]="'sighting.messages.thread.loading' | translate" />
+    }
+    @case ('error') {
+      <app-error-retry [retryLabel]="'sighting.messages.retry' | translate" (retry)="retry()">
+        {{ 'sighting.messages.errors.generic' | translate }}
+        <app-error-reference [traceId]="loadErrorTraceId()" />
+      </app-error-retry>
+    }
+    @case ('loaded') {
+      @if (items().length === 0) {
+        <p class="pw-text-muted">{{ 'sighting.messages.thread.empty' | translate }}</p>
+      } @else {
+        <div
+          class="message-thread__list"
+          role="region"
+          tabindex="0"
+          [attr.aria-label]="'sighting.messages.thread.listLabel' | translate"
+        >
+          <ul class="message-thread__items">
+            @for (entry of entries(); track entry.message.id) {
+              @let message = entry.message;
+              <li
+                class="message-thread__item"
+                [class.message-thread__item--mine]="message.isMine"
+                [attr.data-message-id]="message.id"
+              >
+                <p class="message-thread__meta pw-text-small">
+                  <span class="message-thread__sender">{{ message.senderDisplayName }}</span>
+                  <time
+                    class="pw-text-muted"
+                    [attr.datetime]="message.createdAt"
+                    [matTooltip]="message.createdAt | date: 'medium'"
+                    >{{ entry.age.key | translate: entry.age.value }}</time
+                  >
+                </p>
+                <p class="message-thread__text">{{ message.text }}</p>
+              </li>
+            }
+          </ul>
+          @if (hasOlder()) {
+            <div class="message-thread__older pw-cluster">
+              @switch (older().kind) {
+                @case ('loading') {
+                  <app-loading-indicator
+                    layout="inline"
+                    [label]="'sighting.messages.thread.loadingOlder' | translate"
+                  />
+                }
+                @case ('error') {
+                  <app-error-retry
+                    [retryLabel]="'sighting.messages.retry' | translate"
+                    (retry)="showOlder()"
+                  >
+                    {{ 'sighting.messages.thread.olderError' | translate }}
+                    <app-error-reference [traceId]="olderErrorTraceId()" />
+                  </app-error-retry>
+                }
+                @default {
+                  <button mat-stroked-button type="button" (click)="showOlder()">
+                    {{ 'sighting.messages.thread.showOlder' | translate }}
+                  </button>
+                }
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+  }
+</section>

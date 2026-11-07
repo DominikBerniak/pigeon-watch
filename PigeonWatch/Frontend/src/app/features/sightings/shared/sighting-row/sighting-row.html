@@ -36,7 +36,7 @@
         criticalityLabel(sighting().criticality) | translate
       }}</app-criticality-badge>
       ·
-      <time [attr.datetime]="sighting().createdAt" [title]="sighting().createdAt | date: 'medium'">{{
+      <time [attr.datetime]="sighting().createdAt" [matTooltip]="sighting().createdAt | date: 'medium'">{{
         age().key | translate: age().value
       }}</time>
     </span>

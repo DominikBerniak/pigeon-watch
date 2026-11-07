@@ -27,6 +27,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   Observable,
   Subject,
@@ -109,6 +110,7 @@ interface CommentEntry {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
+    MatTooltipModule,
     TranslatePipe,
     Alert,
     ErrorReference,

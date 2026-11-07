@@ -22,6 +22,7 @@ import {
 export interface CellScenario {
   readonly action: string;
   readonly steps: readonly CellStep[];
+  readonly trigger?: CellStep;
 }
 
 interface CellBase {
@@ -383,6 +384,13 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
 const detailMap = '#sighting-detail-map app-map-view';
 const commentForm = 'form.sighting-comments__add';
 const commentField = `${commentForm} textarea`;
+const contactButton = 'button.sighting-detail__contact';
+const messageField = 'textarea';
+const openMessageDialog = (...steps: CellStep[]): CellScenario => ({
+  action: 'Open dialog',
+  trigger: click(contactButton),
+  steps: [waitFor(messageField), ...steps],
+});
 
 const detailCells: readonly SightingDetailCell[] = [
   {
@@ -560,6 +568,60 @@ const detailCells: readonly SightingDetailCell[] = [
       action: 'Press Edit',
       steps: [press('sighting.comments.edit'), waitFor('.sighting-comments__edit textarea')],
     },
+  },
+  {
+    id: 'detail-message-own',
+    label: 'Own sighting (no "Message {owner}" button)',
+    group: 'sightingDetail',
+    detail: 'loadedOwn',
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'detail-message-dialog-open',
+    label: 'Message dialog, open (empty field)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    leaflet: 'tileless',
+    steps: [],
+    dialog: openMessageDialog(),
+  },
+  {
+    id: 'detail-message-dialog-validation',
+    label: 'Message dialog, validation error (whitespace only)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    leaflet: 'tileless',
+    steps: [],
+    dialog: openMessageDialog(fill(messageField, ['   ']), submitForm(), waitFor(fieldError)),
+  },
+  {
+    id: 'detail-message-dialog-sending',
+    label: 'Message dialog, sending (request never completes)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    startThread: 'pending',
+    leaflet: 'tileless',
+    steps: [],
+    dialog: openMessageDialog(
+      fill(messageField, ['Is it still under the bench?']),
+      submitForm(),
+      waitFor(busyButton),
+    ),
+  },
+  {
+    id: 'detail-message-dialog-failure',
+    label: 'Message dialog, send failed (500 with a reference)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    startThread: 'failure',
+    leaflet: 'tileless',
+    steps: [],
+    dialog: openMessageDialog(
+      fill(messageField, ['Is it still under the bench?']),
+      submitForm(),
+      waitFor('app-alert'),
+    ),
   },
 ];
 

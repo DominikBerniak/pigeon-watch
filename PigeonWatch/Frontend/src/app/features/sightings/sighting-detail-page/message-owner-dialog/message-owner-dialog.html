@@ -1,0 +1,42 @@
+<h2 mat-dialog-title>
+  {{ 'sighting.messages.dialog.title' | translate: data.ownerDisplayName }}
+</h2>
+<form [formRoot]="messageForm" (submit)="send()">
+  <mat-dialog-content>
+    <div class="pw-stack">
+      <p class="pw-text-muted">
+        {{ 'sighting.messages.dialog.intro' | translate: data.ownerDisplayName }}
+      </p>
+      @if (errorText(); as text) {
+        <app-alert kind="error">
+          {{ text }}
+          <app-error-reference [traceId]="errorTraceId()" />
+        </app-alert>
+      }
+      <mat-form-field class="pw-full-width">
+        <mat-label>{{ 'sighting.messages.dialog.label' | translate }}</mat-label>
+        <textarea matInput rows="4" [formField]="messageForm.text"></textarea>
+        <mat-hint>{{ 'sighting.messages.hint' | translate: rules().textMaxLength }}</mat-hint>
+        <mat-error>
+          <app-field-errors [field]="messageForm.text" [messages]="textMessages()" />
+        </mat-error>
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
+  <mat-dialog-actions>
+    <app-form-actions>
+      <button
+        mat-stroked-button
+        type="button"
+        class="pw-full-width"
+        [disabled]="sending()"
+        (click)="cancel()"
+      >
+        {{ 'sighting.messages.dialog.cancel' | translate }}
+      </button>
+      <app-submit-button [busy]="sending()">{{
+        'sighting.messages.dialog.send' | translate
+      }}</app-submit-button>
+    </app-form-actions>
+  </mat-dialog-actions>
+</form>

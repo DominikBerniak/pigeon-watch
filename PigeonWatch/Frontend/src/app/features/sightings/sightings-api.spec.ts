@@ -9,8 +9,13 @@ import {
   SightingCommentPage,
   SightingCriticality,
   SightingListRequest,
+  SightingMessage,
+  SightingMessagePage,
   SightingPage,
   SightingStatus,
+  SightingThread,
+  SightingThreadPage,
+  SightingThreadStart,
 } from './sighting.types';
 import { SightingsApi } from './sightings-api';
 
@@ -28,6 +33,7 @@ const sighting: Sighting = {
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T12:00:00Z',
   hasPhoto: false,
+  isMine: false,
 };
 
 describe('SightingsApi', () => {
@@ -277,5 +283,74 @@ describe('SightingsApi', () => {
 
     expect(request.request.method).toBe('DELETE');
     expect(deleted).toEqual(placeholder);
+  });
+
+  const thread: SightingThread = {
+    id: 't/1',
+    sightingId: 'a/b',
+    sightingName: 'Limpy',
+    counterpartDisplayName: 'Ola N',
+    isOwner: false,
+    lastMessageAt: '2026-11-07T12:00:00Z',
+  };
+
+  const message: SightingMessage = {
+    id: 'm1',
+    text: 'Is it still there?',
+    senderDisplayName: 'Jan K',
+    createdAt: '2026-11-07T12:00:00Z',
+    isMine: true,
+  };
+
+  it('asks for a page of the threads on a sighting with encoded ids', () => {
+    let page: SightingThreadPage | undefined;
+
+    api.threads('a/b', 2).subscribe((value) => (page = value));
+    const request = httpMock.expectOne(
+      (candidate) => candidate.url === `${sightingsUrl}/a%2Fb/threads`,
+    );
+    request.flush({ items: [thread], totalCount: 1 });
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('page')).toBe('2');
+    expect(page).toEqual({ items: [thread], totalCount: 1 });
+  });
+
+  it('starts a thread with the first message as JSON', () => {
+    let started: SightingThreadStart | undefined;
+
+    api.startThread('a/b', 'Is it still there?').subscribe((value) => (started = value));
+    const request = httpMock.expectOne(`${sightingsUrl}/a%2Fb/threads`);
+    request.flush({ thread, message });
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ text: 'Is it still there?' });
+    expect(started).toEqual({ thread, message });
+  });
+
+  it('asks for a page of messages in a thread with encoded ids', () => {
+    let page: SightingMessagePage | undefined;
+
+    api.threadMessages('a/b', 't/1', 3).subscribe((value) => (page = value));
+    const request = httpMock.expectOne(
+      (candidate) => candidate.url === `${sightingsUrl}/a%2Fb/threads/t%2F1/messages`,
+    );
+    request.flush({ items: [message], totalCount: 41 });
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('page')).toBe('3');
+    expect(page).toEqual({ items: [message], totalCount: 41 });
+  });
+
+  it('posts a reply to the thread as JSON', () => {
+    let sent: SightingMessage | undefined;
+
+    api.sendMessage('a/b', 't/1', 'On my way').subscribe((value) => (sent = value));
+    const request = httpMock.expectOne(`${sightingsUrl}/a%2Fb/threads/t%2F1/messages`);
+    request.flush(message);
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ text: 'On my way' });
+    expect(sent).toEqual(message);
   });
 });

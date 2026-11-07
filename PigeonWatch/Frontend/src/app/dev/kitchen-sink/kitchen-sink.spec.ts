@@ -22,6 +22,7 @@ import {
   sinkPhotoSighting,
   sinkPosition,
   sinkSightings,
+  sinkStartThreadTraceId,
 } from './cell-stubs';
 import { KitchenSink } from './kitchen-sink';
 
@@ -762,6 +763,89 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
     for (const section of root.querySelectorAll('[data-cell^="detail-comments-"] app-sighting-comments')) {
       expect(section.contains(document.activeElement)).toBe(false);
     }
+  });
+
+  function messageDialog(): HTMLElement | null {
+    return document.querySelector<HTMLElement>('app-message-owner-dialog');
+  }
+
+  function contactButtonOf(id: string): HTMLButtonElement | null {
+    return cell(id).querySelector<HTMLButtonElement>('button.sighting-detail__contact');
+  }
+
+  async function openMessageDialogOf(id: string): Promise<HTMLElement> {
+    await eventually(() => expect(contactButtonOf(id)).not.toBeNull());
+    cell(id).querySelector<HTMLButtonElement>('header button')?.click();
+
+    let opened: HTMLElement | null = null;
+
+    await eventually(() => {
+      opened = messageDialog();
+      expect(opened?.querySelector('textarea') ?? null).not.toBeNull();
+    });
+
+    return opened!;
+  }
+
+  it('offers "Message {owner}" on a sighting of someone else', async () => {
+    await eventually(() => {
+      expect(contactButtonOf('detail-loaded')?.getAttribute('aria-label')).toBe(
+        label('sighting.messages.contactButton', sinkSightings[0].reporterDisplayName),
+      );
+    });
+  });
+
+  it('shows no message button on an own sighting', async () => {
+    await eventually(() => {
+      expect(factRowsOf('detail-message-own')).toHaveLength(7);
+      expect(contactButtonOf('detail-message-own')).toBeNull();
+    });
+  });
+
+  it('opens the message dialog with an empty field and no error', async () => {
+    const dialog = await openMessageDialogOf('detail-message-dialog-open');
+
+    expect(textOf(dialog.querySelector('[mat-dialog-title]'))).toBe(
+      label('sighting.messages.dialog.title', sinkSightings[0].reporterDisplayName),
+    );
+    expect(dialog.querySelector('textarea')?.value).toBe('');
+    expect(dialog.querySelector('mat-error app-field-errors')?.textContent?.trim() ?? '').toBe('');
+    expect(dialog.querySelector('app-alert')).toBeNull();
+  });
+
+  it('opens the message dialog with the required error for a whitespace-only message', async () => {
+    await openMessageDialogOf('detail-message-dialog-validation');
+
+    await eventually(() => {
+      expect(textOf(messageDialog()?.querySelector('mat-form-field mat-error'))).toBe(
+        label('sighting.messages.validation.required'),
+      );
+    });
+  });
+
+  it('opens the message dialog in the sending state with Cancel disabled', async () => {
+    await openMessageDialogOf('detail-message-dialog-sending');
+
+    await eventually(() => {
+      expect(
+        messageDialog()?.querySelector('app-submit-button [aria-busy="true"] mat-progress-spinner'),
+      ).not.toBeNull();
+      expect(
+        messageDialog()?.querySelector<HTMLButtonElement>('app-form-actions button[type="button"]')
+          ?.disabled,
+      ).toBe(true);
+    });
+  });
+
+  it('opens the message dialog with the send failure and its reference', async () => {
+    await openMessageDialogOf('detail-message-dialog-failure');
+
+    await eventually(() => {
+      const alert = messageDialog()?.querySelector('app-alert');
+
+      expect(alert?.textContent).toContain(label('sighting.messages.errors.send'));
+      expect(alert?.textContent).toContain(label('common.errorReference', sinkStartThreadTraceId));
+    });
   });
 
   function listRowsOf(id: string): HTMLElement[] {

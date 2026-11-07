@@ -24,8 +24,8 @@ Bob opens Alice's sighting, contacts her, and sees his private thread there. Ali
 | Cooldown | None | FR-019 names sightings and comments only; moderation arrives with S-10/S-11. | Plan |
 | Length | 1000 characters | Room to arrange a handover. | Plan |
 | Edit/delete | Neither, append-only | Smallest scope and a moderation trail; test-plan §7 records message text as deliberate self-disclosure. | Plan |
-| Entry point | `/messages` page from the user menu; thread opens on the sighting page | One inbox with a single shared thread view; only a menu item touches the initial bundle. | Plan |
-| Order/paging | Newest first, 20 per page, "Show older" | Same as comments. | Plan |
+| Entry point | `/messages` chat page: thread sidebar on the left, chat pane on the right; "Message {owner}" popup on the sighting page | Changed during implementation (2026-11-07): all conversation UI on one dedicated page, the sighting page only starts contact. | Implementation |
+| Order/paging | Chat order (newest at bottom), bubbles: mine right, theirs left; 20 per page, "Show older" at top | Changed during implementation (2026-11-07) to read like a chat; API stays newest-first. | Implementation |
 | Outsider access | 404, not 403 | Thread ids cannot be probed. | Plan |
 | Owner signal | `isMine` on `SightingModel` | Lets the SPA pick the owner view without exposing the reporter id. | Research |
 | Labels | English only | S-12 default. | Research |

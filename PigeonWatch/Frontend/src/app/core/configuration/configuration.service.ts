@@ -34,11 +34,17 @@ export interface CommentRules {
   pageSize: number;
 }
 
+export interface MessageRules {
+  textMaxLength: number;
+  pageSize: number;
+}
+
 export interface ClientConfiguration {
   passwordRules: PasswordRules;
   displayNameRules: DisplayNameRules;
   sightingRules: SightingRules;
   commentRules: CommentRules;
+  messageRules: MessageRules;
 }
 
 export interface CurrentUser {

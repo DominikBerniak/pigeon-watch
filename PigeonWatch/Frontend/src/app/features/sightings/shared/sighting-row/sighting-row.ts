@@ -1,4 +1,5 @@
 import { DatePipe } from '@angular/common';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -37,7 +38,7 @@ const visibilityMargin = '200px';
 
 @Component({
   selector: 'li[app-sighting-row]',
-  imports: [DatePipe, RouterLink, TranslatePipe, CriticalityBadge],
+  imports: [DatePipe, MatTooltipModule, RouterLink, TranslatePipe, CriticalityBadge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sighting-row.html',
   styleUrl: './sighting-row.scss',

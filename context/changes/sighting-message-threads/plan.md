@@ -47,7 +47,7 @@ Thread identity: one `SIGHTING_THREAD` row per (sighting, contacting user), uniq
 
 - **Start-or-append race.** `POST sightings/{id}/threads` creates the thread if the caller has none on that sighting, else appends to it. Two concurrent first posts by the same user hit the unique `(SIGHTING_ID, PARTICIPANT_ID)` index; on that unique violation re-read the existing thread and append, instead of surfacing a 500. Do not catch broader exceptions.
 - **404, not 403, for non-participants.** A caller who is not the participant or the sighting's owner gets `ThreadNotFound` → 404 for both reads and replies, so thread ids cannot be probed. Every repository read and write is scoped by thread id, sighting id and participant-or-owner, not by thread id alone (S-07 impl-review F1).
-- **Deep link.** `/messages` links to `/sightings/:id?thread=<threadId>`; the owner's panel preselects that thread, a non-owner ignores the parameter.
+- **Deep link.** `/messages` links to `/sightings/:id?thread=<threadId>`; the owner's panel preselects that thread, a non-owner ignores the parameter. *(Superseded 2026-11-07: threads open at `/messages/:sightingId/:threadId`; see the Phase 4 and 5 amendments.)*
 
 ## Phase 1: Thread and message data model
 
@@ -264,6 +264,8 @@ Lock the privacy and participant guarantees on the real HTTP pipeline before any
 
 The contact action, the owner's thread list and the shared thread view on the sighting detail page.
 
+> **Amendment 2026-11-07 (user decision during implementation, supersedes Changes Required 2–4 below):** conversations are not shown on the sighting detail page. Item 1 (types, API client, `message-errors.ts`) stands. The detail page gets only a "Message {owner}" button for non-owners (none on the caller's own sighting) that opens a `MatDialog` popup with a single text field validated from `messageRules`; sending calls `POST sightings/{id}/threads` (starts or appends to the caller's thread), closes the popup and navigates to `/messages/:sightingId/:threadId`. The in-page `sighting-messages` panel and its owner thread list are removed; the `message-thread` component moves to `features/messages/` for Phase 5. Labels, kitchen-sink cells and specs follow the popup (states: closed, open, sending, validation, failure). Progress 4.3 is verified as "Bob sends from the popup and lands in the conversation; no button on Alice's own sighting" (Alice's reply moves to 5.3); 4.4 as "popup usable at phone width".
+
 ### Changes Required:
 
 #### 1. Types, API client and failure mapping
@@ -318,6 +320,8 @@ The contact action, the owner's thread list and the shared thread view on the si
 ### Overview
 
 The `/messages` page and its user-menu entry.
+
+> **Amendment 2026-11-07 (user decision during implementation, supersedes item 1's Intent below):** `/messages` is a dedicated chat page. A left sidebar lists all the caller's threads from `GET threads` (sighting name with label fallback, counterpart display name, last activity, most recent first, "Show more" paging). Selecting one opens it in the main pane at `/messages/:sightingId/:threadId` (deep-linkable, no API change). The pane is a chat: messages as colored bubbles, the caller's (`isMine`) on the right in one color, the counterpart's on the left in another, in chat order (oldest at top, newest at the bottom next to the reply box; the API stays newest-first and the SPA reverses for display; "Show older" at the top loads the next 20). The pane header shows the sighting name linking to `/sightings/:id` and the counterpart name. No thread selected → empty-pane prompt. At phone width the sidebar and pane stack: list first, then the chat with a back control. Bubble colors are new design tokens. Progress 5.3 is verified as "Alice opens Bob's thread from the sidebar and replies; Bob sees it on reload".
 
 ### Changes Required:
 
@@ -453,24 +457,24 @@ Additive migration only (two new tables); no data backfill. `SightingModel.isMin
 
 #### Automated
 
-- [x] 3.1 Integration tests pass, including coverage guard, anonymous 401 sweep, privacy sweep, audit columns and SightingThreadContractTests
-- [x] 3.2 Unit tests still pass
+- [x] 3.1 Integration tests pass, including coverage guard, anonymous 401 sweep, privacy sweep, audit columns and SightingThreadContractTests — 8ac4806
+- [x] 3.2 Unit tests still pass — 8ac4806
 
 #### Manual
 
-- [x] 3.3 Review the §7 wording in test-plan.md
+- [x] 3.3 Review the §7 wording in test-plan.md — 8ac4806
 
 ### Phase 4: Sighting-detail messages panel (SPA)
 
 #### Automated
 
-- [ ] 4.1 SPA unit tests pass, including the new specs, label coverage and style-token coverage
-- [ ] 4.2 Production build passes within the bundle budget
+- [x] 4.1 SPA unit tests pass, including the new specs, label coverage and style-token coverage
+- [x] 4.2 Production build passes within the bundle budget
 
 #### Manual
 
-- [ ] 4.3 Bob contacts Alice and Alice replies on the detail page; no contact action on own sighting
-- [ ] 4.4 Panel layout is usable at phone width
+- [x] 4.3 Bob contacts Alice and Alice replies on the detail page; no contact action on own sighting
+- [x] 4.4 Panel layout is usable at phone width
 
 ### Phase 5: Messages inbox page (SPA)
 

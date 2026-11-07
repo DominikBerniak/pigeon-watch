@@ -95,6 +95,14 @@ html {
     )
   );
 
+  @include mat.tooltip-overrides(
+    (
+      container-color: var(--pw-color-info-surface),
+      supporting-text-color: var(--pw-color-info),
+      container-shape: var(--pw-radius-md),
+    )
+  );
+
   @include mat.dialog-overrides(
     (
       container-shape: var(--pw-radius-xl),
@@ -160,6 +168,14 @@ app-sighting-filters {
   @include mat.select-overrides(
     (
       trigger-text-size: var(--pw-font-size-sm),
+    )
+  );
+}
+
+button.sighting-detail__contact {
+  @include mat.icon-button-overrides(
+    (
+      focus-state-layer-opacity: 0,
     )
   );
 }

@@ -19,8 +19,11 @@ import {
   SightingFilters,
   SightingList,
   SightingListRequest,
+  SightingMessage,
   SightingPage,
   SightingStatus,
+  SightingThread,
+  SightingThreadStart,
 } from '../../features/sightings/sighting.types';
 
 export type SaveMode = 'success' | 'duplicate' | 'failure' | 'pending';
@@ -38,6 +41,7 @@ export type DetailMode =
   | 'loadedUnnamed'
   | 'loadedLongName'
   | 'loadedWithPhoto'
+  | 'loadedOwn'
   | 'notFound'
   | 'failure'
   | 'pending'
@@ -45,6 +49,7 @@ export type DetailMode =
 export type PhotoMode = 'image' | 'pending' | 'failure';
 export type CommentsMode = 'empty' | 'items' | 'failure' | 'pending';
 export type AddCommentMode = 'success' | 'cooldown';
+export type StartThreadMode = 'success' | 'failure' | 'pending';
 
 export interface ProfileModes {
   readonly group: 'profile';
@@ -68,6 +73,7 @@ export interface SightingDetailModes {
   readonly photo?: PhotoMode;
   readonly comments?: CommentsMode;
   readonly addComment?: AddCommentMode;
+  readonly startThread?: StartThreadMode;
 }
 
 export interface SightingListModes {
@@ -115,6 +121,7 @@ function sinkSighting(
     reporterDisplayName: sinkUser.displayName,
     createdAt: new Date(sinkLoadedAt - ageMinutes * minuteMilliseconds).toISOString(),
     hasPhoto,
+    isMine: false,
   };
 }
 
@@ -265,6 +272,23 @@ export const sinkComments: readonly SightingComment[] = Array.from(
 
 export const sinkCommentCooldownSeconds = 42;
 
+export const sinkOwnSighting: Sighting = {
+  ...sinkSightings[0],
+  id: 'sink-own',
+  isMine: true,
+};
+
+export const sinkStartThreadTraceId = '00-sink-thread-start-01';
+
+const sinkContactThread: SightingThread = {
+  id: 'sink-thread-contact',
+  sightingId: sinkSightings[0].id,
+  sightingName: sinkSightings[0].name,
+  counterpartDisplayName: sinkSightings[0].reporterDisplayName,
+  isOwner: false,
+  lastMessageAt: new Date(sinkLoadedAt).toISOString(),
+};
+
 const busyHoldMilliseconds = 30000;
 
 function badRequest(errors: Record<string, string[]>): HttpErrorResponse {
@@ -365,6 +389,8 @@ export class CellStubs {
           isDeleted: true,
         }),
       ),
+    startThread: (_sightingId: string, text: string): Observable<SightingThreadStart> =>
+      this.startThreadResult(text),
   };
   readonly geolocation = {
     currentPosition: (): Observable<GeolocationOutcome> => this.positionResult(),
@@ -492,6 +518,8 @@ export class CellStubs {
         return of(sinkLongNameSighting);
       case 'loadedWithPhoto':
         return of(sinkPhotoSighting);
+      case 'loadedOwn':
+        return of(sinkOwnSighting);
       case 'notFound':
         return throwError(() => new HttpErrorResponse({ status: 404 }));
       case 'failure':
@@ -567,6 +595,32 @@ export class CellStubs {
         isMine: true,
       }),
     );
+  }
+
+  private startThreadResult(text: string): Observable<SightingThreadStart> {
+    const modes = this.modes();
+
+    switch (modes.group === 'sightingDetail' ? (modes.startThread ?? 'success') : 'success') {
+      case 'failure':
+        return throwError(
+          () =>
+            new HttpErrorResponse({ status: 500, error: { traceId: sinkStartThreadTraceId } }),
+        );
+      case 'pending':
+        return NEVER;
+      default:
+        return of({ thread: sinkContactThread, message: this.newMessage(text) });
+    }
+  }
+
+  private newMessage(text: string): SightingMessage {
+    return {
+      id: `sink-message-new-${Date.now()}`,
+      text,
+      senderDisplayName: sinkUser.displayName,
+      createdAt: new Date().toISOString(),
+      isMine: true,
+    };
   }
 
   private thumbnailResult(): Observable<Blob> {

@@ -14,6 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
@@ -21,6 +22,7 @@ import {
   Subject,
   catchError,
   combineLatest,
+  filter,
   map,
   of,
   startWith,
@@ -53,6 +55,7 @@ import {
 import {
   Sighting,
   SightingFilters,
+  SightingThreadStart,
   sightingCriticalityLabel,
   sightingCriticalityMarker,
   sightingStatusLabel,
@@ -63,6 +66,10 @@ import {
   readSightingDetailReturn,
 } from '../sighting-list-page/sighting-list-hand-over';
 import { SightingsApi } from '../sightings-api';
+import {
+  MessageOwnerDialog,
+  MessageOwnerDialogData,
+} from './message-owner-dialog/message-owner-dialog';
 import { PhotoDialog, PhotoDialogData } from './photo-dialog/photo-dialog';
 import { SightingComments } from './sighting-comments/sighting-comments';
 
@@ -85,6 +92,7 @@ const coordinateDecimals = 5;
   imports: [
     DatePipe,
     MatButtonModule,
+    MatTooltipModule,
     RouterLink,
     TranslatePipe,
     Alert,
@@ -246,6 +254,18 @@ export class SightingDetailPage {
       maxWidth: 'var(--pw-photo-dialog-max-width)',
       data: { url, title, alt: this.resources.translate('sighting.detail.photoAlt', title) },
     });
+  }
+
+  protected openMessageDialog(sighting: Sighting): void {
+    this.dialog
+      .open<MessageOwnerDialog, MessageOwnerDialogData, SightingThreadStart>(MessageOwnerDialog, {
+        data: { sightingId: sighting.id, ownerDisplayName: sighting.reporterDisplayName },
+      })
+      .afterClosed()
+      .pipe(filter((started): started is SightingThreadStart => started !== undefined))
+      .subscribe(
+        (started) => void this.router.navigate(['/messages', sighting.id, started.thread.id]),
+      );
   }
 
   private failureState(error: unknown): DetailState {

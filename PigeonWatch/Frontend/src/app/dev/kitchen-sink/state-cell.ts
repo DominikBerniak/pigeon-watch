@@ -134,7 +134,9 @@ export class StateCell {
         until<HTMLElement>(() => ref.componentRef?.location.nativeElement ?? null),
       ),
     );
-    const trigger = press('profile.password.title')(this.context(this.host.nativeElement));
+    const trigger = (scenario.trigger ?? press('profile.password.title'))(
+      this.context(this.host.nativeElement),
+    );
 
     this.running.set(true);
     merge(opened, trigger.pipe(ignoreElements()))

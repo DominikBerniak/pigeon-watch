@@ -20,6 +20,7 @@ const named: Sighting = {
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T12:00:00Z',
   hasPhoto: false,
+  isMine: false,
 };
 
 const unnamed: Sighting = {
@@ -30,6 +31,7 @@ const unnamed: Sighting = {
   criticality: SightingCriticality.monitor,
   createdAt: '2026-10-10T08:30:00Z',
   hasPhoto: false,
+  isMine: false,
 };
 
 describe('MySightings', () => {
@@ -125,7 +127,10 @@ describe('MySightings', () => {
       '5 min ago',
       '1 d ago',
     ]);
-    expect(items[0].querySelector('time')?.getAttribute('title')).toBe(
+    expect(
+      document.getElementById(items[0].querySelector('time')?.getAttribute('aria-describedby') ?? '')
+        ?.textContent,
+    ).toBe(
       formatDate(named.createdAt, 'medium', 'en-US'),
     );
   });

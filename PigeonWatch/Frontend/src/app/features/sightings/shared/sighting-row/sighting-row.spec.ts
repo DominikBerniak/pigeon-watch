@@ -25,6 +25,7 @@ const named: Sighting = {
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T11:55:00Z',
   hasPhoto: false,
+  isMine: false,
 };
 
 @Component({
@@ -144,13 +145,15 @@ describe('SightingRow', () => {
     );
   });
 
-  it('shows the relative age with the report time in datetime and the full date as title', async () => {
+  it('shows the relative age with the report time in datetime and the full date as its tooltip', async () => {
     const row = await render(named);
     const time = row.querySelector('time')!;
 
     expect(time.textContent?.trim()).toBe('5 min ago');
     expect(time.getAttribute('datetime')).toBe(named.createdAt);
-    expect(time.getAttribute('title')).toBe(formatDate(named.createdAt, 'medium', 'en-US'));
+    expect(document.getElementById(time.getAttribute('aria-describedby') ?? '')?.textContent).toBe(
+      formatDate(named.createdAt, 'medium', 'en-US'),
+    );
   });
 
   it.each([
