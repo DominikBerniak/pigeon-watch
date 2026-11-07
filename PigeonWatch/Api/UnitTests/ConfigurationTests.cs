@@ -44,6 +44,9 @@ public class ConfigurationTests
         Assert.Equal(SightingRules.BehaviourMaxLength, model.SightingRules.BehaviourMaxLength);
         Assert.Equal(SightingRules.CooldownSeconds, model.SightingRules.CooldownSeconds);
         Assert.Equal(SightingRules.NearbyRadiusKilometers, model.SightingRules.NearbyRadiusKm);
+        Assert.Equal(SightingRules.PhotoMaxBytes, model.SightingRules.PhotoMaxBytes);
+        Assert.Equal(SightingRules.PhotoMaxDimension, model.SightingRules.PhotoMaxDimension);
+        Assert.Equal(["image/jpeg", "image/png", "image/webp"], model.SightingRules.PhotoAllowedContentTypes);
     }
 
     [Fact]

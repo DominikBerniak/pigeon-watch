@@ -131,27 +131,21 @@ public sealed class OwnershipContractTests : IDisposable
         TestUser bob = await SeedUserAsync(bobEmail, bobPassword, bobDisplayName);
         Guid aliceSightingId = await alice.CreateSightingAsync(cancellationToken: cancellationToken);
 
-        using HttpResponseMessage create = await bob.Client.PostAsJsonAsync(
-            "/sightings",
-            new
-            {
-                name = "Forged pigeon",
-                description = "A pigeon with a bent wing near the fountain.",
-                behaviour = "Hops instead of flying.",
-                latitude = 52.2297,
-                longitude = 21.0122,
-                status = 1,
-                criticality = 2,
-                id = aliceSightingId,
-                reporterId = alice.Id,
-                reporterDisplayName = aliceDisplayName,
-                reporterEmail = aliceEmail,
-                email = aliceEmail,
-                userId = alice.Id,
-                createUser = alice.Id.ToString(),
-                reporter = new { id = alice.Id, displayName = aliceDisplayName, email = aliceEmail }
-            },
-            cancellationToken);
+        Dictionary<string, string> forgedFields = SightingForm.Fields(name: "Forged pigeon");
+        forgedFields["id"] = aliceSightingId.ToString();
+        forgedFields["reporterId"] = alice.Id.ToString();
+        forgedFields["reporterDisplayName"] = aliceDisplayName;
+        forgedFields["reporterEmail"] = aliceEmail;
+        forgedFields["email"] = aliceEmail;
+        forgedFields["userId"] = alice.Id.ToString();
+        forgedFields["createUser"] = alice.Id.ToString();
+        forgedFields["reporter.id"] = alice.Id.ToString();
+        forgedFields["reporter.displayName"] = aliceDisplayName;
+        forgedFields["reporter.email"] = aliceEmail;
+        forgedFields["photoBlobName"] = $"{Guid.NewGuid():D}.jpg";
+        forgedFields["hasPhoto"] = "true";
+        using MultipartFormDataContent forgedContent = SightingForm.Content(forgedFields);
+        using HttpResponseMessage create = await bob.Client.PostAsync("/sightings", forgedContent, cancellationToken);
         IReadOnlyList<LeakHit> leaks = await scanner.ScanAsync(create, ResponseLeakScanner.NeedlesFor(aliceEmail), cancellationToken);
         string createBody = await create.Content.ReadAsStringAsync(cancellationToken);
         using JsonDocument created = JsonDocument.Parse(createBody);
@@ -165,6 +159,7 @@ public sealed class OwnershipContractTests : IDisposable
         Assert.Empty(leaks);
         Assert.NotEqual(aliceSightingId, createdId);
         Assert.Equal(bobDisplayName, createdReporter);
+        Assert.False(created.RootElement.GetProperty("hasPhoto").GetBoolean());
         Assert.Equal([new SightingSummary(createdId, bobDisplayName)], bobMine);
         Assert.Equal([new SightingSummary(aliceSightingId, aliceDisplayName)], aliceMine);
         Assert.Equal(2, createUsers.Count);

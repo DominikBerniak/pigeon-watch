@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore.Migrations;
 using PigeonWatch.Data;
 using PigeonWatch.Data.Auditing;
@@ -10,6 +12,7 @@ using PigeonWatch.Data.Conventions;
 using PigeonWatch.Data.Diagnostics;
 using PigeonWatch.Data.Mappers;
 using PigeonWatch.Data.Repositories;
+using PigeonWatch.Data.Storage;
 
 namespace PigeonWatch.DependencyInjection;
 
@@ -23,6 +26,24 @@ public static class DataServiceCollectionExtensions
         services.AddScoped<ISaveChangesInterceptor, AuditSaveChangesInterceptor>();
         services.AddProblemDetails();
         services.AddExceptionHandler<DatabaseUnavailableExceptionHandler>();
+        services.AddExceptionHandler<PhotoStorageUnavailableExceptionHandler>();
+
+        services.AddSingleton<IValidateOptions<BlobStorageOptions>, BlobStorageOptionsValidator>();
+        services.AddOptions<BlobStorageOptions>()
+            .Bind(configuration.GetSection(BlobStorageOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<ISightingPhotoStore>(serviceProvider =>
+        {
+            BlobStorageOptions options = serviceProvider.GetRequiredService<IOptions<BlobStorageOptions>>().Value;
+
+            if (string.IsNullOrWhiteSpace(options.LocalDirectory))
+                return new AzureBlobSightingPhotoStore(options);
+
+            IHostEnvironment environment = serviceProvider.GetRequiredService<IHostEnvironment>();
+            string localDirectory = Path.Combine(environment.ContentRootPath, options.LocalDirectory);
+
+            return new LocalFolderSightingPhotoStore(localDirectory);
+        });
 
         services.AddDbContext<PigeonWatchDbContext>((serviceProvider, options) =>
             options

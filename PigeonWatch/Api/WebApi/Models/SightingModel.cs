@@ -21,4 +21,6 @@ public sealed class SightingModel
     public required string ReporterDisplayName { get; init; }
 
     public required DateTime CreatedAt { get; init; }
+
+    public required bool HasPhoto { get; init; }
 }

@@ -30,7 +30,7 @@ describe('map config', () => {
     const tileOrigin = new URL(mapTiles.urlTemplate.replace(/\{[xyz]\}/g, '0')).origin;
 
     expect(tileOrigin).toBe('https://tile.openstreetmap.org');
-    expect(imgSrc).toBe(`img-src 'self' data: ${tileOrigin}`);
+    expect(imgSrc).toBe(`img-src 'self' data: blob: ${tileOrigin}`);
   });
 
   it('builds marker icons from static pw-map-marker classes', () => {

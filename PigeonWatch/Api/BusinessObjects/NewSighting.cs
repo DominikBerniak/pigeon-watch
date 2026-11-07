@@ -8,4 +8,6 @@ public sealed record NewSighting(
     double Latitude,
     double Longitude,
     SightingStatus Status,
-    SightingCriticality Criticality);
+    SightingCriticality Criticality,
+    NewSightingPhoto? Photo = null,
+    string? PhotoBlobName = null);

@@ -2,7 +2,7 @@ import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ResourceService } from '../../core/resources/resource.service';
-import { sightingErrorMessage, sightingFailure } from './sighting-errors';
+import { isReportableSightingFailure, sightingErrorMessage, sightingFailure } from './sighting-errors';
 
 describe('sighting errors', () => {
   function badRequest(
@@ -45,6 +45,33 @@ describe('sighting errors', () => {
       },
     );
 
+    it.each([
+      ['PhotoTooLarge', 'photoTooLarge'],
+      ['PhotoUnsupportedType', 'photoUnsupportedType'],
+      ['PhotoUnreadable', 'photoUnreadable'],
+    ])('maps a 400 carrying %s to the %s photo problem', (code, kind) => {
+      const error = badRequest([code], { traceId: '00-abc-def-01' });
+      const failure = sightingFailure(error);
+
+      expect(failure).toEqual({ kind });
+      expect(isReportableSightingFailure(error, failure)).toBe(false);
+    });
+
+    it('maps a 503 carrying PhotoStorageUnavailable to the storage outage and reports it', () => {
+      const error = new HttpErrorResponse({
+        status: 503,
+        error: { status: 503, traceId: '00-abc-def-01', errors: { PhotoStorageUnavailable: ['x'] } },
+      });
+      const failure = sightingFailure(error);
+
+      expect(failure).toEqual({ kind: 'photoStorageUnavailable', traceId: '00-abc-def-01' });
+      expect(isReportableSightingFailure(error, failure)).toBe(true);
+    });
+
+    it('keeps a 400 carrying PhotoStorageUnavailable generic', () => {
+      expect(sightingFailure(badRequest(['PhotoStorageUnavailable']))).toEqual({ kind: 'generic' });
+    });
+
     it('maps 404 to not found', () => {
       expect(sightingFailure(new HttpErrorResponse({ status: 404 }))).toEqual({
         kind: 'notFound',
@@ -84,6 +111,18 @@ describe('sighting errors', () => {
       expect(sightingErrorMessage(labels, { kind: 'generic' })).toBe(
         "We couldn't reach the sightings right now. Try again.",
       );
+    });
+
+    it('renders the photo problem and storage outage messages from their labels', () => {
+      const labels = resources();
+
+      expect(sightingErrorMessage(labels, { kind: 'photoTooLarge' })).toBe(
+        labels.translate('sighting.form.photoTooLarge'),
+      );
+      expect(sightingErrorMessage(labels, { kind: 'photoStorageUnavailable' })).toBe(
+        labels.translate('sighting.form.photoStorageUnavailable'),
+      );
+      expect(labels.translate('sighting.form.photoStorageUnavailable')).toContain('remove the photo');
     });
   });
 });

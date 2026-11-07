@@ -18,6 +18,9 @@ public class ClientConfigurationService : IClientConfigurationService
             SightingRules.DescriptionMaxLength,
             SightingRules.BehaviourMaxLength,
             SightingRules.CooldownSeconds,
-            SightingRules.NearbyRadiusKilometers));
+            SightingRules.NearbyRadiusKilometers,
+            SightingRules.PhotoMaxBytes,
+            SightingRules.PhotoMaxDimension,
+            SightingRules.PhotoAllowedContentTypes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)));
     }
 }

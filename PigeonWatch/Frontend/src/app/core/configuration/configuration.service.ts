@@ -23,6 +23,9 @@ export interface SightingRules {
   behaviourMaxLength: number;
   cooldownSeconds: number;
   nearbyRadiusKm: number;
+  photoMaxBytes: number;
+  photoMaxDimension: number;
+  photoAllowedContentTypes: readonly string[];
 }
 
 export interface ClientConfiguration {

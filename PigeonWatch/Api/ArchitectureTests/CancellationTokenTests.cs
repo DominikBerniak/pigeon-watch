@@ -1,4 +1,5 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace PigeonWatch.ArchitectureTests;
 
@@ -6,6 +7,11 @@ public class CancellationTokenTests
 {
     private const BindingFlags declaredMethods =
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+
+    private static readonly IReadOnlyList<MethodInfo> exemptFrameworkInterfaceMethods =
+    [
+        typeof(IValueProviderFactory).GetMethod(nameof(IValueProviderFactory.CreateValueProviderAsync))!
+    ];
 
     [Fact]
     public void Async_methods_take_a_cancellation_token_with_a_default_except_controller_actions()
@@ -18,6 +24,9 @@ public class CancellationTokenTests
             foreach (MethodInfo method in type.GetMethods(declaredMethods))
             {
                 if (PigeonWatchAssemblies.IsCompilerGenerated(method) || !IsAwaitableReturn(method.ReturnType))
+                    continue;
+
+                if (ImplementsExemptFrameworkInterfaceMethod(type, method))
                     continue;
 
                 checkedMethods++;
@@ -39,6 +48,36 @@ public class CancellationTokenTests
             offenders.Count == 0,
             $"Async methods must take a CancellationToken with a default value; controller actions take one without a default. Offenders:{Environment.NewLine}"
             + PigeonWatchAssemblies.Describe(offenders));
+    }
+
+    [Fact]
+    public void Exempt_framework_interface_methods_are_exactly_the_value_provider_factory_entry_point()
+    {
+        List<string> exempt = exemptFrameworkInterfaceMethods.Select(Describe).ToList();
+
+        Assert.Equal(["Microsoft.AspNetCore.Mvc.ModelBinding.IValueProviderFactory.CreateValueProviderAsync"], exempt);
+    }
+
+    private static bool ImplementsExemptFrameworkInterfaceMethod(Type type, MethodInfo method)
+    {
+        if (type.IsInterface)
+            return false;
+
+        foreach (MethodInfo exempt in exemptFrameworkInterfaceMethods)
+        {
+            Type interfaceType = exempt.DeclaringType!;
+
+            if (!interfaceType.IsAssignableFrom(type))
+                continue;
+
+            InterfaceMapping mapping = type.GetInterfaceMap(interfaceType);
+            int index = Array.IndexOf(mapping.InterfaceMethods, exempt);
+
+            if (index >= 0 && mapping.TargetMethods[index] == method)
+                return true;
+        }
+
+        return false;
     }
 
     private static bool IsAwaitableReturn(Type returnType)

@@ -7,15 +7,24 @@ import { provideRouter } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ResourceService } from '../../core/resources/resource.service';
 import { NearbyMapPage } from '../../features/sightings/nearby-map-page/nearby-map-page';
+import { PhotoEncoder } from '../../features/sightings/report-sighting-page/photo-picker/photo-encoder';
 import { SightingDetailPage } from '../../features/sightings/sighting-detail-page/sighting-detail-page';
 import { LEAFLET_LOADER, MapView } from '../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../shared/map/testing/map-view-stub';
 import { CellDefinition, cellGroups } from './cell-definitions';
-import { sinkListSightings, sinkLongNameSighting, sinkPosition, sinkSightings } from './cell-stubs';
+import {
+  sinkListSightings,
+  sinkLongNameSighting,
+  sinkPhotoSighting,
+  sinkPosition,
+  sinkSightings,
+} from './cell-stubs';
 import { KitchenSink } from './kitchen-sink';
 
 const patience = { timeout: 2000, interval: 25 };
+const manualRunPatience = { timeout: 10_000, interval: 25 };
 const sinkTestTimeout = 15_000;
+const sinkPhotoUrl = 'blob:sink-photo';
 
 describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
   let fixture: ComponentFixture<KitchenSink>;
@@ -23,7 +32,15 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        {
+          provide: PhotoEncoder,
+          useValue: { createPreviewUrl: () => sinkPhotoUrl, revokePreviewUrl: () => undefined },
+        },
+      ],
     });
     TestBed.overrideComponent(NearbyMapPage, {
       remove: { imports: [MapView] },
@@ -67,6 +84,18 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
       fixture.detectChanges();
       check();
     }, patience);
+  }
+
+  async function runManualOf(id: string): Promise<void> {
+    const button = cell(id).querySelector<HTMLButtonElement>('header button')!;
+
+    button.click();
+    fixture.detectChanges();
+    expect(button.disabled).toBe(true);
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(button.disabled).toBe(false);
+    }, manualRunPatience);
   }
 
   async function openDialogOf(id: string): Promise<void> {
@@ -289,7 +318,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
 
     expect(cell(id).querySelector('app-sighting-filters')).not.toBeNull();
 
-    cell(id).querySelector<HTMLButtonElement>('header button')?.click();
+    await runManualOf(id);
 
     await eventually(() => {
       expect(
@@ -317,7 +346,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
 
     await eventually(() => expect(mapOf(id).markers()).toHaveLength(sinkSightings.length));
 
-    cell(id).querySelector<HTMLButtonElement>('header button')?.click();
+    await runManualOf(id);
 
     await eventually(() => {
       expect(statusOf(id)).toBe(label('map.filters.noMatch', 10));
@@ -517,6 +546,50 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
     });
   });
 
+  it('shows the generated photo as an open-photo button beside the key facts', async () => {
+    const id = 'detail-photo-loaded';
+
+    await eventually(() => {
+      const trigger = cell(id).querySelector('button.sighting-detail__photo');
+      const image = trigger?.querySelector('img');
+
+      expect(headingOf(id)).toBe(sinkPhotoSighting.name);
+      expect(trigger?.getAttribute('aria-label')).toBe(label('sighting.detail.photoOpen'));
+      expect(image?.getAttribute('src')).toBe(sinkPhotoUrl);
+      expect(image?.getAttribute('alt')).toBe(
+        label('sighting.detail.photoAlt', sinkPhotoSighting.name),
+      );
+      expect(cell(id).querySelector('.sighting-detail__photo + dl.sighting-detail__facts')).not.toBeNull();
+      expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
+    });
+  });
+
+  it('shows the photo placeholder with its loading label while the details are already shown', async () => {
+    const id = 'detail-photo-loading';
+
+    await eventually(() => {
+      const spinner = cell(id).querySelector(
+        '.sighting-detail__photo-placeholder app-loading-indicator mat-progress-spinner',
+      );
+
+      expect(spinner?.getAttribute('aria-label')).toBe(label('sighting.detail.photoLoading'));
+      expect(cell(id).querySelector('figure')).toBeNull();
+      expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
+    });
+  });
+
+  it('shows the inline photo message while the details stay visible', async () => {
+    const id = 'detail-photo-error';
+
+    await eventually(() => {
+      expect(textOf(cell(id).querySelector('.sighting-detail__details app-alert'))).toBe(
+        label('sighting.detail.photoError'),
+      );
+      expect(cell(id).querySelector('figure')).toBeNull();
+      expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
+    });
+  });
+
   function listRowsOf(id: string): HTMLElement[] {
     return [...cell(id).querySelectorAll<HTMLElement>('li[app-sighting-row]')];
   }
@@ -572,6 +645,47 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
       expect(cell(id).querySelector('mat-paginator')).not.toBeNull();
     });
   });
+
+  it('shows a thumbnail only in the list rows of sightings with a photo, keeping the photo label', async () => {
+    const id = 'list-loaded';
+
+    await eventually(() => {
+      const photoLabel = label('sighting.row.hasPhoto');
+      const rows = listRowsOf(id);
+      const labelled = rows.filter(
+        (row) => textOf(row.querySelector('.pw-visually-hidden')) === photoLabel,
+      );
+      const withThumbnail = rows.filter((row) => row.querySelector('.sighting-row__thumb img'));
+
+      expect(labelled).toHaveLength(sinkSightings.filter((sighting) => sighting.hasPhoto).length);
+      expect(labelled.length).toBeGreaterThan(0);
+      expect(withThumbnail).toEqual(labelled);
+      withThumbnail.forEach((row) => {
+        const image = row.querySelector('.sighting-row__thumb img');
+
+        expect(image?.getAttribute('src')).toBe(sinkPhotoUrl);
+        expect(image?.getAttribute('alt')).toBe('');
+        expect(row.querySelector('.sighting-row__thumb svg')).toBeNull();
+      });
+    });
+  });
+
+  it.each(['list-thumbnails-loading', 'list-thumbnails-error'])(
+    'keeps the camera icon and no image in the photo rows of %s',
+    async (id) => {
+      await eventually(() => {
+        const thumbs = listRowsOf(id)
+          .map((row) => row.querySelector('.sighting-row__thumb'))
+          .filter((thumb) => thumb !== null);
+
+        expect(thumbs).toHaveLength(sinkSightings.filter((sighting) => sighting.hasPhoto).length);
+        thumbs.forEach((thumb) => {
+          expect(thumb.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+          expect(thumb.querySelector('img')).toBeNull();
+        });
+      });
+    },
+  );
 
   it('shows the second page of the paged fixtures after Next page', async () => {
     const id = 'list-second-page';
@@ -629,6 +743,11 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
 
       expect(items).toHaveLength(sinkSightings.length);
       items.forEach((item) => expect(item.querySelector('app-criticality-badge')).not.toBeNull());
+      expect(
+        [...items].filter(
+          (item) => item.querySelector('.sighting-row__thumb img')?.getAttribute('src') === sinkPhotoUrl,
+        ),
+      ).toHaveLength(sinkSightings.filter((sighting) => sighting.hasPhoto).length);
       expect(
         new Set([...items].map((item) => item.querySelector('time')?.textContent?.trim())).size,
       ).toBe(sinkSightings.length);

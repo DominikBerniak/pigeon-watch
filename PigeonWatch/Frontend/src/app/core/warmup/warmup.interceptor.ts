@@ -4,7 +4,10 @@ import { Observable, Subscription } from 'rxjs';
 import { ErrorReportingService } from '../error-reporting/error-reporting.service';
 import { isApiUrl } from '../http/api-url';
 import { REQUEST_RESENT, SKIP_WARMUP } from '../http/http-context-tokens';
+import { problemErrorCodes } from '../../shared/http/problem-details';
 import { WarmupState } from './warmup-state';
+
+const photoStorageUnavailableCode = 'photostorageunavailable';
 
 export const warmupPendingThresholdMs = 3_000;
 export const warmupBudgetMs = 120_000;
@@ -87,7 +90,15 @@ export const warmupInterceptor: HttpInterceptorFn = (request, next) => {
 };
 
 function isWarmupError(error: unknown): error is HttpErrorResponse {
-  return error instanceof HttpErrorResponse && (error.status === 503 || error.status === 0);
+  if (!(error instanceof HttpErrorResponse)) return false;
+
+  if (error.status === 0) return true;
+
+  return error.status === 503 && !isPhotoStorageOutage(error);
+}
+
+function isPhotoStorageOutage(error: HttpErrorResponse): boolean {
+  return problemErrorCodes(error).some((code) => code.toLowerCase() === photoStorageUnavailableCode);
 }
 
 function retryDelayMs(error: HttpErrorResponse): number {

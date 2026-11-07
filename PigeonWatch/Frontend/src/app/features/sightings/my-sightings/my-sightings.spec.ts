@@ -19,6 +19,7 @@ const named: Sighting = {
   criticality: SightingCriticality.urgent,
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T12:00:00Z',
+  hasPhoto: false,
 };
 
 const unnamed: Sighting = {
@@ -28,6 +29,7 @@ const unnamed: Sighting = {
   status: SightingStatus.spotted,
   criticality: SightingCriticality.monitor,
   createdAt: '2026-10-10T08:30:00Z',
+  hasPhoto: false,
 };
 
 describe('MySightings', () => {

@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
@@ -38,6 +39,8 @@ public sealed class EndpointFixtureRegistry
         new(["POST client-errors"], BuildClientErrors),
         new(["POST sightings"], BuildCreateSighting),
         new(["GET sightings/{id:guid}"], BuildGetSighting),
+        new(["GET sightings/{id:guid}/photo"], BuildGetSightingPhoto),
+        new(["GET sightings/{id:guid}/photo/thumbnail"], BuildGetSightingPhotoThumbnail),
         new(["GET sightings/nearby"], BuildNearby),
         new(["POST sightings/list"], BuildList),
         new(["GET sightings/mine"], BuildMine),
@@ -159,13 +162,15 @@ public sealed class EndpointFixtureRegistry
         const string uri = "/sightings";
         List<FixtureRequest> requests =
         [
-            Make(key, "valid sighting", JsonOf(HttpMethod.Post, uri, SightingBody(1, 2, 52.2297, 21.0122))),
-            Make(key, "invalid initial status", JsonOf(HttpMethod.Post, uri, SightingBody(99, 2, 52.2297, 21.0122))),
-            Make(key, "invalid criticality", JsonOf(HttpMethod.Post, uri, SightingBody(1, 99, 52.2297, 21.0122))),
-            Make(key, "out of range location", JsonOf(HttpMethod.Post, uri, SightingBody(1, 2, 200, 21.0122)))
+            Make(key, "valid sighting", SightingForm.Request(SightingFields(1, 2, 52.2297))),
+            Make(key, "valid sighting with a photo", SightingForm.Request(SightingFields(1, 2, 52.2297), TestPhotos.JpegWithExif())),
+            Make(key, "photo of an unsupported type", SightingForm.Request(SightingFields(1, 2, 52.2297), TestPhotos.Gif, "image/gif")),
+            Make(key, "invalid initial status", SightingForm.Request(SightingFields(99, 2, 52.2297))),
+            Make(key, "invalid criticality", SightingForm.Request(SightingFields(1, 99, 52.2297))),
+            Make(key, "out of range location", SightingForm.Request(SightingFields(1, 2, 200)))
         ];
 
-        AddMalformed(requests, key, HttpMethod.Post, uri);
+        AddMalformedMultipart(requests, key, HttpMethod.Post, uri);
 
         return requests;
     }
@@ -194,6 +199,28 @@ public sealed class EndpointFixtureRegistry
         [
             Make(key, "existing sighting", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}")),
             Make(key, "unknown sighting", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{Guid.NewGuid()}"))
+        ];
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildGetSightingPhoto(FixtureContext context)
+    {
+        const string key = "GET sightings/{id:guid}/photo";
+
+        return
+        [
+            Make(key, "existing sighting with a photo", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}/photo")),
+            Make(key, "unknown sighting", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{Guid.NewGuid()}/photo"))
+        ];
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildGetSightingPhotoThumbnail(FixtureContext context)
+    {
+        const string key = "GET sightings/{id:guid}/photo/thumbnail";
+
+        return
+        [
+            Make(key, "existing sighting with a photo", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}/photo/thumbnail")),
+            Make(key, "unknown sighting", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{Guid.NewGuid()}/photo/thumbnail"))
         ];
     }
 
@@ -278,24 +305,27 @@ public sealed class EndpointFixtureRegistry
         return requests;
     }
 
-    private static object SightingBody(int status, int criticality, double latitude, double longitude)
+    private static Dictionary<string, string> SightingFields(int status, int criticality, double latitude)
     {
-        return new
-        {
-            name = "Sweep pigeon",
-            description = "A pigeon with a bent wing near the fountain.",
-            behaviour = "Hops instead of flying.",
-            latitude,
-            longitude,
-            status,
-            criticality
-        };
+        return SightingForm.Fields(status, criticality, latitude, 21.0122, "Sweep pigeon");
     }
 
     private static void AddMalformed(List<FixtureRequest> requests, string key, HttpMethod method, string uri)
     {
         for (int index = 0; index < malformedBodies.Length; index++)
             requests.Add(Make(key, $"malformed body {index}", Json(method, uri, malformedBodies[index])));
+    }
+
+    private static void AddMalformedMultipart(List<FixtureRequest> requests, string key, HttpMethod method, string uri)
+    {
+        requests.Add(Make(key, "empty form", new HttpRequestMessage(method, uri) { Content = new MultipartFormDataContent() }));
+
+        for (int index = 0; index < malformedBodies.Length; index++)
+        {
+            StringContent content = new(malformedBodies[index], Encoding.UTF8);
+            content.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data; boundary=sweep-boundary");
+            requests.Add(Make(key, $"malformed multipart body {index}", new HttpRequestMessage(method, uri) { Content = content }));
+        }
     }
 
     private static FixtureRequest Make(string key, string description, HttpRequestMessage message)

@@ -139,4 +139,14 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
 
         return latest is null ? null : DateTime.SpecifyKind(latest.Value, DateTimeKind.Utc);
     }
+
+    public async Task<string?> GetPhotoBlobNameAsync(Guid sightingId, CancellationToken cancellationToken = default)
+    {
+        string? blobName = await db.Sightings
+            .Where(e => e.Id == sightingId)
+            .Select(e => e.PhotoBlobName)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return blobName;
+    }
 }

@@ -1,0 +1,42 @@
+<fieldset class="photo-picker">
+  <legend class="photo-picker__legend">{{ 'sighting.form.photoLabel' | translate }}</legend>
+  <div class="pw-stack">
+    <p class="pw-text-muted pw-text-small">{{ 'sighting.form.photoHint' | translate }}</p>
+    <input #fileInput type="file" hidden [accept]="accept()" (change)="choose($event)" />
+    @if (previewUrl(); as url) {
+      <img
+        class="photo-picker__preview"
+        [src]="url"
+        [alt]="'sighting.form.photoPreviewAlt' | translate"
+      />
+    }
+    <div class="pw-cluster">
+      <button
+        #chooseButton
+        mat-stroked-button
+        type="button"
+        [disabled]="processing()"
+        (click)="fileInput.click()"
+      >
+        {{ 'sighting.form.photoChoose' | translate }}
+      </button>
+      @if (value()) {
+        <button mat-stroked-button type="button" (click)="remove()">
+          {{ 'sighting.form.photoRemove' | translate }}
+        </button>
+      }
+    </div>
+    @if (processing()) {
+      <p class="pw-text-muted pw-text-small" role="status">
+        {{ 'sighting.form.photoProcessing' | translate }}
+      </p>
+    }
+    <p class="photo-picker__error pw-text-small" aria-live="polite">
+      @if (problemText(); as text) {
+        {{ text }}
+      } @else if (field(); as boundField) {
+        <app-field-errors [field]="boundField" [messages]="errorMessages()" />
+      }
+    </p>
+  </div>
+</fieldset>

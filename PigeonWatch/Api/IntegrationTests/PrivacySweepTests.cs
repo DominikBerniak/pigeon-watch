@@ -234,7 +234,7 @@ public sealed class PrivacySweepTests : IDisposable
     {
         TestUser alice = await SeedUserAsync(aliceEmail, aliceDisplayName);
         TestUser bob = await SeedUserAsync(bobEmail, bobDisplayName);
-        Guid sightingId = await alice.CreateSightingAsync(cancellationToken: cancellationToken);
+        Guid sightingId = await alice.CreateSightingAsync(photo: TestPhotos.JpegWithExif(), cancellationToken: cancellationToken);
         FixtureContext context = new([alice.Email, bob.Email], [alice.DisplayName, bob.DisplayName], sightingId);
 
         return new SweepWorld(alice, bob, context);

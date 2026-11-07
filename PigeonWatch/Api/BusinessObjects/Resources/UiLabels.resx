@@ -297,6 +297,36 @@
   <data name="sighting.form.cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="sighting.form.photoLabel" xml:space="preserve">
+    <value>Photo (optional)</value>
+  </data>
+  <data name="sighting.form.photoHint" xml:space="preserve">
+    <value>A JPEG, PNG or WebP photo helps rescuers recognise the bird. It is resized before upload.</value>
+  </data>
+  <data name="sighting.form.photoChoose" xml:space="preserve">
+    <value>Choose photo</value>
+  </data>
+  <data name="sighting.form.photoRemove" xml:space="preserve">
+    <value>Remove photo</value>
+  </data>
+  <data name="sighting.form.photoPreviewAlt" xml:space="preserve">
+    <value>Preview of the chosen photo</value>
+  </data>
+  <data name="sighting.form.photoProcessing" xml:space="preserve">
+    <value>Preparing the photo…</value>
+  </data>
+  <data name="sighting.form.photoTooLarge" xml:space="preserve">
+    <value>This photo is too large. Choose a smaller one or remove it.</value>
+  </data>
+  <data name="sighting.form.photoUnsupportedType" xml:space="preserve">
+    <value>This file type isn't supported. Choose a JPEG, PNG or WebP photo.</value>
+  </data>
+  <data name="sighting.form.photoUnreadable" xml:space="preserve">
+    <value>We couldn't read this photo. Choose another one or remove it.</value>
+  </data>
+  <data name="sighting.form.photoStorageUnavailable" xml:space="preserve">
+    <value>We couldn't save the photo right now. Try again, or remove the photo and report without it.</value>
+  </data>
   <data name="sighting.status.spotted" xml:space="preserve">
     <value>Spotted</value>
   </data>
@@ -380,6 +410,24 @@
   </data>
   <data name="sighting.detail.pageTitle" xml:space="preserve">
     <value>{0} – {1}</value>
+  </data>
+  <data name="sighting.detail.photoAlt" xml:space="preserve">
+    <value>Photo of {0}</value>
+  </data>
+  <data name="sighting.detail.photoLoading" xml:space="preserve">
+    <value>Loading the photo…</value>
+  </data>
+  <data name="sighting.detail.photoError" xml:space="preserve">
+    <value>We couldn't load the photo right now.</value>
+  </data>
+  <data name="sighting.detail.photoOpen" xml:space="preserve">
+    <value>Open the full photo</value>
+  </data>
+  <data name="sighting.detail.photoClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="sighting.row.hasPhoto" xml:space="preserve">
+    <value>Has a photo</value>
   </data>
   <data name="sighting.mine.title" xml:space="preserve">
     <value>My sightings</value>

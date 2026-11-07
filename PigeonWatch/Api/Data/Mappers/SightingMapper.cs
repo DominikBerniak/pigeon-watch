@@ -16,7 +16,8 @@ public class SightingMapper : ISightingMapper
             Latitude = sighting.Latitude,
             Longitude = sighting.Longitude,
             Status = sighting.Status,
-            Criticality = sighting.Criticality
+            Criticality = sighting.Criticality,
+            PhotoBlobName = sighting.PhotoBlobName
         };
     }
 
@@ -32,6 +33,7 @@ public class SightingMapper : ISightingMapper
             entity.Status,
             entity.Criticality,
             entity.Reporter.DisplayName,
-            DateTime.SpecifyKind(entity.CreateDate, DateTimeKind.Utc));
+            DateTime.SpecifyKind(entity.CreateDate, DateTimeKind.Utc),
+            entity.PhotoBlobName is not null);
     }
 }

@@ -75,7 +75,7 @@ public sealed class EndpointProtectionTests : IDisposable
     {
         TestUser alice = await SeedUserAsync(aliceEmail, aliceDisplayName);
         TestUser bob = await SeedUserAsync(bobEmail, bobDisplayName);
-        Guid sightingId = await alice.CreateSightingAsync(cancellationToken: cancellationToken);
+        Guid sightingId = await alice.CreateSightingAsync(photo: TestPhotos.JpegWithExif(), cancellationToken: cancellationToken);
         FixtureContext context = new([alice.Email, bob.Email], [alice.DisplayName, bob.DisplayName], sightingId);
         List<string> needles = new[] { aliceEmail, bobEmail }.SelectMany(email => ResponseLeakScanner.NeedlesFor(email)).ToList();
         List<string> protectedKeys = new EndpointCatalog(factory.Services).GetEndpoints()

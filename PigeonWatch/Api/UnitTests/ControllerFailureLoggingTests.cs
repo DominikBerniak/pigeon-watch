@@ -30,6 +30,9 @@ public class ControllerFailureLoggingTests
     [InlineData(SightingErrorCodes.InvalidLocation)]
     [InlineData(SightingErrorCodes.InvalidInitialStatus)]
     [InlineData(SightingErrorCodes.InvalidCriticality)]
+    [InlineData(SightingErrorCodes.PhotoTooLarge)]
+    [InlineData(SightingErrorCodes.PhotoUnsupportedType)]
+    [InlineData(SightingErrorCodes.PhotoUnreadable)]
     public async Task Create_logs_a_warning_with_the_error_code_for_invalid_input(string code)
     {
         sightingService

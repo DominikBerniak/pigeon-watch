@@ -3,7 +3,7 @@ project: PigeonWatch
 version: 1
 status: draft
 created: 2026-10-03
-updated: 2026-11-01
+updated: 2026-11-03
 prd_version: 2
 main_goal: speed
 top_blocker: decisions
@@ -45,7 +45,7 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 | S-01 | register-and-login          | register an account, log in and log out                                     | F-01          | FR-001                         | done     |
 | S-02 | edit-profile-name           | view and edit their own profile name, and change their password, from a profile page opened through a header user menu | S-01          | FR-002, FR-022                 | done     |
 | S-03 | report-sighting-on-map      | report a sighting and see it on the nearby map and its detail page          | S-01          | US-01, FR-004, FR-005, FR-019  | done |
-| S-04 | attach-sighting-photo       | attach an optional photo to a sighting                                      | S-03          | FR-005                         | proposed |
+| S-04 | attach-sighting-photo       | attach an optional photo to a sighting                                      | S-03          | FR-005                         | in-progress |
 | S-05 | filter-sightings-nearby     | scope the map to their nearby area and filter by status and criticality     | S-03          | FR-004                         | done |
 | S-06 | urgency-ranked-sighting-list | browse nearby sightings as a list ordered by urgency                       | S-03          | FR-020                         | done        |
 | S-07 | comment-on-sighting         | add comments to a sighting                                                  | S-03          | FR-009, FR-019                 | proposed |
@@ -143,7 +143,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** First use of file storage, and the photo is optional, so reporting works without it.
-- **Status:** proposed
+- **Status:** in-progress
 
 ### S-05: Filter sightings by nearby area, status and criticality
 
