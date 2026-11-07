@@ -1,10 +1,10 @@
 ---
 change_id: comment-on-sighting
 title: Comment on sighting
-status: impl_reviewed
+status: archived
 created: 2026-11-07
 updated: 2026-11-07
-archived_at: null
+archived_at: 2026-11-07T16:20:10Z
 ---
 
 ## Notes
