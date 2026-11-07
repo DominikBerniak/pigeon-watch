@@ -1,3 +1,4 @@
+using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data.Storage;
 
 namespace PigeonWatch.UnitTests;
@@ -96,6 +97,38 @@ public sealed class LocalFolderSightingPhotoStoreTests : IDisposable
         await store.DeleteAsync(blobName, cancellationToken);
 
         Assert.Null(await store.OpenReadAsync(blobName, cancellationToken));
+    }
+
+    [Fact]
+    public async Task A_save_that_fails_on_disk_throws_photo_storage_unavailable_with_the_cause()
+    {
+        Directory.CreateDirectory(directory);
+        string blockedRoot = Path.Combine(directory, "blocked");
+        await File.WriteAllBytesAsync(blockedRoot, [1], cancellationToken);
+        LocalFolderSightingPhotoStore store = new(blockedRoot);
+        using MemoryStream source = new([1, 2, 3]);
+
+        PhotoStorageUnavailableException exception = await Assert.ThrowsAsync<PhotoStorageUnavailableException>(
+            () => store.SaveAsync($"{Guid.NewGuid()}.jpg", source, cancellationToken));
+
+        Assert.IsAssignableFrom<IOException>(exception.InnerException);
+    }
+
+    [Fact]
+    public async Task A_read_that_fails_on_disk_throws_photo_storage_unavailable_with_the_cause()
+    {
+        LocalFolderSightingPhotoStore store = new(directory);
+        string blobName = $"{Guid.NewGuid()}.jpg";
+
+        using (MemoryStream source = new([1, 2, 3]))
+            await store.SaveAsync(blobName, source, cancellationToken);
+
+        await using FileStream locked = new(Path.Combine(directory, blobName), FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+        PhotoStorageUnavailableException exception = await Assert.ThrowsAsync<PhotoStorageUnavailableException>(
+            () => store.OpenReadAsync(blobName, cancellationToken));
+
+        Assert.IsAssignableFrom<IOException>(exception.InnerException);
     }
 
     [Theory]

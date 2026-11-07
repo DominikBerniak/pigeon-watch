@@ -104,6 +104,27 @@ describe('PhotoEncoder', () => {
     expect((error as PhotoDecodeError).cause).toBe(cause);
   });
 
+  it('closes a bitmap that finishes decoding after the encoding was cancelled', async () => {
+    let resolveBitmap: (bitmap: unknown) => void = () => undefined;
+    const decoding = new Promise<unknown>((resolve) => (resolveBitmap = resolve));
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn(() => decoding),
+    );
+    const context: FakeContext = { drawImage: vi.fn() };
+    stubCanvas(new Blob(['jpeg']), context);
+
+    const subscription = encoder.encode(new Blob(['x']), 1600).subscribe();
+
+    subscription.unsubscribe();
+    resolveBitmap({ width: 100, height: 100, close });
+    await decoding;
+    await Promise.resolve();
+
+    expect(close).toHaveBeenCalledOnce();
+    expect(context.drawImage).not.toHaveBeenCalled();
+  });
+
   it('fails with a PhotoEncodeError when the canvas has no 2D context', async () => {
     stubBitmap(100, 100);
     stubCanvas(null, null);

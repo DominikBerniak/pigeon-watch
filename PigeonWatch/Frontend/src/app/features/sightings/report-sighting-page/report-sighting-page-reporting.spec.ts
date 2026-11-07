@@ -18,7 +18,7 @@ import { MapView } from '../../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../../shared/map/testing/map-view-stub';
 import { NewSighting, Sighting } from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
-import { PhotoEncoder } from './photo-picker/photo-encoder';
+import { PhotoEncoder } from '../shared/photo-encoder';
 import { ReportSightingPage } from './report-sighting-page';
 
 const warsaw: GeoPoint = { latitude: 52.2297, longitude: 21.0122 };

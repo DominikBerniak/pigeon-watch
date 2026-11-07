@@ -72,6 +72,20 @@ public class PhotoNormalizationProviderTests
     }
 
     [Fact]
+    public async Task Large_orientation_six_jpeg_is_scaled_down_and_rotated()
+    {
+        byte[] input = InsertExifSegment(CreateJpeg(4000, 3000), CreateOrientationExifPayload(6));
+
+        PhotoNormalizationResult result = await NormalizeAsync(input);
+
+        Assert.True(result.Succeeded);
+        AssertJpeg(result.Jpeg, 1200, 1600);
+        using SKBitmap output = SKBitmap.Decode(result.Jpeg);
+        Assert.True(IsReddish(output.GetPixel(1190, 10)));
+        Assert.False(IsReddish(output.GetPixel(10, 10)));
+    }
+
+    [Fact]
     public async Task Webp_is_accepted()
     {
         byte[] input = Encode(CreateBitmap(320, 240), SKEncodedImageFormat.Webp, 80);
@@ -152,6 +166,17 @@ public class PhotoNormalizationProviderTests
             Assert.Equal(10000, codec.Info.Width);
             Assert.Equal(5000, codec.Info.Height);
         }
+
+        PhotoNormalizationResult result = await NormalizeAsync(input);
+
+        AssertFailure(result, SightingErrorCodes.PhotoUnreadable);
+    }
+
+    [Fact]
+    public async Task Header_above_sixteen_megapixels_is_rejected_without_decoding()
+    {
+        byte[] input = CreateBlankPng(5000, 4000);
+        Assert.True(input.Length < SightingRules.PhotoMaxBytes);
 
         PhotoNormalizationResult result = await NormalizeAsync(input);
 

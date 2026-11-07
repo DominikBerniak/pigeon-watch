@@ -22,7 +22,7 @@ import { TranslatePipe } from '../../../../core/resources/translate.pipe';
 import { FieldErrors } from '../../../../shared/ui/field-errors/field-errors';
 import { PhotoProblem, photoProblemLabels } from '../../sighting-errors';
 import { fallbackSightingRules } from '../../sighting.types';
-import { PhotoDecodeError, PhotoEncoder } from './photo-encoder';
+import { PhotoDecodeError, PhotoEncoder } from '../../shared/photo-encoder';
 
 @Component({
   selector: 'app-photo-picker',

@@ -6,7 +6,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink, provideRouter } from '@angular/router';
 import { NEVER, Observable, of, throwError } from 'rxjs';
 import { ErrorReportingService } from '../../../../core/error-reporting/error-reporting.service';
-import { PhotoEncoder } from '../../report-sighting-page/photo-picker/photo-encoder';
+import { PhotoEncoder } from '../photo-encoder';
 import { Sighting, SightingCriticality, SightingStatus } from '../../sighting.types';
 import { SightingsApi } from '../../sightings-api';
 import { SightingRow } from './sighting-row';

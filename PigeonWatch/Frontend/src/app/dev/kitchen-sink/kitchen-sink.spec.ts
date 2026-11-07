@@ -7,7 +7,7 @@ import { provideRouter } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ResourceService } from '../../core/resources/resource.service';
 import { NearbyMapPage } from '../../features/sightings/nearby-map-page/nearby-map-page';
-import { PhotoEncoder } from '../../features/sightings/report-sighting-page/photo-picker/photo-encoder';
+import { PhotoEncoder } from '../../features/sightings/shared/photo-encoder';
 import { SightingDetailPage } from '../../features/sightings/sighting-detail-page/sighting-detail-page';
 import { LEAFLET_LOADER, MapView } from '../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../shared/map/testing/map-view-stub';

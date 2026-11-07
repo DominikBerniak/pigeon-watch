@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, defer, switchMap, throwError } from 'rxjs';
+import { Observable, switchMap } from 'rxjs';
 
 export const photoJpegType = 'image/jpeg';
 export const photoJpegQuality = 0.85;
@@ -40,10 +40,7 @@ export class PhotoEncoder {
   private readonly document = inject(DOCUMENT);
 
   encode(file: Blob, maxDimension: number): Observable<Blob> {
-    return defer(() => createImageBitmap(file, { imageOrientation: 'from-image' })).pipe(
-      catchError((cause: unknown) => throwError(() => new PhotoDecodeError(cause))),
-      switchMap((bitmap) => this.toJpeg(bitmap, maxDimension)),
-    );
+    return this.decode(file).pipe(switchMap((bitmap) => this.toJpeg(bitmap, maxDimension)));
   }
 
   createPreviewUrl(photo: Blob): string {
@@ -52,6 +49,39 @@ export class PhotoEncoder {
 
   revokePreviewUrl(url: string): void {
     URL.revokeObjectURL(url);
+  }
+
+  private decode(file: Blob): Observable<ImageBitmap> {
+    return new Observable<ImageBitmap>((subscriber) => {
+      let cancelled = false;
+      let decoding: Promise<ImageBitmap>;
+
+      try {
+        decoding = createImageBitmap(file, { imageOrientation: 'from-image' });
+      } catch (cause: unknown) {
+        subscriber.error(new PhotoDecodeError(cause));
+
+        return;
+      }
+
+      decoding.then(
+        (bitmap) => {
+          if (cancelled) {
+            bitmap.close();
+
+            return;
+          }
+
+          subscriber.next(bitmap);
+          subscriber.complete();
+        },
+        (cause: unknown) => subscriber.error(new PhotoDecodeError(cause)),
+      );
+
+      return () => {
+        cancelled = true;
+      };
+    });
   }
 
   private toJpeg(bitmap: ImageBitmap, maxDimension: number): Observable<Blob> {

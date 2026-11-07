@@ -276,6 +276,7 @@ public sealed class SightingPhotoContractTests : IDisposable
         FakeLogRecord warning = Assert.Single(factory.Logs.GetSnapshot(), record => record.Level == LogLevel.Warning);
         Assert.Equal("PhotoTooLarge", State(warning, "ErrorCode"));
         Assert.Equal("sightings", State(warning, "Route"));
+        Assert.False(string.IsNullOrWhiteSpace(State(warning, "FormError")));
         Assert.Equal(0, factory.CountSightings());
         Assert.Empty(factory.PhotoStore.BlobNames);
     }

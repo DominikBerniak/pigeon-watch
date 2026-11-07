@@ -68,9 +68,12 @@ internal sealed class AzureBlobSightingPhotoStore(BlobStorageOptions options) : 
         }
     }
 
-    private static bool IsUnavailable(Exception exception, CancellationToken cancellationToken)
+    internal static bool IsUnavailable(Exception exception, CancellationToken cancellationToken)
     {
-        if (exception is RequestFailedException or AuthenticationFailedException or AggregateException or TimeoutException)
+        if (exception is RequestFailedException requestFailed)
+            return requestFailed.Status is 0 or 408 or 429 or >= 500;
+
+        if (exception is AuthenticationFailedException or AggregateException or TimeoutException)
             return true;
 
         return exception is OperationCanceledException && !cancellationToken.IsCancellationRequested;

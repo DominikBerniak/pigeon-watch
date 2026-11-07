@@ -10,7 +10,7 @@ import { ErrorReportingService } from '../../../core/error-reporting/error-repor
 import { MapView } from '../../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../../shared/map/testing/map-view-stub';
 import { Sighting, SightingCriticality, SightingStatus } from '../sighting.types';
-import { PhotoEncoder } from '../report-sighting-page/photo-picker/photo-encoder';
+import { PhotoEncoder } from '../shared/photo-encoder';
 import { SightingsApi } from '../sightings-api';
 import { SightingDetailPage } from './sighting-detail-page';
 
@@ -560,6 +560,32 @@ describe('SightingDetailPage', () => {
     );
     expect(root.querySelector('.sighting-detail__photo')).toBeNull();
     expect(rows(root)).toHaveLength(7);
+    expect(report).toHaveBeenCalledExactlyOnceWith('api-failure', 'sighting.detail.photo', error);
+  });
+
+  it.each([400, 401, 429])(
+    'shows the inline message without reporting when the photo fails with the expected status %i',
+    async (status) => {
+      get.mockReturnValue(of(withPhoto));
+      photo.mockReturnValue(throwError(() => new HttpErrorResponse({ status })));
+
+      const root = await open();
+
+      expect(root.querySelector('.sighting-detail__details app-alert')?.textContent?.trim()).toBe(
+        "We couldn't load the photo right now.",
+      );
+      expect(report).not.toHaveBeenCalled();
+    },
+  );
+
+  it('reports a missing photo blob because the sighting says it has a photo', async () => {
+    const error = new HttpErrorResponse({ status: 404 });
+
+    get.mockReturnValue(of(withPhoto));
+    photo.mockReturnValue(throwError(() => error));
+
+    await open();
+
     expect(report).toHaveBeenCalledExactlyOnceWith('api-failure', 'sighting.detail.photo', error);
   });
 

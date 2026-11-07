@@ -11,9 +11,17 @@ internal sealed class LocalFolderSightingPhotoStore(string localDirectory) : ISi
     public async Task SaveAsync(string blobName, Stream jpeg, CancellationToken cancellationToken = default)
     {
         string path = GetPath(blobName);
-        Directory.CreateDirectory(rootDirectory);
-        await using FileStream file = new(path, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
-        await jpeg.CopyToAsync(file, cancellationToken);
+
+        try
+        {
+            Directory.CreateDirectory(rootDirectory);
+            await using FileStream file = new(path, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
+            await jpeg.CopyToAsync(file, cancellationToken);
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw new PhotoStorageUnavailableException($"Photo storage could not save blob {blobName}.", exception);
+        }
     }
 
     public Task<Stream?> OpenReadAsync(string blobName, CancellationToken cancellationToken = default)
@@ -23,19 +31,42 @@ internal sealed class LocalFolderSightingPhotoStore(string localDirectory) : ISi
         if (!File.Exists(path))
             return Task.FromResult<Stream?>(null);
 
-        Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
+        try
+        {
+            Stream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
 
-        return Task.FromResult<Stream?>(stream);
+            return Task.FromResult<Stream?>(stream);
+        }
+        catch (FileNotFoundException)
+        {
+            return Task.FromResult<Stream?>(null);
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw new PhotoStorageUnavailableException($"Photo storage could not read blob {blobName}.", exception);
+        }
     }
 
     public Task DeleteAsync(string blobName, CancellationToken cancellationToken = default)
     {
         string path = GetPath(blobName);
 
-        if (File.Exists(path))
-            File.Delete(path);
+        try
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            throw new PhotoStorageUnavailableException($"Photo storage could not delete blob {blobName}.", exception);
+        }
 
         return Task.CompletedTask;
+    }
+
+    private static bool IsUnavailable(Exception exception)
+    {
+        return exception is IOException or UnauthorizedAccessException;
     }
 
     private string GetPath(string blobName)

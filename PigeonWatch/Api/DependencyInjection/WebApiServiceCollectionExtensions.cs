@@ -53,10 +53,11 @@ public static class WebApiServiceCollectionExtensions
 
                 string category = (context.ActionDescriptor as ControllerActionDescriptor)?.ControllerTypeInfo.FullName ?? "PigeonWatch.WebApi";
                 string route = (context.HttpContext.GetEndpoint() as RouteEndpoint)?.RoutePattern.RawText ?? "unmatched";
+                string formError = context.ModelState[string.Empty]?.Errors[0].ErrorMessage ?? "unknown";
                 context.HttpContext.RequestServices
                     .GetRequiredService<ILoggerFactory>()
                     .CreateLogger(category)
-                    .LogWarning("Request rejected with {ErrorCode} on {Route}", SightingErrorCodes.PhotoTooLarge, route);
+                    .LogWarning("Request rejected with {ErrorCode} on {Route}: {FormError}", SightingErrorCodes.PhotoTooLarge, route, formError);
 
                 ModelStateDictionary modelState = new();
                 modelState.AddModelError(SightingErrorCodes.PhotoTooLarge, $"The request must not exceed {SightingRules.PhotoRequestMaxBytes} bytes and the photo {SightingRules.PhotoMaxBytes} bytes.");
