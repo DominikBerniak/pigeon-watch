@@ -48,7 +48,7 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 | S-04 | attach-sighting-photo       | attach an optional photo to a sighting                                      | S-03          | FR-005                         | done        |
 | S-05 | filter-sightings-nearby     | scope the map to their nearby area and filter by status and criticality     | S-03          | FR-004                         | done |
 | S-06 | urgency-ranked-sighting-list | browse nearby sightings as a list ordered by urgency                       | S-03          | FR-020                         | done        |
-| S-07 | comment-on-sighting         | add comments to a sighting                                                  | S-03          | FR-009, FR-019                 | proposed |
+| S-07 | comment-on-sighting         | add comments to a sighting                                                  | S-03          | FR-009, FR-019                 | done        |
 | S-08 | sighting-message-threads    | contact a sighting's owner and continue the conversation in a per-sighting thread | S-03    | FR-012, FR-013                 | proposed |
 | S-09 | edit-own-sighting-with-lock | edit their own sighting, with location and description locked once others engage | S-07, S-08 | FR-006                    | proposed |
 | S-10 | admin-remove-sightings      | (as admin) remove sightings                                                 | S-03          | FR-017                         | proposed |
@@ -181,7 +181,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Open comments before moderation tools exist; the cooldown is the only spam guard until `S-10` and `S-11` land.
-- **Status:** proposed
+- **Status:** done
 
 ### S-08: Contact a sighting's owner and hold a thread
 
@@ -299,3 +299,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **S-05: user can see the map scoped to their nearby area by default and filter sightings by status and criticality.** — Archived 2026-11-01 → `context/archive/2026-11-01-filter-sightings-nearby/`. Lesson: —.
 - **S-06: user can browse nearby sightings as a list ordered by urgency, with the same filters as the map, resolved sightings hidden unless requested.** — Archived 2026-11-01 → `context/archive/2026-11-01-urgency-ranked-sighting-list/`. Lesson: —.
 - **S-04: user can attach an optional photo to a sighting they report.** — Archived 2026-11-07 → `context/archive/2026-11-03-attach-sighting-photo/`. Lesson: —.
+- **S-07: user can add comments to a sighting, subject to the submission cooldown.** — Archived 2026-11-07 → `context/archive/2026-11-07-comment-on-sighting/`. Lesson: —.
