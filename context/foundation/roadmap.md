@@ -49,7 +49,7 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 | S-05 | filter-sightings-nearby     | scope the map to their nearby area and filter by status and criticality     | S-03          | FR-004                         | done |
 | S-06 | urgency-ranked-sighting-list | browse nearby sightings as a list ordered by urgency                       | S-03          | FR-020                         | done        |
 | S-07 | comment-on-sighting         | add comments to a sighting                                                  | S-03          | FR-009, FR-019                 | done        |
-| S-08 | sighting-message-threads    | contact a sighting's owner and continue the conversation in a per-sighting thread | S-03    | FR-012, FR-013                 | proposed |
+| S-08 | sighting-message-threads    | contact a sighting's owner and continue the conversation in a per-sighting thread | S-03    | FR-012, FR-013                 | in-progress |
 | S-09 | edit-own-sighting-with-lock | edit their own sighting, with location and description locked once others engage | S-07, S-08 | FR-006                    | proposed |
 | S-10 | admin-remove-sightings      | (as admin) remove sightings                                                 | S-03          | FR-017                         | proposed |
 | S-11 | admin-moderate-users        | (as admin) message, warn or ban users                                       | S-08, S-10    | FR-018                         | proposed |
@@ -193,7 +193,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Contact-info privacy (a PRD NFR) must hold on every surface; no read/unread state and no live delivery, per the PRD.
-- **Status:** proposed
+- **Status:** in-progress
 
 ### S-09: Edit own sighting with engagement lock
 

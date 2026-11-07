@@ -164,6 +164,111 @@ namespace PigeonWatch.Data.Migrations
                     b.ToTable("SIGHTING", (string)null);
                 });
 
+            modelBuilder.Entity("PigeonWatch.Data.Entities.SightingMessageEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ID");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CREATE_DATE");
+
+                    b.Property<string>("CreateUser")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("CREATE_USER");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("SENDER_ID");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("TEXT");
+
+                    b.Property<Guid>("ThreadId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("THREAD_ID");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("UPDATE_DATE");
+
+                    b.Property<string>("UpdateUser")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("UPDATE_USER");
+
+                    b.HasKey("Id")
+                        .HasName("PK_SIGHTING_MESSAGE");
+
+                    b.HasIndex("SenderId")
+                        .HasDatabaseName("IX_SIGHTING_MESSAGE_SENDER_ID");
+
+                    b.HasIndex("ThreadId", "CreateDate")
+                        .HasDatabaseName("IX_SIGHTING_MESSAGE_THREAD_ID_CREATE_DATE");
+
+                    b.ToTable("SIGHTING_MESSAGE", (string)null);
+                });
+
+            modelBuilder.Entity("PigeonWatch.Data.Entities.SightingThreadEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ID");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CREATE_DATE");
+
+                    b.Property<string>("CreateUser")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("CREATE_USER");
+
+                    b.Property<DateTime>("LastMessageAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LAST_MESSAGE_AT");
+
+                    b.Property<Guid>("ParticipantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("PARTICIPANT_ID");
+
+                    b.Property<Guid>("SightingId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("SIGHTING_ID");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("UPDATE_DATE");
+
+                    b.Property<string>("UpdateUser")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("UPDATE_USER");
+
+                    b.HasKey("Id")
+                        .HasName("PK_SIGHTING_THREAD");
+
+                    b.HasIndex("ParticipantId", "LastMessageAt")
+                        .HasDatabaseName("IX_SIGHTING_THREAD_PARTICIPANT_ID_LAST_MESSAGE_AT");
+
+                    b.HasIndex("SightingId", "ParticipantId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_SIGHTING_THREAD_SIGHTING_ID_PARTICIPANT_ID");
+
+                    b.ToTable("SIGHTING_THREAD", (string)null);
+                });
+
             modelBuilder.Entity("PigeonWatch.Data.Entities.UserAccountEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -304,6 +409,48 @@ namespace PigeonWatch.Data.Migrations
                         .HasConstraintName("FK_SIGHTING_USER_ACCOUNT_REPORTER_ID");
 
                     b.Navigation("Reporter");
+                });
+
+            modelBuilder.Entity("PigeonWatch.Data.Entities.SightingMessageEntity", b =>
+                {
+                    b.HasOne("PigeonWatch.Data.Entities.UserAccountEntity", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_SIGHTING_MESSAGE_USER_ACCOUNT_SENDER_ID");
+
+                    b.HasOne("PigeonWatch.Data.Entities.SightingThreadEntity", "Thread")
+                        .WithMany()
+                        .HasForeignKey("ThreadId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_SIGHTING_MESSAGE_SIGHTING_THREAD_THREAD_ID");
+
+                    b.Navigation("Sender");
+
+                    b.Navigation("Thread");
+                });
+
+            modelBuilder.Entity("PigeonWatch.Data.Entities.SightingThreadEntity", b =>
+                {
+                    b.HasOne("PigeonWatch.Data.Entities.UserAccountEntity", "Participant")
+                        .WithMany()
+                        .HasForeignKey("ParticipantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_SIGHTING_THREAD_USER_ACCOUNT_PARTICIPANT_ID");
+
+                    b.HasOne("PigeonWatch.Data.Entities.SightingEntity", "Sighting")
+                        .WithMany()
+                        .HasForeignKey("SightingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_SIGHTING_THREAD_SIGHTING_SIGHTING_ID");
+
+                    b.Navigation("Participant");
+
+                    b.Navigation("Sighting");
                 });
 #pragma warning restore 612, 618
         }
