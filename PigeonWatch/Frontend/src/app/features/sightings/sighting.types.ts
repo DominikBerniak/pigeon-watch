@@ -1,4 +1,4 @@
-import { SightingRules } from '../../core/configuration/configuration.service';
+import { CommentRules, SightingRules } from '../../core/configuration/configuration.service';
 import { MapMarkerKind } from '../../shared/map/map-marker';
 
 export const SightingStatus = {
@@ -43,6 +43,21 @@ export interface SightingList {
 
 export interface SightingPage {
   items: Sighting[];
+  totalCount: number;
+}
+
+export interface SightingComment {
+  id: string;
+  text: string | null;
+  authorDisplayName: string | null;
+  createdAt: string;
+  editedAt: string | null;
+  isDeleted: boolean;
+  isMine: boolean;
+}
+
+export interface SightingCommentPage {
+  items: SightingComment[];
   totalCount: number;
 }
 
@@ -159,4 +174,10 @@ export const fallbackSightingRules: SightingRules = {
   photoMaxBytes: 2097152,
   photoMaxDimension: 1600,
   photoAllowedContentTypes: ['image/jpeg', 'image/png', 'image/webp'],
+};
+
+export const fallbackCommentRules: CommentRules = {
+  textMaxLength: 500,
+  cooldownSeconds: 60,
+  pageSize: 20,
 };

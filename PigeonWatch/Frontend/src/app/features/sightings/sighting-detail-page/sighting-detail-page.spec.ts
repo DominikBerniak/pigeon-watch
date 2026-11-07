@@ -9,7 +9,12 @@ import { NEVER, Observable, Subject, of, throwError } from 'rxjs';
 import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { MapView } from '../../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../../shared/map/testing/map-view-stub';
-import { Sighting, SightingCriticality, SightingStatus } from '../sighting.types';
+import {
+  Sighting,
+  SightingCommentPage,
+  SightingCriticality,
+  SightingStatus,
+} from '../sighting.types';
 import { PhotoEncoder } from '../shared/photo-encoder';
 import { SightingsApi } from '../sightings-api';
 import { SightingDetailPage } from './sighting-detail-page';
@@ -52,7 +57,14 @@ describe('SightingDetailPage', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([{ path: 'sightings/:id', component: SightingDetailPage }]),
-        { provide: SightingsApi, useValue: { get, photo } },
+        {
+          provide: SightingsApi,
+          useValue: {
+            get,
+            photo,
+            comments: (): Observable<SightingCommentPage> => of({ items: [], totalCount: 0 }),
+          },
+        },
         { provide: PhotoEncoder, useValue: { createPreviewUrl, revokePreviewUrl } },
         { provide: ErrorReportingService, useValue: { report } },
       ],

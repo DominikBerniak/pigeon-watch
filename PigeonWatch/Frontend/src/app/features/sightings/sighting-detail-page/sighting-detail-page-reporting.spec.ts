@@ -3,11 +3,11 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { MapView } from '../../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../../shared/map/testing/map-view-stub';
-import { Sighting } from '../sighting.types';
+import { Sighting, SightingCommentPage } from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
 import { SightingDetailPage } from './sighting-detail-page';
 
@@ -25,7 +25,10 @@ describe('SightingDetailPage failure reporting', () => {
         provideRouter([{ path: 'sightings/:id', component: SightingDetailPage }]),
         {
           provide: SightingsApi,
-          useValue: { get: (): Observable<Sighting> => throwError(() => error) },
+          useValue: {
+            get: (): Observable<Sighting> => throwError(() => error),
+            comments: (): Observable<SightingCommentPage> => of({ items: [], totalCount: 0 }),
+          },
         },
         { provide: ErrorReportingService, useValue: { report } },
       ],

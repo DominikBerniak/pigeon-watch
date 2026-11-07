@@ -64,6 +64,7 @@ import {
 } from '../sighting-list-page/sighting-list-hand-over';
 import { SightingsApi } from '../sightings-api';
 import { PhotoDialog, PhotoDialogData } from './photo-dialog/photo-dialog';
+import { SightingComments } from './sighting-comments/sighting-comments';
 
 type DetailState =
   | { readonly kind: 'loading' }
@@ -95,6 +96,7 @@ const coordinateDecimals = 5;
     LoadingIndicator,
     MapView,
     PageCard,
+    SightingComments,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sighting-detail-page.html',

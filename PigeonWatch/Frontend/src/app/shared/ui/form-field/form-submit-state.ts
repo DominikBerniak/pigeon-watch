@@ -12,6 +12,10 @@ export class FormSubmitState {
   markSubmitted(): void {
     this.submittedState.set(true);
   }
+
+  reset(): void {
+    this.submittedState.set(false);
+  }
 }
 
 @Injectable()

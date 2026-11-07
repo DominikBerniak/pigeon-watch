@@ -13,6 +13,10 @@ import { LEAFLET_LOADER, MapView } from '../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../shared/map/testing/map-view-stub';
 import { CellDefinition, cellGroups } from './cell-definitions';
 import {
+  sinkCommentCooldownSeconds,
+  sinkCommentPageSize,
+  sinkComments,
+  sinkCommentTotal,
   sinkListSightings,
   sinkLongNameSighting,
   sinkPhotoSighting,
@@ -588,6 +592,162 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
       expect(cell(id).querySelector('figure')).toBeNull();
       expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
     });
+  });
+
+  function commentsOf(id: string): HTMLElement {
+    const section = cell(id).querySelector<HTMLElement>('app-sighting-comments');
+
+    if (!section) throw new Error(`No comments section in ${id}`);
+
+    return section;
+  }
+
+  function commentItemsOf(id: string): HTMLElement[] {
+    return [...commentsOf(id).querySelectorAll<HTMLElement>('li.sighting-comments__item')];
+  }
+
+  it('shows the comments loading indicator while the sighting details are shown', async () => {
+    const id = 'detail-comments-loading';
+
+    await eventually(() => {
+      expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
+      expect(
+        commentsOf(id)
+          .querySelector('app-loading-indicator mat-progress-spinner')
+          ?.getAttribute('aria-label'),
+      ).toBe(label('sighting.comments.loading'));
+      expect(textOf(commentsOf(id).querySelector('h2'))).toBe(label('sighting.comments.title'));
+    });
+  });
+
+  it('shows the empty comments text as muted text, not an alert, below the add form', async () => {
+    const id = 'detail-comments-empty';
+
+    await eventually(() => {
+      expect(textOf(commentsOf(id).querySelector('p.pw-text-muted'))).toBe(
+        label('sighting.comments.empty'),
+      );
+      expect(commentsOf(id).querySelector('app-alert')).toBeNull();
+      expect(commentsOf(id).querySelector('form.sighting-comments__add textarea')).not.toBeNull();
+      expect(textOf(commentsOf(id).querySelector('h2'))).toBe(
+        label('sighting.comments.titleWithCount', 0),
+      );
+    });
+  });
+
+  it('collapses the comments to the heading with the count and a "Show comments" toggle', async () => {
+    const id = 'detail-comments-collapsed';
+
+    await eventually(() => {
+      const toggle = commentsOf(id).querySelector('button.sighting-comments__toggle');
+
+      expect(textOf(toggle)).toBe(label('sighting.comments.expand'));
+      expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+      expect(commentsOf(id).querySelector('.sighting-comments__body')?.hasAttribute('hidden')).toBe(
+        true,
+      );
+      expect(textOf(commentsOf(id).querySelector('h2'))).toBe(
+        label('sighting.comments.titleWithCount', 23),
+      );
+    });
+  });
+
+  it('shows own, other, edited and deleted comments with "Show older comments" inside the box', async () => {
+    const id = 'detail-comments-list';
+
+    await eventually(() => {
+      const region = commentsOf(id).querySelector('.sighting-comments__list');
+      const items = commentItemsOf(id);
+      const showOlder = [...(region?.querySelectorAll('button') ?? [])].find(
+        (button) => textOf(button) === label('sighting.comments.showOlder'),
+      );
+
+      expect(region?.getAttribute('role')).toBe('region');
+      expect(region?.getAttribute('tabindex')).toBe('0');
+      expect(items).toHaveLength(sinkCommentPageSize);
+      expect(textOf(commentsOf(id).querySelector('h2'))).toBe(
+        label('sighting.comments.titleWithCount', sinkCommentTotal),
+      );
+      expect(textOf(items[0].querySelector('.sighting-comments__text'))).toBe(sinkComments[0].text);
+      expect(
+        items.filter((item) =>
+          [...item.querySelectorAll('button')].some(
+            (button) => textOf(button) === label('sighting.comments.edit'),
+          ),
+        ),
+      ).toEqual([items[0]]);
+      expect(textOf(items[1].querySelector('.sighting-comments__edited'))).toBe(
+        label('sighting.comments.edited'),
+      );
+      expect(textOf(items[2])).toBe(label('sighting.comments.deleted'));
+      expect(items[2].querySelector('button')).toBeNull();
+      expect(showOlder).toBeDefined();
+      expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
+    });
+  });
+
+  it('shows the comments load error with Try again and leaves the details alone', async () => {
+    const id = 'detail-comments-error';
+
+    await eventually(() => {
+      expect(textOf(commentsOf(id).querySelector('app-alert[role="alert"]'))).toBe(
+        label('sighting.comments.errors.generic'),
+      );
+      expect(
+        [...commentsOf(id).querySelectorAll('button')].some(
+          (button) => textOf(button) === label('sighting.comments.retry'),
+        ),
+      ).toBe(true);
+      expect(cell(id).querySelectorAll('dl > div')).toHaveLength(7);
+    });
+  });
+
+  it('shows the comment cooldown alert with the seconds and keeps the typed text', async () => {
+    const id = 'detail-comments-cooldown';
+
+    await eventually(() => {
+      expect(textOf(commentsOf(id).querySelector('form.sighting-comments__add app-alert'))).toBe(
+        label('sighting.comments.errors.cooldown', sinkCommentCooldownSeconds),
+      );
+      expect(
+        commentsOf(id).querySelector<HTMLTextAreaElement>('form.sighting-comments__add textarea')
+          ?.value,
+      ).toBe('Spotted it again near the fountain.');
+      expect(commentItemsOf(id)).toHaveLength(sinkCommentPageSize);
+    });
+  });
+
+  it('edits an own comment inline once Edit is pressed from the cell header', async () => {
+    const id = 'detail-comments-editing';
+
+    await eventually(() => expect(commentItemsOf(id)).toHaveLength(sinkCommentPageSize));
+
+    expect(commentsOf(id).querySelector('.sighting-comments__edit')).toBeNull();
+    expect(textOf(cell(id).querySelector('header button'))).toBe('Press Edit');
+
+    await runManualOf(id);
+
+    await eventually(() => {
+      const field = commentItemsOf(id)[0].querySelector<HTMLTextAreaElement>(
+        '.sighting-comments__edit textarea',
+      );
+
+      expect(field?.value).toBe(sinkComments[0].text);
+      expect(document.activeElement).toBe(field);
+      expect(
+        [...commentItemsOf(id)[0].querySelectorAll('button')].map(textOf),
+      ).toEqual([label('sighting.comments.cancel'), label('sighting.comments.save')]);
+    });
+  });
+
+  it('takes no focus on load in any comments cell', async () => {
+    await eventually(() =>
+      expect(textOf(commentsOf('detail-comments-cooldown').querySelector('app-alert'))).not.toBe(''),
+    );
+
+    for (const section of root.querySelectorAll('[data-cell^="detail-comments-"] app-sighting-comments')) {
+      expect(section.contains(document.activeElement)).toBe(false);
+    }
   });
 
   function listRowsOf(id: string): HTMLElement[] {

@@ -426,6 +426,99 @@
   <data name="sighting.detail.photoClose" xml:space="preserve">
     <value>Close</value>
   </data>
+  <data name="sighting.comments.title" xml:space="preserve">
+    <value>Comments</value>
+  </data>
+  <data name="sighting.comments.titleWithCount" xml:space="preserve">
+    <value>Comments ({0})</value>
+  </data>
+  <data name="sighting.comments.collapse" xml:space="preserve">
+    <value>Hide comments</value>
+  </data>
+  <data name="sighting.comments.expand" xml:space="preserve">
+    <value>Show comments</value>
+  </data>
+  <data name="sighting.comments.empty" xml:space="preserve">
+    <value>No comments yet. Be the first to add one.</value>
+  </data>
+  <data name="sighting.comments.loading" xml:space="preserve">
+    <value>Loading the comments…</value>
+  </data>
+  <data name="sighting.comments.listLabel" xml:space="preserve">
+    <value>Comments, newest first</value>
+  </data>
+  <data name="sighting.comments.retry" xml:space="preserve">
+    <value>Try again</value>
+  </data>
+  <data name="sighting.comments.add.label" xml:space="preserve">
+    <value>Add a comment</value>
+  </data>
+  <data name="sighting.comments.add.hint" xml:space="preserve">
+    <value>Up to {0} characters.</value>
+  </data>
+  <data name="sighting.comments.add.submit" xml:space="preserve">
+    <value>Post comment</value>
+  </data>
+  <data name="sighting.comments.edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="sighting.comments.editLabel" xml:space="preserve">
+    <value>Edit your comment</value>
+  </data>
+  <data name="sighting.comments.save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="sighting.comments.cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="sighting.comments.delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="sighting.comments.deleting" xml:space="preserve">
+    <value>Deleting the comment…</value>
+  </data>
+  <data name="sighting.comments.deleteConfirmTitle" xml:space="preserve">
+    <value>Delete this comment?</value>
+  </data>
+  <data name="sighting.comments.deleteConfirmMessage" xml:space="preserve">
+    <value>Everyone will see "Comment deleted" in its place. You can't undo this.</value>
+  </data>
+  <data name="sighting.comments.deleteConfirmAction" xml:space="preserve">
+    <value>Delete comment</value>
+  </data>
+  <data name="sighting.comments.deleted" xml:space="preserve">
+    <value>Comment deleted</value>
+  </data>
+  <data name="sighting.comments.edited" xml:space="preserve">
+    <value>edited</value>
+  </data>
+  <data name="sighting.comments.showOlder" xml:space="preserve">
+    <value>Show older comments</value>
+  </data>
+  <data name="sighting.comments.loadingOlder" xml:space="preserve">
+    <value>Loading older comments…</value>
+  </data>
+  <data name="sighting.comments.olderError" xml:space="preserve">
+    <value>We couldn't load older comments.</value>
+  </data>
+  <data name="sighting.comments.errors.cooldown" xml:space="preserve">
+    <value>You can post or edit another comment in {0} seconds.</value>
+  </data>
+  <data name="sighting.comments.errors.notFound" xml:space="preserve">
+    <value>This comment no longer exists. Refresh the comments.</value>
+  </data>
+  <data name="sighting.comments.errors.forbidden" xml:space="preserve">
+    <value>You can only change your own comments.</value>
+  </data>
+  <data name="sighting.comments.errors.generic" xml:space="preserve">
+    <value>We couldn't reach the comments right now. Try again.</value>
+  </data>
+  <data name="sighting.comments.validation.required" xml:space="preserve">
+    <value>Write a comment first.</value>
+  </data>
+  <data name="sighting.comments.validation.maxLength" xml:space="preserve">
+    <value>Use at most {0} characters.</value>
+  </data>
   <data name="sighting.row.hasPhoto" xml:space="preserve">
     <value>Has a photo</value>
   </data>

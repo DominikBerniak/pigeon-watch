@@ -494,29 +494,29 @@ The additive migration `AddSightingComment` creates a new table with no data bac
 
 #### Automated
 
-- [x] 2.1 API builds
-- [x] 2.2 Architecture tests pass
-- [x] 2.3 Unit tests pass, including the comment service, controller, view model creator and configuration tests
-- [x] 2.4 Integration tests pass, including SightingCommentContractTests, endpoint coverage, protection and the privacy sweep
-- [x] 2.5 No pending model changes
+- [x] 2.1 API builds — 90d4db3
+- [x] 2.2 Architecture tests pass — 90d4db3
+- [x] 2.3 Unit tests pass, including the comment service, controller, view model creator and configuration tests — 90d4db3
+- [x] 2.4 Integration tests pass, including SightingCommentContractTests, endpoint coverage, protection and the privacy sweep — 90d4db3
+- [x] 2.5 No pending model changes — 90d4db3
 
 #### Manual
 
-- [x] 2.6 Against the local API, post, list, edit within 60 s (blocked), delete and list as two users, confirming the placeholder and no author id or email
+- [x] 2.6 Against the local API, post, list, edit within 60 s (blocked), delete and list as two users, confirming the placeholder and no author id or email — 90d4db3
 
 ### Phase 3: SPA comments section
 
 #### Automated
 
-- [ ] 3.1 SPA unit tests pass, including the new comment specs, kitchen-sink markers, label coverage and style-token coverage
-- [ ] 3.2 Production build passes within the bundle budget
-- [ ] 3.3 API resource tests still pass with the new keys
+- [x] 3.1 SPA unit tests pass, including the new comment specs, kitchen-sink markers, label coverage and style-token coverage
+- [x] 3.2 Production build passes within the bundle budget
+- [x] 3.3 API resource tests still pass with the new keys
 
 #### Manual
 
-- [ ] 3.4 On the detail page: post, edit cooldown, delete placeholder, and Show older appends inside the box without moving the page
-- [ ] 3.5 Keyboard: the list region scrolls, actions are reachable by Tab, and the dialog returns focus
-- [ ] 3.6 Kitchen sink: the comment cells render at form and wide widths with no layout jump
+- [x] 3.4 On the detail page: post, edit cooldown, delete placeholder, and Show older appends inside the box without moving the page
+- [x] 3.5 Keyboard: the list region scrolls, actions are reachable by Tab, and the dialog returns focus
+- [x] 3.6 Kitchen sink: the comment cells render at form and wide widths with no layout jump
 
 ### Phase 4: E2E and documentation
 

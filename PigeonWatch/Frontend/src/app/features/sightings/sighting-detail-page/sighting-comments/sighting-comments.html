@@ -1,0 +1,192 @@
+<section class="sighting-comments" aria-labelledby="sighting-comments-title">
+  <div class="sighting-comments__header">
+    <h2 id="sighting-comments-title" class="pw-subtitle">{{ heading() }}</h2>
+    <button
+      mat-button
+      type="button"
+      class="sighting-comments__toggle"
+      aria-controls="sighting-comments-body"
+      [attr.aria-expanded]="expanded()"
+      (click)="toggleExpanded()"
+    >
+      {{ (expanded() ? 'sighting.comments.collapse' : 'sighting.comments.expand') | translate }}
+    </button>
+  </div>
+  <div id="sighting-comments-body" class="sighting-comments__body" [hidden]="!expanded()">
+    <form class="sighting-comments__add" [formRoot]="addForm" (submit)="submitAdd()">
+      <mat-form-field class="pw-full-width">
+        <mat-label>{{ 'sighting.comments.add.label' | translate }}</mat-label>
+        <textarea matInput rows="3" [formField]="addForm.text"></textarea>
+        <mat-hint>{{ 'sighting.comments.add.hint' | translate: rules().textMaxLength }}</mat-hint>
+        <mat-error>
+          <app-field-errors [field]="addForm.text" [messages]="textMessages()" />
+        </mat-error>
+      </mat-form-field>
+      @if (addErrorText(); as text) {
+        <app-alert kind="error">
+          {{ text }}
+          <app-error-reference [traceId]="addErrorTraceId()" />
+        </app-alert>
+      }
+      <div class="sighting-comments__submit">
+        <app-submit-button [busy]="adding()">{{
+          'sighting.comments.add.submit' | translate
+        }}</app-submit-button>
+      </div>
+    </form>
+    @switch (state().kind) {
+      @case ('loading') {
+        <app-loading-indicator [label]="'sighting.comments.loading' | translate" />
+      }
+      @case ('error') {
+        <app-error-retry [retryLabel]="'sighting.comments.retry' | translate" (retry)="retry()">
+          {{ 'sighting.comments.errors.generic' | translate }}
+          <app-error-reference [traceId]="loadErrorTraceId()" />
+        </app-error-retry>
+      }
+      @case ('loaded') {
+        @if (items().length === 0) {
+          <p class="pw-text-muted">{{ 'sighting.comments.empty' | translate }}</p>
+        } @else {
+          <div
+            #listRegion
+            class="sighting-comments__list"
+            role="region"
+            tabindex="0"
+            [attr.aria-label]="'sighting.comments.listLabel' | translate"
+          >
+            <ul class="sighting-comments__items">
+              @for (entry of entries(); track entry.comment.id) {
+                @let comment = entry.comment;
+                <li class="sighting-comments__item" [attr.data-comment-id]="comment.id">
+                  @if (comment.isDeleted) {
+                    <p class="sighting-comments__deleted pw-text-muted">
+                      {{ 'sighting.comments.deleted' | translate }}
+                    </p>
+                  } @else {
+                    <p class="sighting-comments__meta pw-text-small">
+                      <span class="sighting-comments__author">{{ comment.authorDisplayName }}</span>
+                      <time
+                        class="pw-text-muted"
+                        [attr.datetime]="comment.createdAt"
+                        [title]="comment.createdAt | date: 'medium'"
+                        >{{ entry.age.key | translate: entry.age.value }}</time
+                      >
+                      @if (comment.editedAt) {
+                        <span class="sighting-comments__edited pw-text-muted">{{
+                          'sighting.comments.edited' | translate
+                        }}</span>
+                      }
+                    </p>
+                    @if (editingId() === comment.id) {
+                      <form
+                        #editFormElement
+                        appFormSubmitScope
+                        class="sighting-comments__edit"
+                        [formRoot]="editForm"
+                        (submit)="saveEdit(comment)"
+                      >
+                        <mat-form-field class="pw-full-width">
+                          <mat-label>{{ 'sighting.comments.editLabel' | translate }}</mat-label>
+                          <textarea
+                            #editField
+                            matInput
+                            rows="3"
+                            [formField]="editForm.text"
+                          ></textarea>
+                          <mat-hint>{{
+                            'sighting.comments.add.hint' | translate: rules().textMaxLength
+                          }}</mat-hint>
+                          <mat-error>
+                            <app-field-errors [field]="editForm.text" [messages]="textMessages()" />
+                          </mat-error>
+                        </mat-form-field>
+                        @if (itemErrorText(comment.id); as text) {
+                          <app-alert kind="error">
+                            {{ text }}
+                            <app-error-reference [traceId]="itemErrorTraceId(comment.id)" />
+                          </app-alert>
+                        }
+                        <app-form-actions>
+                          <button
+                            mat-stroked-button
+                            type="button"
+                            class="pw-full-width"
+                            [disabled]="saving()"
+                            (click)="cancelEdit()"
+                          >
+                            {{ 'sighting.comments.cancel' | translate }}
+                          </button>
+                          <app-submit-button [busy]="saving()">{{
+                            'sighting.comments.save' | translate
+                          }}</app-submit-button>
+                        </app-form-actions>
+                      </form>
+                    } @else {
+                      <p class="sighting-comments__text">{{ comment.text }}</p>
+                      @if (itemErrorText(comment.id); as text) {
+                        <app-alert kind="error">
+                          {{ text }}
+                          <app-error-reference [traceId]="itemErrorTraceId(comment.id)" />
+                        </app-alert>
+                      }
+                      @if (comment.isMine) {
+                        <div class="sighting-comments__actions pw-cluster">
+                          @if (deletingId() === comment.id) {
+                            <app-loading-indicator
+                              layout="inline"
+                              [label]="'sighting.comments.deleting' | translate"
+                            />
+                          } @else {
+                            <button
+                              #editButton
+                              mat-button
+                              type="button"
+                              [attr.data-comment-id]="comment.id"
+                              (click)="startEdit(comment)"
+                            >
+                              {{ 'sighting.comments.edit' | translate }}
+                            </button>
+                            <button mat-button type="button" (click)="confirmDelete(comment)">
+                              {{ 'sighting.comments.delete' | translate }}
+                            </button>
+                          }
+                        </div>
+                      }
+                    }
+                  }
+                </li>
+              }
+            </ul>
+            @if (hasOlder()) {
+              <div class="sighting-comments__older pw-cluster">
+                @switch (older().kind) {
+                  @case ('loading') {
+                    <app-loading-indicator
+                      layout="inline"
+                      [label]="'sighting.comments.loadingOlder' | translate"
+                    />
+                  }
+                  @case ('error') {
+                    <app-error-retry
+                      [retryLabel]="'sighting.comments.retry' | translate"
+                      (retry)="showOlder()"
+                    >
+                      {{ 'sighting.comments.olderError' | translate }}
+                      <app-error-reference [traceId]="olderErrorTraceId()" />
+                    </app-error-retry>
+                  }
+                  @default {
+                    <button mat-stroked-button type="button" (click)="showOlder()">
+                      {{ 'sighting.comments.showOlder' | translate }}
+                    </button>
+                  }
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    }
+  </div>
+</section>

@@ -381,6 +381,8 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
 ];
 
 const detailMap = '#sighting-detail-map app-map-view';
+const commentForm = 'form.sighting-comments__add';
+const commentField = `${commentForm} textarea`;
 
 const detailCells: readonly SightingDetailCell[] = [
   {
@@ -485,6 +487,79 @@ const detailCells: readonly SightingDetailCell[] = [
     photo: 'failure',
     leaflet: 'tileless',
     steps: [],
+  },
+  {
+    id: 'detail-comments-loading',
+    label: 'Comments loading (request never completes, details shown)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    comments: 'pending',
+    leaflet: 'tileless',
+    steps: [press('sighting.comments.expand')],
+  },
+  {
+    id: 'detail-comments-empty',
+    label: 'Comments empty (muted text, add form)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    comments: 'empty',
+    leaflet: 'tileless',
+    steps: [press('sighting.comments.expand')],
+  },
+  {
+    id: 'detail-comments-collapsed',
+    label: 'Comments collapsed by default (heading with count and "Show comments")',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    comments: 'items',
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'detail-comments-list',
+    label: 'Comments: own, other, edited, deleted, with "Show older comments" in the box',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    comments: 'items',
+    leaflet: 'tileless',
+    steps: [press('sighting.comments.expand')],
+  },
+  {
+    id: 'detail-comments-error',
+    label: 'Comments failed to load (500, Try again)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    comments: 'failure',
+    leaflet: 'tileless',
+    steps: [press('sighting.comments.expand')],
+  },
+  {
+    id: 'detail-comments-cooldown',
+    label: 'Comment posted within the cooldown (alert with seconds, text kept)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    comments: 'items',
+    addComment: 'cooldown',
+    leaflet: 'tileless',
+    steps: [
+      press('sighting.comments.expand'),
+      fill(commentField, ['Spotted it again near the fountain.']),
+      submitForm(),
+      waitFor(`${commentForm} app-alert`),
+    ],
+  },
+  {
+    id: 'detail-comments-editing',
+    label: 'Editing an own comment (Edit runs from the header, focus moves to the field)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    comments: 'items',
+    leaflet: 'tileless',
+    steps: [press('sighting.comments.expand')],
+    manual: {
+      action: 'Press Edit',
+      steps: [press('sighting.comments.edit'), waitFor('.sighting-comments__edit textarea')],
+    },
   },
 ];
 
