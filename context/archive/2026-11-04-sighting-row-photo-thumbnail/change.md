@@ -1,10 +1,10 @@
 ---
 change_id: sighting-row-photo-thumbnail
 title: Real photo thumbnails in sighting list rows
-status: impl_reviewed
+status: archived
 created: 2026-11-04
 updated: 2026-11-07
-archived_at: null
+archived_at: 2026-11-07T12:51:02Z
 ---
 
 ## Notes
