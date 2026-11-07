@@ -1,9 +1,9 @@
 ---
 change_id: sighting-row-photo-thumbnail
 title: Real photo thumbnails in sighting list rows
-status: implementing
+status: implemented
 created: 2026-11-04
-updated: 2026-11-04
+updated: 2026-11-07
 archived_at: null
 ---
 

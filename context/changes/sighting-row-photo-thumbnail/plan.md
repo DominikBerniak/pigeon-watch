@@ -286,10 +286,10 @@ Rows with a photo load and show the thumbnail when they scroll into view.
 
 #### Automated
 
-- [x] 3.1 Frontend specs pass
-- [x] 3.2 Build passes within the initial-bundle budget
+- [x] 3.1 Frontend specs pass — cd05f24
+- [x] 3.2 Build passes within the initial-bundle budget — cd05f24
 
 #### Manual
 
-- [ ] 3.3 List and My sightings rows show thumbnails at phone width, with no layout shift while they load
-- [ ] 3.4 Scrolling a long list requests thumbnails only for rows that come into view
+- [x] 3.3 List and My sightings rows show thumbnails at phone width, with no layout shift while they load — cd05f24
+- [x] 3.4 Scrolling a long list requests thumbnails only for rows that come into view — cd05f24
