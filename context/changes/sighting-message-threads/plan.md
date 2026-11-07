@@ -441,24 +441,24 @@ Additive migration only (two new tables); no data backfill. `SightingModel.isMin
 
 #### Automated
 
-- [x] 2.1 API builds with style rules
-- [x] 2.2 Architecture tests pass, including controller action shape
-- [x] 2.3 Unit tests pass, including the new service, controller and view-model creator tests
+- [x] 2.1 API builds with style rules — 3a7cf0f
+- [x] 2.2 Architecture tests pass, including controller action shape — 3a7cf0f
+- [x] 2.3 Unit tests pass, including the new service, controller and view-model creator tests — 3a7cf0f
 
 #### Manual
 
-- [x] 2.4 Bob starts a thread on Alice's sighting via curl.exe and Alice lists it via GET threads
+- [x] 2.4 Bob starts a thread on Alice's sighting via curl.exe and Alice lists it via GET threads — 3a7cf0f
 
 ### Phase 3: Privacy and access contract tests
 
 #### Automated
 
-- [ ] 3.1 Integration tests pass, including coverage guard, anonymous 401 sweep, privacy sweep, audit columns and SightingThreadContractTests
-- [ ] 3.2 Unit tests still pass
+- [x] 3.1 Integration tests pass, including coverage guard, anonymous 401 sweep, privacy sweep, audit columns and SightingThreadContractTests
+- [x] 3.2 Unit tests still pass
 
 #### Manual
 
-- [ ] 3.3 Review the §7 wording in test-plan.md
+- [x] 3.3 Review the §7 wording in test-plan.md
 
 ### Phase 4: Sighting-detail messages panel (SPA)
 

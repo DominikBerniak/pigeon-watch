@@ -131,8 +131,10 @@ public sealed class PrivacySweepTests : IDisposable
     {
         TestUser alice = await SeedUserAsync(aliceEmail, aliceDisplayName);
         TestUser bob = await SeedUserAsync(bobEmail, bobDisplayName);
-        await alice.CreateSightingAsync(cancellationToken: cancellationToken);
+        Guid aliceSightingId = await alice.CreateSightingAsync(cancellationToken: cancellationToken);
         await bob.CreateSightingAsync(cancellationToken: cancellationToken);
+        Guid threadId = await bob.StartThreadAsync(aliceSightingId, "I can help catch it", cancellationToken);
+        await alice.ReplyAsync(aliceSightingId, threadId, "Thank you, it is still there", cancellationToken);
 
         using HttpResponseMessage rename = await alice.Client.PutAsJsonAsync(
             "/account/profile",
@@ -150,12 +152,16 @@ public sealed class PrivacySweepTests : IDisposable
 
         offenders.AddRange(FindAuditOffenders("USER_ACCOUNT", factory.ReadUserAccountAuditUsers(), needles));
         offenders.AddRange(FindAuditOffenders("SIGHTING", factory.ReadSightingAuditUsers(), needles));
+        offenders.AddRange(FindAuditOffenders("SIGHTING_THREAD", factory.ReadSightingThreadAuditUsers(), needles));
+        offenders.AddRange(FindAuditOffenders("SIGHTING_MESSAGE", factory.ReadSightingMessageAuditUsers(), needles));
 
         Assert.Equal(HttpStatusCode.OK, rename.StatusCode);
         Assert.Equal(HttpStatusCode.OK, passwordChange.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, failedLogin.StatusCode);
         Assert.Equal(2, factory.ReadUserAccountAuditUsers().Count);
         Assert.Equal(2, factory.ReadSightingAuditUsers().Count);
+        Assert.Single(factory.ReadSightingThreadAuditUsers());
+        Assert.Equal(2, factory.ReadSightingMessageAuditUsers().Count);
         Assert.True(offenders.Count == 0, string.Join(Environment.NewLine, offenders));
     }
 

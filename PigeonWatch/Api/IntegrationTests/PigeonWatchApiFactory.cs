@@ -164,6 +164,16 @@ public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null, Cul
         return ReadAuditUsers("SIGHTING");
     }
 
+    public IReadOnlyList<AuditUsers> ReadSightingThreadAuditUsers()
+    {
+        return ReadAuditUsers("SIGHTING_THREAD");
+    }
+
+    public IReadOnlyList<AuditUsers> ReadSightingMessageAuditUsers()
+    {
+        return ReadAuditUsers("SIGHTING_MESSAGE");
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureLogging(logging => logging.AddProvider(new FakeLoggerProvider(logs)));
