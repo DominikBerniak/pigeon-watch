@@ -52,6 +52,10 @@ a {
   outline-offset: var(--pw-focus-ring-offset);
 }
 
+[tabindex='-1']:focus-visible {
+  outline: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

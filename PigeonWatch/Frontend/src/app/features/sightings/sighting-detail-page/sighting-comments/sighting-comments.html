@@ -69,7 +69,7 @@
                       <time
                         class="pw-text-muted"
                         [attr.datetime]="comment.createdAt"
-                        [matTooltip]="comment.createdAt | date: 'medium'"
+                        [appTooltip]="comment.createdAt | date: 'medium'"
                         >{{ entry.age.key | translate: entry.age.value }}</time
                       >
                       @if (comment.editedAt) {

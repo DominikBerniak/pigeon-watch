@@ -1,5 +1,4 @@
 import { DatePipe } from '@angular/common';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -16,7 +15,7 @@ import { RouterLink } from '@angular/router';
 import { Observable, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ErrorReportingService } from '../../../../core/error-reporting/error-reporting.service';
 import { TranslatePipe } from '../../../../core/resources/translate.pipe';
-import { CriticalityBadge } from '../../../../shared/ui';
+import { CriticalityBadge, Tooltip } from '../../../../shared/ui';
 import { PhotoEncoder } from '../photo-encoder';
 import {
   Sighting,
@@ -38,7 +37,7 @@ const visibilityMargin = '200px';
 
 @Component({
   selector: 'li[app-sighting-row]',
-  imports: [DatePipe, MatTooltipModule, RouterLink, TranslatePipe, CriticalityBadge],
+  imports: [DatePipe, RouterLink, TranslatePipe, CriticalityBadge, Tooltip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sighting-row.html',
   styleUrl: './sighting-row.scss',

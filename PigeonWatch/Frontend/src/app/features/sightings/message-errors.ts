@@ -17,7 +17,8 @@ export type MessageContext =
   | 'sighting.threads.load'
   | 'sighting.threads.start'
   | 'sighting.messages.load'
-  | 'sighting.messages.send';
+  | 'sighting.messages.send'
+  | 'messages.inbox.load';
 
 const ownSightingCode = 'ownsightingcontact';
 const textRequiredCode = 'messagetextrequired';

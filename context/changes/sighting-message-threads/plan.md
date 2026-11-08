@@ -28,7 +28,7 @@ A signed-in user who does not own a sighting can contact its owner. The first me
 
 ## What We're NOT Doing
 
-- No read/unread state, notifications, unread counts or live delivery (FR-013, `prd.md:165`).
+- No notifications or live delivery (FR-013, `prd.md:165`). *(Amended 2026-11-08: read/unread state and an unread count are now in scope, Phase 6; FR-013 amended.)*
 - No message edit or delete; messages are append-only.
 - No cooldown on messages (FR-019 names sightings and comments only); spam control waits for S-10/S-11 moderation.
 - No owner-initiated threads and no way to address a user directly; only a non-owner starts a thread.
@@ -325,6 +325,8 @@ The `/messages` page and its user-menu entry.
 
 ### Changes Required:
 
+> **Amendment 2026-11-08 (user decision during manual verification):** (a) On a sighting where the caller already has a thread, the email icon on the detail page opens `/messages/:sightingId/:threadId` instead of the popup; the detail page loads the caller's own thread with `GET sightings/{id}/threads` in its own stream (non-owners only), and a failed lookup keeps the popup path (start-or-append is safe) and is reported per `message-errors.ts`. (b) The messages page gets a Refresh button that reloads the sidebar from page 1 and the open thread's first page without reloading the page. (c) The Messages user-menu item is removed; an icon button with the same email icon sits next to the user menu in the header, linking to `/messages` with `header.messages` as its accessible name (the unread count is Phase 6). The email icon is shared, so it is promoted to one component and imported by file path from the initial bundle. Progress 5.4 is verified as "the header email button sits well beside the user menu and works from every page". The page card uses the new `full` width so the sidebar and chat sit side by side below `xl`.
+
 #### 1. Route, menu and page
 
 **File**: `PigeonWatch/Frontend/src/app/app.routes.ts`, `PigeonWatch/Frontend/src/app/app.html`, new `PigeonWatch/Frontend/src/app/features/messages/messages-page/`, `sightings-api.ts` (or a messages API file)
@@ -355,7 +357,60 @@ The `/messages` page and its user-menu entry.
 
 ---
 
-## Phase 6: Two-user E2E and docs
+## Phase 6: Read state and unread badge
+
+> Added 2026-11-08 by user decision during Phase 5 manual verification; amends FR-013 ("no read/unread tracking") for S-08.
+
+### Overview
+
+Each participant has a per-thread read marker. A thread is unread for a user when it holds a message from the other person newer than that user's marker. The sidebar marks unread threads and the header email button shows the number of unread threads.
+
+### Changes Required:
+
+#### 1. Data model
+
+**File**: `SightingThreadEntity.cs`, `PigeonWatchDbContext.cs`, new migration `AddSightingThreadReadMarkers`, `SightingThread.cs`, `SightingThreadMapper.cs`, `SightingThreadRepository.cs` (+ interface)
+
+**Contract**: `SIGHTING_THREAD` gains nullable `OWNER_LAST_READ_AT` and `PARTICIPANT_LAST_READ_AT` (UTC). Sending a message sets the sender's own marker to the message time, so your own messages never make a thread unread for you. `MarkReadAsync(sightingId, threadId, userId, now)` sets the caller's side, scoped like `GetThreadForUserAsync`. `CountUnreadThreadsAsync(userId)` counts threads where the caller is owner or participant and the latest message from the other side is newer than the caller's marker (null marker = never read). Thread reads carry `HasUnread` for the caller.
+
+#### 2. API
+
+**File**: service, view-model creator, `SightingThreadModel.cs`, `SightingThreadsController.cs`, `ThreadsController.cs`
+
+**Contract**: `SightingThreadModel` gains `hasUnread`. `PUT sightings/{sightingId:guid}/threads/{threadId:guid}/read` returns 204; non-participant or unknown returns 404 (Information), same scoping as replies. `GET threads/unread-count` returns 200 `{ count }` with `Cache-Control: private, no-store`. Unit tests for service, controllers and repository (on SQLite) cover own-message-not-unread, marker scoping, the outsider 404 and the count.
+
+#### 3. Contract tests
+
+**File**: `EndpointFixtureRegistry.cs`, `SightingThreadContractTests.cs`
+
+**Contract**: fixtures for both new routes (coverage guard, anonymous 401, privacy sweep); Bob's message is unread for Alice until she marks it read; Carol cannot mark Bob's thread (404, nothing written); the count never includes another user's threads.
+
+#### 4. SPA
+
+**File**: `sightings-api.ts`, `sighting.types.ts`, `messages-page`, `message-thread`, `app.html`/`app.ts`, a root unread-count service under `core/` (or `features/messages`, imported by file path)
+
+**Contract**: opening a thread marks it read after its first page loads (PUT), then clears the sidebar mark and refreshes the count. Unread rows show a dot plus bold text and a visually hidden "unread" label (never colour alone). The header email button shows the count as a badge when it is above 0 and nothing at 0, with an accessible name that includes the count. The count is fetched after sign-in, on route changes (throttled), after a thread is marked read and on Refresh; no timer. Failures report under `messages.unread.count` and `messages.thread.read` and leave the badge as it was. Labels, kitchen-sink cells (unread rows, badge with a count) and specs follow. PRD FR-013 is amended to allow read/unread tracking.
+
+### Success Criteria:
+
+#### Automated Verification:
+
+- API builds with style rules: `dotnet build PigeonWatch/Api/PigeonWatchApi.slnx`
+- Migration matches the model: `dotnet ef migrations has-pending-model-changes --project PigeonWatch/Api/Data/PigeonWatch.Data.csproj --startup-project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj`
+- All .NET tests pass, including architecture, unit and integration: `dotnet test PigeonWatch/Api/PigeonWatchApi.slnx`
+- SPA unit tests pass: `npm test -- --watch=false` (in `PigeonWatch/Frontend`)
+- Production build passes within the bundle budget: `npm run build` (in `PigeonWatch/Frontend`)
+
+#### Manual Verification:
+
+- Bob messages Alice; Alice sees the badge and the unread mark, opens the thread, and both clear
+- No badge when nothing is unread
+
+**Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to the next phase.
+
+---
+
+## Phase 7: Two-user E2E and docs
 
 ### Overview
 
@@ -367,7 +422,7 @@ One browser-level proof of the two-person flow, and the rules files updated.
 
 **File**: `PigeonWatch/Frontend/tests/e2e/sighting-messages.spec.ts`
 
-**Intent**: Two fresh users in two browser contexts with empty `storageState` (pattern: `sighting-comments.spec.ts:3-7`): owner reports a sighting, contacter sends a message, owner finds it on `/messages`, opens it and replies, contacter reloads and sees the reply.
+**Intent**: Two fresh users in two browser contexts with empty `storageState` (pattern: `sighting-comments.spec.ts:3-7`): owner reports a sighting, contacter sends a message, owner finds it on `/messages` (header badge shows 1, thread marked unread), opens it and replies (badge clears), contacter reloads and sees the reply marked unread.
 
 #### 2. Docs
 
@@ -468,34 +523,49 @@ Additive migration only (two new tables); no data backfill. `SightingModel.isMin
 
 #### Automated
 
-- [x] 4.1 SPA unit tests pass, including the new specs, label coverage and style-token coverage
-- [x] 4.2 Production build passes within the bundle budget
+- [x] 4.1 SPA unit tests pass, including the new specs, label coverage and style-token coverage — 512b599
+- [x] 4.2 Production build passes within the bundle budget — 512b599
 
 #### Manual
 
-- [x] 4.3 Bob contacts Alice and Alice replies on the detail page; no contact action on own sighting
-- [x] 4.4 Panel layout is usable at phone width
+- [x] 4.3 Bob contacts Alice and Alice replies on the detail page; no contact action on own sighting — 512b599
+- [x] 4.4 Panel layout is usable at phone width — 512b599
 
 ### Phase 5: Messages inbox page (SPA)
 
 #### Automated
 
-- [ ] 5.1 SPA unit tests pass
-- [ ] 5.2 Production build passes within the bundle budget
+- [x] 5.1 SPA unit tests pass
+- [x] 5.2 Production build passes within the bundle budget
 
 #### Manual
 
-- [ ] 5.3 Both users see the thread on /messages and it opens on the sighting
-- [ ] 5.4 Menu item reads well next to Profile and works from every page
+- [x] 5.3 Both users see the thread on /messages and it opens on the sighting
+- [x] 5.4 Menu item reads well next to Profile and works from every page
 
-### Phase 6: Two-user E2E and docs
+### Phase 6: Read state and unread badge
 
 #### Automated
 
-- [ ] 6.1 E2E suite passes, including sighting-messages.spec.ts
-- [ ] 6.2 SPA unit tests still pass
-- [ ] 6.3 All .NET tests still pass
+- [ ] 6.1 API builds with style rules
+- [ ] 6.2 Migration matches the model
+- [ ] 6.3 All .NET tests pass, including architecture, unit and integration
+- [ ] 6.4 SPA unit tests pass
+- [ ] 6.5 Production build passes within the bundle budget
 
 #### Manual
 
-- [ ] 6.4 Docs read correctly and no longer claim messaging is missing
+- [ ] 6.6 Bob messages Alice; badge and unread mark appear and clear when Alice opens the thread
+- [ ] 6.7 No badge when nothing is unread
+
+### Phase 7: Two-user E2E and docs
+
+#### Automated
+
+- [ ] 7.1 E2E suite passes, including sighting-messages.spec.ts
+- [ ] 7.2 SPA unit tests still pass
+- [ ] 7.3 All .NET tests still pass
+
+#### Manual
+
+- [ ] 7.4 Docs read correctly and no longer claim messaging is missing

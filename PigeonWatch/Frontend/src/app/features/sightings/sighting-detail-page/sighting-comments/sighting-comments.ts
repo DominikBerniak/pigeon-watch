@@ -27,7 +27,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   Observable,
   Subject,
@@ -57,6 +56,7 @@ import {
   FormSubmitState,
   LoadingIndicator,
   SubmitButton,
+  Tooltip,
   provideFormFieldDefaults,
 } from '../../../../shared/ui';
 import {
@@ -68,11 +68,7 @@ import {
   isReportableCommentFailure,
 } from '../../comment-errors';
 import { SightingAge, sightingAge } from '../../shared/sighting-age';
-import {
-  SightingComment,
-  SightingCommentPage,
-  fallbackCommentRules,
-} from '../../sighting.types';
+import { SightingComment, SightingCommentPage, fallbackCommentRules } from '../../sighting.types';
 import { SightingsApi } from '../../sightings-api';
 import { DeleteCommentDialog } from './delete-comment-dialog/delete-comment-dialog';
 
@@ -110,7 +106,6 @@ interface CommentEntry {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatTooltipModule,
     TranslatePipe,
     Alert,
     ErrorReference,
@@ -120,6 +115,7 @@ interface CommentEntry {
     FormSubmitScope,
     LoadingIndicator,
     SubmitButton,
+    Tooltip,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sighting-comments.html',
@@ -264,7 +260,10 @@ export class SightingComments {
       .subscribe({
         next: (comment) => {
           if (this.state().kind === 'loaded') {
-            this.items.update((items) => [comment, ...items.filter((item) => item.id !== comment.id)]);
+            this.items.update((items) => [
+              comment,
+              ...items.filter((item) => item.id !== comment.id),
+            ]);
             this.totalCount.update((count) => count + 1);
             this.now.set(new Date());
           } else {

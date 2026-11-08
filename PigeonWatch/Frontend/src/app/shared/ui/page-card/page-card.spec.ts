@@ -30,6 +30,14 @@ class WidthPageCardHost {
 
 @Component({
   imports: [PageCard],
+  template: `<app-page-card [title]="'Card title'" [fillHeight]="fill()" />`,
+})
+class FillPageCardHost {
+  readonly fill = signal(false);
+}
+
+@Component({
+  imports: [PageCard],
   template: `<app-page-card [title]="'Card title'"
     ><button headerActions class="toggle">Toggle</button></app-page-card
   >`,
@@ -122,5 +130,28 @@ describe('PageCard', () => {
     await fixture.whenStable();
 
     expect(card.classList.contains('page-card-host--wide')).toBe(false);
+  });
+
+  it('reflects the full width as its own host class', async () => {
+    const fixture = TestBed.createComponent(WidthPageCardHost);
+    fixture.componentInstance.width.set('full');
+    await fixture.whenStable();
+    const card: HTMLElement = fixture.nativeElement.querySelector('app-page-card');
+
+    expect(card.classList.contains('page-card-host--full')).toBe(true);
+    expect(card.classList.contains('page-card-host--wide')).toBe(false);
+  });
+
+  it('reflects fillHeight as a host class only while it is set', async () => {
+    const fixture = TestBed.createComponent(FillPageCardHost);
+    await fixture.whenStable();
+    const card: HTMLElement = fixture.nativeElement.querySelector('app-page-card');
+
+    expect(card.classList.contains('page-card-host--fill')).toBe(false);
+
+    fixture.componentInstance.fill.set(true);
+    await fixture.whenStable();
+
+    expect(card.classList.contains('page-card-host--fill')).toBe(true);
   });
 });

@@ -14,7 +14,6 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
@@ -44,9 +43,12 @@ import {
   DetailList,
   ErrorReference,
   ErrorRetry,
+  Icon,
   LoadingIndicator,
   PageCard,
+  Tooltip,
 } from '../../../shared/ui';
+import { isReportableMessageFailure, messageFailure } from '../message-errors';
 import {
   isReportablePhotoFailure,
   isReportableSightingFailure,
@@ -55,6 +57,7 @@ import {
 import {
   Sighting,
   SightingFilters,
+  SightingThread,
   SightingThreadStart,
   sightingCriticalityLabel,
   sightingCriticalityMarker,
@@ -92,7 +95,6 @@ const coordinateDecimals = 5;
   imports: [
     DatePipe,
     MatButtonModule,
-    MatTooltipModule,
     RouterLink,
     TranslatePipe,
     Alert,
@@ -101,10 +103,12 @@ const coordinateDecimals = 5;
     DetailList,
     ErrorReference,
     ErrorRetry,
+    Icon,
     LoadingIndicator,
     MapView,
     PageCard,
     SightingComments,
+    Tooltip,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sighting-detail-page.html',
@@ -136,6 +140,7 @@ export class SightingDetailPage {
   protected readonly state = signal<DetailState>({ kind: 'loading' });
   protected readonly mapShown = signal(false);
   protected readonly photo = signal<PhotoState>({ kind: 'none' });
+  protected readonly ownThread = signal<SightingThread | null>(null);
   protected readonly photoUrl = computed(() => {
     const photo = this.photo();
 
@@ -219,6 +224,13 @@ export class SightingDetailPage {
       )
       .subscribe((photo) => this.photo.set(photo));
 
+    this.shownSightings
+      .pipe(
+        switchMap((sighting) => this.ownThreadOf(sighting)),
+        takeUntilDestroyed(),
+      )
+      .subscribe((thread) => this.ownThread.set(thread));
+
     combineLatest([
       this.route.paramMap.pipe(map((params) => params.get('id') ?? '')),
       this.reloads.pipe(startWith(undefined)),
@@ -296,6 +308,22 @@ export class SightingDetailPage {
         return of<PhotoState>({ kind: 'error' });
       }),
       startWith<PhotoState>({ kind: 'loading' }),
+    );
+  }
+
+  private ownThreadOf(sighting: Sighting | null): Observable<SightingThread | null> {
+    if (!sighting || sighting.isMine) return of(null);
+
+    return this.sightingsApi.threads(sighting.id, 1).pipe(
+      map((page) => page.items[0] ?? null),
+      catchError((error: unknown) => {
+        if (isReportableMessageFailure(error, messageFailure(error))) {
+          this.reporting.report('api-failure', 'sighting.threads.load', error);
+        }
+
+        return of<SightingThread | null>(null);
+      }),
+      startWith<SightingThread | null>(null),
     );
   }
 

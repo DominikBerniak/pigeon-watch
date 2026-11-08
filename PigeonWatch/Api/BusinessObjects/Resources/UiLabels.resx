@@ -39,8 +39,14 @@
   <data name="nav.reportSighting" xml:space="preserve">
     <value>Report sighting</value>
   </data>
+  <data name="header.accountMenu" xml:space="preserve">
+    <value>Account menu for {0}</value>
+  </data>
   <data name="header.logout" xml:space="preserve">
     <value>Log out</value>
+  </data>
+  <data name="header.messages" xml:space="preserve">
+    <value>Messages</value>
   </data>
   <data name="header.profile" xml:space="preserve">
     <value>Profile</value>
@@ -522,6 +528,9 @@
   <data name="sighting.messages.contactButton" xml:space="preserve">
     <value>Message {0}</value>
   </data>
+  <data name="sighting.messages.openConversation" xml:space="preserve">
+    <value>Open conversation with {0}</value>
+  </data>
   <data name="sighting.messages.dialog.title" xml:space="preserve">
     <value>Message {0}</value>
   </data>
@@ -553,7 +562,7 @@
     <value>No messages in this conversation yet.</value>
   </data>
   <data name="sighting.messages.thread.listLabel" xml:space="preserve">
-    <value>Messages, newest first</value>
+    <value>Messages, oldest first</value>
   </data>
   <data name="sighting.messages.thread.replyLabel" xml:space="preserve">
     <value>Reply to {0}</value>
@@ -587,6 +596,60 @@
   </data>
   <data name="sighting.messages.validation.maxLength" xml:space="preserve">
     <value>Use at most {0} characters.</value>
+  </data>
+  <data name="messages.page.title" xml:space="preserve">
+    <value>Messages</value>
+  </data>
+  <data name="messages.inbox.label" xml:space="preserve">
+    <value>Conversations</value>
+  </data>
+  <data name="messages.inbox.loading" xml:space="preserve">
+    <value>Loading your conversations…</value>
+  </data>
+  <data name="messages.inbox.empty" xml:space="preserve">
+    <value>No conversations yet. Open someone else's sighting and message its reporter to start one.</value>
+  </data>
+  <data name="messages.inbox.error" xml:space="preserve">
+    <value>We couldn't load your conversations. Try again.</value>
+  </data>
+  <data name="messages.inbox.retry" xml:space="preserve">
+    <value>Try again</value>
+  </data>
+  <data name="messages.inbox.showMore" xml:space="preserve">
+    <value>Show more</value>
+  </data>
+  <data name="messages.inbox.loadingMore" xml:space="preserve">
+    <value>Loading more conversations…</value>
+  </data>
+  <data name="messages.inbox.moreError" xml:space="preserve">
+    <value>We couldn't load more conversations.</value>
+  </data>
+  <data name="messages.inbox.refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="messages.pane.empty" xml:space="preserve">
+    <value>Choose a conversation to read it and reply.</value>
+  </data>
+  <data name="messages.chat.back" xml:space="preserve">
+    <value>All conversations</value>
+  </data>
+  <data name="messages.chat.titleUnknown" xml:space="preserve">
+    <value>Conversation</value>
+  </data>
+  <data name="messages.chat.sightingLink" xml:space="preserve">
+    <value>Sighting: {0}</value>
+  </data>
+  <data name="messages.chat.openSighting" xml:space="preserve">
+    <value>Open the sighting</value>
+  </data>
+  <data name="messages.chat.replyLabelUnknown" xml:space="preserve">
+    <value>Your reply</value>
+  </data>
+  <data name="messages.chat.maximize" xml:space="preserve">
+    <value>Open in full screen</value>
+  </data>
+  <data name="messages.chat.close" xml:space="preserve">
+    <value>Close</value>
   </data>
   <data name="sighting.row.hasPhoto" xml:space="preserve">
     <value>Has a photo</value>

@@ -16,6 +16,7 @@ const testRoutes: Routes = [
   { path: '', pathMatch: 'full', component: BlankPage, data: { layout: 'wide' } },
   { path: 'roomy', component: BlankPage, data: { layout: 'roomy' } },
   { path: 'profile', component: BlankPage },
+  { path: 'fill', component: BlankPage, data: { fill: true } },
 ];
 
 describe('App', () => {
@@ -62,7 +63,7 @@ describe('App', () => {
   async function openUserMenu(): Promise<HTMLElement> {
     currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
     const element = await render();
-    const trigger = element.querySelector<HTMLButtonElement>('header button');
+    const trigger = element.querySelector<HTMLButtonElement>('header button.app-header__account');
 
     trigger?.click();
     await TestBed.inject(ApplicationRef).whenStable();
@@ -74,29 +75,86 @@ describe('App', () => {
     return Array.from(document.body.querySelectorAll<HTMLElement>('[role="menuitem"]'));
   }
 
-  it('shows the user name as the menu button without the email', async () => {
+  it('shows a user icon button named after the user without the email', async () => {
     currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
     const element = await render();
     const header = element.querySelector('header');
+    const trigger = header?.querySelector<HTMLButtonElement>('button.app-header__account');
 
-    expect(header?.querySelector('button')?.textContent?.trim()).toBe('Jan K');
+    expect(header?.querySelectorAll('button').length).toBe(1);
+    expect(trigger?.getAttribute('aria-label')).toBe('Account menu for Jan K');
+    expect(trigger?.getAttribute('aria-haspopup')).toBe('menu');
+
+    trigger?.dispatchEvent(new MouseEvent('mouseenter'));
+
+    expect(document.body.querySelector('.pw-tooltip')?.textContent).toBe('Profile');
+
+    trigger?.dispatchEvent(new MouseEvent('mouseleave'));
+    expect(trigger?.textContent?.trim()).toBe('');
+    expect(trigger?.querySelector('app-icon[name="user"] svg')?.getAttribute('aria-hidden')).toBe(
+      'true',
+    );
+    expect(header?.textContent).not.toContain('Jan K');
     expect(header?.textContent).not.toContain('jan@example.com');
-    expect(header?.textContent).not.toContain('Logged in as');
+    expect(document.body.querySelector('.app-header__menu-name')).toBeNull();
     expect(menuItems()).toEqual([]);
   });
 
-  it('opens a menu with Report sighting, Profile and Log out', async () => {
+  it('opens a menu headed by the user name, then Profile and Log out', async () => {
     await openUserMenu();
 
+    const menu = document.body.querySelector<HTMLElement>('[role="menu"]');
+    const name = menu?.querySelector<HTMLElement>('.app-header__menu-name');
     const items = menuItems();
 
-    expect(items.map((item) => item.textContent?.trim())).toEqual([
-      'Report sighting',
-      'Profile',
-      'Log out',
-    ]);
-    expect(items[0].getAttribute('href')).toBe('/sightings/new');
-    expect(items[1].getAttribute('href')).toBe('/profile');
+    expect(name?.textContent?.trim()).toBe('Jan K');
+    expect(name?.getAttribute('role')).toBeNull();
+    expect(name?.hasAttribute('tabindex')).toBe(false);
+    expect(name?.compareDocumentPosition(items[0])).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(menu?.textContent).not.toContain('jan@example.com');
+    expect(items.map((item) => item.textContent?.trim())).toEqual(['Profile', 'Log out']);
+    expect(items[0].getAttribute('href')).toBe('/profile');
+  });
+
+  it('puts the report, messages and account icon buttons in that order', async () => {
+    currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
+    const element = await render();
+    const user = element.querySelector('header .app-header__user');
+    const controls = Array.from(user?.querySelectorAll<HTMLElement>('a, button') ?? []);
+
+    expect(controls.length).toBe(3);
+    expect(controls[0].classList).toContain('app-header__report');
+    expect(controls[1].classList).toContain('app-header__messages');
+    expect(controls[2].classList).toContain('app-header__account');
+    expect(
+      controls.map((control) => control.querySelector('app-icon')?.getAttribute('name')),
+    ).toEqual(['report', 'mail', 'user']);
+  });
+
+  it('links the plus icon button to the report sighting page', async () => {
+    currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
+    const element = await render();
+    const link = element.querySelector<HTMLAnchorElement>('header a.app-header__report');
+
+    expect(link?.getAttribute('href')).toBe('/sightings/new');
+    expect(link?.getAttribute('aria-label')).toBe('Report sighting');
+    expect(link?.textContent?.trim()).toBe('');
+    expect(link?.querySelector('app-icon[name="report"] svg')?.getAttribute('aria-hidden')).toBe(
+      'true',
+    );
+  });
+
+  it('links the email icon button to the messages page', async () => {
+    currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
+    const element = await render();
+    const link = element.querySelector<HTMLAnchorElement>('header a.app-header__messages');
+
+    expect(link?.getAttribute('href')).toBe('/messages');
+    expect(link?.getAttribute('aria-label')).toBe('Messages');
+    expect(link?.textContent?.trim()).toBe('');
+    expect(link?.querySelector('app-icon[name="mail"] svg')?.getAttribute('aria-hidden')).toBe(
+      'true',
+    );
   });
 
   it('links the brand in the header to the home page', async () => {
@@ -108,37 +166,10 @@ describe('App', () => {
     expect(link?.textContent?.trim()).toBe('PigeonWatch');
   });
 
-  it('publishes the user button width on the root and removes it on logout', async () => {
-    class FakeResizeObserver {
-      observe = vi.fn();
-      disconnect = vi.fn();
-    }
-    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
-    const root = document.documentElement.style;
-
-    try {
-      await render();
-      currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
-      TestBed.tick();
-      await TestBed.inject(ApplicationRef).whenStable();
-
-      expect(root.getPropertyValue('--pw-user-button-width')).toMatch(/px$/);
-
-      currentUser.set(null);
-      TestBed.tick();
-      await TestBed.inject(ApplicationRef).whenStable();
-
-      expect(root.getPropertyValue('--pw-user-button-width')).toBe('');
-    } finally {
-      vi.unstubAllGlobals();
-      root.removeProperty('--pw-user-button-width');
-    }
-  });
-
   it('logs out from the menu', async () => {
     await openUserMenu();
 
-    menuItems()[2].click();
+    menuItems()[1].click();
 
     expect(logout).toHaveBeenCalledOnce();
   });
@@ -183,16 +214,34 @@ describe('App', () => {
     expect(main.classList).not.toContain('app-main--roomy');
   });
 
-  it('declares the wide layout on the home, report, sighting list and sighting detail routes among product routes', () => {
+  it('makes main fill the viewport height on a route whose data asks for it', async () => {
+    const { main } = await renderSignedIn();
+
+    await navigate('/fill');
+
+    expect(main.classList).toContain('app-main--fill');
+  });
+
+  it('does not make main fill the height on a route without the fill flag', async () => {
+    const { main } = await renderSignedIn();
+
+    await navigate('/fill');
+    await navigate('/profile');
+
+    expect(main.classList).not.toContain('app-main--fill');
+  });
+
+  it('declares the wide layout on the home, report, sighting list, sighting detail and messages routes among product routes', () => {
     const wide = routes
       .filter((route) => !devRoutes.includes(route))
       .filter((route) => route.data?.['layout'] === 'wide');
 
-    expect(wide.map((route) => route.path)).toEqual([
+    expect(wide.map((route) => route.path ?? route.matcher?.name)).toEqual([
       '',
       'sightings/new',
       'sightings/list',
       'sightings/:id',
+      'messagesUrlMatcher',
     ]);
   });
 

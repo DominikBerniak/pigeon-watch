@@ -80,26 +80,28 @@
               <span class="sighting-detail__reporter">
                 {{ sighting.reporterDisplayName }}
                 @if (!sighting.isMine) {
-                  <button
-                    mat-icon-button
-                    type="button"
-                    class="sighting-detail__contact"
-                    [attr.aria-label]="'sighting.messages.contactButton' | translate: sighting.reporterDisplayName"
-                    [matTooltip]="'sighting.messages.contactButton' | translate: sighting.reporterDisplayName"
-                    (click)="openMessageDialog(sighting)"
-                  >
-                    <svg
-                      class="sighting-detail__contact-icon"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                      focusable="false"
+                  @if (ownThread(); as thread) {
+                    <a
+                      mat-icon-button
+                      class="sighting-detail__contact"
+                      [routerLink]="['/messages', sighting.id, thread.id]"
+                      [attr.aria-label]="'sighting.messages.openConversation' | translate: sighting.reporterDisplayName"
+                      [appTooltip]="'sighting.messages.openConversation' | translate: sighting.reporterDisplayName"
                     >
-                      <path
-                        fill="currentColor"
-                        d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm8 7 8-5H4l8 5Zm-8 7h16V8.24l-7.47 4.67a1 1 0 0 1-1.06 0L4 8.24V18Z"
-                      />
-                    </svg>
-                  </button>
+                      <app-icon name="mail" />
+                    </a>
+                  } @else {
+                    <button
+                      mat-icon-button
+                      type="button"
+                      class="sighting-detail__contact"
+                      [attr.aria-label]="'sighting.messages.contactButton' | translate: sighting.reporterDisplayName"
+                      [appTooltip]="'sighting.messages.contactButton' | translate: sighting.reporterDisplayName"
+                      (click)="openMessageDialog(sighting)"
+                    >
+                      <app-icon name="mail" />
+                    </button>
+                  }
                 }
               </span>
             </div>

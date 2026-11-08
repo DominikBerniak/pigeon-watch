@@ -17,12 +17,16 @@ import {
   sinkCommentPageSize,
   sinkComments,
   sinkCommentTotal,
+  sinkContactThread,
+  sinkInboxPageSize,
   sinkListSightings,
   sinkLongNameSighting,
+  sinkMessagePageSize,
   sinkPhotoSighting,
   sinkPosition,
   sinkSightings,
   sinkStartThreadTraceId,
+  sinkThreads,
 } from './cell-stubs';
 import { KitchenSink } from './kitchen-sink';
 
@@ -154,6 +158,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
       nearbyMap: 'app-nearby-map-page',
       sightingDetail: 'app-sighting-detail-page',
       sightingList: 'app-sighting-list-page',
+      messages: 'app-messages-page',
     };
 
     expect(root.querySelectorAll('app-state-cell').length).toBe(definitions.length);
@@ -165,7 +170,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
       expect(textOf(element.querySelector('h3'))).toBe(definition.label);
       expect(
         element.querySelectorAll(
-          'app-profile-page, app-nearby-map-page, app-sighting-detail-page, app-sighting-list-page',
+          'app-profile-page, app-nearby-map-page, app-sighting-detail-page, app-sighting-list-page, app-messages-page',
         ),
       ).toHaveLength(1);
       expect(element.querySelector(pageOf[definition.group])).not.toBeNull();
@@ -802,6 +807,22 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
     });
   });
 
+  it('links the email icon to the existing conversation instead of the dialog', async () => {
+    const id = 'detail-message-existing';
+
+    await eventually(() => {
+      const link = cell(id).querySelector<HTMLAnchorElement>('a.sighting-detail__contact');
+
+      expect(link?.getAttribute('href')).toBe(
+        `/messages/${sinkSightings[0].id}/${sinkContactThread.id}`,
+      );
+      expect(link?.getAttribute('aria-label')).toBe(
+        label('sighting.messages.openConversation', sinkSightings[0].reporterDisplayName),
+      );
+      expect(contactButtonOf(id)).toBeNull();
+    });
+  });
+
   it('opens the message dialog with an empty field and no error', async () => {
     const dialog = await openMessageDialogOf('detail-message-dialog-open');
 
@@ -1155,5 +1176,143 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
           ?.disabled,
       ).toBe(true);
     });
+  });
+
+  function threadRowsOf(id: string): HTMLAnchorElement[] {
+    return [...cell(id).querySelectorAll<HTMLAnchorElement>('a.messages__thread')];
+  }
+
+  function bubblesOf(id: string): HTMLElement[] {
+    return [...cell(id).querySelectorAll<HTMLElement>('li.message-thread__item')];
+  }
+
+  it('shows the threads loading indicator in the sidebar', async () => {
+    await eventually(() => {
+      expect(
+        cell('messages-loading')
+          .querySelector('nav app-loading-indicator mat-progress-spinner')
+          ?.getAttribute('aria-label'),
+      ).toBe(label('messages.inbox.loading'));
+      expect(threadRowsOf('messages-loading')).toHaveLength(0);
+    });
+  });
+
+  it('shows the empty threads text as muted text and no pane prompt', async () => {
+    await eventually(() => {
+      expect(textOf(cell('messages-empty').querySelector('nav p.pw-text-muted'))).toBe(
+        label('messages.inbox.empty'),
+      );
+      expect(cell('messages-empty').querySelector('.messages__prompt')).toBeNull();
+    });
+  });
+
+  it('shows the threads error with Try again', async () => {
+    await eventually(() => {
+      expect(textOf(cell('messages-error').querySelector('nav app-alert'))).toBe(
+        label('messages.inbox.error'),
+      );
+      expect(buttonOf('messages-error', 'messages.inbox.retry')).not.toBeNull();
+    });
+  });
+
+  it('shows the first page of threads with "Show more" and the pane prompt', async () => {
+    await eventually(() => {
+      const rows = threadRowsOf('messages-list');
+
+      expect(rows).toHaveLength(sinkInboxPageSize);
+      expect(textOf(rows[0].querySelector('.messages__counterpart'))).toBe(
+        sinkThreads[0].counterpartDisplayName,
+      );
+      expect(textOf(rows[1].querySelector('.messages__sighting'))).toBe(label('sighting.unnamed'));
+      expect(buttonOf('messages-list', 'messages.inbox.showMore')).not.toBeNull();
+      expect(cell('messages-list').querySelector('app-page-card header button')).toBe(
+        buttonOf('messages-list', 'messages.inbox.refresh'),
+      );
+      expect(textOf(cell('messages-list').querySelector('.messages__prompt'))).toBe(
+        label('messages.pane.empty'),
+      );
+      expect(cell('messages-list').querySelector('app-message-thread')).toBeNull();
+    });
+  });
+
+  it('shows the chosen thread as bubbles, own ones marked, with "Show older messages" above them', async () => {
+    const id = 'messages-thread';
+
+    await eventually(() => {
+      const bubbles = bubblesOf(id);
+      const older = buttonOf(id, 'sighting.messages.thread.showOlder');
+
+      expect(bubbles).toHaveLength(sinkMessagePageSize);
+      expect(bubbles.some((bubble) => bubble.classList.contains('message-thread__item--mine'))).toBe(
+        true,
+      );
+      expect(bubbles.some((bubble) => !bubble.classList.contains('message-thread__item--mine'))).toBe(
+        true,
+      );
+      expect(older).not.toBeNull();
+      expect(older!.compareDocumentPosition(bubbles[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(threadRowsOf(id)[0].getAttribute('aria-current')).toBe('page');
+      expect(textOf(cell(id).querySelector('app-message-thread h2'))).toBe(
+        label('sighting.messages.thread.title', sinkThreads[0].counterpartDisplayName),
+      );
+      expect(textOf(cell(id).querySelector('a.message-thread__sighting'))).toBe(
+        label('messages.chat.sightingLink', sinkThreads[0].sightingName),
+      );
+      expect(cell(id).querySelector('form.message-thread__reply textarea')).not.toBeNull();
+    });
+  });
+
+  it('shows the thread loading indicator in the pane while the threads stay listed', async () => {
+    await eventually(() => {
+      expect(cell('messages-thread-loading').querySelector('app-message-thread app-loading-indicator')).not.toBeNull();
+      expect(threadRowsOf('messages-thread-loading')).toHaveLength(sinkInboxPageSize);
+    });
+  });
+
+  it('shows the thread error with Try again in the pane', async () => {
+    await eventually(() => {
+      expect(textOf(cell('messages-thread-error').querySelector('app-message-thread app-alert'))).toBe(
+        label('sighting.messages.errors.generic'),
+      );
+      expect(bubblesOf('messages-thread-error')).toHaveLength(0);
+    });
+  });
+
+  it('opens the chosen thread in the full screen popup from the cell header', async () => {
+    const id = 'messages-thread-fullscreen';
+
+    await eventually(() => expect(bubblesOf(id)).toHaveLength(sinkMessagePageSize));
+    cell(id).querySelector<HTMLButtonElement>('header button')?.click();
+    await eventually(() => {
+      const popup = document.querySelector('app-message-thread-dialog');
+
+      expect(popup?.querySelectorAll('li.message-thread__item')).toHaveLength(sinkMessagePageSize);
+      expect(textOf(popup?.querySelector('h2'))).toBe(
+        label('sighting.messages.thread.title', sinkThreads[0].counterpartDisplayName),
+      );
+      expect(popup?.querySelector('button.message-thread__expand')?.getAttribute('aria-label')).toBe(
+        label('messages.chat.close'),
+      );
+    });
+  });
+
+  it('renders the narrow cells with the thread list or the chosen conversation and its back link', async () => {
+    await eventually(() => {
+      expect(cell('messages-phone-list').querySelector('.messages--selected')).toBeNull();
+      expect(threadRowsOf('messages-phone-list')).toHaveLength(sinkInboxPageSize);
+      expect(cell('messages-phone-thread').querySelector('.messages--selected')).not.toBeNull();
+      expect(textOf(cell('messages-phone-thread').querySelector('a.messages__back'))).toBe(
+        label('messages.chat.back'),
+      );
+      expect(bubblesOf('messages-phone-thread')).toHaveLength(sinkMessagePageSize);
+    });
+  });
+
+  it('takes no focus on load in any messages cell', async () => {
+    await eventually(() => expect(bubblesOf('messages-thread')).not.toHaveLength(0));
+
+    const messagesCells = [...root.querySelectorAll('[data-cell^="messages-"]')];
+
+    expect(messagesCells.some((element) => element.contains(document.activeElement))).toBe(false);
   });
 });

@@ -1,0 +1,94 @@
+<app-page-card width="full" [fillHeight]="true" [title]="'messages.page.title' | translate">
+  <button headerActions mat-stroked-button type="button" (click)="refresh()">
+    {{ 'messages.inbox.refresh' | translate }}
+  </button>
+  <div class="messages" [class.messages--selected]="selection() !== null">
+    <div class="messages__layout">
+      <nav class="messages__sidebar" [attr.aria-label]="'messages.inbox.label' | translate">
+        @switch (state().kind) {
+          @case ('loading') {
+            <app-loading-indicator [label]="'messages.inbox.loading' | translate" />
+          }
+          @case ('error') {
+            <app-error-retry [retryLabel]="'messages.inbox.retry' | translate" (retry)="retry()">
+              {{ 'messages.inbox.error' | translate }}
+              <app-error-reference [traceId]="loadErrorTraceId()" />
+            </app-error-retry>
+          }
+          @case ('loaded') {
+            @if (rows().length === 0) {
+              <p class="pw-text-muted">{{ 'messages.inbox.empty' | translate }}</p>
+            } @else {
+              <ul class="messages__threads">
+                @for (row of rows(); track row.thread.id) {
+                  @let thread = row.thread;
+                  <li>
+                    <a
+                      class="messages__thread"
+                      [class.messages__thread--selected]="row.selected"
+                      [attr.aria-current]="row.selected ? 'page' : null"
+                      [attr.data-thread-id]="thread.id"
+                      [routerLink]="['/messages', thread.sightingId, thread.id]"
+                    >
+                      <span class="messages__counterpart">{{ thread.counterpartDisplayName }}</span>
+                      <span class="messages__sighting pw-text-small pw-text-muted">{{
+                        thread.sightingName ?? ('sighting.unnamed' | translate)
+                      }}</span>
+                      <time
+                        class="pw-text-small pw-text-muted"
+                        [attr.datetime]="thread.lastMessageAt"
+                        [appTooltip]="thread.lastMessageAt | date: 'medium'"
+                        >{{ row.age.key | translate: row.age.value }}</time
+                      >
+                    </a>
+                  </li>
+                }
+              </ul>
+              @if (hasMore()) {
+                <div class="messages__more pw-cluster">
+                  @switch (more().kind) {
+                    @case ('loading') {
+                      <app-loading-indicator
+                        layout="inline"
+                        [label]="'messages.inbox.loadingMore' | translate"
+                      />
+                    }
+                    @case ('error') {
+                      <app-error-retry
+                        [retryLabel]="'messages.inbox.retry' | translate"
+                        (retry)="showMore()"
+                      >
+                        {{ 'messages.inbox.moreError' | translate }}
+                        <app-error-reference [traceId]="moreErrorTraceId()" />
+                      </app-error-retry>
+                    }
+                    @default {
+                      <button mat-stroked-button type="button" (click)="showMore()">
+                        {{ 'messages.inbox.showMore' | translate }}
+                      </button>
+                    }
+                  }
+                </div>
+              }
+            }
+          }
+        }
+      </nav>
+      <div class="messages__pane">
+        @if (selection(); as selected) {
+          <a class="messages__back" mat-button routerLink="/messages">{{
+            'messages.chat.back' | translate
+          }}</a>
+          <app-message-thread
+            [sightingId]="selected.sightingId"
+            [threadId]="selected.threadId"
+            [thread]="selectedThread()"
+            (expandToggle)="openFullScreen(selected)"
+          />
+        } @else if (promptShown()) {
+          <p class="messages__prompt pw-text-muted">{{ 'messages.pane.empty' | translate }}</p>
+        }
+      </div>
+    </div>
+  </div>
+</app-page-card>

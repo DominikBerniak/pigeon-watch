@@ -353,4 +353,18 @@ describe('SightingsApi', () => {
     expect(request.request.body).toEqual({ text: 'On my way' });
     expect(sent).toEqual(message);
   });
+
+  it('asks for a page of the caller threads across sightings', () => {
+    let page: SightingThreadPage | undefined;
+
+    api.inbox(2).subscribe((value) => (page = value));
+    const request = httpMock.expectOne(
+      (candidate) => candidate.url === `${environment.apiUrl}/threads`,
+    );
+    request.flush({ items: [thread], totalCount: 21 });
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('page')).toBe('2');
+    expect(page).toEqual({ items: [thread], totalCount: 21 });
+  });
 });

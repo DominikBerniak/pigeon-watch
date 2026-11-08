@@ -1,17 +1,10 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  effect,
-  inject,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import {
   ActivatedRouteSnapshot,
+  Data,
   NavigationEnd,
   Router,
   RouterLink,
@@ -22,18 +15,20 @@ import { SessionService } from './core/auth/session.service';
 import { TranslatePipe } from './core/resources/translate.pipe';
 import { WarmupPanel } from './core/warmup/warmup-panel/warmup-panel';
 import { Brand } from './shared/ui/brand/brand';
-
-const userButtonWidthProperty = '--pw-user-button-width';
+import { Icon } from './shared/ui/icon/icon';
+import { Tooltip } from './shared/ui/tooltip/tooltip';
 
 @Component({
   imports: [
     Brand,
+    Icon,
     MatButtonModule,
     MatMenu,
     MatMenuItem,
     MatMenuTrigger,
     RouterLink,
     RouterOutlet,
+    Tooltip,
     TranslatePipe,
     WarmupPanel,
   ],
@@ -47,38 +42,15 @@ export class App {
   private readonly router = inject(Router);
 
   protected readonly currentUser = this.session.currentUser;
-  private readonly userTrigger = viewChild(MatMenuTrigger, { read: ElementRef });
-
-  protected readonly userMenuOpen = signal(false);
-  protected readonly layout = toSignal(
+  private readonly routeData = toSignal(
     this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
-      map(() => layoutOf(this.router.routerState.snapshot.root)),
+      map(() => leafData(this.router.routerState.snapshot.root)),
     ),
-    { initialValue: null },
+    { initialValue: {} as Data },
   );
-
-  constructor() {
-    effect((onCleanup) => {
-      const button = this.userTrigger()?.nativeElement as HTMLElement | undefined;
-
-      if (!button || typeof ResizeObserver === 'undefined') return;
-
-      const publish = (): void =>
-        document.documentElement.style.setProperty(
-          userButtonWidthProperty,
-          `${button.getBoundingClientRect().width}px`,
-        );
-      const observer = new ResizeObserver(publish);
-
-      publish();
-      observer.observe(button);
-      onCleanup(() => {
-        observer.disconnect();
-        document.documentElement.style.removeProperty(userButtonWidthProperty);
-      });
-    });
-  }
+  protected readonly layout = computed(() => layoutOf(this.routeData()));
+  protected readonly fill = computed(() => this.routeData()['fill'] === true);
 
   protected logout(): void {
     this.session.logout();
@@ -87,12 +59,16 @@ export class App {
 
 type Layout = 'wide' | 'roomy';
 
-function layoutOf(root: ActivatedRouteSnapshot): Layout | null {
+function leafData(root: ActivatedRouteSnapshot): Data {
   let route = root;
 
   while (route.firstChild) route = route.firstChild;
 
-  const layout = route.data['layout'];
+  return route.data;
+}
+
+function layoutOf(data: Data): Layout | null {
+  const layout = data['layout'];
 
   return layout === 'wide' || layout === 'roomy' ? layout : null;
 }

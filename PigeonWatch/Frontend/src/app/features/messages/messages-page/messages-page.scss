@@ -1,0 +1,126 @@
+@use 'breakpoints' as bp;
+
+:host {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.messages {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  container-type: inline-size;
+}
+
+.messages__layout {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--pw-space-5);
+  min-height: 0;
+
+  @include bp.container-from(md) {
+    display: grid;
+    grid-template-columns: var(--pw-messages-sidebar-width) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+}
+
+.messages--selected .messages__sidebar {
+  display: none;
+
+  @include bp.container-from(md) {
+    display: flex;
+  }
+}
+
+.messages:not(.messages--selected) .messages__pane {
+  display: none;
+
+  @include bp.container-from(md) {
+    display: flex;
+  }
+}
+
+.messages__sidebar {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--pw-space-3);
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.messages__threads {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.messages__thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-space-1);
+  padding: var(--pw-space-3);
+  border-radius: var(--pw-radius-md);
+  border-inline-start: var(--pw-accent-border-width) solid transparent;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color var(--pw-duration-fast) var(--pw-easing-standard);
+}
+
+.messages__thread:hover {
+  background-color: var(--pw-color-background);
+}
+
+.messages__thread--selected,
+.messages__thread--selected:hover {
+  border-inline-start-color: var(--pw-color-primary);
+  background-color: var(--pw-color-info-surface);
+}
+
+.messages__counterpart {
+  font-weight: var(--pw-font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.messages__sighting {
+  overflow-wrap: anywhere;
+}
+
+.messages__more {
+  justify-content: center;
+}
+
+.messages__pane {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--pw-space-3);
+  min-width: 0;
+  min-height: 0;
+}
+
+.messages__pane app-message-thread {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.messages__back {
+  align-self: flex-start;
+
+  @include bp.container-from(md) {
+    display: none;
+  }
+}
+
+.messages__prompt {
+  margin: 0;
+}

@@ -106,6 +106,12 @@ export class SightingsApi {
   sendMessage(sightingId: string, threadId: string, text: string): Observable<SightingMessage> {
     return this.http.post<SightingMessage>(messagesUrl(sightingId, threadId), { text });
   }
+
+  inbox(page: number): Observable<SightingThreadPage> {
+    return this.http.get<SightingThreadPage>(`${environment.apiUrl}/threads`, {
+      params: new HttpParams().set('page', page),
+    });
+  }
 }
 
 export const sightingPhotoFileName = 'photo.jpg';

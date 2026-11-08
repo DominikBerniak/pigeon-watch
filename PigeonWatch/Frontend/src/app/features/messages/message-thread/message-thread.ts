@@ -1,29 +1,25 @@
+import { TextFieldModule } from '@angular/cdk/text-field';
 import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
   ElementRef,
+  Injector,
+  afterNextRender,
   computed,
   inject,
   input,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import {
-  FormField,
-  FormRoot,
-  form,
-  maxLength,
-  required,
-  requiredError,
-  validate,
-} from '@angular/forms/signals';
+import { FormField, FormRoot, form, maxLength } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterLink } from '@angular/router';
 import {
   Subject,
   Subscription,
@@ -48,7 +44,7 @@ import {
   FieldErrors,
   FormSubmitState,
   LoadingIndicator,
-  SubmitButton,
+  Tooltip,
   provideFormFieldDefaults,
 } from '../../../shared/ui';
 import {
@@ -63,6 +59,7 @@ import { SightingAge, sightingAge } from '../../sightings/shared/sighting-age';
 import {
   SightingMessage,
   SightingMessagePage,
+  SightingThread,
   fallbackMessageRules,
 } from '../../sightings/sighting.types';
 import { SightingsApi } from '../../sightings/sightings-api';
@@ -91,6 +88,8 @@ interface ThreadKey {
   readonly threadId: string;
 }
 
+let nextTitleId = 0;
+
 @Component({
   providers: [provideFormFieldDefaults()],
   selector: 'app-message-thread',
@@ -101,14 +100,15 @@ interface ThreadKey {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatTooltipModule,
+    RouterLink,
+    TextFieldModule,
     TranslatePipe,
     Alert,
     ErrorReference,
     ErrorRetry,
     FieldErrors,
     LoadingIndicator,
-    SubmitButton,
+    Tooltip,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './message-thread.html',
@@ -121,15 +121,26 @@ export class MessageThread {
   private readonly reporting = inject(ErrorReportingService);
   private readonly submitState = inject(FormSubmitState);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
   private readonly reloads = new Subject<void>();
   private readonly replyModel = signal<MessageText>({ text: '' });
   private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
+  private readonly list = viewChild<ElementRef<HTMLElement>>('list');
   private loadedPages = 0;
   private olderRequest: Subscription | null = null;
 
   readonly sightingId = input.required<string>();
   readonly threadId = input.required<string>();
-  readonly counterpartDisplayName = input.required<string>();
+  readonly thread = input<SightingThread | null>(null);
+  readonly expanded = input(false);
+  readonly expandToggle = output<void>();
+
+  private readonly instanceId = nextTitleId++;
+  protected readonly titleId = `message-thread-title-${this.instanceId}`;
+  protected readonly hintId = `message-thread-hint-${this.instanceId}`;
+  protected readonly expandLabel = computed(() =>
+    this.expanded() ? 'messages.chat.close' : 'messages.chat.maximize',
+  );
 
   protected readonly rules = computed(
     () => this.configuration.clientConfig()?.messageRules ?? fallbackMessageRules,
@@ -142,12 +153,37 @@ export class MessageThread {
   protected readonly sending = signal(false);
   protected readonly sendFailure = signal<MessageFailure | null>(null);
   protected readonly replyForm = form(this.replyModel, (path) => {
-    required(path.text);
-    validate(path.text, ({ value }) => (isBlank(value()) ? requiredError() : undefined));
     maxLength(path.text, () => this.rules().textMaxLength);
   });
+  protected readonly blank = computed(() => isBlank(this.replyModel().text));
+  protected readonly title = computed(() => {
+    const thread = this.thread();
+
+    return thread
+      ? this.resources.translate('sighting.messages.thread.title', thread.counterpartDisplayName)
+      : this.resources.translate('messages.chat.titleUnknown');
+  });
+  protected readonly sightingLinkText = computed(() => {
+    const thread = this.thread();
+
+    if (!thread) return this.resources.translate('messages.chat.openSighting');
+
+    return this.resources.translate(
+      'messages.chat.sightingLink',
+      thread.sightingName ?? this.resources.translate('sighting.unnamed'),
+    );
+  });
+  protected readonly replyLabel = computed(() => {
+    const thread = this.thread();
+
+    return thread
+      ? this.resources.translate(
+          'sighting.messages.thread.replyLabel',
+          thread.counterpartDisplayName,
+        )
+      : this.resources.translate('messages.chat.replyLabelUnknown');
+  });
   protected readonly textMessages = computed(() => ({
-    required: this.resources.translate('sighting.messages.validation.required'),
     maxLength: this.resources.translate(
       'sighting.messages.validation.maxLength',
       this.rules().textMaxLength,
@@ -156,7 +192,9 @@ export class MessageThread {
   protected readonly entries = computed<readonly MessageEntry[]>(() => {
     const now = this.now();
 
-    return this.items().map((message) => ({ message, age: sightingAge(message.createdAt, now) }));
+    return this.items()
+      .map((message) => ({ message, age: sightingAge(message.createdAt, now) }))
+      .reverse();
   });
   protected readonly hasOlder = computed(() => this.items().length < this.totalCount());
   protected readonly loadErrorTraceId = computed(() => {
@@ -209,15 +247,30 @@ export class MessageThread {
     this.heading()?.nativeElement.focus();
   }
 
+  reload(): void {
+    this.reloads.next();
+  }
+
   protected retry(): void {
     this.reloads.next();
   }
 
+  protected sendOnEnter(event: Event): void {
+    const key = event as KeyboardEvent;
+
+    if (key.shiftKey || key.isComposing) return;
+
+    key.preventDefault();
+    this.send();
+  }
+
   protected send(): void {
+    if (this.sending() || isBlank(this.replyModel().text)) return;
+
     this.submitState.markSubmitted();
     this.sendFailure.set(null);
 
-    if (this.sending() || this.replyForm().invalid()) return;
+    if (this.replyForm().invalid()) return;
 
     this.sending.set(true);
     this.sightingsApi
@@ -235,6 +288,7 @@ export class MessageThread {
             ]);
             this.totalCount.update((count) => count + 1);
             this.now.set(new Date());
+            this.scrollToNewest();
           } else {
             this.reloads.next();
           }
@@ -258,6 +312,7 @@ export class MessageThread {
       .threadMessages(this.sightingId(), this.threadId(), page)
       .subscribe({
         next: (result) => {
+          this.keepScrollPosition();
           this.loadedPages = page;
           this.items.update((items) => appendNew(items, result.items));
           this.totalCount.set(result.totalCount);
@@ -284,6 +339,37 @@ export class MessageThread {
     this.items.set(appendNew([], page.items));
     this.totalCount.set(page.totalCount);
     this.state.set({ kind: 'loaded' });
+    this.scrollToNewest();
+  }
+
+  private scrollToNewest(): void {
+    afterNextRender(
+      {
+        write: () => {
+          const list = this.list()?.nativeElement;
+
+          if (list) list.scrollTop = list.scrollHeight;
+        },
+      },
+      { injector: this.injector },
+    );
+  }
+
+  private keepScrollPosition(): void {
+    const list = this.list()?.nativeElement;
+
+    if (!list) return;
+
+    const fromBottom = list.scrollHeight - list.scrollTop;
+
+    afterNextRender(
+      {
+        write: () => {
+          list.scrollTop = list.scrollHeight - fromBottom;
+        },
+      },
+      { injector: this.injector },
+    );
   }
 
   private loadFailure(error: unknown): { readonly kind: 'error'; readonly traceId?: string } {
@@ -306,7 +392,7 @@ export class MessageThread {
 }
 
 function isBlank(value: string): boolean {
-  return value !== '' && value.trim() === '';
+  return value.trim() === '';
 }
 
 function appendNew(

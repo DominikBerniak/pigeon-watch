@@ -12,6 +12,7 @@ import {
   waitForText,
 } from './cell-driver';
 import {
+  MessagesModes,
   NearbyMapModes,
   ProfileModes,
   SightingDetailModes,
@@ -37,6 +38,7 @@ export type ProfileCell = CellBase & ProfileModes;
 export type NearbyMapCell = CellBase & NearbyMapModes;
 export type SightingDetailCell = CellBase & SightingDetailModes;
 export type SightingListCell = CellBase & SightingListModes;
+export type MessagesCell = CellBase & MessagesModes;
 export type CellDefinition = CellBase & StubModes;
 
 export interface CellGroup {
@@ -578,6 +580,15 @@ const detailCells: readonly SightingDetailCell[] = [
     steps: [],
   },
   {
+    id: 'detail-message-existing',
+    label: 'Existing conversation (the email icon links to it instead of opening the dialog)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    ownThread: 'existing',
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
     id: 'detail-message-dialog-open',
     label: 'Message dialog, open (empty field)',
     group: 'sightingDetail',
@@ -716,9 +727,99 @@ const listCells: readonly SightingListCell[] = [
   },
 ];
 
+const messagesCells: readonly MessagesCell[] = [
+  {
+    id: 'messages-loading',
+    label: 'Loading (threads request never completes)',
+    group: 'messages',
+    inbox: 'pending',
+    steps: [],
+  },
+  {
+    id: 'messages-empty',
+    label: 'Empty (no conversations yet)',
+    group: 'messages',
+    inbox: 'empty',
+    steps: [],
+  },
+  {
+    id: 'messages-error',
+    label: 'Threads failed to load (500, Try again)',
+    group: 'messages',
+    inbox: 'failure',
+    steps: [],
+  },
+  {
+    id: 'messages-list',
+    label: 'Threads, none chosen (prompt in the pane, "Show more" in the sidebar)',
+    group: 'messages',
+    inbox: 'items',
+    steps: [],
+  },
+  {
+    id: 'messages-thread',
+    label: 'Thread chosen (bubbles, own on the right, "Show older messages" at the top)',
+    group: 'messages',
+    inbox: 'items',
+    selected: true,
+    steps: [],
+  },
+  {
+    id: 'messages-thread-loading',
+    label: 'Thread chosen, messages loading (request never completes)',
+    group: 'messages',
+    inbox: 'items',
+    selected: true,
+    thread: 'pending',
+    steps: [],
+  },
+  {
+    id: 'messages-thread-error',
+    label: 'Thread chosen, messages failed to load (500, Try again)',
+    group: 'messages',
+    inbox: 'items',
+    selected: true,
+    thread: 'failure',
+    steps: [],
+  },
+  {
+    id: 'messages-thread-fullscreen',
+    label: 'Thread in the full screen popup (opened from the header, focus moves to the popup)',
+    group: 'messages',
+    inbox: 'items',
+    selected: true,
+    steps: [],
+    dialog: {
+      action: 'Open full screen',
+      trigger: click('button.message-thread__expand'),
+      steps: [waitFor('li.message-thread__item')],
+    },
+  },
+];
+
+const messagesPhoneCells: readonly MessagesCell[] = [
+  {
+    id: 'messages-phone-list',
+    label: 'Narrow, none chosen (threads only)',
+    group: 'messages',
+    inbox: 'items',
+    steps: [],
+  },
+  {
+    id: 'messages-phone-thread',
+    label: 'Narrow, thread chosen (conversation with "All conversations", threads hidden)',
+    group: 'messages',
+    inbox: 'items',
+    selected: true,
+    steps: [],
+  },
+];
+
 export const cellGroups: readonly CellGroup[] = [
   { title: 'Profile', wide: false, cells: [...profileCells, ...dialogCells] },
   { title: 'Nearby map', wide: true, cells: nearbyMapCells },
   { title: 'Sighting detail', wide: true, cells: detailCells },
   { title: 'Sighting list', wide: false, cells: listCells },
+  { title: 'Messages', wide: true, cells: messagesCells },
+  { title: 'Messages, narrow', wide: false, cells: messagesPhoneCells },
 ];

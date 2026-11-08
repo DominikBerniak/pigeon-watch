@@ -26,6 +26,8 @@ import { ErrorReportingService } from '../../core/error-reporting/error-reportin
 import { GeolocationService } from '../../core/geolocation/geolocation.service';
 import { ResourceService } from '../../core/resources/resource.service';
 import { ProfileApi } from '../../features/profile/profile-api';
+import { ActivatedRoute } from '@angular/router';
+import { MessagesPage } from '../../features/messages/messages-page/messages-page';
 import { ProfilePage } from '../../features/profile/profile-page/profile-page';
 import { NearbyMapPage } from '../../features/sightings/nearby-map-page/nearby-map-page';
 import { SightingDetailPage } from '../../features/sightings/sighting-detail-page/sighting-detail-page';
@@ -43,7 +45,14 @@ interface NextLocationOption {
 
 @Component({
   selector: 'app-state-cell',
-  imports: [MatButtonModule, ProfilePage, NearbyMapPage, SightingDetailPage, SightingListPage],
+  imports: [
+    MatButtonModule,
+    ProfilePage,
+    NearbyMapPage,
+    SightingDetailPage,
+    SightingListPage,
+    MessagesPage,
+  ],
   providers: [
     CellStubs,
     { provide: SessionService, useFactory: () => inject(CellStubs).session },
@@ -52,6 +61,10 @@ interface NextLocationOption {
     { provide: SightingsApi, useFactory: () => inject(CellStubs).sightingsApi },
     { provide: GeolocationService, useFactory: () => inject(CellStubs).geolocation },
     { provide: ErrorReportingService, useValue: { report: (): void => undefined } },
+    {
+      provide: ActivatedRoute,
+      useFactory: () => inject(CellStubs).route(inject(ActivatedRoute, { skipSelf: true })),
+    },
     {
       provide: LEAFLET_LOADER,
       useFactory: () => inject(CellStubs).leafletLoader(inject(LEAFLET_LOADER, { skipSelf: true })),

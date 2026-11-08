@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, unknownRouteRedirect } from './core/auth/auth.guards';
 import { devRoutes } from './dev/dev-routes';
+import { messagesUrlMatcher } from './features/messages/messages-page/messages-url-matcher';
 
 export const routes: Routes = [
   {
@@ -54,6 +55,13 @@ export const routes: Routes = [
       import('./features/sightings/sighting-detail-page/sighting-detail-page').then(
         (m) => m.SightingDetailPage,
       ),
+  },
+  {
+    matcher: messagesUrlMatcher,
+    canActivate: [authGuard],
+    data: { layout: 'wide', fill: true },
+    loadComponent: () =>
+      import('./features/messages/messages-page/messages-page').then((m) => m.MessagesPage),
   },
   ...devRoutes,
   {
