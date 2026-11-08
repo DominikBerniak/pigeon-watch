@@ -549,25 +549,25 @@ Additive migration only (two new tables); no data backfill. `SightingModel.isMin
 
 #### Automated
 
-- [x] 6.1 API builds with style rules
-- [x] 6.2 Migration matches the model
-- [x] 6.3 All .NET tests pass, including architecture, unit and integration
-- [x] 6.4 SPA unit tests pass
-- [x] 6.5 Production build passes within the bundle budget
+- [x] 6.1 API builds with style rules — bb72edf
+- [x] 6.2 Migration matches the model — bb72edf
+- [x] 6.3 All .NET tests pass, including architecture, unit and integration — bb72edf
+- [x] 6.4 SPA unit tests pass — bb72edf
+- [x] 6.5 Production build passes within the bundle budget — bb72edf
 
 #### Manual
 
-- [x] 6.6 Bob messages Alice; badge and unread mark appear and clear when Alice opens the thread
-- [x] 6.7 No badge when nothing is unread
+- [x] 6.6 Bob messages Alice; badge and unread mark appear and clear when Alice opens the thread — bb72edf
+- [x] 6.7 No badge when nothing is unread — bb72edf
 
 ### Phase 7: Two-user E2E and docs
 
 #### Automated
 
-- [ ] 7.1 E2E suite passes, including sighting-messages.spec.ts
-- [ ] 7.2 SPA unit tests still pass
-- [ ] 7.3 All .NET tests still pass
+- [x] 7.1 E2E suite passes, including sighting-messages.spec.ts
+- [x] 7.2 SPA unit tests still pass
+- [x] 7.3 All .NET tests still pass
 
 #### Manual
 
-- [ ] 7.4 Docs read correctly and no longer claim messaging is missing
+- [x] 7.4 Docs read correctly and no longer claim messaging is missing
