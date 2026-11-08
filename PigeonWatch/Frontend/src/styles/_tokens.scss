@@ -25,6 +25,9 @@
   --pw-color-criticality-urgent: #c92a2a;
   --pw-color-message-mine: #dbe4ff;
   --pw-color-message-theirs: #eef1f6;
+  --pw-color-unread-badge: #c92a2a;
+  --pw-color-on-unread-badge: #ffffff;
+  --pw-color-unread-dot: #3b5bdb;
 
   --pw-gradient-brand: linear-gradient(135deg, #3b5bdb 0%, #8b5cf6 55%, #14b8a6 100%);
   --pw-gradient-backdrop:
@@ -98,6 +101,11 @@
   --pw-row-icon-size: 1rem;
   --pw-inline-icon-size: 1.25rem;
   --pw-header-icon-size: 1.5rem;
+  --pw-unread-badge-size: 1.125rem;
+  --pw-unread-badge-offset: 0.125rem;
+  --pw-unread-badge-padding: 0.25rem;
+  --pw-unread-badge-font-size: 0.6875rem;
+  --pw-unread-dot-size: 0.5rem;
   --pw-row-thumb-size: 3rem;
   --pw-brand-mark-size-md: 2rem;
   --pw-brand-mark-size-lg: 3rem;

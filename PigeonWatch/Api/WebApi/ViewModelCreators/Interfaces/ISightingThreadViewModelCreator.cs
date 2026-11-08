@@ -10,4 +10,5 @@ public interface ISightingThreadViewModelCreator
     SightingMessageModel CreateMessage(SightingMessage message, Guid currentUserId);
     SightingMessagePageModel CreateMessagePage(SightingMessagePage page, Guid currentUserId);
     SightingThreadStartModel CreateStart(SightingThread thread, SightingMessage message, Guid currentUserId);
+    UnreadMessageCountModel CreateUnreadCount(int count);
 }

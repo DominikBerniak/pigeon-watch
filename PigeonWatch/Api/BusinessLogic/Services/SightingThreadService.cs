@@ -51,7 +51,7 @@ public class SightingThreadService(ISightingThreadRepository sightingThreadRepos
         if (message is null)
             return SightingThreadResult.Failure([SenderNotFound()]);
 
-        return SightingThreadResult.Success(thread with { LastMessageAt = now }, message);
+        return SightingThreadResult.Success(thread with { LastMessageAt = now, HasUnread = false }, message);
     }
 
     public async Task<SightingThreadPageResult> ListForSightingAsync(Guid sightingId, Guid userId, int page, CancellationToken cancellationToken = default)
@@ -97,6 +97,26 @@ public class SightingThreadService(ISightingThreadRepository sightingThreadRepos
         SightingMessagePage messages = await sightingThreadRepository.ListMessagesAsync(sightingId, threadId, userId, page, SightingMessageRules.PageSize, cancellationToken);
 
         return SightingMessagePageResult.Success(messages);
+    }
+
+    public async Task<SightingThreadReadResult> MarkReadAsync(Guid sightingId, Guid threadId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        if (await sightingThreadRepository.GetSightingOwnerAsync(sightingId, cancellationToken) is null)
+            return SightingThreadReadResult.Failure([SightingNotFound()]);
+
+        bool marked = await sightingThreadRepository.MarkReadAsync(sightingId, threadId, userId, timeProvider.GetUtcNow().UtcDateTime, cancellationToken);
+
+        if (!marked)
+            return SightingThreadReadResult.Failure([ThreadNotFound()]);
+
+        return SightingThreadReadResult.Success();
+    }
+
+    public async Task<int> CountUnreadMessagesAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        int count = await sightingThreadRepository.CountUnreadMessagesAsync(userId, cancellationToken);
+
+        return count;
     }
 
     private static SightingError? ValidateText(string text)

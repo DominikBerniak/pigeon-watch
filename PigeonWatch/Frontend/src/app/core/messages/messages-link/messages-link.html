@@ -1,0 +1,16 @@
+<a
+  mat-icon-button
+  class="app-header__messages"
+  routerLink="/messages"
+  [attr.aria-label]="
+    unreadCount() > 0
+      ? ('header.messagesUnread' | translate: unreadCount())
+      : ('header.messages' | translate)
+  "
+  [appTooltip]="'header.messages' | translate"
+>
+  <app-icon name="mail" size="lg" />
+  @if (unreadCount() > 0) {
+    <span class="messages-link__badge" aria-hidden="true">{{ unreadCount() }}</span>
+  }
+</a>

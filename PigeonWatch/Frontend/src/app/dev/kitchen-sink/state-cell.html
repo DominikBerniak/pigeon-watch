@@ -40,5 +40,8 @@
     @case ('messages') {
       <app-messages-page />
     }
+    @case ('header') {
+      <app-messages-link [unreadCount]="headerUnreadCount()" />
+    }
   }
 </section>

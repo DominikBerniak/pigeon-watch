@@ -361,6 +361,8 @@ The `/messages` page and its user-menu entry.
 
 > Added 2026-11-08 by user decision during Phase 5 manual verification; amends FR-013 ("no read/unread tracking") for S-08.
 
+> **Amendment 2026-11-08 (user decision during Phase 6 manual verification):** the header badge counts unread **messages**, not threads: `GET threads/unread-count` returns the number of messages from the other side newer than the caller's marker, across all the caller's threads (`CountUnreadMessagesAsync`). `hasUnread` per thread stays. The messages page keeps its sidebar in step with the count: whenever the unread count changes, it re-fetches the first inbox page in the background (no loading state, selection and paging kept) and merges each returned thread's `hasUnread`, `lastMessageAt` and order into the list.
+
 ### Overview
 
 Each participant has a per-thread read marker. A thread is unread for a user when it holds a message from the other person newer than that user's marker. The sidebar marks unread threads and the header email button shows the number of unread threads.
@@ -535,28 +537,28 @@ Additive migration only (two new tables); no data backfill. `SightingModel.isMin
 
 #### Automated
 
-- [x] 5.1 SPA unit tests pass
-- [x] 5.2 Production build passes within the bundle budget
+- [x] 5.1 SPA unit tests pass — 6af9f69
+- [x] 5.2 Production build passes within the bundle budget — 6af9f69
 
 #### Manual
 
-- [x] 5.3 Both users see the thread on /messages and it opens on the sighting
-- [x] 5.4 Menu item reads well next to Profile and works from every page
+- [x] 5.3 Both users see the thread on /messages and it opens on the sighting — 6af9f69
+- [x] 5.4 Menu item reads well next to Profile and works from every page — 6af9f69
 
 ### Phase 6: Read state and unread badge
 
 #### Automated
 
-- [ ] 6.1 API builds with style rules
-- [ ] 6.2 Migration matches the model
-- [ ] 6.3 All .NET tests pass, including architecture, unit and integration
-- [ ] 6.4 SPA unit tests pass
-- [ ] 6.5 Production build passes within the bundle budget
+- [x] 6.1 API builds with style rules
+- [x] 6.2 Migration matches the model
+- [x] 6.3 All .NET tests pass, including architecture, unit and integration
+- [x] 6.4 SPA unit tests pass
+- [x] 6.5 Production build passes within the bundle budget
 
 #### Manual
 
-- [ ] 6.6 Bob messages Alice; badge and unread mark appear and clear when Alice opens the thread
-- [ ] 6.7 No badge when nothing is unread
+- [x] 6.6 Bob messages Alice; badge and unread mark appear and clear when Alice opens the thread
+- [x] 6.7 No badge when nothing is unread
 
 ### Phase 7: Two-user E2E and docs
 

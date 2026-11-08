@@ -38,6 +38,19 @@ public class SightingThreadViewModelCreatorTests
     }
 
     [Fact]
+    public void CreateThread_carries_has_unread()
+    {
+        Assert.True(creator.CreateThread(Thread() with { HasUnread = true }, ownerId).HasUnread);
+        Assert.False(creator.CreateThread(Thread(), ownerId).HasUnread);
+    }
+
+    [Fact]
+    public void CreateUnreadCount_carries_the_count()
+    {
+        Assert.Equal(5, creator.CreateUnreadCount(5).Count);
+    }
+
+    [Fact]
     public void CreateMessage_marks_only_the_senders_message_as_mine()
     {
         SightingMessage message = new(Guid.NewGuid(), Guid.NewGuid(), participantId, "Bob", "Hello", lastMessageAt);
@@ -91,6 +104,8 @@ public class SightingThreadViewModelCreatorTests
     [InlineData(typeof(SightingThreadStartModel))]
     [InlineData(typeof(SightingThreadPageModel))]
     [InlineData(typeof(SightingMessagePageModel))]
+    [InlineData(typeof(SightingThreadReadModel))]
+    [InlineData(typeof(UnreadMessageCountModel))]
     public void Messaging_models_expose_no_user_id_email_or_audit_column(Type modelType)
     {
         PropertyInfo[] properties = modelType.GetProperties();
@@ -107,6 +122,6 @@ public class SightingThreadViewModelCreatorTests
 
     private SightingThread Thread()
     {
-        return new(Guid.NewGuid(), Guid.NewGuid(), "Grey", ownerId, "Alice", participantId, "Bob", lastMessageAt);
+        return new(Guid.NewGuid(), Guid.NewGuid(), "Grey", ownerId, "Alice", participantId, "Bob", lastMessageAt, false);
     }
 }

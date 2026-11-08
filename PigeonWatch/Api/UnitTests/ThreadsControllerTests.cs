@@ -24,8 +24,8 @@ public class ThreadsControllerTests
     public async Task List_returns_the_callers_threads_with_the_counterpart_per_role_without_caching()
     {
         Guid otherUserId = Guid.NewGuid();
-        SightingThread owned = new(Guid.NewGuid(), Guid.NewGuid(), "Grey", userId, "Alice", otherUserId, "Bob", DateTime.UtcNow);
-        SightingThread joined = new(Guid.NewGuid(), Guid.NewGuid(), null, otherUserId, "Carol", userId, "Alice", DateTime.UtcNow);
+        SightingThread owned = new(Guid.NewGuid(), Guid.NewGuid(), "Grey", userId, "Alice", otherUserId, "Bob", DateTime.UtcNow, true);
+        SightingThread joined = new(Guid.NewGuid(), Guid.NewGuid(), null, otherUserId, "Carol", userId, "Alice", DateTime.UtcNow, false);
         service.ListForUserAsync(userId, 1, Arg.Any<CancellationToken>())
             .Returns(SightingThreadPageResult.Success(new SightingThreadPage([owned, joined], 2)));
         ThreadsController controller = CreateController(Authenticated(userId));
@@ -36,6 +36,7 @@ public class ThreadsControllerTests
         Assert.Equal([true, false], model.Items.Select(item => item.IsOwner));
         Assert.Equal(["Bob", "Carol"], model.Items.Select(item => item.CounterpartDisplayName));
         Assert.Equal([owned.SightingId, joined.SightingId], model.Items.Select(item => item.SightingId));
+        Assert.Equal([true, false], model.Items.Select(item => item.HasUnread));
         Assert.Equal(2, model.TotalCount);
         Assert.Equal("private, no-store", controller.Response.Headers.CacheControl.ToString());
     }
@@ -63,6 +64,30 @@ public class ThreadsControllerTests
 
         Assert.IsType<UnauthorizedResult>(result.Result);
         await service.DidNotReceive().ListForUserAsync(Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Unread_count_returns_the_callers_count_without_caching()
+    {
+        service.CountUnreadMessagesAsync(userId, Arg.Any<CancellationToken>()).Returns(4);
+        ThreadsController controller = CreateController(Authenticated(userId));
+
+        ActionResult<UnreadMessageCountModel> result = await controller.UnreadCount(cancellationToken);
+
+        UnreadMessageCountModel model = Assert.IsType<UnreadMessageCountModel>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal(4, model.Count);
+        Assert.Equal("private, no-store", controller.Response.Headers.CacheControl.ToString());
+    }
+
+    [Fact]
+    public async Task Unread_count_returns_401_for_a_missing_name_identifier_claim()
+    {
+        ThreadsController controller = CreateController(new ClaimsPrincipal(new ClaimsIdentity()));
+
+        ActionResult<UnreadMessageCountModel> result = await controller.UnreadCount(cancellationToken);
+
+        Assert.IsType<UnauthorizedResult>(result.Result);
+        await service.DidNotReceive().CountUnreadMessagesAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     private ThreadsController CreateController(ClaimsPrincipal user)

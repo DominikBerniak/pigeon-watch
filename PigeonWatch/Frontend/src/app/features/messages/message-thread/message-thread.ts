@@ -34,6 +34,7 @@ import {
 } from 'rxjs';
 import { ConfigurationService } from '../../../core/configuration/configuration.service';
 import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
+import { UnreadCountService } from '../../../core/messages/unread-count.service';
 import { ResourceService } from '../../../core/resources/resource.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import { unexpectedTraceId } from '../../../shared/http/problem-details';
@@ -119,6 +120,7 @@ export class MessageThread {
   private readonly configuration = inject(ConfigurationService);
   private readonly resources = inject(ResourceService);
   private readonly reporting = inject(ErrorReportingService);
+  private readonly unreadCount = inject(UnreadCountService);
   private readonly submitState = inject(FormSubmitState);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
@@ -128,12 +130,14 @@ export class MessageThread {
   private readonly list = viewChild<ElementRef<HTMLElement>>('list');
   private loadedPages = 0;
   private olderRequest: Subscription | null = null;
+  private readRequest: Subscription | null = null;
 
   readonly sightingId = input.required<string>();
   readonly threadId = input.required<string>();
   readonly thread = input<SightingThread | null>(null);
   readonly expanded = input(false);
   readonly expandToggle = output<void>();
+  readonly markedRead = output<string>();
 
   private readonly instanceId = nextTitleId++;
   protected readonly titleId = `message-thread-title-${this.instanceId}`;
@@ -234,13 +238,17 @@ export class MessageThread {
       .subscribe((result) => {
         if ('items' in result) {
           this.applyFirstPage(result);
+          this.markRead();
 
           return;
         }
 
         this.state.set(result);
       });
-    this.destroyRef.onDestroy(() => this.olderRequest?.unsubscribe());
+    this.destroyRef.onDestroy(() => {
+      this.olderRequest?.unsubscribe();
+      this.readRequest?.unsubscribe();
+    });
   }
 
   focusHeading(): void {
@@ -325,6 +333,8 @@ export class MessageThread {
   private resetThread(): void {
     this.olderRequest?.unsubscribe();
     this.olderRequest = null;
+    this.readRequest?.unsubscribe();
+    this.readRequest = null;
     this.loadedPages = 0;
     this.state.set({ kind: 'loading' });
     this.items.set([]);
@@ -340,6 +350,18 @@ export class MessageThread {
     this.totalCount.set(page.totalCount);
     this.state.set({ kind: 'loaded' });
     this.scrollToNewest();
+  }
+
+  private markRead(): void {
+    const threadId = this.threadId();
+
+    this.readRequest = this.sightingsApi.markThreadRead(this.sightingId(), threadId).subscribe({
+      next: () => {
+        this.markedRead.emit(threadId);
+        this.unreadCount.refresh();
+      },
+      error: (error: unknown) => this.failureOf(error, 'messages.thread.read'),
+    });
   }
 
   private scrollToNewest(): void {

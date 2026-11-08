@@ -69,6 +69,7 @@ export interface SightingThread {
   counterpartDisplayName: string;
   isOwner: boolean;
   lastMessageAt: string;
+  hasUnread: boolean;
 }
 
 export interface SightingThreadPage {

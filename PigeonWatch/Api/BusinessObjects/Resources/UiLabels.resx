@@ -48,6 +48,9 @@
   <data name="header.messages" xml:space="preserve">
     <value>Messages</value>
   </data>
+  <data name="header.messagesUnread" xml:space="preserve">
+    <value>Messages, {0} unread</value>
+  </data>
   <data name="header.profile" xml:space="preserve">
     <value>Profile</value>
   </data>
@@ -623,6 +626,9 @@
   </data>
   <data name="messages.inbox.moreError" xml:space="preserve">
     <value>We couldn't load more conversations.</value>
+  </data>
+  <data name="messages.inbox.unread" xml:space="preserve">
+    <value>Unread</value>
   </data>
   <data name="messages.inbox.refresh" xml:space="preserve">
     <value>Refresh</value>

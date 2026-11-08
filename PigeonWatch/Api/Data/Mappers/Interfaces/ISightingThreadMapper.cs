@@ -6,6 +6,6 @@ namespace PigeonWatch.Data.Mappers;
 public interface ISightingThreadMapper
 {
     internal SightingMessageEntity ToMessageEntity(NewSightingMessage message);
-    internal SightingThread ToThread(SightingThreadEntity entity);
+    internal SightingThread ToThread(SightingThreadEntity entity, bool hasUnread);
     internal SightingMessage ToMessage(SightingMessageEntity entity);
 }

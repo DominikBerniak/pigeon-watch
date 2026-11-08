@@ -13,4 +13,6 @@ public sealed class SightingThreadModel
     public required bool IsOwner { get; init; }
 
     public required DateTime LastMessageAt { get; init; }
+
+    public required bool HasUnread { get; init; }
 }

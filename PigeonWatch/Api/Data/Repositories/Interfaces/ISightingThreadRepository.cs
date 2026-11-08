@@ -12,4 +12,6 @@ public interface ISightingThreadRepository
     Task<SightingThreadPage> ListThreadsForSightingAsync(Guid sightingId, Guid userId, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<SightingThreadPage> ListThreadsForUserAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<SightingMessagePage> ListMessagesAsync(Guid sightingId, Guid threadId, Guid userId, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<bool> MarkReadAsync(Guid sightingId, Guid threadId, Guid userId, DateTime now, CancellationToken cancellationToken = default);
+    Task<int> CountUnreadMessagesAsync(Guid userId, CancellationToken cancellationToken = default);
 }

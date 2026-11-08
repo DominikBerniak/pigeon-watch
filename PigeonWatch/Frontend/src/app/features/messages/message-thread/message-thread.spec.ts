@@ -9,6 +9,7 @@ import {
   ConfigurationService,
 } from '../../../core/configuration/configuration.service';
 import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
+import { UnreadCountService } from '../../../core/messages/unread-count.service';
 import {
   SightingMessage,
   SightingMessagePage,
@@ -37,6 +38,7 @@ const summary: SightingThread = {
   counterpartDisplayName: 'Ola N',
   isOwner: true,
   lastMessageAt: new Date().toISOString(),
+  hasUnread: false,
 };
 
 const theirs = messageOf('theirs');
@@ -53,9 +55,17 @@ describe('MessageThread', () => {
       (sightingId: string, threadId: string, text: string) => Observable<SightingMessage>
     >
   >;
+  let markThreadRead: ReturnType<
+    typeof vi.fn<(sightingId: string, threadId: string) => Observable<void>>
+  >;
+  let report: ReturnType<typeof vi.fn>;
+  let refreshCount: ReturnType<typeof vi.fn>;
   let fixture: ComponentFixture<MessageThread>;
 
   beforeEach(() => {
+    markThreadRead = vi.fn(() => of(undefined));
+    report = vi.fn();
+    refreshCount = vi.fn();
     threadMessages = vi.fn(() => of({ items: [theirs, mine], totalCount: 2 }));
     sendMessage = vi.fn((_sightingId: string, _threadId: string, text: string) =>
       of(messageOf('new', { text, senderDisplayName: 'Jan K', isMine: true })),
@@ -65,8 +75,9 @@ describe('MessageThread', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
-        { provide: SightingsApi, useValue: { threadMessages, sendMessage } },
-        { provide: ErrorReportingService, useValue: { report: vi.fn() } },
+        { provide: SightingsApi, useValue: { threadMessages, sendMessage, markThreadRead } },
+        { provide: ErrorReportingService, useValue: { report } },
+        { provide: UnreadCountService, useValue: { refresh: refreshCount } },
       ],
     });
   });
@@ -474,5 +485,62 @@ describe('MessageThread', () => {
     fixture.componentInstance.focusHeading();
 
     expect(document.activeElement).toBe(root.querySelector('h2'));
+  });
+
+  it('marks the thread read after its first page loads, then refreshes the count and emits', async () => {
+    fixture = TestBed.createComponent(MessageThread);
+    const marked = vi.fn();
+    fixture.componentInstance.markedRead.subscribe(marked);
+    fixture.componentRef.setInput('sightingId', 'sighting-1');
+    fixture.componentRef.setInput('threadId', 'thread-1');
+    await settle();
+
+    expect(markThreadRead).toHaveBeenCalledExactlyOnceWith('sighting-1', 'thread-1');
+    expect(threadMessages.mock.invocationCallOrder[0]).toBeLessThan(
+      markThreadRead.mock.invocationCallOrder[0],
+    );
+    expect(marked).toHaveBeenCalledExactlyOnceWith('thread-1');
+    expect(refreshCount).toHaveBeenCalledOnce();
+  });
+
+  it('marks the thread read again after a reload', async () => {
+    await open();
+
+    fixture.componentInstance.reload();
+    await settle();
+
+    expect(markThreadRead).toHaveBeenCalledTimes(2);
+    expect(refreshCount).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not mark the thread read when its messages fail to load', async () => {
+    threadMessages.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+    await open();
+
+    expect(markThreadRead).not.toHaveBeenCalled();
+    expect(refreshCount).not.toHaveBeenCalled();
+  });
+
+  it('reports an unexpected mark-read failure and leaves the count alone', async () => {
+    markThreadRead.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+    await open();
+
+    expect(report).toHaveBeenCalledExactlyOnceWith(
+      'api-failure',
+      'messages.thread.read',
+      expect.any(HttpErrorResponse),
+    );
+    expect(refreshCount).not.toHaveBeenCalled();
+  });
+
+  it('does not report a mark-read 404', async () => {
+    markThreadRead.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+
+    await open();
+
+    expect(report).not.toHaveBeenCalled();
+    expect(refreshCount).not.toHaveBeenCalled();
   });
 });

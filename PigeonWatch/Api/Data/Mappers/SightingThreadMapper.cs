@@ -15,7 +15,7 @@ public class SightingThreadMapper : ISightingThreadMapper
         };
     }
 
-    SightingThread ISightingThreadMapper.ToThread(SightingThreadEntity entity)
+    SightingThread ISightingThreadMapper.ToThread(SightingThreadEntity entity, bool hasUnread)
     {
         return new SightingThread(
             entity.Id,
@@ -25,7 +25,8 @@ public class SightingThreadMapper : ISightingThreadMapper
             entity.Sighting.Reporter.DisplayName,
             entity.ParticipantId,
             entity.Participant.DisplayName,
-            DateTime.SpecifyKind(entity.LastMessageAt, DateTimeKind.Utc));
+            DateTime.SpecifyKind(entity.LastMessageAt, DateTimeKind.Utc),
+            hasUnread);
     }
 
     SightingMessage ISightingThreadMapper.ToMessage(SightingMessageEntity entity)

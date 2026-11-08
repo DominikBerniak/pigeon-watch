@@ -1,12 +1,13 @@
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
+import { Component, WritableSignal, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { Router, UrlSegment, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { Observable, Subject, of, throwError } from 'rxjs';
 import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
+import { UnreadCountService } from '../../../core/messages/unread-count.service';
 import {
   SightingMessage,
   SightingMessagePage,
@@ -32,6 +33,7 @@ function threadOf(index: number, overrides: Partial<SightingThread> = {}): Sight
     counterpartDisplayName: `Person ${index}`,
     isOwner: index % 2 === 0,
     lastMessageAt: new Date(Date.now() - (index * 60 + 5) * minute).toISOString(),
+    hasUnread: false,
     ...overrides,
   };
 }
@@ -51,7 +53,12 @@ describe('MessagesPage', () => {
       (sightingId: string, threadId: string, page: number) => Observable<SightingMessagePage>
     >
   >;
+  let markThreadRead: ReturnType<
+    typeof vi.fn<(sightingId: string, threadId: string) => Observable<void>>
+  >;
   let report: ReturnType<typeof vi.fn>;
+  let refreshCount: ReturnType<typeof vi.fn>;
+  let unreadCount: WritableSignal<number>;
   let harness: RouterTestingHarness;
 
   const first = threadOf(1);
@@ -62,7 +69,10 @@ describe('MessagesPage', () => {
       of({ items: [first, unnamed], totalCount: 2 }),
     );
     threadMessages = vi.fn(() => of({ items: [message], totalCount: 1 }));
+    markThreadRead = vi.fn(() => of(undefined));
     report = vi.fn();
+    refreshCount = vi.fn();
+    unreadCount = signal(0);
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -77,9 +87,14 @@ describe('MessagesPage', () => {
             inbox,
             threadMessages,
             sendMessage: (): Observable<SightingMessage> => of(message),
+            markThreadRead,
           },
         },
         { provide: ErrorReportingService, useValue: { report } },
+        {
+          provide: UnreadCountService,
+          useValue: { refresh: refreshCount, count: unreadCount.asReadonly() },
+        },
       ],
     });
     harness = await RouterTestingHarness.create();
@@ -298,6 +313,89 @@ describe('MessagesPage', () => {
     expect(inbox).toHaveBeenCalledTimes(1);
   });
 
+  it('marks unread threads with a dot, bold text and a visually hidden label', async () => {
+    inbox.mockReturnValue(
+      of({ items: [threadOf(1, { hasUnread: true }), unnamed], totalCount: 2 }),
+    );
+
+    const root = await open();
+    const [unreadRow, readRow] = rows(root);
+
+    expect(unreadRow.classList).toContain('messages__thread--unread');
+    expect(unreadRow.querySelector('.messages__unread-dot')?.getAttribute('aria-hidden')).toBe(
+      'true',
+    );
+    expect(textOf(unreadRow.querySelector('.pw-visually-hidden'))).toBe('Unread');
+    expect(textOf(unreadRow.querySelector('.messages__counterpart'))).toBe('Person 1');
+    expect(readRow.classList).not.toContain('messages__thread--unread');
+    expect(readRow.querySelector('.messages__unread-dot')).toBeNull();
+    expect(readRow.querySelector('.pw-visually-hidden')).toBeNull();
+    expect(markThreadRead).not.toHaveBeenCalled();
+  });
+
+  it('marks the opened thread read after its first page loads and clears its row', async () => {
+    inbox.mockReturnValue(
+      of({
+        items: [threadOf(1, { hasUnread: true }), threadOf(2, { hasUnread: true })],
+        totalCount: 2,
+      }),
+    );
+
+    const root = await open('/messages/sighting-1/thread-1');
+
+    expect(markThreadRead).toHaveBeenCalledExactlyOnceWith('sighting-1', 'thread-1');
+    expect(threadMessages.mock.invocationCallOrder[0]).toBeLessThan(
+      markThreadRead.mock.invocationCallOrder[0],
+    );
+    expect(rows(root)[0].classList).not.toContain('messages__thread--unread');
+    expect(rows(root)[1].classList).toContain('messages__thread--unread');
+    expect(refreshCount).toHaveBeenCalledOnce();
+    expect(inbox).toHaveBeenCalledOnce();
+  });
+
+  it('keeps a thread read when the threads arrive after it was marked read', async () => {
+    const late = new Subject<SightingThreadPage>();
+
+    inbox.mockReturnValue(late);
+
+    const root = await open('/messages/sighting-1/thread-1');
+
+    expect(markThreadRead).toHaveBeenCalledExactlyOnceWith('sighting-1', 'thread-1');
+
+    late.next({
+      items: [threadOf(1, { hasUnread: true }), threadOf(2, { hasUnread: true })],
+      totalCount: 2,
+    });
+    await settle();
+
+    expect(rows(root)[0].classList).not.toContain('messages__thread--unread');
+    expect(rows(root)[1].classList).toContain('messages__thread--unread');
+  });
+
+  it('keeps the unread mark and reports when marking read fails', async () => {
+    inbox.mockReturnValue(of({ items: [threadOf(1, { hasUnread: true })], totalCount: 1 }));
+    markThreadRead.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+    const root = await open('/messages/sighting-1/thread-1');
+
+    expect(rows(root)[0].classList).toContain('messages__thread--unread');
+    expect(refreshCount).not.toHaveBeenCalled();
+    expect(report).toHaveBeenCalledExactlyOnceWith(
+      'api-failure',
+      'messages.thread.read',
+      expect.any(HttpErrorResponse),
+    );
+  });
+
+  it('refreshes the unread count on Refresh', async () => {
+    const root = await open();
+
+    button(root, 'Refresh')?.click();
+    await settle();
+
+    expect(refreshCount).toHaveBeenCalledOnce();
+  });
+
   it('puts a Refresh button in the card header', async () => {
     const root = await open();
 
@@ -372,6 +470,129 @@ describe('MessagesPage', () => {
 
     expect(root.querySelector('app-error-retry')).toBeNull();
     expect(rows(root)).toHaveLength(2);
+  });
+
+  it('syncs the threads in the background when the unread count changes', async () => {
+    const root = await open('/messages/sighting-1/thread-1');
+    const view = threadView();
+    const synced = new Subject<SightingThreadPage>();
+    const newer = threadOf(2, {
+      hasUnread: true,
+      lastMessageAt: new Date(Date.now() - minute).toISOString(),
+    });
+
+    expect(inbox).toHaveBeenCalledOnce();
+
+    inbox.mockReturnValueOnce(synced);
+    unreadCount.set(1);
+    await settle();
+
+    expect(inbox).toHaveBeenCalledTimes(2);
+    expect(inbox).toHaveBeenLastCalledWith(1);
+    expect(root.querySelector('nav app-loading-indicator')).toBeNull();
+    expect(rows(root).map((row) => row.dataset['threadId'])).toEqual(['thread-1', 'thread-2']);
+
+    synced.next({ items: [newer, first], totalCount: 2 });
+    await settle();
+
+    const [top, second] = rows(root);
+
+    expect(rows(root).map((row) => row.dataset['threadId'])).toEqual(['thread-2', 'thread-1']);
+    expect(top.classList).toContain('messages__thread--unread');
+    expect(textOf(top.querySelector('.pw-visually-hidden'))).toBe('Unread');
+    expect(second.getAttribute('aria-current')).toBe('page');
+    expect(top.getAttribute('aria-current')).toBeNull();
+    expect(root.querySelector('nav app-loading-indicator')).toBeNull();
+    expect(TestBed.inject(Router).url).toBe('/messages/sighting-1/thread-1');
+    expect(threadView()).toBe(view);
+    expect(threadMessages).toHaveBeenCalledOnce();
+  });
+
+  it('keeps later pages, adds new threads, keeps the open thread read and updates the total on a sync', async () => {
+    inbox.mockImplementation((page) =>
+      page === 1
+        ? of({ items: [threadOf(1), threadOf(2)], totalCount: 4 })
+        : of({ items: [threadOf(3), threadOf(4)], totalCount: 4 }),
+    );
+
+    const root = await open('/messages/sighting-1/thread-1');
+
+    button(root, 'Show more')?.click();
+    await settle();
+
+    inbox.mockReturnValueOnce(
+      of({
+        items: [
+          threadOf(5, { hasUnread: true, lastMessageAt: new Date(Date.now() - minute).toISOString() }),
+          threadOf(1, { hasUnread: true }),
+          threadOf(2, { sightingName: 'Renamed', counterpartDisplayName: 'Someone else' }),
+        ],
+        totalCount: 5,
+      }),
+    );
+    unreadCount.set(2);
+    await settle();
+
+    expect(rows(root).map((row) => row.dataset['threadId'])).toEqual([
+      'thread-5',
+      'thread-1',
+      'thread-2',
+      'thread-3',
+      'thread-4',
+    ]);
+    expect(rows(root)[0].classList).toContain('messages__thread--unread');
+    expect(rows(root)[1].classList).not.toContain('messages__thread--unread');
+    expect(textOf(rows(root)[2].querySelector('.messages__sighting'))).toBe('Renamed');
+    expect(textOf(rows(root)[2].querySelector('.messages__counterpart'))).toBe('Someone else');
+    expect(button(root, 'Show more')).toBeNull();
+  });
+
+  it('cancels an older sync when the count changes again', async () => {
+    const root = await open();
+    const stale = new Subject<SightingThreadPage>();
+
+    inbox.mockReturnValueOnce(stale);
+    unreadCount.set(1);
+    await settle();
+    inbox.mockReturnValueOnce(
+      of({ items: [threadOf(3, { hasUnread: true, lastMessageAt: new Date().toISOString() })], totalCount: 3 }),
+    );
+    unreadCount.set(2);
+    await settle();
+
+    expect(stale.observed).toBe(false);
+    expect(rows(root).map((row) => row.dataset['threadId'])).toEqual([
+      'thread-3',
+      'thread-1',
+      'thread-2',
+    ]);
+  });
+
+  it('keeps the threads and reports silently when a sync fails', async () => {
+    const root = await open();
+
+    inbox.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 500 })));
+    unreadCount.set(1);
+    await settle();
+
+    expect(rows(root).map((row) => row.dataset['threadId'])).toEqual(['thread-1', 'thread-2']);
+    expect(root.querySelector('app-error-retry')).toBeNull();
+    expect(root.querySelector('app-alert')).toBeNull();
+    expect(report).toHaveBeenCalledExactlyOnceWith(
+      'api-failure',
+      'messages.inbox.sync',
+      expect.any(HttpErrorResponse),
+    );
+  });
+
+  it('does not report an expected status when a sync fails', async () => {
+    await open();
+
+    inbox.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 429 })));
+    unreadCount.set(1);
+    await settle();
+
+    expect(report).not.toHaveBeenCalled();
   });
 
   function dialogElement(): HTMLElement | null {

@@ -89,6 +89,20 @@ public class SightingThreadsController(
         return CreatedAtAction(nameof(ListMessages), new { sightingId, threadId }, model);
     }
 
+    [HttpPut("{threadId:guid}/read")]
+    public async Task<ActionResult<SightingThreadReadModel>> MarkRead(Guid sightingId, Guid threadId, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+            return UnauthorizedForInvalidIdentity();
+
+        SightingThreadReadResult result = await sightingThreadService.MarkReadAsync(sightingId, threadId, userId, cancellationToken);
+
+        if (!result.Succeeded)
+            return GetFailure<SightingThreadReadModel>(sightingId, threadId, result.Errors);
+
+        return NoContent();
+    }
+
     private ActionResult<TResponseModel> GetFailure<TResponseModel>(Guid sightingId, Guid? threadId, IReadOnlyList<SightingError> errors)
     {
         HashSet<string> codes = errors.Select(error => error.Code).ToHashSet();

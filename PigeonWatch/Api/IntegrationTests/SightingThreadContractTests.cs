@@ -322,6 +322,8 @@ public sealed class SightingThreadContractTests : IDisposable
             await world.Bob.Client.GetAsync(ThreadsUri(world.SightingId), cancellationToken),
             await world.Alice.Client.GetAsync("/threads", cancellationToken),
             await world.Bob.Client.GetAsync("/threads", cancellationToken),
+            await world.Alice.Client.GetAsync("/threads/unread-count", cancellationToken),
+            await world.Bob.Client.GetAsync("/threads/unread-count", cancellationToken),
             await world.Alice.Client.GetAsync($"/sightings/{world.SightingId}", cancellationToken),
             await world.Bob.Client.GetAsync($"/sightings/{world.SightingId}", cancellationToken)
         ];
@@ -365,6 +367,98 @@ public sealed class SightingThreadContractTests : IDisposable
 
         foreach (HttpResponseMessage read in reads)
             read.Dispose();
+    }
+
+    [Fact]
+    public async Task Bobs_messages_are_unread_for_alice_until_she_marks_the_thread_read()
+    {
+        World world = await SeedAsync();
+        Guid threadId = await world.Bob.StartThreadAsync(world.SightingId, "I can help catch it", cancellationToken);
+        clock.Advance(TimeSpan.FromSeconds(1));
+        await world.Bob.StartThreadAsync(world.SightingId, "I am on my way", cancellationToken);
+        clock.Advance(TimeSpan.FromSeconds(1));
+
+        ThreadView aliceBefore = Assert.Single((await GetInboxAsync(world.Alice)).Items);
+        ThreadView aliceSightingBefore = Assert.Single((await GetSightingThreadsAsync(world.Alice, world.SightingId)).Items);
+        ThreadView bobBefore = Assert.Single((await GetInboxAsync(world.Bob)).Items);
+        int aliceCountBefore = await GetUnreadCountAsync(world.Alice);
+        int bobCountBefore = await GetUnreadCountAsync(world.Bob);
+
+        using HttpResponseMessage markRead = await MarkReadAsync(world.Alice, world.SightingId, threadId);
+        string markReadBody = await markRead.Content.ReadAsStringAsync(cancellationToken);
+
+        ThreadView aliceAfter = Assert.Single((await GetInboxAsync(world.Alice)).Items);
+        int aliceCountAfter = await GetUnreadCountAsync(world.Alice);
+
+        clock.Advance(TimeSpan.FromSeconds(1));
+        await world.Alice.ReplyAsync(world.SightingId, threadId, "Thank you", cancellationToken);
+
+        ThreadView aliceAfterReply = Assert.Single((await GetInboxAsync(world.Alice)).Items);
+        ThreadView bobAfterReply = Assert.Single((await GetInboxAsync(world.Bob)).Items);
+        int bobCountAfterReply = await GetUnreadCountAsync(world.Bob);
+
+        clock.Advance(TimeSpan.FromSeconds(1));
+        await world.Bob.ReplyAsync(world.SightingId, threadId, "See you soon", cancellationToken);
+
+        int aliceCountAfterBobFollowUp = await GetUnreadCountAsync(world.Alice);
+        int bobCountAfterOwnFollowUp = await GetUnreadCountAsync(world.Bob);
+
+        Assert.True(aliceBefore.HasUnread);
+        Assert.True(aliceSightingBefore.HasUnread);
+        Assert.False(bobBefore.HasUnread);
+        Assert.Equal(2, aliceCountBefore);
+        Assert.Equal(0, bobCountBefore);
+        Assert.Equal(HttpStatusCode.NoContent, markRead.StatusCode);
+        Assert.Empty(markReadBody);
+        Assert.False(aliceAfter.HasUnread);
+        Assert.Equal(0, aliceCountAfter);
+        Assert.False(aliceAfterReply.HasUnread);
+        Assert.True(bobAfterReply.HasUnread);
+        Assert.Equal(1, bobCountAfterReply);
+        Assert.Equal(1, aliceCountAfterBobFollowUp);
+        Assert.Equal(0, bobCountAfterOwnFollowUp);
+    }
+
+    [Fact]
+    public async Task Carol_cannot_mark_bobs_thread_read_and_nothing_is_written()
+    {
+        World world = await SeedAsync();
+        Guid threadId = await world.Bob.StartThreadAsync(world.SightingId, "I can help catch it", cancellationToken);
+        IReadOnlyList<AuditUsers> auditBefore = factory.ReadSightingThreadAuditUsers();
+        clock.Advance(TimeSpan.FromSeconds(1));
+
+        using HttpResponseMessage carolMark = await MarkReadAsync(world.Carol, world.SightingId, threadId);
+        using HttpResponseMessage unknownThread = await MarkReadAsync(world.Alice, world.SightingId, Guid.NewGuid());
+        using HttpResponseMessage unknownSighting = await MarkReadAsync(world.Alice, Guid.NewGuid(), threadId);
+        ThreadView aliceThread = Assert.Single((await GetInboxAsync(world.Alice)).Items);
+
+        Assert.Equal(HttpStatusCode.NotFound, carolMark.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, unknownThread.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, unknownSighting.StatusCode);
+        Assert.Equal(auditBefore, factory.ReadSightingThreadAuditUsers());
+        Assert.True(aliceThread.HasUnread);
+        Assert.Equal(1, await GetUnreadCountAsync(world.Alice));
+    }
+
+    [Fact]
+    public async Task The_unread_count_counts_messages_and_never_includes_another_users_threads()
+    {
+        World world = await SeedAsync();
+        Guid carolSightingId = await world.Carol.CreateSightingAsync(cancellationToken: cancellationToken);
+        await world.Bob.StartThreadAsync(world.SightingId, "To Alice", cancellationToken);
+        await world.Bob.StartThreadAsync(carolSightingId, "To Carol", cancellationToken);
+        clock.Advance(TimeSpan.FromSeconds(1));
+        await world.Bob.StartThreadAsync(carolSightingId, "To Carol again", cancellationToken);
+        await world.Alice.StartThreadAsync(carolSightingId, "Alice to Carol", cancellationToken);
+
+        using HttpResponseMessage carolCount = await world.Carol.Client.GetAsync("/threads/unread-count", cancellationToken);
+        int carolUnread = await ReadCountAsync(carolCount);
+
+        Assert.Equal(HttpStatusCode.OK, carolCount.StatusCode);
+        Assert.Equal("no-store, private", NormalizedCacheControl(carolCount));
+        Assert.Equal(3, carolUnread);
+        Assert.Equal(1, await GetUnreadCountAsync(world.Alice));
+        Assert.Equal(0, await GetUnreadCountAsync(world.Bob));
     }
 
     public void Dispose()
@@ -420,6 +514,44 @@ public sealed class SightingThreadContractTests : IDisposable
         HttpResponseMessage response = await user.Client.PostAsJsonAsync(MessagesUri(sightingId, threadId), body, cancellationToken);
 
         return response;
+    }
+
+    private async Task<HttpResponseMessage> MarkReadAsync(TestUser user, Guid sightingId, Guid threadId)
+    {
+        HttpResponseMessage response = await user.Client.PutAsync($"{ThreadsUri(sightingId)}/{threadId}/read", null, cancellationToken);
+
+        return response;
+    }
+
+    private async Task<ThreadPageView> GetInboxAsync(TestUser user)
+    {
+        using HttpResponseMessage response = await user.Client.GetAsync("/threads", cancellationToken);
+
+        return await ReadThreadPageAsync(response);
+    }
+
+    private async Task<ThreadPageView> GetSightingThreadsAsync(TestUser user, Guid sightingId)
+    {
+        using HttpResponseMessage response = await user.Client.GetAsync(ThreadsUri(sightingId), cancellationToken);
+
+        return await ReadThreadPageAsync(response);
+    }
+
+    private async Task<int> GetUnreadCountAsync(TestUser user)
+    {
+        using HttpResponseMessage response = await user.Client.GetAsync("/threads/unread-count", cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        return await ReadCountAsync(response);
+    }
+
+    private async Task<int> ReadCountAsync(HttpResponseMessage response)
+    {
+        string body = await response.Content.ReadAsStringAsync(cancellationToken);
+        using JsonDocument document = JsonDocument.Parse(body);
+
+        return document.RootElement.GetProperty("count").GetInt32();
     }
 
     private async Task<bool> ReadIsMineAsync(HttpResponseMessage response)
@@ -480,7 +612,8 @@ public sealed class SightingThreadContractTests : IDisposable
             element.GetProperty("id").GetGuid(),
             element.GetProperty("sightingId").GetGuid(),
             element.GetProperty("counterpartDisplayName").GetString()!,
-            element.GetProperty("isOwner").GetBoolean());
+            element.GetProperty("isOwner").GetBoolean(),
+            element.GetProperty("hasUnread").GetBoolean());
     }
 
     private static MessageView ToMessage(JsonElement element)
@@ -494,7 +627,7 @@ public sealed class SightingThreadContractTests : IDisposable
 
     private sealed record World(TestUser Alice, TestUser Bob, TestUser Carol, Guid SightingId);
 
-    private sealed record ThreadView(Guid Id, Guid SightingId, string CounterpartDisplayName, bool IsOwner);
+    private sealed record ThreadView(Guid Id, Guid SightingId, string CounterpartDisplayName, bool IsOwner, bool HasUnread);
 
     private sealed record MessageView(Guid Id, string Text, string SenderDisplayName, bool IsMine);
 

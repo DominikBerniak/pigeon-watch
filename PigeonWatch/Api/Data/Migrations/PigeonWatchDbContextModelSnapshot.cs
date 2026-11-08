@@ -238,9 +238,17 @@ namespace PigeonWatch.Data.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("LAST_MESSAGE_AT");
 
+                    b.Property<DateTime?>("OwnerLastReadAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("OWNER_LAST_READ_AT");
+
                     b.Property<Guid>("ParticipantId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("PARTICIPANT_ID");
+
+                    b.Property<DateTime?>("ParticipantLastReadAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("PARTICIPANT_LAST_READ_AT");
 
                     b.Property<Guid>("SightingId")
                         .HasColumnType("uniqueidentifier")
@@ -421,7 +429,7 @@ namespace PigeonWatch.Data.Migrations
                         .HasConstraintName("FK_SIGHTING_MESSAGE_USER_ACCOUNT_SENDER_ID");
 
                     b.HasOne("PigeonWatch.Data.Entities.SightingThreadEntity", "Thread")
-                        .WithMany()
+                        .WithMany("Messages")
                         .HasForeignKey("ThreadId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
@@ -451,6 +459,11 @@ namespace PigeonWatch.Data.Migrations
                     b.Navigation("Participant");
 
                     b.Navigation("Sighting");
+                });
+
+            modelBuilder.Entity("PigeonWatch.Data.Entities.SightingThreadEntity", b =>
+                {
+                    b.Navigation("Messages");
                 });
 #pragma warning restore 612, 618
         }

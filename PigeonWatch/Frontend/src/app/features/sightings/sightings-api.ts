@@ -107,6 +107,10 @@ export class SightingsApi {
     return this.http.post<SightingMessage>(messagesUrl(sightingId, threadId), { text });
   }
 
+  markThreadRead(sightingId: string, threadId: string): Observable<void> {
+    return this.http.put<void>(threadReadUrl(sightingId, threadId), null);
+  }
+
   inbox(page: number): Observable<SightingThreadPage> {
     return this.http.get<SightingThreadPage>(`${environment.apiUrl}/threads`, {
       params: new HttpParams().set('page', page),
@@ -126,6 +130,10 @@ function commentUrl(sightingId: string, commentId: string): string {
 
 function threadsUrl(sightingId: string): string {
   return `${environment.apiUrl}/sightings/${encodeURIComponent(sightingId)}/threads`;
+}
+
+function threadReadUrl(sightingId: string, threadId: string): string {
+  return `${threadsUrl(sightingId)}/${encodeURIComponent(threadId)}/read`;
 }
 
 function messagesUrl(sightingId: string, threadId: string): string {

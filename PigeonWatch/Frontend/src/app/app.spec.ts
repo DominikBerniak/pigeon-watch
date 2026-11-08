@@ -1,5 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, Routes, provideRouter } from '@angular/router';
@@ -8,6 +8,7 @@ import { routes } from './app.routes';
 import { SessionService } from './core/auth/session.service';
 import { CurrentUser } from './core/configuration/configuration.service';
 import { devRoutes } from './dev/dev-routes';
+import { environment } from '../environments/environment';
 
 @Component({ template: '' })
 class BlankPage {}
@@ -154,6 +155,61 @@ describe('App', () => {
     expect(link?.textContent?.trim()).toBe('');
     expect(link?.querySelector('app-icon[name="mail"] svg')?.getAttribute('aria-hidden')).toBe(
       'true',
+    );
+  });
+
+  it('fetches the unread count after sign-in and shows it as a badge named in the link', async () => {
+    currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
+    const element = await render();
+
+    TestBed.inject(HttpTestingController)
+      .expectOne(`${environment.apiUrl}/threads/unread-count`)
+      .flush({ count: 2 });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    const link = element.querySelector<HTMLAnchorElement>('header a.app-header__messages');
+
+    expect(link?.getAttribute('aria-label')).toBe('Messages, 2 unread');
+    expect(link?.querySelector('.messages-link__badge')?.textContent?.trim()).toBe('2');
+  });
+
+  it('asks for no unread count while nobody is logged in', async () => {
+    await render();
+
+    TestBed.inject(HttpTestingController).expectNone(`${environment.apiUrl}/threads/unread-count`);
+  });
+
+  it('clears the badge when the user logs out', async () => {
+    currentUser.set({ id: '1', email: 'jan@example.com', displayName: 'Jan K', roles: [] });
+    const element = await render();
+
+    TestBed.inject(HttpTestingController)
+      .expectOne(`${environment.apiUrl}/threads/unread-count`)
+      .flush({ count: 2 });
+    currentUser.set(null);
+    await TestBed.inject(ApplicationRef).whenStable();
+    currentUser.set({ id: '2', email: 'ola@example.com', displayName: 'Ola N', roles: [] });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    const link = element.querySelector<HTMLAnchorElement>('header a.app-header__messages');
+
+    expect(link?.getAttribute('aria-label')).toBe('Messages');
+    expect(link?.querySelector('.messages-link__badge')).toBeNull();
+    TestBed.inject(HttpTestingController).expectOne(`${environment.apiUrl}/threads/unread-count`);
+  });
+
+  it('refreshes the unread count after a route change', async () => {
+    const { main } = await renderSignedIn();
+    const httpMock = TestBed.inject(HttpTestingController);
+
+    httpMock.expectOne(`${environment.apiUrl}/threads/unread-count`).flush({ count: 0 });
+    await navigate('/profile');
+
+    httpMock.expectOne(`${environment.apiUrl}/threads/unread-count`).flush({ count: 1 });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(main.ownerDocument.querySelector('.messages-link__badge')?.textContent?.trim()).toBe(
+      '1',
     );
   });
 

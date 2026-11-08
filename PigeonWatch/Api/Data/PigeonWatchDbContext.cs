@@ -82,7 +82,7 @@ public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options
             entity.ToTable("SightingMessage");
             entity.HasKey(e => e.Id);
             entity.HasOne(e => e.Thread)
-                .WithMany()
+                .WithMany(e => e.Messages)
                 .HasForeignKey(e => e.ThreadId)
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.Sender)

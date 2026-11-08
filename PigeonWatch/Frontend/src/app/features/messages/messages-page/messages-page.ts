@@ -10,12 +10,26 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, ParamMap, RouterLink } from '@angular/router';
-import { Subject, Subscription, catchError, map, of, skip, startWith, switchMap, tap } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  Subject,
+  Subscription,
+  catchError,
+  map,
+  merge,
+  of,
+  skip,
+  startWith,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
+import { UnreadCountService } from '../../../core/messages/unread-count.service';
 import { TranslatePipe } from '../../../core/resources/translate.pipe';
 import { unexpectedTraceId } from '../../../shared/http/problem-details';
 import {
@@ -78,6 +92,7 @@ export class MessagesPage {
   private readonly route = inject(ActivatedRoute);
   private readonly sightingsApi = inject(SightingsApi);
   private readonly reporting = inject(ErrorReportingService);
+  private readonly unreadCount = inject(UnreadCountService);
   private readonly dialog = inject(MatDialog);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
@@ -85,6 +100,7 @@ export class MessagesPage {
   private readonly threadView = viewChild(MessageThread);
   private loadedPages = 0;
   private moreRequest: Subscription | null = null;
+  private readonly readSinceInboxRequest = new Set<string>();
 
   protected readonly state = signal<InboxState>({ kind: 'loading' });
   protected readonly threads = signal<readonly SightingThread[]>([]);
@@ -164,6 +180,19 @@ export class MessagesPage {
         }
       });
 
+    merge(
+      toObservable(this.unreadCount.count).pipe(
+        skip(1),
+        map(() => true),
+      ),
+      this.reloads.pipe(map(() => false)),
+    )
+      .pipe(
+        switchMap((sync) => (sync ? this.syncFirstPage() : EMPTY)),
+        takeUntilDestroyed(),
+      )
+      .subscribe((page) => this.mergeFirstPage(page));
+
     this.destroyRef.onDestroy(() => this.moreRequest?.unsubscribe());
   }
 
@@ -174,6 +203,12 @@ export class MessagesPage {
   protected refresh(): void {
     this.reloads.next();
     this.threadView()?.reload();
+    this.unreadCount.refresh();
+  }
+
+  protected markRowRead(threadId: string): void {
+    this.readSinceInboxRequest.add(threadId);
+    this.threads.update((threads) => this.withReadMarks(threads));
   }
 
   protected openFullScreen(selection: ThreadSelection): void {
@@ -204,7 +239,7 @@ export class MessagesPage {
     this.moreRequest = this.sightingsApi.inbox(page).subscribe({
       next: (result) => {
         this.loadedPages = page;
-        this.threads.update((threads) => appendNew(threads, result.items));
+        this.threads.update((threads) => this.withReadMarks(appendNew(threads, result.items)));
         this.totalCount.set(result.totalCount);
         this.more.set({ kind: 'idle' });
       },
@@ -216,6 +251,7 @@ export class MessagesPage {
     this.moreRequest?.unsubscribe();
     this.moreRequest = null;
     this.loadedPages = 0;
+    this.readSinceInboxRequest.clear();
     this.state.set({ kind: 'loading' });
     this.more.set({ kind: 'idle' });
   }
@@ -223,9 +259,37 @@ export class MessagesPage {
   private applyFirstPage(page: SightingThreadPage): void {
     this.loadedPages = 1;
     this.now.set(new Date());
-    this.threads.set(appendNew([], page.items));
+    this.threads.set(this.withReadMarks(appendNew([], page.items)));
     this.totalCount.set(page.totalCount);
     this.state.set({ kind: 'loaded' });
+  }
+
+  private syncFirstPage(): Observable<SightingThreadPage> {
+    return this.sightingsApi.inbox(1).pipe(
+      catchError((error: unknown) => {
+        if (isReportableMessageFailure(error, messageFailure(error))) {
+          this.reporting.report('api-failure', 'messages.inbox.sync', error);
+        }
+
+        return EMPTY;
+      }),
+    );
+  }
+
+  private mergeFirstPage(page: SightingThreadPage): void {
+    if (this.state().kind !== 'loaded') return;
+
+    this.now.set(new Date());
+    this.threads.update((threads) => this.withReadMarks(mergeThreads(threads, page.items)));
+    this.totalCount.set(page.totalCount);
+  }
+
+  private withReadMarks(threads: readonly SightingThread[]): readonly SightingThread[] {
+    return threads.map((thread) =>
+      thread.hasUnread && this.readSinceInboxRequest.has(thread.id)
+        ? { ...thread, hasUnread: false }
+        : thread,
+    );
   }
 
   private loadFailure(error: unknown): { readonly kind: 'error'; readonly traceId?: string } {
@@ -246,6 +310,36 @@ function selectionOf(params: ParamMap): ThreadSelection | null {
   if (!sightingId || !threadId) return null;
 
   return { sightingId, threadId };
+}
+
+function mergeThreads(
+  threads: readonly SightingThread[],
+  incoming: readonly SightingThread[],
+): readonly SightingThread[] {
+  const updates = new Map(incoming.map((thread) => [thread.id, thread]));
+  const merged = threads.map((thread) => {
+    const update = updates.get(thread.id);
+
+    return update
+      ? {
+          ...thread,
+          hasUnread: update.hasUnread,
+          lastMessageAt: update.lastMessageAt,
+          sightingName: update.sightingName,
+          counterpartDisplayName: update.counterpartDisplayName,
+        }
+      : thread;
+  });
+
+  return [...appendNew(merged, incoming)].sort(byLatestActivity);
+}
+
+function byLatestActivity(left: SightingThread, right: SightingThread): number {
+  const difference = Date.parse(right.lastMessageAt) - Date.parse(left.lastMessageAt);
+
+  if (difference !== 0) return difference;
+
+  return right.id < left.id ? -1 : right.id > left.id ? 1 : 0;
 }
 
 function appendNew(

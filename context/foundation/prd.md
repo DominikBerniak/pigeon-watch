@@ -95,7 +95,7 @@ A member of the general public who spots a distressed pigeon and wants to report
 ### Messaging
 - FR-012: User can contact the owner of a sighting; the resulting conversation is tied to that sighting. Contacting other users is only possible through a sighting (the admin is the only exception). Priority: must-have
   > Socrates: Counter-argument considered: "restricting contact to sighting threads blocks two rescuers who want to coordinate generally, not about one specific bird." Resolution: kept as written — a deliberate scope boundary for MVP, not a gap to fix now.
-- FR-013: User can view their messages grouped by sighting as a simple per-sighting thread, and reply with plain text; no read/unread tracking or separate inbox-list-vs-thread navigation polish for MVP. Priority: must-have
+- FR-013: User can view their messages grouped by sighting as a simple per-sighting thread, and reply with plain text; per-thread read/unread state with an unread-thread count is in scope (amended 2026-11-08), but no separate inbox-list-vs-thread navigation polish for MVP. Priority: must-have
   > Socrates: Counter-argument considered: "a full inbox (list + thread view + read state) is a real feature in itself, more than an MVP needs." Resolution: revised twice — first simplified to a flat list, then reconsidered: since every message is already tied to a sighting (FR-012), grouping by sighting is the data's natural structure and effectively free; the real scope cut is dropping read/unread state and separate inbox-navigation UI, not the grouping itself.
 
 ### Admin

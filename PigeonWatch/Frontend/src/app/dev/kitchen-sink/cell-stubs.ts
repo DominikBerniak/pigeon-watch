@@ -97,12 +97,18 @@ export interface MessagesModes {
   readonly thread?: ThreadMessagesMode;
 }
 
+export interface HeaderModes {
+  readonly group: 'header';
+  readonly unreadCount: number;
+}
+
 export type StubModes =
   | ProfileModes
   | NearbyMapModes
   | SightingDetailModes
   | SightingListModes
-  | MessagesModes;
+  | MessagesModes
+  | HeaderModes;
 
 type LeafletModule = typeof Leaflet;
 
@@ -306,6 +312,7 @@ export const sinkContactThread: SightingThread = {
   counterpartDisplayName: sinkSightings[0].reporterDisplayName,
   isOwner: false,
   lastMessageAt: new Date(sinkLoadedAt).toISOString(),
+  hasUnread: false,
 };
 
 export const sinkInboxPageSize = 20;
@@ -320,6 +327,7 @@ export const sinkThreads: readonly SightingThread[] = Array.from(
     counterpartDisplayName: index % 3 === 0 ? 'Ola N' : `Helper ${index + 1}`,
     isOwner: index % 2 === 0,
     lastMessageAt: new Date(sinkLoadedAt - (index * 95 + 3) * minuteMilliseconds).toISOString(),
+    hasUnread: index < 3,
   }),
 );
 
@@ -455,6 +463,11 @@ export class CellStubs {
     ): Observable<SightingMessagePage> => this.threadMessagesResult(page),
     sendMessage: (_sightingId: string, _threadId: string, text: string): Observable<SightingMessage> =>
       of(this.newMessage(text)),
+    markThreadRead: (): Observable<void> => of(undefined),
+  };
+  readonly unreadCount = {
+    count: signal(0).asReadonly(),
+    refresh: (): void => undefined,
   };
   readonly geolocation = {
     currentPosition: (): Observable<GeolocationOutcome> => this.positionResult(),

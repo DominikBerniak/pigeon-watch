@@ -16,15 +16,7 @@
         >
           <app-icon name="report" size="lg" />
         </a>
-        <a
-          mat-icon-button
-          class="app-header__messages"
-          routerLink="/messages"
-          [attr.aria-label]="'header.messages' | translate"
-          [appTooltip]="'header.messages' | translate"
-        >
-          <app-icon name="mail" size="lg" />
-        </a>
+        <app-messages-link [unreadCount]="unreadCount()" />
         <button
           mat-icon-button
           type="button"

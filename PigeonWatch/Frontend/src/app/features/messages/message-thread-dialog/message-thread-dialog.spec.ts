@@ -24,6 +24,7 @@ const thread: SightingThread = {
   counterpartDisplayName: 'Ola N',
   isOwner: true,
   lastMessageAt: new Date().toISOString(),
+  hasUnread: false,
 };
 
 const message: SightingMessage = {
@@ -52,7 +53,11 @@ describe('MessageThreadDialog', () => {
         provideRouter([{ path: 'sightings/:id', component: SightingRouteStub }]),
         {
           provide: SightingsApi,
-          useValue: { threadMessages, sendMessage: (): Observable<SightingMessage> => of(message) },
+          useValue: {
+            threadMessages,
+            sendMessage: (): Observable<SightingMessage> => of(message),
+            markThreadRead: (): Observable<void> => of(undefined),
+          },
         },
         { provide: ErrorReportingService, useValue: { report: vi.fn() } },
       ],

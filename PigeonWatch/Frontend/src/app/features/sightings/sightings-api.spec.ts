@@ -292,6 +292,7 @@ describe('SightingsApi', () => {
     counterpartDisplayName: 'Ola N',
     isOwner: false,
     lastMessageAt: '2026-11-07T12:00:00Z',
+    hasUnread: true,
   };
 
   const message: SightingMessage = {
@@ -352,6 +353,18 @@ describe('SightingsApi', () => {
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({ text: 'On my way' });
     expect(sent).toEqual(message);
+  });
+
+  it('marks a thread read with an empty PUT', () => {
+    let completed = false;
+
+    api.markThreadRead('a/b', 't/1').subscribe({ complete: () => (completed = true) });
+    const request = httpMock.expectOne(`${sightingsUrl}/a%2Fb/threads/t%2F1/read`);
+    request.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toBeNull();
+    expect(completed).toBe(true);
   });
 
   it('asks for a page of the caller threads across sightings', () => {

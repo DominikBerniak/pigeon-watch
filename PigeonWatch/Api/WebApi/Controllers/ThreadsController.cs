@@ -44,4 +44,17 @@ public class ThreadsController(
 
         return Ok(sightingThreadViewModelCreator.CreateThreadPage(result.Page, userId));
     }
+
+    [HttpGet("unread-count")]
+    public async Task<ActionResult<UnreadMessageCountModel>> UnreadCount(CancellationToken cancellationToken)
+    {
+        Response.Headers.CacheControl = noStoreCacheControl;
+
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+            return UnauthorizedForInvalidIdentity();
+
+        int count = await sightingThreadService.CountUnreadMessagesAsync(userId, cancellationToken);
+
+        return Ok(sightingThreadViewModelCreator.CreateUnreadCount(count));
+    }
 }

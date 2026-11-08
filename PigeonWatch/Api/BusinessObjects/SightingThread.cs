@@ -8,4 +8,5 @@ public sealed record SightingThread(
     string OwnerDisplayName,
     Guid ParticipantId,
     string ParticipantDisplayName,
-    DateTime LastMessageAt);
+    DateTime LastMessageAt,
+    bool HasUnread);

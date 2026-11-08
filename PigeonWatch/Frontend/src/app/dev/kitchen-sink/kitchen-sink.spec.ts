@@ -159,6 +159,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
       sightingDetail: 'app-sighting-detail-page',
       sightingList: 'app-sighting-list-page',
       messages: 'app-messages-page',
+      header: 'app-messages-link',
     };
 
     expect(root.querySelectorAll('app-state-cell').length).toBe(definitions.length);
@@ -170,7 +171,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
       expect(textOf(element.querySelector('h3'))).toBe(definition.label);
       expect(
         element.querySelectorAll(
-          'app-profile-page, app-nearby-map-page, app-sighting-detail-page, app-sighting-list-page, app-messages-page',
+          'app-profile-page, app-nearby-map-page, app-sighting-detail-page, app-sighting-list-page, app-messages-page, app-messages-link',
         ),
       ).toHaveLength(1);
       expect(element.querySelector(pageOf[definition.group])).not.toBeNull();
@@ -1232,6 +1233,58 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
         label('messages.pane.empty'),
       );
       expect(cell('messages-list').querySelector('app-message-thread')).toBeNull();
+    });
+  });
+
+  it('marks the unread threads with a dot, bold text and a hidden label', async () => {
+    await eventually(() => {
+      const rows = threadRowsOf('messages-list');
+      const unread = rows.filter((row) => row.classList.contains('messages__thread--unread'));
+
+      expect(unread).toEqual(rows.slice(0, 3));
+      expect(rows[0].querySelector('.messages__unread-dot')?.getAttribute('aria-hidden')).toBe(
+        'true',
+      );
+      expect(textOf(rows[0].querySelector('.pw-visually-hidden'))).toBe(
+        label('messages.inbox.unread'),
+      );
+      expect(rows[3].querySelector('.messages__unread-dot')).toBeNull();
+      expect(rows[3].querySelector('.pw-visually-hidden')).toBeNull();
+    });
+  });
+
+  it('clears the unread mark of the chosen thread once it is read', async () => {
+    await eventually(() => {
+      const rows = threadRowsOf('messages-thread');
+
+      expect(rows[0].classList).not.toContain('messages__thread--unread');
+      expect(rows[0].querySelector('.messages__unread-dot')).toBeNull();
+      expect(rows[1].classList).toContain('messages__thread--unread');
+    });
+  });
+
+  it('shows the header messages button without a badge when nothing is unread', async () => {
+    await eventually(() => {
+      const link = cell('header-messages-read').querySelector('a.app-header__messages');
+
+      expect(link?.getAttribute('aria-label')).toBe(label('header.messages'));
+      expect(link?.querySelector('.messages-link__badge')).toBeNull();
+    });
+  });
+
+  it('shows the unread count as a badge on the header messages button', async () => {
+    await eventually(() => {
+      for (const [id, count] of [
+        ['header-messages-unread', 3],
+        ['header-messages-unread-many', 128],
+      ] as const) {
+        const link = cell(id).querySelector('a.app-header__messages');
+        const badge = link?.querySelector('.messages-link__badge');
+
+        expect(link?.getAttribute('aria-label')).toBe(label('header.messagesUnread', count));
+        expect(textOf(badge)).toBe(String(count));
+        expect(badge?.getAttribute('aria-hidden')).toBe('true');
+      }
     });
   });
 

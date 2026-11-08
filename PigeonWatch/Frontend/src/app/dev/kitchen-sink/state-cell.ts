@@ -24,6 +24,8 @@ import { SessionService } from '../../core/auth/session.service';
 import { ConfigurationService } from '../../core/configuration/configuration.service';
 import { ErrorReportingService } from '../../core/error-reporting/error-reporting.service';
 import { GeolocationService } from '../../core/geolocation/geolocation.service';
+import { MessagesLink } from '../../core/messages/messages-link/messages-link';
+import { UnreadCountService } from '../../core/messages/unread-count.service';
 import { ResourceService } from '../../core/resources/resource.service';
 import { ProfileApi } from '../../features/profile/profile-api';
 import { ActivatedRoute } from '@angular/router';
@@ -52,6 +54,7 @@ interface NextLocationOption {
     SightingDetailPage,
     SightingListPage,
     MessagesPage,
+    MessagesLink,
   ],
   providers: [
     CellStubs,
@@ -60,6 +63,7 @@ interface NextLocationOption {
     { provide: ProfileApi, useFactory: () => inject(CellStubs).profileApi },
     { provide: SightingsApi, useFactory: () => inject(CellStubs).sightingsApi },
     { provide: GeolocationService, useFactory: () => inject(CellStubs).geolocation },
+    { provide: UnreadCountService, useFactory: () => inject(CellStubs).unreadCount },
     { provide: ErrorReportingService, useValue: { report: (): void => undefined } },
     {
       provide: ActivatedRoute,
@@ -99,6 +103,11 @@ export class StateCell {
     const definition = this.definition();
 
     return definition.group === 'nearbyMap' && definition.geolocation === 'timeoutThenNext';
+  });
+  protected readonly headerUnreadCount = computed(() => {
+    const definition = this.definition();
+
+    return definition.group === 'header' ? definition.unreadCount : 0;
   });
 
   private openRef: MatDialogRef<unknown> | null = null;

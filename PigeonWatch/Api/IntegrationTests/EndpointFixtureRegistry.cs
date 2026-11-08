@@ -52,7 +52,9 @@ public sealed class EndpointFixtureRegistry
         new(["POST sightings/{sightingId:guid}/threads"], BuildStartThread),
         new(["GET sightings/{sightingId:guid}/threads/{threadId:guid}/messages"], BuildListMessages),
         new(["POST sightings/{sightingId:guid}/threads/{threadId:guid}/messages"], BuildReply),
+        new(["PUT sightings/{sightingId:guid}/threads/{threadId:guid}/read"], BuildMarkThreadRead),
         new(["GET threads"], BuildListThreads),
+        new(["GET threads/unread-count"], BuildUnreadMessageCount),
         new(["POST auth/login"], BuildLogin),
         new(["POST auth/refresh"], BuildRefresh),
         new([.. NotFoundStubKeys, .. ManageStubKeys], BuildStubs)
@@ -404,6 +406,24 @@ public sealed class EndpointFixtureRegistry
         AddMalformed(requests, key, HttpMethod.Post, uri);
 
         return requests;
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildMarkThreadRead(FixtureContext context)
+    {
+        const string key = "PUT sightings/{sightingId:guid}/threads/{threadId:guid}/read";
+
+        return
+        [
+            Make(key, "seeded thread", new HttpRequestMessage(HttpMethod.Put, $"/sightings/{context.SightingId}/threads/{context.ThreadId}/read")),
+            Make(key, "seeded thread again", new HttpRequestMessage(HttpMethod.Put, $"/sightings/{context.SightingId}/threads/{context.ThreadId}/read")),
+            Make(key, "unknown thread", new HttpRequestMessage(HttpMethod.Put, $"/sightings/{context.SightingId}/threads/{Guid.NewGuid()}/read")),
+            Make(key, "seeded thread under an unknown sighting", new HttpRequestMessage(HttpMethod.Put, $"/sightings/{Guid.NewGuid()}/threads/{context.ThreadId}/read"))
+        ];
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildUnreadMessageCount(FixtureContext context)
+    {
+        return [Make("GET threads/unread-count", "unread message count", new HttpRequestMessage(HttpMethod.Get, "/threads/unread-count"))];
     }
 
     private static IReadOnlyList<FixtureRequest> BuildListThreads(FixtureContext context)

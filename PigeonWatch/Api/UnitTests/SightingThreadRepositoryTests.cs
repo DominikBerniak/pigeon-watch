@@ -206,7 +206,7 @@ public sealed class SightingThreadRepositoryTests : IDisposable
         ISightingThreadRepository repository = CreateRepository(db);
 
         Assert.Equal(thread, await repository.GetThreadForUserAsync(sightingId, thread.Id, participantId, cancellationToken));
-        Assert.Equal(thread, await repository.GetThreadForUserAsync(sightingId, thread.Id, ownerId, cancellationToken));
+        Assert.Equal(thread with { HasUnread = true }, await repository.GetThreadForUserAsync(sightingId, thread.Id, ownerId, cancellationToken));
         Assert.Null(await repository.GetThreadForUserAsync(sightingId, thread.Id, outsiderId, cancellationToken));
         Assert.Null(await repository.GetThreadForUserAsync(otherSightingId, thread.Id, participantId, cancellationToken));
         Assert.Null(await repository.GetThreadForUserAsync(sightingId, Guid.NewGuid(), participantId, cancellationToken));
@@ -427,9 +427,188 @@ public sealed class SightingThreadRepositoryTests : IDisposable
         Assert.Equal(0, otherSightingPage.TotalCount);
     }
 
+    [Fact]
+    public async Task A_message_from_the_other_side_is_unread_until_marked_read_and_own_messages_never_are()
+    {
+        Guid ownerId = await CreateUserAsync("owner@example.com", "Alice");
+        Guid participantId = await CreateUserAsync("participant@example.com", "Bob");
+        Guid sightingId = await CreateSightingAsync(ownerId);
+        SightingThread thread = (await StartAsync(sightingId, participantId, "Hello", timeProvider.UtcNow.UtcDateTime))!.Value.Thread;
+
+        Assert.False(thread.HasUnread);
+        Assert.False((await GetThreadAsync(sightingId, thread.Id, participantId))!.HasUnread);
+        Assert.True((await GetThreadAsync(sightingId, thread.Id, ownerId))!.HasUnread);
+
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(1);
+        Assert.True(await MarkReadAsync(sightingId, thread.Id, ownerId, timeProvider.UtcNow.UtcDateTime));
+
+        Assert.False((await GetThreadAsync(sightingId, thread.Id, ownerId))!.HasUnread);
+
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(1);
+        await AppendAsync(sightingId, thread.Id, participantId, "Still there?", timeProvider.UtcNow.UtcDateTime);
+
+        Assert.True((await GetThreadAsync(sightingId, thread.Id, ownerId))!.HasUnread);
+        Assert.False((await GetThreadAsync(sightingId, thread.Id, participantId))!.HasUnread);
+
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(1);
+        await AppendAsync(sightingId, thread.Id, ownerId, "Yes", timeProvider.UtcNow.UtcDateTime);
+
+        Assert.False((await GetThreadAsync(sightingId, thread.Id, ownerId))!.HasUnread);
+        Assert.True((await GetThreadAsync(sightingId, thread.Id, participantId))!.HasUnread);
+    }
+
+    [Fact]
+    public async Task Starting_again_on_the_same_sighting_marks_the_thread_read_for_the_participant()
+    {
+        Guid ownerId = await CreateUserAsync("owner@example.com", "Alice");
+        Guid participantId = await CreateUserAsync("participant@example.com", "Bob");
+        Guid sightingId = await CreateSightingAsync(ownerId);
+        SightingThread thread = (await StartAsync(sightingId, participantId, "Hello", timeProvider.UtcNow.UtcDateTime))!.Value.Thread;
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(1);
+        await AppendAsync(sightingId, thread.Id, ownerId, "Thanks", timeProvider.UtcNow.UtcDateTime);
+
+        Assert.True((await GetThreadAsync(sightingId, thread.Id, participantId))!.HasUnread);
+
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(1);
+        (SightingThread Thread, SightingMessage Message)? again = await StartAsync(sightingId, participantId, "On my way", timeProvider.UtcNow.UtcDateTime);
+
+        Assert.False(again!.Value.Thread.HasUnread);
+        Assert.False((await GetThreadAsync(sightingId, thread.Id, participantId))!.HasUnread);
+        Assert.True((await GetThreadAsync(sightingId, thread.Id, ownerId))!.HasUnread);
+    }
+
+    [Fact]
+    public async Task Mark_read_sets_only_the_callers_side()
+    {
+        Guid ownerId = await CreateUserAsync("owner@example.com", "Alice");
+        Guid participantId = await CreateUserAsync("participant@example.com", "Bob");
+        Guid sightingId = await CreateSightingAsync(ownerId);
+        SightingThread thread = (await StartAsync(sightingId, participantId, "Hello", timeProvider.UtcNow.UtcDateTime))!.Value.Thread;
+        DateTime started = timeProvider.UtcNow.UtcDateTime;
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(1);
+        DateTime readAt = timeProvider.UtcNow.UtcDateTime;
+
+        Assert.True(await MarkReadAsync(sightingId, thread.Id, ownerId, readAt));
+
+        (DateTime? OwnerLastReadAt, DateTime? ParticipantLastReadAt) markers = await ReadMarkersAsync(thread.Id);
+
+        Assert.Equal(readAt, markers.OwnerLastReadAt);
+        Assert.Equal(started, markers.ParticipantLastReadAt);
+    }
+
+    [Fact]
+    public async Task Mark_read_returns_false_and_writes_nothing_for_an_outsider_another_sighting_or_an_unknown_thread()
+    {
+        Guid ownerId = await CreateUserAsync("owner@example.com", "Alice");
+        Guid participantId = await CreateUserAsync("participant@example.com", "Bob");
+        Guid outsiderId = await CreateUserAsync("outsider@example.com", "Carol");
+        Guid sightingId = await CreateSightingAsync(ownerId);
+        Guid otherSightingId = await CreateSightingAsync(ownerId);
+        SightingThread thread = (await StartAsync(sightingId, participantId, "Hello", timeProvider.UtcNow.UtcDateTime))!.Value.Thread;
+        (DateTime? OwnerLastReadAt, DateTime? ParticipantLastReadAt) before = await ReadMarkersAsync(thread.Id);
+        DateTime later = timeProvider.UtcNow.UtcDateTime.AddMinutes(1);
+
+        Assert.False(await MarkReadAsync(sightingId, thread.Id, outsiderId, later));
+        Assert.False(await MarkReadAsync(otherSightingId, thread.Id, ownerId, later));
+        Assert.False(await MarkReadAsync(sightingId, Guid.NewGuid(), ownerId, later));
+
+        Assert.Equal(before, await ReadMarkersAsync(thread.Id));
+        Assert.Null(before.OwnerLastReadAt);
+        Assert.True((await GetThreadAsync(sightingId, thread.Id, ownerId))!.HasUnread);
+    }
+
+    [Fact]
+    public async Task Count_unread_messages_counts_only_messages_from_the_other_side_newer_than_the_callers_marker()
+    {
+        Guid aliceId = await CreateUserAsync("alice@example.com", "Alice");
+        Guid bobId = await CreateUserAsync("bob@example.com", "Bob");
+        Guid daveId = await CreateUserAsync("dave@example.com", "Dave");
+        Guid outsiderId = await CreateUserAsync("outsider@example.com", "Carol");
+        Guid aliceSightingId = await CreateSightingAsync(aliceId);
+        Guid bobSightingId = await CreateSightingAsync(bobId);
+        SightingThread bobOnAlice = (await StartAsync(aliceSightingId, bobId, "Bob to Alice", timeProvider.UtcNow.UtcDateTime))!.Value.Thread;
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(1);
+        await AppendAsync(aliceSightingId, bobOnAlice.Id, bobId, "Bob again", timeProvider.UtcNow.UtcDateTime);
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(1);
+        await StartAsync(aliceSightingId, daveId, "Dave to Alice", timeProvider.UtcNow.UtcDateTime);
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(1);
+        SightingThread aliceOnBob = (await StartAsync(bobSightingId, aliceId, "Alice to Bob", timeProvider.UtcNow.UtcDateTime))!.Value.Thread;
+
+        Assert.Equal(3, await CountUnreadMessagesAsync(aliceId));
+        Assert.Equal(1, await CountUnreadMessagesAsync(bobId));
+        Assert.Equal(0, await CountUnreadMessagesAsync(daveId));
+        Assert.Equal(0, await CountUnreadMessagesAsync(outsiderId));
+
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(1);
+        await MarkReadAsync(aliceSightingId, bobOnAlice.Id, aliceId, timeProvider.UtcNow.UtcDateTime);
+
+        Assert.Equal(1, await CountUnreadMessagesAsync(aliceId));
+        Assert.Equal(1, await CountUnreadMessagesAsync(bobId));
+
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(1);
+        await AppendAsync(aliceSightingId, bobOnAlice.Id, bobId, "Bob after the read", timeProvider.UtcNow.UtcDateTime);
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(1);
+        await AppendAsync(bobSightingId, aliceOnBob.Id, aliceId, "Alice again", timeProvider.UtcNow.UtcDateTime);
+
+        Assert.Equal(2, await CountUnreadMessagesAsync(aliceId));
+        Assert.Equal(2, await CountUnreadMessagesAsync(bobId));
+    }
+
+    [Fact]
+    public async Task List_threads_carry_has_unread_for_the_caller()
+    {
+        Guid ownerId = await CreateUserAsync("owner@example.com", "Alice");
+        Guid bobId = await CreateUserAsync("bob@example.com", "Bob");
+        Guid daveId = await CreateUserAsync("dave@example.com", "Dave");
+        Guid sightingId = await CreateSightingAsync(ownerId);
+        SightingThread bobThread = (await StartAsync(sightingId, bobId, "Bob here", timeProvider.UtcNow.UtcDateTime))!.Value.Thread;
+        SightingThread daveThread = (await StartAsync(sightingId, daveId, "Dave here", timeProvider.UtcNow.UtcDateTime.AddMinutes(1)))!.Value.Thread;
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(2);
+        await MarkReadAsync(sightingId, bobThread.Id, ownerId, timeProvider.UtcNow.UtcDateTime);
+
+        await using PigeonWatchDbContext db = CreateContext();
+        ISightingThreadRepository repository = CreateRepository(db);
+        SightingThreadPage ownerInbox = await repository.ListThreadsForUserAsync(ownerId, 1, SightingMessageRules.PageSize, cancellationToken);
+        SightingThreadPage ownerSighting = await repository.ListThreadsForSightingAsync(sightingId, ownerId, 1, SightingMessageRules.PageSize, cancellationToken);
+        SightingThreadPage bobInbox = await repository.ListThreadsForUserAsync(bobId, 1, SightingMessageRules.PageSize, cancellationToken);
+
+        Assert.Equal([(daveThread.Id, true), (bobThread.Id, false)], ownerInbox.Items.Select(thread => (thread.Id, thread.HasUnread)));
+        Assert.Equal([(daveThread.Id, true), (bobThread.Id, false)], ownerSighting.Items.Select(thread => (thread.Id, thread.HasUnread)));
+        Assert.Equal([(bobThread.Id, false)], bobInbox.Items.Select(thread => (thread.Id, thread.HasUnread)));
+    }
+
     public void Dispose()
     {
         connection.Dispose();
+    }
+
+    private async Task<SightingThread?> GetThreadAsync(Guid sightingId, Guid threadId, Guid userId)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+
+        return await CreateRepository(db).GetThreadForUserAsync(sightingId, threadId, userId, cancellationToken);
+    }
+
+    private async Task<bool> MarkReadAsync(Guid sightingId, Guid threadId, Guid userId, DateTime now)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+
+        return await CreateRepository(db).MarkReadAsync(sightingId, threadId, userId, now, cancellationToken);
+    }
+
+    private async Task<int> CountUnreadMessagesAsync(Guid userId)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+
+        return await CreateRepository(db).CountUnreadMessagesAsync(userId, cancellationToken);
+    }
+
+    private async Task<(DateTime? OwnerLastReadAt, DateTime? ParticipantLastReadAt)> ReadMarkersAsync(Guid threadId)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+        SightingThreadEntity entity = await db.SightingThreads.AsNoTracking().SingleAsync(e => e.Id == threadId, cancellationToken);
+
+        return (entity.OwnerLastReadAt, entity.ParticipantLastReadAt);
     }
 
     private async Task<(SightingThread Thread, SightingMessage Message)?> StartAsync(Guid sightingId, Guid participantId, string text, DateTime now)

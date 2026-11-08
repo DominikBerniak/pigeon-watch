@@ -11,4 +11,10 @@ internal class SightingThreadEntity : AuditableEntity
     public UserAccountEntity Participant { get; set; } = null!;
 
     public DateTime LastMessageAt { get; set; }
+
+    public DateTime? OwnerLastReadAt { get; set; }
+
+    public DateTime? ParticipantLastReadAt { get; set; }
+
+    public List<SightingMessageEntity> Messages { get; set; } = [];
 }

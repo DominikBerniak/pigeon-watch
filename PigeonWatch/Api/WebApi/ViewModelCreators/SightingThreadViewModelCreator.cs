@@ -16,7 +16,8 @@ public class SightingThreadViewModelCreator : ISightingThreadViewModelCreator
             SightingName = thread.SightingName,
             CounterpartDisplayName = isOwner ? thread.ParticipantDisplayName : thread.OwnerDisplayName,
             IsOwner = isOwner,
-            LastMessageAt = thread.LastMessageAt
+            LastMessageAt = thread.LastMessageAt,
+            HasUnread = thread.HasUnread
         };
     }
 
@@ -47,6 +48,14 @@ public class SightingThreadViewModelCreator : ISightingThreadViewModelCreator
         {
             Items = page.Items.Select(message => CreateMessage(message, currentUserId)).ToList(),
             TotalCount = page.TotalCount
+        };
+    }
+
+    public UnreadMessageCountModel CreateUnreadCount(int count)
+    {
+        return new()
+        {
+            Count = count
         };
     }
 

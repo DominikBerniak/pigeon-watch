@@ -12,6 +12,7 @@ import {
   waitForText,
 } from './cell-driver';
 import {
+  HeaderModes,
   MessagesModes,
   NearbyMapModes,
   ProfileModes,
@@ -39,6 +40,7 @@ export type NearbyMapCell = CellBase & NearbyMapModes;
 export type SightingDetailCell = CellBase & SightingDetailModes;
 export type SightingListCell = CellBase & SightingListModes;
 export type MessagesCell = CellBase & MessagesModes;
+export type HeaderCell = CellBase & HeaderModes;
 export type CellDefinition = CellBase & StubModes;
 
 export interface CellGroup {
@@ -751,14 +753,16 @@ const messagesCells: readonly MessagesCell[] = [
   },
   {
     id: 'messages-list',
-    label: 'Threads, none chosen (prompt in the pane, "Show more" in the sidebar)',
+    label:
+      'Threads, none chosen (three unread rows, prompt in the pane, "Show more" in the sidebar)',
     group: 'messages',
     inbox: 'items',
     steps: [],
   },
   {
     id: 'messages-thread',
-    label: 'Thread chosen (bubbles, own on the right, "Show older messages" at the top)',
+    label:
+      'Thread chosen (bubbles, own on the right, "Show older messages" at the top, its row marked read)',
     group: 'messages',
     inbox: 'items',
     selected: true,
@@ -815,6 +819,30 @@ const messagesPhoneCells: readonly MessagesCell[] = [
   },
 ];
 
+const headerCells: readonly HeaderCell[] = [
+  {
+    id: 'header-messages-read',
+    label: 'Messages button, nothing unread (no badge)',
+    group: 'header',
+    unreadCount: 0,
+    steps: [],
+  },
+  {
+    id: 'header-messages-unread',
+    label: 'Messages button with 3 unread messages',
+    group: 'header',
+    unreadCount: 3,
+    steps: [],
+  },
+  {
+    id: 'header-messages-unread-many',
+    label: 'Messages button with 128 unread messages',
+    group: 'header',
+    unreadCount: 128,
+    steps: [],
+  },
+];
+
 export const cellGroups: readonly CellGroup[] = [
   { title: 'Profile', wide: false, cells: [...profileCells, ...dialogCells] },
   { title: 'Nearby map', wide: true, cells: nearbyMapCells },
@@ -822,4 +850,5 @@ export const cellGroups: readonly CellGroup[] = [
   { title: 'Sighting list', wide: false, cells: listCells },
   { title: 'Messages', wide: true, cells: messagesCells },
   { title: 'Messages, narrow', wide: false, cells: messagesPhoneCells },
+  { title: 'Header', wide: false, cells: headerCells },
 ];

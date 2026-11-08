@@ -254,6 +254,59 @@ public class SightingThreadsControllerTests
         Assert.IsType<UnauthorizedResult>(result.Result);
     }
 
+    [Fact]
+    public async Task List_carries_has_unread_for_the_caller()
+    {
+        service.ListForSightingAsync(sightingId, ownerId, 1, Arg.Any<CancellationToken>())
+            .Returns(SightingThreadPageResult.Success(new SightingThreadPage([Thread() with { HasUnread = true }, Thread()], 2)));
+        SightingThreadsController controller = CreateController(Authenticated(ownerId));
+
+        ActionResult<SightingThreadPageModel> result = await controller.List(sightingId, null, cancellationToken);
+
+        SightingThreadPageModel model = Assert.IsType<SightingThreadPageModel>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal([true, false], model.Items.Select(item => item.HasUnread));
+    }
+
+    [Fact]
+    public async Task Mark_read_returns_204_without_logging()
+    {
+        service.MarkReadAsync(sightingId, threadId, userId, Arg.Any<CancellationToken>()).Returns(SightingThreadReadResult.Success());
+        SightingThreadsController controller = CreateController(Authenticated(userId));
+
+        ActionResult<SightingThreadReadModel> result = await controller.MarkRead(sightingId, threadId, cancellationToken);
+
+        Assert.IsType<NoContentResult>(result.Result);
+        Assert.Empty(LogCalls());
+    }
+
+    [Theory]
+    [InlineData(SightingMessageErrorCodes.ThreadNotFound)]
+    [InlineData(SightingMessageErrorCodes.SightingNotFound)]
+    public async Task Mark_read_returns_404_logged_at_information_for_a_thread_the_caller_cannot_see(string code)
+    {
+        service.MarkReadAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(SightingThreadReadResult.Failure([Error(code)]));
+        SightingThreadsController controller = CreateController(Authenticated(userId));
+
+        ActionResult<SightingThreadReadModel> result = await controller.MarkRead(sightingId, threadId, cancellationToken);
+
+        Assert.IsType<NotFoundResult>(result.Result);
+        LogCall call = Assert.Single(LogCalls());
+        Assert.Equal(LogLevel.Information, call.Level);
+        Assert.Equal(sightingId, call.State["SightingId"]);
+    }
+
+    [Fact]
+    public async Task Mark_read_returns_401_for_a_missing_name_identifier_claim()
+    {
+        SightingThreadsController controller = CreateController(new ClaimsPrincipal(new ClaimsIdentity()));
+
+        ActionResult<SightingThreadReadModel> result = await controller.MarkRead(sightingId, threadId, cancellationToken);
+
+        Assert.IsType<UnauthorizedResult>(result.Result);
+        await service.DidNotReceive().MarkReadAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
     private SightingThreadsController CreateController(ClaimsPrincipal user)
     {
         ProblemDetailsFactory problemDetailsFactory = Substitute.For<ProblemDetailsFactory>();
@@ -277,7 +330,7 @@ public class SightingThreadsControllerTests
 
     private SightingThread Thread()
     {
-        return new(Guid.NewGuid(), sightingId, "Grey", ownerId, "Alice", userId, "Bob", createdAt);
+        return new(Guid.NewGuid(), sightingId, "Grey", ownerId, "Alice", userId, "Bob", createdAt, false);
     }
 
     private SightingMessage Message(Guid senderId)

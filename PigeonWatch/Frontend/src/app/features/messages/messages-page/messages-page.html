@@ -26,11 +26,22 @@
                     <a
                       class="messages__thread"
                       [class.messages__thread--selected]="row.selected"
+                      [class.messages__thread--unread]="thread.hasUnread"
                       [attr.aria-current]="row.selected ? 'page' : null"
                       [attr.data-thread-id]="thread.id"
                       [routerLink]="['/messages', thread.sightingId, thread.id]"
                     >
-                      <span class="messages__counterpart">{{ thread.counterpartDisplayName }}</span>
+                      <span class="messages__headline">
+                        <span class="messages__counterpart">{{
+                          thread.counterpartDisplayName
+                        }}</span>
+                        @if (thread.hasUnread) {
+                          <span class="messages__unread-dot" aria-hidden="true"></span>
+                          <span class="pw-visually-hidden">{{
+                            'messages.inbox.unread' | translate
+                          }}</span>
+                        }
+                      </span>
                       <span class="messages__sighting pw-text-small pw-text-muted">{{
                         thread.sightingName ?? ('sighting.unnamed' | translate)
                       }}</span>
@@ -84,6 +95,7 @@
             [threadId]="selected.threadId"
             [thread]="selectedThread()"
             (expandToggle)="openFullScreen(selected)"
+            (markedRead)="markRowRead($event)"
           />
         } @else if (promptShown()) {
           <p class="messages__prompt pw-text-muted">{{ 'messages.pane.empty' | translate }}</p>

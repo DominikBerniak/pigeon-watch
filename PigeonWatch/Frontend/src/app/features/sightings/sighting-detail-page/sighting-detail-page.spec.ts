@@ -46,6 +46,7 @@ const started: SightingThreadStart = {
     counterpartDisplayName: 'Jan K',
     isOwner: false,
     lastMessageAt: '2026-11-07T12:00:00Z',
+    hasUnread: false,
   },
   message: {
     id: 'message-1',

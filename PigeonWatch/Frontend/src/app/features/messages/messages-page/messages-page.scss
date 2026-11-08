@@ -86,9 +86,33 @@
   background-color: var(--pw-color-info-surface);
 }
 
+.messages__headline {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-space-2);
+  min-width: 0;
+}
+
 .messages__counterpart {
   font-weight: var(--pw-font-weight-semibold);
   overflow-wrap: anywhere;
+}
+
+.messages__unread-dot {
+  flex: none;
+  width: var(--pw-unread-dot-size);
+  height: var(--pw-unread-dot-size);
+  border-radius: var(--pw-radius-full);
+  background-color: var(--pw-color-unread-dot);
+}
+
+.messages__thread--unread .messages__counterpart,
+.messages__thread--unread .messages__sighting {
+  font-weight: var(--pw-font-weight-bold);
+}
+
+.messages__thread--unread .messages__sighting {
+  color: var(--pw-color-text);
 }
 
 .messages__sighting {
