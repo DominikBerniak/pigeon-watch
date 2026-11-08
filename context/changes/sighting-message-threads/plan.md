@@ -564,10 +564,10 @@ Additive migration only (two new tables); no data backfill. `SightingModel.isMin
 
 #### Automated
 
-- [x] 7.1 E2E suite passes, including sighting-messages.spec.ts
-- [x] 7.2 SPA unit tests still pass
-- [x] 7.3 All .NET tests still pass
+- [x] 7.1 E2E suite passes, including sighting-messages.spec.ts — 8ae5364
+- [x] 7.2 SPA unit tests still pass — 8ae5364
+- [x] 7.3 All .NET tests still pass — 8ae5364
 
 #### Manual
 
-- [x] 7.4 Docs read correctly and no longer claim messaging is missing
+- [x] 7.4 Docs read correctly and no longer claim messaging is missing — 8ae5364
