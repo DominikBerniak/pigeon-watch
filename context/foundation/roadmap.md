@@ -3,7 +3,7 @@ project: PigeonWatch
 version: 1
 status: draft
 created: 2026-10-03
-updated: 2026-11-07
+updated: 2026-11-08
 prd_version: 2
 main_goal: speed
 top_blocker: decisions
@@ -49,7 +49,7 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 | S-05 | filter-sightings-nearby     | scope the map to their nearby area and filter by status and criticality     | S-03          | FR-004                         | done |
 | S-06 | urgency-ranked-sighting-list | browse nearby sightings as a list ordered by urgency                       | S-03          | FR-020                         | done        |
 | S-07 | comment-on-sighting         | add comments to a sighting                                                  | S-03          | FR-009, FR-019                 | done        |
-| S-08 | sighting-message-threads    | contact a sighting's owner and continue the conversation in a per-sighting thread | S-03    | FR-012, FR-013                 | in-progress |
+| S-08 | sighting-message-threads    | contact a sighting's owner and continue the conversation in a per-sighting thread | S-03    | FR-012, FR-013                 | done        |
 | S-09 | edit-own-sighting-with-lock | edit their own sighting, with location and description locked once others engage | S-07, S-08 | FR-006                    | proposed |
 | S-10 | admin-remove-sightings      | (as admin) remove sightings                                                 | S-03          | FR-017                         | proposed |
 | S-11 | admin-moderate-users        | (as admin) message, warn or ban users                                       | S-08, S-10    | FR-018                         | proposed |
@@ -193,7 +193,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Contact-info privacy (a PRD NFR) must hold on every surface; no read/unread state and no live delivery, per the PRD.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-09: Edit own sighting with engagement lock
 
@@ -300,3 +300,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **S-06: user can browse nearby sightings as a list ordered by urgency, with the same filters as the map, resolved sightings hidden unless requested.** — Archived 2026-11-01 → `context/archive/2026-11-01-urgency-ranked-sighting-list/`. Lesson: —.
 - **S-04: user can attach an optional photo to a sighting they report.** — Archived 2026-11-07 → `context/archive/2026-11-03-attach-sighting-photo/`. Lesson: —.
 - **S-07: user can add comments to a sighting, subject to the submission cooldown.** — Archived 2026-11-07 → `context/archive/2026-11-07-comment-on-sighting/`. Lesson: —.
+- **S-08: user can contact a sighting's owner and read and reply to plain-text messages grouped by sighting, without ever seeing the other person's contact details.** — Archived 2026-11-08 → `context/archive/2026-11-07-sighting-message-threads/`. Lesson: —.
