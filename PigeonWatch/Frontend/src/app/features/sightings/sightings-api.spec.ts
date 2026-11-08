@@ -355,15 +355,17 @@ describe('SightingsApi', () => {
     expect(sent).toEqual(message);
   });
 
-  it('marks a thread read with an empty PUT', () => {
+  it('marks a thread read up to the seen time with a PUT', () => {
     let completed = false;
 
-    api.markThreadRead('a/b', 't/1').subscribe({ complete: () => (completed = true) });
+    api
+      .markThreadRead('a/b', 't/1', '2026-11-07T12:00:00.1234567Z')
+      .subscribe({ complete: () => (completed = true) });
     const request = httpMock.expectOne(`${sightingsUrl}/a%2Fb/threads/t%2F1/read`);
     request.flush(null, { status: 204, statusText: 'No Content' });
 
     expect(request.request.method).toBe('PUT');
-    expect(request.request.body).toBeNull();
+    expect(request.request.body).toEqual({ seenAt: '2026-11-07T12:00:00.1234567Z' });
     expect(completed).toBe(true);
   });
 

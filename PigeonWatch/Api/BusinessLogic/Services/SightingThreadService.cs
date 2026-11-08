@@ -24,7 +24,12 @@ public class SightingThreadService(ISightingThreadRepository sightingThreadRepos
         (SightingThread Thread, SightingMessage Message)? started = await sightingThreadRepository.StartOrAppendAsync(sightingId, userId, trimmed, timeProvider.GetUtcNow().UtcDateTime, cancellationToken);
 
         if (started is null)
+        {
+            if (await sightingThreadRepository.GetSightingOwnerAsync(sightingId, cancellationToken) is null)
+                return SightingThreadResult.Failure([SightingNotFound()]);
+
             return SightingThreadResult.Failure([SenderNotFound()]);
+        }
 
         return SightingThreadResult.Success(started.Value.Thread, started.Value.Message);
     }
@@ -91,7 +96,7 @@ public class SightingThreadService(ISightingThreadRepository sightingThreadRepos
         if (await sightingThreadRepository.GetSightingOwnerAsync(sightingId, cancellationToken) is null)
             return SightingMessagePageResult.Failure([SightingNotFound()]);
 
-        if (await sightingThreadRepository.GetThreadForUserAsync(sightingId, threadId, userId, cancellationToken) is null)
+        if (!await sightingThreadRepository.IsThreadVisibleToUserAsync(sightingId, threadId, userId, cancellationToken))
             return SightingMessagePageResult.Failure([ThreadNotFound()]);
 
         SightingMessagePage messages = await sightingThreadRepository.ListMessagesAsync(sightingId, threadId, userId, page, SightingMessageRules.PageSize, cancellationToken);
@@ -99,12 +104,12 @@ public class SightingThreadService(ISightingThreadRepository sightingThreadRepos
         return SightingMessagePageResult.Success(messages);
     }
 
-    public async Task<SightingThreadReadResult> MarkReadAsync(Guid sightingId, Guid threadId, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<SightingThreadReadResult> MarkReadAsync(Guid sightingId, Guid threadId, Guid userId, DateTime seenAt, CancellationToken cancellationToken = default)
     {
         if (await sightingThreadRepository.GetSightingOwnerAsync(sightingId, cancellationToken) is null)
             return SightingThreadReadResult.Failure([SightingNotFound()]);
 
-        bool marked = await sightingThreadRepository.MarkReadAsync(sightingId, threadId, userId, timeProvider.GetUtcNow().UtcDateTime, cancellationToken);
+        bool marked = await sightingThreadRepository.MarkReadAsync(sightingId, threadId, userId, seenAt, timeProvider.GetUtcNow().UtcDateTime, cancellationToken);
 
         if (!marked)
             return SightingThreadReadResult.Failure([ThreadNotFound()]);

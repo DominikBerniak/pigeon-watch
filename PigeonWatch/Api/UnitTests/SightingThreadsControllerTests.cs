@@ -268,15 +268,18 @@ public class SightingThreadsControllerTests
     }
 
     [Fact]
-    public async Task Mark_read_returns_204_without_logging()
+    public async Task Mark_read_passes_the_seen_time_as_utc_and_returns_204_without_logging()
     {
-        service.MarkReadAsync(sightingId, threadId, userId, Arg.Any<CancellationToken>()).Returns(SightingThreadReadResult.Success());
+        DateTimeOffset seenAt = new(2026, 11, 7, 14, 30, 15, TimeSpan.FromHours(2));
+        DateTime seenAtUtc = new(2026, 11, 7, 12, 30, 15, DateTimeKind.Utc);
+        service.MarkReadAsync(sightingId, threadId, userId, seenAtUtc, Arg.Any<CancellationToken>()).Returns(SightingThreadReadResult.Success());
         SightingThreadsController controller = CreateController(Authenticated(userId));
 
-        ActionResult<SightingThreadReadModel> result = await controller.MarkRead(sightingId, threadId, cancellationToken);
+        ActionResult<SightingThreadReadModel> result = await controller.MarkRead(sightingId, threadId, new SightingThreadReadRequestModel { SeenAt = seenAt }, cancellationToken);
 
         Assert.IsType<NoContentResult>(result.Result);
         Assert.Empty(LogCalls());
+        await service.Received(1).MarkReadAsync(sightingId, threadId, userId, Arg.Is<DateTime>(value => value == seenAtUtc && value.Kind == DateTimeKind.Utc), Arg.Any<CancellationToken>());
     }
 
     [Theory]
@@ -284,11 +287,11 @@ public class SightingThreadsControllerTests
     [InlineData(SightingMessageErrorCodes.SightingNotFound)]
     public async Task Mark_read_returns_404_logged_at_information_for_a_thread_the_caller_cannot_see(string code)
     {
-        service.MarkReadAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        service.MarkReadAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(SightingThreadReadResult.Failure([Error(code)]));
         SightingThreadsController controller = CreateController(Authenticated(userId));
 
-        ActionResult<SightingThreadReadModel> result = await controller.MarkRead(sightingId, threadId, cancellationToken);
+        ActionResult<SightingThreadReadModel> result = await controller.MarkRead(sightingId, threadId, SeenNow(), cancellationToken);
 
         Assert.IsType<NotFoundResult>(result.Result);
         LogCall call = Assert.Single(LogCalls());
@@ -301,10 +304,15 @@ public class SightingThreadsControllerTests
     {
         SightingThreadsController controller = CreateController(new ClaimsPrincipal(new ClaimsIdentity()));
 
-        ActionResult<SightingThreadReadModel> result = await controller.MarkRead(sightingId, threadId, cancellationToken);
+        ActionResult<SightingThreadReadModel> result = await controller.MarkRead(sightingId, threadId, SeenNow(), cancellationToken);
 
         Assert.IsType<UnauthorizedResult>(result.Result);
-        await service.DidNotReceive().MarkReadAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await service.DidNotReceive().MarkReadAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>());
+    }
+
+    private static SightingThreadReadRequestModel SeenNow()
+    {
+        return new SightingThreadReadRequestModel { SeenAt = new DateTimeOffset(createdAt) };
     }
 
     private SightingThreadsController CreateController(ClaimsPrincipal user)

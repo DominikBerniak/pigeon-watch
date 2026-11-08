@@ -3,7 +3,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, Subject, of, throwError } from 'rxjs';
 import {
   ClientConfiguration,
   ConfigurationService,
@@ -56,7 +56,7 @@ describe('MessageThread', () => {
     >
   >;
   let markThreadRead: ReturnType<
-    typeof vi.fn<(sightingId: string, threadId: string) => Observable<void>>
+    typeof vi.fn<(sightingId: string, threadId: string, seenAt: string) => Observable<void>>
   >;
   let report: ReturnType<typeof vi.fn>;
   let refreshCount: ReturnType<typeof vi.fn>;
@@ -422,6 +422,57 @@ describe('MessageThread', () => {
     expect(threadMessages).toHaveBeenLastCalledWith('sighting-1', 'thread-2', 1);
   });
 
+  it('clears an unsent draft when the thread changes, so it cannot be sent to the other person', async () => {
+    const root = await open();
+
+    field(root).value = 'Meant for the first person';
+    field(root).dispatchEvent(new Event('input'));
+    await settle();
+
+    fixture.componentRef.setInput('threadId', 'thread-2');
+    await settle();
+
+    expect(field(root).value).toBe('');
+    expect(root.querySelector('form.message-thread__reply mat-error')).toBeNull();
+  });
+
+  it('keeps the draft when the same thread reloads after a load error', async () => {
+    threadMessages.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 500 })));
+    const root = await open();
+
+    field(root).value = 'Still typing';
+    field(root).dispatchEvent(new Event('input'));
+    await settle();
+
+    buttonIn(root.querySelector('app-error-retry')!, 'Try again')?.click();
+    await settle();
+
+    expect(field(root).value).toBe('Still typing');
+  });
+
+  it('drops a reply still in flight when the thread changes, so it never lands in the other thread', async () => {
+    const pending = new Subject<SightingMessage>();
+    sendMessage.mockReturnValue(pending);
+    const root = await open();
+
+    await send(root, 'For the first person');
+
+    fixture.componentRef.setInput('threadId', 'thread-2');
+    await settle();
+
+    pending.next(messageOf('late', { text: 'For the first person', isMine: true }));
+    pending.complete();
+    await settle();
+
+    expect(sendMessage).toHaveBeenCalledExactlyOnceWith(
+      'sighting-1',
+      'thread-1',
+      'For the first person',
+    );
+    expect(ids(root)).not.toContain('late');
+    expect(field(root).value).toBe('');
+  });
+
   function expandButton(root: HTMLElement): HTMLButtonElement {
     return root.querySelector<HTMLButtonElement>('header button.message-thread__expand')!;
   }
@@ -487,7 +538,10 @@ describe('MessageThread', () => {
     expect(document.activeElement).toBe(root.querySelector('h2'));
   });
 
-  it('marks the thread read after its first page loads, then refreshes the count and emits', async () => {
+  it('marks the thread read up to the newest loaded message, then refreshes the count and emits', async () => {
+    const newest = messageOf('newest', { createdAt: '2026-11-07T12:00:02.1234567Z' });
+    const older = messageOf('older', { createdAt: '2026-11-07T12:00:01.0000000Z' });
+    threadMessages.mockReturnValue(of({ items: [newest, older], totalCount: 2 }));
     fixture = TestBed.createComponent(MessageThread);
     const marked = vi.fn();
     fixture.componentInstance.markedRead.subscribe(marked);
@@ -495,7 +549,11 @@ describe('MessageThread', () => {
     fixture.componentRef.setInput('threadId', 'thread-1');
     await settle();
 
-    expect(markThreadRead).toHaveBeenCalledExactlyOnceWith('sighting-1', 'thread-1');
+    expect(markThreadRead).toHaveBeenCalledExactlyOnceWith(
+      'sighting-1',
+      'thread-1',
+      '2026-11-07T12:00:02.1234567Z',
+    );
     expect(threadMessages.mock.invocationCallOrder[0]).toBeLessThan(
       markThreadRead.mock.invocationCallOrder[0],
     );
@@ -511,6 +569,15 @@ describe('MessageThread', () => {
 
     expect(markThreadRead).toHaveBeenCalledTimes(2);
     expect(refreshCount).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not mark the thread read when it has no messages', async () => {
+    threadMessages.mockReturnValue(of({ items: [], totalCount: 0 }));
+
+    await open();
+
+    expect(markThreadRead).not.toHaveBeenCalled();
+    expect(refreshCount).not.toHaveBeenCalled();
   });
 
   it('does not mark the thread read when its messages fail to load', async () => {

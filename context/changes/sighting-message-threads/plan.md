@@ -448,6 +448,17 @@ One browser-level proof of the two-person flow, and the rules files updated.
 
 ---
 
+## Addendum 2026-11-08: UI additions accepted during Phases 5-6
+
+Recorded after the full implementation review (F5). Each item shipped and was accepted during that phase's manual verification, but was not in a phase block or an amendment:
+
+- **Header icon buttons**: Report sighting moved out of the account menu into a header icon button beside Messages, and the account trigger became an icon button with the display name as the menu's first, non-interactive row (`app.html`, `_material-theme.scss`, `_tokens.scss`).
+- **`appTooltip` directive** (`shared/ui/tooltip/`): the app's one tooltip, a body-level popover because the header clips overflow and `MatTooltip` would add about 16 kB to the initial bundle; it also replaced `title` attributes on sighting rows and comments so every tooltip is identical.
+- **`MessageThreadDialog`** (`features/messages/message-thread-dialog/`): a full-screen popup of the thread view, opened from the messages page.
+- **Bundle warning budget** raised from 540 kB to 550 kB in `angular.json` for the header buttons and the tooltip (measured 544.69 kB after Phase 6).
+
+---
+
 ## Testing Strategy
 
 ### Unit Tests:

@@ -19,7 +19,9 @@ export type MessageContext =
   | 'sighting.messages.load'
   | 'sighting.messages.send'
   | 'messages.inbox.load'
-  | 'messages.thread.read';
+  | 'messages.inbox.sync'
+  | 'messages.thread.read'
+  | 'messages.unread.count';
 
 const ownSightingCode = 'ownsightingcontact';
 const textRequiredCode = 'messagetextrequired';

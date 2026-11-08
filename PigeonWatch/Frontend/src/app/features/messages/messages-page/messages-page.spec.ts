@@ -54,7 +54,7 @@ describe('MessagesPage', () => {
     >
   >;
   let markThreadRead: ReturnType<
-    typeof vi.fn<(sightingId: string, threadId: string) => Observable<void>>
+    typeof vi.fn<(sightingId: string, threadId: string, seenAt: string) => Observable<void>>
   >;
   let report: ReturnType<typeof vi.fn>;
   let refreshCount: ReturnType<typeof vi.fn>;
@@ -343,7 +343,11 @@ describe('MessagesPage', () => {
 
     const root = await open('/messages/sighting-1/thread-1');
 
-    expect(markThreadRead).toHaveBeenCalledExactlyOnceWith('sighting-1', 'thread-1');
+    expect(markThreadRead).toHaveBeenCalledExactlyOnceWith(
+      'sighting-1',
+      'thread-1',
+      message.createdAt,
+    );
     expect(threadMessages.mock.invocationCallOrder[0]).toBeLessThan(
       markThreadRead.mock.invocationCallOrder[0],
     );
@@ -360,7 +364,11 @@ describe('MessagesPage', () => {
 
     const root = await open('/messages/sighting-1/thread-1');
 
-    expect(markThreadRead).toHaveBeenCalledExactlyOnceWith('sighting-1', 'thread-1');
+    expect(markThreadRead).toHaveBeenCalledExactlyOnceWith(
+      'sighting-1',
+      'thread-1',
+      message.createdAt,
+    );
 
     late.next({
       items: [threadOf(1, { hasUnread: true }), threadOf(2, { hasUnread: true })],
@@ -508,7 +516,7 @@ describe('MessagesPage', () => {
     expect(threadMessages).toHaveBeenCalledOnce();
   });
 
-  it('keeps later pages, adds new threads, keeps the open thread read and updates the total on a sync', async () => {
+  it('keeps later pages, adds new threads, takes a later unread mark from the server and updates the total on a sync', async () => {
     inbox.mockImplementation((page) =>
       page === 1
         ? of({ items: [threadOf(1), threadOf(2)], totalCount: 4 })
@@ -523,7 +531,10 @@ describe('MessagesPage', () => {
     inbox.mockReturnValueOnce(
       of({
         items: [
-          threadOf(5, { hasUnread: true, lastMessageAt: new Date(Date.now() - minute).toISOString() }),
+          threadOf(5, {
+            hasUnread: true,
+            lastMessageAt: new Date(Date.now() - minute).toISOString(),
+          }),
           threadOf(1, { hasUnread: true }),
           threadOf(2, { sightingName: 'Renamed', counterpartDisplayName: 'Someone else' }),
         ],
@@ -541,10 +552,55 @@ describe('MessagesPage', () => {
       'thread-4',
     ]);
     expect(rows(root)[0].classList).toContain('messages__thread--unread');
-    expect(rows(root)[1].classList).not.toContain('messages__thread--unread');
+    expect(rows(root)[1].classList).toContain('messages__thread--unread');
     expect(textOf(rows(root)[2].querySelector('.messages__sighting'))).toBe('Renamed');
     expect(textOf(rows(root)[2].querySelector('.messages__counterpart'))).toBe('Someone else');
     expect(button(root, 'Show more')).toBeNull();
+  });
+
+  it('shows a thread read since the inbox loaded as unread again when a later sync says so', async () => {
+    inbox.mockReturnValue(
+      of({ items: [threadOf(1, { hasUnread: true }), threadOf(2)], totalCount: 2 }),
+    );
+
+    const root = await open('/messages/sighting-1/thread-1');
+
+    expect(rows(root)[0].classList).not.toContain('messages__thread--unread');
+
+    inbox.mockReturnValueOnce(
+      of({ items: [threadOf(1, { hasUnread: true }), threadOf(2)], totalCount: 2 }),
+    );
+    unreadCount.set(1);
+    await settle();
+
+    expect(rows(root)[0].classList).toContain('messages__thread--unread');
+  });
+
+  it('keeps a thread read when a sync that started before it was marked read answers late', async () => {
+    const stale = new Subject<SightingThreadPage>();
+    const pendingRead = new Subject<void>();
+
+    markThreadRead.mockReturnValue(pendingRead);
+    inbox.mockReturnValue(
+      of({ items: [threadOf(1, { hasUnread: true }), threadOf(2)], totalCount: 2 }),
+    );
+
+    const root = await open('/messages/sighting-1/thread-1');
+
+    inbox.mockReturnValueOnce(stale);
+    unreadCount.set(1);
+    await settle();
+
+    pendingRead.next();
+    pendingRead.complete();
+    await settle();
+
+    expect(rows(root)[0].classList).not.toContain('messages__thread--unread');
+
+    stale.next({ items: [threadOf(1, { hasUnread: true }), threadOf(2)], totalCount: 2 });
+    await settle();
+
+    expect(rows(root)[0].classList).not.toContain('messages__thread--unread');
   });
 
   it('cancels an older sync when the count changes again', async () => {
@@ -555,7 +611,10 @@ describe('MessagesPage', () => {
     unreadCount.set(1);
     await settle();
     inbox.mockReturnValueOnce(
-      of({ items: [threadOf(3, { hasUnread: true, lastMessageAt: new Date().toISOString() })], totalCount: 3 }),
+      of({
+        items: [threadOf(3, { hasUnread: true, lastMessageAt: new Date().toISOString() })],
+        totalCount: 3,
+      }),
     );
     unreadCount.set(2);
     await settle();

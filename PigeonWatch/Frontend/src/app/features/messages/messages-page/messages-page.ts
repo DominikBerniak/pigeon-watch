@@ -17,6 +17,7 @@ import { ActivatedRoute, ParamMap, RouterLink } from '@angular/router';
 import {
   EMPTY,
   Observable,
+  defer,
   Subject,
   Subscription,
   catchError,
@@ -39,7 +40,11 @@ import {
   PageCard,
   Tooltip,
 } from '../../../shared/ui';
-import { isReportableMessageFailure, messageFailure } from '../../sightings/message-errors';
+import {
+  MessageContext,
+  isReportableMessageFailure,
+  messageFailure,
+} from '../../sightings/message-errors';
 import { SightingAge, sightingAge } from '../../sightings/shared/sighting-age';
 import { SightingThread, SightingThreadPage } from '../../sightings/sighting.types';
 import { SightingsApi } from '../../sightings/sightings-api';
@@ -100,7 +105,8 @@ export class MessagesPage {
   private readonly threadView = viewChild(MessageThread);
   private loadedPages = 0;
   private moreRequest: Subscription | null = null;
-  private readonly readSinceInboxRequest = new Set<string>();
+  private readonly readMarks = new Map<string, number>();
+  private inboxRequests = 0;
 
   protected readonly state = signal<InboxState>({ kind: 'loading' });
   protected readonly threads = signal<readonly SightingThread[]>([]);
@@ -155,7 +161,7 @@ export class MessagesPage {
         startWith(undefined),
         tap(() => this.resetInbox()),
         switchMap(() =>
-          this.sightingsApi.inbox(1).pipe(
+          this.inboxPage(1).pipe(
             map((page): SightingThreadPage | InboxState => page),
             catchError((error: unknown) => of(this.loadFailure(error))),
           ),
@@ -207,7 +213,7 @@ export class MessagesPage {
   }
 
   protected markRowRead(threadId: string): void {
-    this.readSinceInboxRequest.add(threadId);
+    this.readMarks.set(threadId, this.inboxRequests);
     this.threads.update((threads) => this.withReadMarks(threads));
   }
 
@@ -236,7 +242,7 @@ export class MessagesPage {
     const page = this.loadedPages + 1;
 
     this.more.set({ kind: 'loading' });
-    this.moreRequest = this.sightingsApi.inbox(page).subscribe({
+    this.moreRequest = this.inboxPage(page).subscribe({
       next: (result) => {
         this.loadedPages = page;
         this.threads.update((threads) => this.withReadMarks(appendNew(threads, result.items)));
@@ -251,7 +257,7 @@ export class MessagesPage {
     this.moreRequest?.unsubscribe();
     this.moreRequest = null;
     this.loadedPages = 0;
-    this.readSinceInboxRequest.clear();
+    this.readMarks.clear();
     this.state.set({ kind: 'loading' });
     this.more.set({ kind: 'idle' });
   }
@@ -265,10 +271,14 @@ export class MessagesPage {
   }
 
   private syncFirstPage(): Observable<SightingThreadPage> {
-    return this.sightingsApi.inbox(1).pipe(
+    return this.inboxPage(1).pipe(
       catchError((error: unknown) => {
         if (isReportableMessageFailure(error, messageFailure(error))) {
-          this.reporting.report('api-failure', 'messages.inbox.sync', error);
+          this.reporting.report(
+            'api-failure',
+            'messages.inbox.sync' satisfies MessageContext,
+            error,
+          );
         }
 
         return EMPTY;
@@ -284,11 +294,27 @@ export class MessagesPage {
     this.totalCount.set(page.totalCount);
   }
 
+  private inboxPage(page: number): Observable<SightingThreadPage> {
+    return defer(() => {
+      const request = ++this.inboxRequests;
+
+      return this.sightingsApi
+        .inbox(page)
+        .pipe(tap((result) => this.settleReadMarks(result.items, request)));
+    });
+  }
+
+  private settleReadMarks(threads: readonly SightingThread[], request: number): void {
+    for (const thread of threads) {
+      const markedAfter = this.readMarks.get(thread.id);
+
+      if (markedAfter !== undefined && request > markedAfter) this.readMarks.delete(thread.id);
+    }
+  }
+
   private withReadMarks(threads: readonly SightingThread[]): readonly SightingThread[] {
     return threads.map((thread) =>
-      thread.hasUnread && this.readSinceInboxRequest.has(thread.id)
-        ? { ...thread, hasUnread: false }
-        : thread,
+      thread.hasUnread && this.readMarks.has(thread.id) ? { ...thread, hasUnread: false } : thread,
     );
   }
 

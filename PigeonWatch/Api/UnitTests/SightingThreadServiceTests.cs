@@ -100,6 +100,19 @@ public class SightingThreadServiceTests
     }
 
     [Fact]
+    public async Task Start_returns_sighting_not_found_when_the_sighting_is_gone_by_the_time_of_the_write()
+    {
+        repository.GetSightingOwnerAsync(sightingId, Arg.Any<CancellationToken>()).Returns(ownerId, (Guid?)null);
+        repository
+            .StartOrAppendAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(((SightingThread Thread, SightingMessage Message)?)null);
+
+        SightingThreadResult result = await CreateService().StartAsync(sightingId, participantId, "Hello", cancellationToken);
+
+        Assert.Equal([SightingMessageErrorCodes.SightingNotFound], Codes(result.Errors));
+    }
+
+    [Fact]
     public async Task Reply_appends_the_trimmed_text_for_a_participant()
     {
         StoreThreadFor(participantId);
@@ -253,6 +266,17 @@ public class SightingThreadServiceTests
         SightingMessagePageResult result = await CreateService().ListMessagesAsync(Guid.NewGuid(), threadId, participantId, 1, cancellationToken);
 
         Assert.Equal([SightingMessageErrorCodes.SightingNotFound], Codes(result.Errors));
+        await repository.DidNotReceive().IsThreadVisibleToUserAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task List_messages_checks_access_without_loading_the_thread()
+    {
+        StoreThreadFor(participantId);
+
+        SightingMessagePageResult result = await CreateService().ListMessagesAsync(sightingId, threadId, participantId, 1, cancellationToken);
+
+        Assert.True(result.Succeeded);
         await repository.DidNotReceive().GetThreadForUserAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
@@ -279,32 +303,33 @@ public class SightingThreadServiceTests
     }
 
     [Fact]
-    public async Task Mark_read_sets_the_callers_marker_at_the_current_time()
+    public async Task Mark_read_passes_the_seen_time_and_the_current_time_to_the_repository()
     {
-        repository.MarkReadAsync(sightingId, threadId, ownerId, now.UtcDateTime, Arg.Any<CancellationToken>()).Returns(true);
+        DateTime seenAt = now.UtcDateTime.AddMinutes(-1);
+        repository.MarkReadAsync(sightingId, threadId, ownerId, seenAt, now.UtcDateTime, Arg.Any<CancellationToken>()).Returns(true);
 
-        SightingThreadReadResult result = await CreateService().MarkReadAsync(sightingId, threadId, ownerId, cancellationToken);
+        SightingThreadReadResult result = await CreateService().MarkReadAsync(sightingId, threadId, ownerId, seenAt, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.Empty(result.Errors);
-        await repository.Received(1).MarkReadAsync(sightingId, threadId, ownerId, now.UtcDateTime, Arg.Any<CancellationToken>());
+        await repository.Received(1).MarkReadAsync(sightingId, threadId, ownerId, seenAt, now.UtcDateTime, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Mark_read_returns_sighting_not_found_before_touching_the_thread()
     {
-        SightingThreadReadResult result = await CreateService().MarkReadAsync(Guid.NewGuid(), threadId, ownerId, cancellationToken);
+        SightingThreadReadResult result = await CreateService().MarkReadAsync(Guid.NewGuid(), threadId, ownerId, now.UtcDateTime, cancellationToken);
 
         Assert.Equal([SightingMessageErrorCodes.SightingNotFound], Codes(result.Errors));
-        await repository.DidNotReceive().MarkReadAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>());
+        await repository.DidNotReceive().MarkReadAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Mark_read_returns_thread_not_found_for_an_outsider_or_an_unknown_thread()
     {
-        repository.MarkReadAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()).Returns(false);
+        repository.MarkReadAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()).Returns(false);
 
-        SightingThreadReadResult result = await CreateService().MarkReadAsync(sightingId, threadId, Guid.NewGuid(), cancellationToken);
+        SightingThreadReadResult result = await CreateService().MarkReadAsync(sightingId, threadId, Guid.NewGuid(), now.UtcDateTime, cancellationToken);
 
         Assert.Equal([SightingMessageErrorCodes.ThreadNotFound], Codes(result.Errors));
     }
@@ -327,6 +352,7 @@ public class SightingThreadServiceTests
     private void StoreThreadFor(Guid userId)
     {
         repository.GetThreadForUserAsync(sightingId, threadId, userId, Arg.Any<CancellationToken>()).Returns(Thread());
+        repository.IsThreadVisibleToUserAsync(sightingId, threadId, userId, Arg.Any<CancellationToken>()).Returns(true);
     }
 
     private SightingThread Thread()

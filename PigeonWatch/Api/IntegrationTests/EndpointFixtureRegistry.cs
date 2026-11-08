@@ -411,14 +411,20 @@ public sealed class EndpointFixtureRegistry
     private static IReadOnlyList<FixtureRequest> BuildMarkThreadRead(FixtureContext context)
     {
         const string key = "PUT sightings/{sightingId:guid}/threads/{threadId:guid}/read";
-
-        return
+        string uri = $"/sightings/{context.SightingId}/threads/{context.ThreadId}/read";
+        object body = new { seenAt = DateTimeOffset.UtcNow };
+        List<FixtureRequest> requests =
         [
-            Make(key, "seeded thread", new HttpRequestMessage(HttpMethod.Put, $"/sightings/{context.SightingId}/threads/{context.ThreadId}/read")),
-            Make(key, "seeded thread again", new HttpRequestMessage(HttpMethod.Put, $"/sightings/{context.SightingId}/threads/{context.ThreadId}/read")),
-            Make(key, "unknown thread", new HttpRequestMessage(HttpMethod.Put, $"/sightings/{context.SightingId}/threads/{Guid.NewGuid()}/read")),
-            Make(key, "seeded thread under an unknown sighting", new HttpRequestMessage(HttpMethod.Put, $"/sightings/{Guid.NewGuid()}/threads/{context.ThreadId}/read"))
+            Make(key, "seeded thread", JsonOf(HttpMethod.Put, uri, body)),
+            Make(key, "seeded thread again", JsonOf(HttpMethod.Put, uri, body)),
+            Make(key, "missing seen time", JsonOf(HttpMethod.Put, uri, new { })),
+            Make(key, "unknown thread", JsonOf(HttpMethod.Put, $"/sightings/{context.SightingId}/threads/{Guid.NewGuid()}/read", body)),
+            Make(key, "seeded thread under an unknown sighting", JsonOf(HttpMethod.Put, $"/sightings/{Guid.NewGuid()}/threads/{context.ThreadId}/read", body))
         ];
+
+        AddMalformed(requests, key, HttpMethod.Put, uri);
+
+        return requests;
     }
 
     private static IReadOnlyList<FixtureRequest> BuildUnreadMessageCount(FixtureContext context)

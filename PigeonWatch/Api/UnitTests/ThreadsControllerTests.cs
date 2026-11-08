@@ -56,6 +56,18 @@ public class ThreadsControllerTests
     }
 
     [Fact]
+    public async Task List_returns_401_when_the_caller_no_longer_exists()
+    {
+        service.ListForUserAsync(userId, 1, Arg.Any<CancellationToken>())
+            .Returns(SightingThreadPageResult.Failure([new SightingError(SightingMessageErrorCodes.SenderNotFound, "sender")]));
+        ThreadsController controller = CreateController(Authenticated(userId));
+
+        ActionResult<SightingThreadPageModel> result = await controller.List(null, cancellationToken);
+
+        Assert.IsType<UnauthorizedResult>(result.Result);
+    }
+
+    [Fact]
     public async Task List_returns_401_for_a_missing_name_identifier_claim()
     {
         ThreadsController controller = CreateController(new ClaimsPrincipal(new ClaimsIdentity()));

@@ -47,6 +47,14 @@ public class SightingThreadRepository(PigeonWatchDbContext db, ISightingThreadMa
         return await ToThreadForUserAsync(entity, userId, cancellationToken);
     }
 
+    public async Task<bool> IsThreadVisibleToUserAsync(Guid sightingId, Guid threadId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await db.SightingThreads
+            .AnyAsync(
+                e => e.Id == threadId && e.SightingId == sightingId && (e.ParticipantId == userId || e.Sighting.ReporterId == userId),
+                cancellationToken);
+    }
+
     public async Task<(SightingThread Thread, SightingMessage Message)?> StartOrAppendAsync(Guid sightingId, Guid participantId, string text, DateTime now, CancellationToken cancellationToken = default)
     {
         UserAccountEntity? participant = await db.UserAccounts.FindAsync([participantId], cancellationToken);
@@ -72,8 +80,7 @@ public class SightingThreadRepository(PigeonWatchDbContext db, ISightingThreadMa
             Sighting = sighting,
             ParticipantId = participantId,
             Participant = participant,
-            LastMessageAt = now,
-            ParticipantLastReadAt = now
+            LastMessageAt = now
         };
         db.SightingThreads.Add(thread);
         SightingMessageEntity message = AddMessage(thread, participant, text);
@@ -110,7 +117,6 @@ public class SightingThreadRepository(PigeonWatchDbContext db, ISightingThreadMa
             return null;
 
         thread.LastMessageAt = now;
-        MarkSideRead(thread, senderId, now);
         SightingMessageEntity message = AddMessage(thread, sender, text);
         await db.SaveChangesAsync(cancellationToken);
 
@@ -128,9 +134,7 @@ public class SightingThreadRepository(PigeonWatchDbContext db, ISightingThreadMa
 
     public async Task<SightingThreadPage> ListThreadsForUserAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        IQueryable<SightingThreadEntity> query = db.SightingThreads
-            .AsNoTracking()
-            .Where(e => e.ParticipantId == userId || e.Sighting.ReporterId == userId);
+        IQueryable<SightingThreadEntity> query = ParticipantThreads(userId).Concat(OwnerThreads(userId));
 
         return await ListThreadPageAsync(query, userId, page, pageSize, cancellationToken);
     }
@@ -160,14 +164,14 @@ public class SightingThreadRepository(PigeonWatchDbContext db, ISightingThreadMa
         return new SightingMessagePage(entities.Select(sightingThreadMapper.ToMessage).ToList(), totalCount);
     }
 
-    public async Task<bool> MarkReadAsync(Guid sightingId, Guid threadId, Guid userId, DateTime now, CancellationToken cancellationToken = default)
+    public async Task<bool> MarkReadAsync(Guid sightingId, Guid threadId, Guid userId, DateTime seenAt, DateTime now, CancellationToken cancellationToken = default)
     {
         SightingThreadEntity? thread = await FindTrackedThreadForUserAsync(sightingId, threadId, userId, cancellationToken);
 
         if (thread is null)
             return false;
 
-        MarkSideRead(thread, userId, now);
+        MarkSideRead(thread, userId, seenAt < now ? seenAt : now);
         await db.SaveChangesAsync(cancellationToken);
 
         return true;
@@ -175,16 +179,44 @@ public class SightingThreadRepository(PigeonWatchDbContext db, ISightingThreadMa
 
     public async Task<int> CountUnreadMessagesAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        int count = await db.SightingMessages
-            .AsNoTracking()
-            .Where(m => m.SenderId != userId
-                && (m.Thread.ParticipantId == userId
-                    ? m.Thread.ParticipantLastReadAt == null || m.CreateDate > m.Thread.ParticipantLastReadAt
-                    : m.Thread.Sighting.ReporterId == userId
-                        && (m.Thread.OwnerLastReadAt == null || m.CreateDate > m.Thread.OwnerLastReadAt)))
-            .CountAsync(cancellationToken);
+        int participantCount = await UnreadAsParticipant(userId).CountAsync(cancellationToken);
+        int ownerCount = await UnreadAsOwner(userId).CountAsync(cancellationToken);
 
-        return count;
+        return participantCount + ownerCount;
+    }
+
+    private IQueryable<SightingThreadEntity> ParticipantThreads(Guid userId)
+    {
+        return db.SightingThreads
+            .AsNoTracking()
+            .Where(e => e.ParticipantId == userId);
+    }
+
+    private IQueryable<SightingThreadEntity> OwnerThreads(Guid userId)
+    {
+        return db.Sightings
+            .AsNoTracking()
+            .Where(s => s.ReporterId == userId)
+            .Join(db.SightingThreads, s => s.Id, e => e.SightingId, (s, e) => e)
+            .Where(e => e.ParticipantId != userId);
+    }
+
+    private IQueryable<SightingMessageEntity> UnreadAsParticipant(Guid userId)
+    {
+        return ParticipantThreads(userId)
+            .Join(db.SightingMessages, e => e.Id, m => m.ThreadId, (e, m) => new { Thread = e, Message = m })
+            .Where(x => x.Message.SenderId != userId
+                && (x.Thread.ParticipantLastReadAt == null || x.Message.CreateDate > x.Thread.ParticipantLastReadAt))
+            .Select(x => x.Message);
+    }
+
+    private IQueryable<SightingMessageEntity> UnreadAsOwner(Guid userId)
+    {
+        return OwnerThreads(userId)
+            .Join(db.SightingMessages, e => e.Id, m => m.ThreadId, (e, m) => new { Thread = e, Message = m })
+            .Where(x => x.Message.SenderId != userId
+                && (x.Thread.OwnerLastReadAt == null || x.Message.CreateDate > x.Thread.OwnerLastReadAt))
+            .Select(x => x.Message);
     }
 
     private async Task<SightingThreadPage> ListThreadPageAsync(IQueryable<SightingThreadEntity> query, Guid userId, int page, int pageSize, CancellationToken cancellationToken = default)
@@ -211,7 +243,6 @@ public class SightingThreadRepository(PigeonWatchDbContext db, ISightingThreadMa
     private async Task<(SightingThread Thread, SightingMessage Message)?> AppendToThreadAsync(SightingThreadEntity thread, UserAccountEntity sender, string text, DateTime now, CancellationToken cancellationToken = default)
     {
         thread.LastMessageAt = now;
-        MarkSideRead(thread, sender.Id, now);
         SightingMessageEntity message = AddMessage(thread, sender, text);
         await db.SaveChangesAsync(cancellationToken);
 
@@ -250,12 +281,20 @@ public class SightingThreadRepository(PigeonWatchDbContext db, ISightingThreadMa
                 cancellationToken);
     }
 
-    private static void MarkSideRead(SightingThreadEntity thread, Guid userId, DateTime now)
+    private static void MarkSideRead(SightingThreadEntity thread, Guid userId, DateTime readUpTo)
     {
         if (thread.ParticipantId == userId)
-            thread.ParticipantLastReadAt = now;
+            thread.ParticipantLastReadAt = Later(thread.ParticipantLastReadAt, readUpTo);
         else
-            thread.OwnerLastReadAt = now;
+            thread.OwnerLastReadAt = Later(thread.OwnerLastReadAt, readUpTo);
+    }
+
+    private static DateTime Later(DateTime? marker, DateTime readUpTo)
+    {
+        if (marker is null || readUpTo > marker.Value)
+            return readUpTo;
+
+        return marker.Value;
     }
 
     private static Expression<Func<SightingThreadEntity, bool>> IsUnreadFor(Guid userId)

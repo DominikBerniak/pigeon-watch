@@ -131,6 +131,8 @@ export class MessageThread {
   private loadedPages = 0;
   private olderRequest: Subscription | null = null;
   private readRequest: Subscription | null = null;
+  private sendRequest: Subscription | null = null;
+  private shownKey: ThreadKey | null = null;
 
   readonly sightingId = input.required<string>();
   readonly threadId = input.required<string>();
@@ -226,7 +228,7 @@ export class MessageThread {
   constructor() {
     combineLatest([toObservable(this.key), this.reloads.pipe(startWith(undefined))])
       .pipe(
-        tap(() => this.resetThread()),
+        tap(([key]) => this.resetThread(key)),
         switchMap(([key]) =>
           this.sightingsApi.threadMessages(key.sightingId, key.threadId, 1).pipe(
             map((page): SightingMessagePage | LoadState => page),
@@ -248,6 +250,7 @@ export class MessageThread {
     this.destroyRef.onDestroy(() => {
       this.olderRequest?.unsubscribe();
       this.readRequest?.unsubscribe();
+      this.sendRequest?.unsubscribe();
     });
   }
 
@@ -281,12 +284,9 @@ export class MessageThread {
     if (this.replyForm().invalid()) return;
 
     this.sending.set(true);
-    this.sightingsApi
+    this.sendRequest = this.sightingsApi
       .sendMessage(this.sightingId(), this.threadId(), this.replyModel().text)
-      .pipe(
-        finalize(() => this.sending.set(false)),
-        takeUntilDestroyed(this.destroyRef),
-      )
+      .pipe(finalize(() => this.sending.set(false)))
       .subscribe({
         next: (message) => {
           if (this.state().kind === 'loaded') {
@@ -330,7 +330,19 @@ export class MessageThread {
       });
   }
 
-  private resetThread(): void {
+  private resetThread(key: ThreadKey): void {
+    if (
+      this.shownKey &&
+      (this.shownKey.sightingId !== key.sightingId || this.shownKey.threadId !== key.threadId)
+    ) {
+      this.sendRequest?.unsubscribe();
+      this.sendRequest = null;
+      this.replyModel.set({ text: '' });
+      this.replyForm().reset();
+      this.submitState.reset();
+    }
+
+    this.shownKey = key;
     this.olderRequest?.unsubscribe();
     this.olderRequest = null;
     this.readRequest?.unsubscribe();
@@ -353,15 +365,21 @@ export class MessageThread {
   }
 
   private markRead(): void {
+    const newest = this.items()[0];
+
+    if (!newest) return;
+
     const threadId = this.threadId();
 
-    this.readRequest = this.sightingsApi.markThreadRead(this.sightingId(), threadId).subscribe({
-      next: () => {
-        this.markedRead.emit(threadId);
-        this.unreadCount.refresh();
-      },
-      error: (error: unknown) => this.failureOf(error, 'messages.thread.read'),
-    });
+    this.readRequest = this.sightingsApi
+      .markThreadRead(this.sightingId(), threadId, newest.createdAt)
+      .subscribe({
+        next: () => {
+          this.markedRead.emit(threadId);
+          this.unreadCount.refresh();
+        },
+        error: (error: unknown) => this.failureOf(error, 'messages.thread.read'),
+      });
   }
 
   private scrollToNewest(): void {

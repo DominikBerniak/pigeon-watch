@@ -107,8 +107,8 @@ export class SightingsApi {
     return this.http.post<SightingMessage>(messagesUrl(sightingId, threadId), { text });
   }
 
-  markThreadRead(sightingId: string, threadId: string): Observable<void> {
-    return this.http.put<void>(threadReadUrl(sightingId, threadId), null);
+  markThreadRead(sightingId: string, threadId: string, seenAt: string): Observable<void> {
+    return this.http.put<void>(threadReadUrl(sightingId, threadId), { seenAt });
   }
 
   inbox(page: number): Observable<SightingThreadPage> {

@@ -35,12 +35,7 @@ public class ThreadsController(
         SightingThreadPageResult result = await sightingThreadService.ListForUserAsync(userId, page ?? 1, cancellationToken);
 
         if (!result.Succeeded)
-        {
-            foreach (SightingError error in result.Errors.Where(error => loggedErrorCodes.Contains(error.Code)))
-                LogInvalidInput(error.Code);
-
-            return GetValidationProblem<SightingThreadPageModel>(result.Errors.Select(error => (error.Code, error.Description)));
-        }
+            return GetFailure<SightingThreadPageModel>(result.Errors);
 
         return Ok(sightingThreadViewModelCreator.CreateThreadPage(result.Page, userId));
     }
@@ -56,5 +51,16 @@ public class ThreadsController(
         int count = await sightingThreadService.CountUnreadMessagesAsync(userId, cancellationToken);
 
         return Ok(sightingThreadViewModelCreator.CreateUnreadCount(count));
+    }
+
+    private ActionResult<TResponseModel> GetFailure<TResponseModel>(IReadOnlyList<SightingError> errors)
+    {
+        if (errors.Any(error => error.Code == SightingMessageErrorCodes.SenderNotFound))
+            return UnauthorizedForMissingUser();
+
+        foreach (SightingError error in errors.Where(error => loggedErrorCodes.Contains(error.Code)))
+            LogInvalidInput(error.Code);
+
+        return GetValidationProblem<TResponseModel>(errors.Select(error => (error.Code, error.Description)));
     }
 }
