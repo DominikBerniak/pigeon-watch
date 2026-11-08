@@ -32,6 +32,7 @@ public class SightingMapper : ISightingMapper
             entity.Longitude,
             entity.Status,
             entity.Criticality,
+            entity.ReporterId,
             entity.Reporter.DisplayName,
             DateTime.SpecifyKind(entity.CreateDate, DateTimeKind.Utc),
             entity.PhotoBlobName is not null);

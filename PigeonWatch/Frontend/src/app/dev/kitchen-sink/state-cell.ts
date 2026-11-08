@@ -24,8 +24,12 @@ import { SessionService } from '../../core/auth/session.service';
 import { ConfigurationService } from '../../core/configuration/configuration.service';
 import { ErrorReportingService } from '../../core/error-reporting/error-reporting.service';
 import { GeolocationService } from '../../core/geolocation/geolocation.service';
+import { MessagesLink } from '../../core/messages/messages-link/messages-link';
+import { UnreadCountService } from '../../core/messages/unread-count.service';
 import { ResourceService } from '../../core/resources/resource.service';
 import { ProfileApi } from '../../features/profile/profile-api';
+import { ActivatedRoute } from '@angular/router';
+import { MessagesPage } from '../../features/messages/messages-page/messages-page';
 import { ProfilePage } from '../../features/profile/profile-page/profile-page';
 import { NearbyMapPage } from '../../features/sightings/nearby-map-page/nearby-map-page';
 import { SightingDetailPage } from '../../features/sightings/sighting-detail-page/sighting-detail-page';
@@ -43,7 +47,15 @@ interface NextLocationOption {
 
 @Component({
   selector: 'app-state-cell',
-  imports: [MatButtonModule, ProfilePage, NearbyMapPage, SightingDetailPage, SightingListPage],
+  imports: [
+    MatButtonModule,
+    ProfilePage,
+    NearbyMapPage,
+    SightingDetailPage,
+    SightingListPage,
+    MessagesPage,
+    MessagesLink,
+  ],
   providers: [
     CellStubs,
     { provide: SessionService, useFactory: () => inject(CellStubs).session },
@@ -51,7 +63,12 @@ interface NextLocationOption {
     { provide: ProfileApi, useFactory: () => inject(CellStubs).profileApi },
     { provide: SightingsApi, useFactory: () => inject(CellStubs).sightingsApi },
     { provide: GeolocationService, useFactory: () => inject(CellStubs).geolocation },
+    { provide: UnreadCountService, useFactory: () => inject(CellStubs).unreadCount },
     { provide: ErrorReportingService, useValue: { report: (): void => undefined } },
+    {
+      provide: ActivatedRoute,
+      useFactory: () => inject(CellStubs).route(inject(ActivatedRoute, { skipSelf: true })),
+    },
     {
       provide: LEAFLET_LOADER,
       useFactory: () => inject(CellStubs).leafletLoader(inject(LEAFLET_LOADER, { skipSelf: true })),
@@ -86,6 +103,11 @@ export class StateCell {
     const definition = this.definition();
 
     return definition.group === 'nearbyMap' && definition.geolocation === 'timeoutThenNext';
+  });
+  protected readonly headerUnreadCount = computed(() => {
+    const definition = this.definition();
+
+    return definition.group === 'header' ? definition.unreadCount : 0;
   });
 
   private openRef: MatDialogRef<unknown> | null = null;
@@ -134,7 +156,9 @@ export class StateCell {
         until<HTMLElement>(() => ref.componentRef?.location.nativeElement ?? null),
       ),
     );
-    const trigger = press('profile.password.title')(this.context(this.host.nativeElement));
+    const trigger = (scenario.trigger ?? press('profile.password.title'))(
+      this.context(this.host.nativeElement),
+    );
 
     this.running.set(true);
     merge(opened, trigger.pipe(ignoreElements()))

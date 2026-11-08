@@ -1,5 +1,6 @@
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { By } from '@angular/platform-browser';
@@ -14,6 +15,8 @@ import {
   SightingCommentPage,
   SightingCriticality,
   SightingStatus,
+  SightingThreadPage,
+  SightingThreadStart,
 } from '../sighting.types';
 import { PhotoEncoder } from '../shared/photo-encoder';
 import { SightingsApi } from '../sightings-api';
@@ -31,9 +34,32 @@ const sighting: Sighting = {
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T12:00:00Z',
   hasPhoto: false,
+  isMine: false,
 };
 
 const withPhoto: Sighting = { ...sighting, hasPhoto: true };
+const started: SightingThreadStart = {
+  thread: {
+    id: 'thread-9',
+    sightingId: 'sighting-1',
+    sightingName: 'Limpy',
+    counterpartDisplayName: 'Jan K',
+    isOwner: false,
+    lastMessageAt: '2026-11-07T12:00:00Z',
+    hasUnread: false,
+  },
+  message: {
+    id: 'message-1',
+    text: 'Is it still there?',
+    senderDisplayName: 'Ola N',
+    createdAt: '2026-11-07T12:00:00Z',
+    isMine: true,
+  },
+};
+
+@Component({ template: '' })
+class MessagesRouteStub {}
+
 const photoBlob = new Blob(['jpeg'], { type: 'image/jpeg' });
 
 describe('SightingDetailPage', () => {
@@ -41,6 +67,12 @@ describe('SightingDetailPage', () => {
   let photo: ReturnType<typeof vi.fn<(id: string) => Observable<Blob>>>;
   let createPreviewUrl: ReturnType<typeof vi.fn<(blob: Blob) => string>>;
   let revokePreviewUrl: ReturnType<typeof vi.fn<(url: string) => void>>;
+  let startThread: ReturnType<
+    typeof vi.fn<(sightingId: string, text: string) => Observable<SightingThreadStart>>
+  >;
+  let threads: ReturnType<
+    typeof vi.fn<(sightingId: string, page: number) => Observable<SightingThreadPage>>
+  >;
   let report: ReturnType<typeof vi.fn>;
   let harness: RouterTestingHarness;
 
@@ -51,18 +83,29 @@ describe('SightingDetailPage', () => {
     photo = vi.fn<(id: string) => Observable<Blob>>(() => of(photoBlob));
     createPreviewUrl = vi.fn<(blob: Blob) => string>(() => `blob:photo-${++previews}`);
     revokePreviewUrl = vi.fn<(url: string) => void>();
+    startThread = vi.fn<(sightingId: string, text: string) => Observable<SightingThreadStart>>(
+      () => of(started),
+    );
+    threads = vi.fn<(sightingId: string, page: number) => Observable<SightingThreadPage>>(() =>
+      of({ items: [], totalCount: 0 }),
+    );
     report = vi.fn();
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideRouter([{ path: 'sightings/:id', component: SightingDetailPage }]),
+        provideRouter([
+          { path: 'sightings/:id', component: SightingDetailPage },
+          { path: 'messages/:sightingId/:threadId', component: MessagesRouteStub },
+        ]),
         {
           provide: SightingsApi,
           useValue: {
             get,
             photo,
             comments: (): Observable<SightingCommentPage> => of({ items: [], totalCount: 0 }),
+            threads,
+            startThread,
           },
         },
         { provide: PhotoEncoder, useValue: { createPreviewUrl, revokePreviewUrl } },
@@ -505,6 +548,209 @@ describe('SightingDetailPage', () => {
 
     expect(root.querySelector('app-page-card h1')?.textContent?.trim()).toBe('Second');
     expect(document.title).toBe('Second – PigeonWatch');
+  });
+
+  function contactButton(root: HTMLElement): HTMLButtonElement | null {
+    return root.querySelector<HTMLButtonElement>('button.sighting-detail__contact');
+  }
+
+  async function sendFromDialog(text: string): Promise<void> {
+    const dialog = document.querySelector<HTMLElement>('app-message-owner-dialog')!;
+    const field = dialog.querySelector<HTMLTextAreaElement>('textarea')!;
+
+    field.value = text;
+    field.dispatchEvent(new Event('input'));
+    dialog.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+    await settle();
+  }
+
+  it('offers "Message {reporter}" on a sighting of someone else', async () => {
+    const root = await open();
+
+    expect(contactButton(root)?.getAttribute('aria-label')).toBe('Message Jan K');
+    expect(contactButton(root)?.textContent?.trim()).toBe('');
+    expect(contactButton(root)?.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    expect(contactButton(root)?.getAttribute('type')).toBe('button');
+    expect(contactButton(root)?.closest('.sighting-detail__reporter')?.textContent).toContain(
+      'Jan K',
+    );
+  });
+
+  it('shows no message button on an own sighting', async () => {
+    get.mockReturnValue(of({ ...sighting, isMine: true }));
+
+    const root = await open();
+
+    expect(rows(root)).toHaveLength(7);
+    expect(contactButton(root)).toBeNull();
+    expect(root.textContent).not.toContain('Message Jan K');
+  });
+
+  it('opens the message dialog for the reporter without sending anything', async () => {
+    const root = await open();
+
+    contactButton(root)!.click();
+    await settle();
+
+    const dialog = document.querySelector<HTMLElement>('app-message-owner-dialog');
+
+    expect(dialog?.querySelector('h2')?.textContent?.trim()).toBe('Message Jan K');
+    expect(startThread).not.toHaveBeenCalled();
+
+    button(dialog!, 'Cancel').click();
+    await settle();
+    await vi.waitFor(() =>
+      expect(document.querySelector('app-message-owner-dialog')).toBeNull(),
+    );
+    expect(TestBed.inject(Router).url).toBe('/sightings/sighting-1');
+  });
+
+  it('sends from the dialog and opens the conversation with the sighting and returned thread ids', async () => {
+    const root = await open();
+
+    contactButton(root)!.click();
+    await settle();
+    await sendFromDialog('Is it still there?');
+    await vi.waitFor(() =>
+      expect(TestBed.inject(Router).url).toBe('/messages/sighting-1/thread-9'),
+    );
+
+    expect(startThread).toHaveBeenCalledExactlyOnceWith('sighting-1', 'Is it still there?');
+    expect(document.querySelector('app-message-owner-dialog')).toBeNull();
+  });
+
+  it('stays on the sighting with the dialog open when sending fails', async () => {
+    startThread.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+    const root = await open();
+
+    contactButton(root)!.click();
+    await settle();
+    await sendFromDialog('Is it still there?');
+
+    expect(document.querySelector('app-message-owner-dialog app-alert')).not.toBeNull();
+    expect(TestBed.inject(Router).url).toBe('/sightings/sighting-1');
+    expect(report).toHaveBeenCalledExactlyOnceWith(
+      'api-failure',
+      'sighting.threads.start',
+      expect.any(HttpErrorResponse),
+    );
+
+    TestBed.inject(MatDialog).closeAll();
+    await settle();
+  });
+
+  function conversationLink(root: HTMLElement): HTMLAnchorElement | null {
+    return root.querySelector<HTMLAnchorElement>('a.sighting-detail__contact');
+  }
+
+  it('looks up the own thread of the caller on a sighting of someone else', async () => {
+    const root = await open();
+
+    expect(threads).toHaveBeenCalledExactlyOnceWith('sighting-1', 1);
+    expect(conversationLink(root)).toBeNull();
+    expect(contactButton(root)).not.toBeNull();
+  });
+
+  it('sends no thread lookup on an own sighting', async () => {
+    get.mockReturnValue(of({ ...sighting, isMine: true }));
+
+    await open();
+
+    expect(threads).not.toHaveBeenCalled();
+  });
+
+  it('links the email icon to the existing conversation instead of the dialog', async () => {
+    threads.mockReturnValue(of({ items: [started.thread], totalCount: 1 }));
+
+    const root = await open();
+    const link = conversationLink(root);
+
+    expect(contactButton(root)).toBeNull();
+    expect(link?.getAttribute('href')).toBe('/messages/sighting-1/thread-9');
+    expect(link?.getAttribute('aria-label')).toBe('Open conversation with Jan K');
+    expect(link?.textContent?.trim()).toBe('');
+    expect(link?.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+
+    link!.click();
+    await settle();
+    await vi.waitFor(() =>
+      expect(TestBed.inject(Router).url).toBe('/messages/sighting-1/thread-9'),
+    );
+
+    expect(document.querySelector('app-message-owner-dialog')).toBeNull();
+    expect(startThread).not.toHaveBeenCalled();
+  });
+
+  it('keeps the dialog path and shows the details while the thread lookup is pending', async () => {
+    threads.mockReturnValue(NEVER);
+
+    const root = await open();
+
+    expect(rows(root)).toHaveLength(7);
+    expect(conversationLink(root)).toBeNull();
+
+    contactButton(root)!.click();
+    await settle();
+
+    expect(document.querySelector('app-message-owner-dialog')).not.toBeNull();
+
+    TestBed.inject(MatDialog).closeAll();
+    await settle();
+  });
+
+  it('keeps the dialog path and reports when the thread lookup fails', async () => {
+    const error = new HttpErrorResponse({ status: 500 });
+
+    threads.mockReturnValue(throwError(() => error));
+
+    const root = await open();
+
+    expect(conversationLink(root)).toBeNull();
+    expect(sightingReports()).toEqual([['api-failure', 'sighting.threads.load', error]]);
+
+    contactButton(root)!.click();
+    await settle();
+
+    expect(document.querySelector('app-message-owner-dialog')).not.toBeNull();
+
+    TestBed.inject(MatDialog).closeAll();
+    await settle();
+  });
+
+  it.each([401, 404, 429])(
+    'keeps the dialog path without reporting when the thread lookup fails with %i',
+    async (status) => {
+      threads.mockReturnValue(throwError(() => new HttpErrorResponse({ status })));
+
+      const root = await open();
+
+      expect(conversationLink(root)).toBeNull();
+      expect(contactButton(root)).not.toBeNull();
+      expect(sightingReports()).toEqual([]);
+    },
+  );
+
+  it('looks the thread up again for the next sighting the route moves to', async () => {
+    threads.mockImplementation((sightingId) =>
+      of(
+        sightingId === 'a'
+          ? { items: [{ ...started.thread, sightingId: 'a' }], totalCount: 1 }
+          : { items: [], totalCount: 0 },
+      ),
+    );
+    get.mockImplementation((id) => of({ ...sighting, id }));
+
+    const root = await open('a');
+
+    expect(conversationLink(root)?.getAttribute('href')).toBe('/messages/a/thread-9');
+
+    await harness.navigateByUrl('/sightings/b');
+    await settle();
+
+    expect(threads).toHaveBeenLastCalledWith('b', 1);
+    expect(conversationLink(root)).toBeNull();
+    expect(contactButton(root)).not.toBeNull();
   });
 
   it('sends no photo request and shows no photo when the sighting has none', async () => {

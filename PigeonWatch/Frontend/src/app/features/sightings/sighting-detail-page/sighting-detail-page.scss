@@ -81,6 +81,12 @@
   background-color: var(--pw-color-info-surface);
 }
 
+.sighting-detail__reporter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pw-space-1);
+}
+
 .sighting-detail__facts {
   display: grid;
   flex: 1 1 var(--pw-detail-fact-min-width);

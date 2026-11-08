@@ -12,6 +12,10 @@ public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options
 
     internal DbSet<SightingCommentEntity> SightingComments => Set<SightingCommentEntity>();
 
+    internal DbSet<SightingThreadEntity> SightingThreads => Set<SightingThreadEntity>();
+
+    internal DbSet<SightingMessageEntity> SightingMessages => Set<SightingMessageEntity>();
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder.Conventions.Add(_ => new UpperSnakeCaseNamingConvention());
@@ -55,6 +59,37 @@ public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.SightingId, e.CreateDate });
             entity.HasIndex(e => new { e.AuthorId, e.CreateDate });
+        });
+
+        modelBuilder.Entity<SightingThreadEntity>(entity =>
+        {
+            entity.ToTable("SightingThread");
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Sighting)
+                .WithMany()
+                .HasForeignKey(e => e.SightingId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Participant)
+                .WithMany()
+                .HasForeignKey(e => e.ParticipantId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => new { e.SightingId, e.ParticipantId }).IsUnique();
+            entity.HasIndex(e => new { e.ParticipantId, e.LastMessageAt });
+        });
+
+        modelBuilder.Entity<SightingMessageEntity>(entity =>
+        {
+            entity.ToTable("SightingMessage");
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Thread)
+                .WithMany(e => e.Messages)
+                .HasForeignKey(e => e.ThreadId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Sender)
+                .WithMany()
+                .HasForeignKey(e => e.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => new { e.ThreadId, e.CreateDate });
         });
     }
 }

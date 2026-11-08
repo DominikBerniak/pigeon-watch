@@ -38,6 +38,11 @@ public class ClientConfigurationViewModelCreator : IClientConfigurationViewModel
                 TextMaxLength = configuration.CommentTextMaxLength,
                 CooldownSeconds = configuration.CommentCooldownSeconds,
                 PageSize = configuration.CommentPageSize
+            },
+            MessageRules = new MessageRulesModel
+            {
+                TextMaxLength = configuration.MessageTextMaxLength,
+                PageSize = configuration.MessagePageSize
             }
         };
     }

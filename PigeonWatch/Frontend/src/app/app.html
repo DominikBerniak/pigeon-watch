@@ -7,20 +7,28 @@
         <app-brand [name]="'common.appName' | translate" />
       </a>
       <div class="pw-cluster app-header__user">
-        <button
-          mat-stroked-button
-          type="button"
-          class="app-header__user-button"
-          disableRipple
-          [class.app-header__user-button--open]="userMenuOpen()"
-          [matMenuTriggerFor]="userMenu"
-          (menuOpened)="userMenuOpen.set(true)"
-          (menuClosed)="userMenuOpen.set(false)"
+        <a
+          mat-icon-button
+          class="app-header__report"
+          routerLink="/sightings/new"
+          [attr.aria-label]="'nav.reportSighting' | translate"
+          [appTooltip]="'nav.reportSighting' | translate"
         >
-          {{ user.displayName }}
+          <app-icon name="report" size="lg" />
+        </a>
+        <app-messages-link [unreadCount]="unreadCount()" />
+        <button
+          mat-icon-button
+          type="button"
+          class="app-header__account"
+          [matMenuTriggerFor]="userMenu"
+          [attr.aria-label]="'header.accountMenu' | translate: user.displayName"
+          [appTooltip]="'header.profile' | translate"
+        >
+          <app-icon name="user" size="lg" />
         </button>
         <mat-menu #userMenu="matMenu" class="pw-user-menu-panel" xPosition="before">
-          <a mat-menu-item routerLink="/sightings/new">{{ 'nav.reportSighting' | translate }}</a>
+          <div class="app-header__menu-name">{{ user.displayName }}</div>
           <a mat-menu-item routerLink="/profile">{{ 'header.profile' | translate }}</a>
           <button mat-menu-item type="button" (click)="logout()">
             {{ 'header.logout' | translate }}
@@ -37,6 +45,7 @@
     [class.app-main--guest]="!currentUser()"
     [class.app-main--wide]="layout() === 'wide'"
     [class.app-main--roomy]="layout() === 'roomy'"
+    [class.app-main--fill]="fill()"
   >
     @if (!currentUser()) {
       <app-brand size="lg" [name]="'common.appName' | translate" />

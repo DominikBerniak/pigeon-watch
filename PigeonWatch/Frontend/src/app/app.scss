@@ -39,18 +39,24 @@
   text-decoration: none;
 }
 
-.app-header__user-button {
-  min-width: var(--pw-user-menu-width);
-  max-width: 100%;
-}
-
-.app-header__user-button.app-header__user-button--open {
-  border-bottom-color: transparent;
-  background-color: var(--pw-color-surface);
-}
-
 .app-header__user {
-  gap: var(--pw-space-4);
+  flex-wrap: nowrap;
+  margin-inline-start: auto;
+  gap: var(--pw-space-2);
+}
+
+.app-header__report,
+.app-header__account {
+  flex: none;
+}
+
+.app-header__menu-name {
+  margin-block-end: var(--pw-space-2);
+  padding-block: var(--pw-space-1) var(--pw-space-3);
+  padding-inline: var(--pw-space-3);
+  border-bottom: var(--pw-border-width) solid var(--pw-color-border-subtle);
+  font-weight: var(--pw-font-weight-semibold);
+  overflow-wrap: anywhere;
 }
 
 .app-body {
@@ -84,6 +90,13 @@
   @include bp.from(xl) {
     max-width: var(--pw-content-wide-max-width);
   }
+}
+
+.app-main--fill {
+  display: flex;
+  flex: 1 0 var(--pw-fill-min-height);
+  flex-direction: column;
+  min-height: 0;
 }
 
 .app-main--guest {

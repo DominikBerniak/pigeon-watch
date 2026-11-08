@@ -1,0 +1,19 @@
+:host {
+  --icon-size: var(--pw-inline-icon-size);
+
+  display: block;
+  flex: none;
+  margin-inline: auto;
+  width: var(--icon-size);
+  height: var(--icon-size);
+}
+
+:host(.icon--lg) {
+  --icon-size: var(--pw-header-icon-size);
+}
+
+.icon__glyph {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

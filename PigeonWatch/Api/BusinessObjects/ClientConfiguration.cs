@@ -18,4 +18,6 @@ public sealed record ClientConfiguration(
     IReadOnlyList<string> SightingPhotoAllowedContentTypes,
     int CommentTextMaxLength,
     int CommentCooldownSeconds,
-    int CommentPageSize);
+    int CommentPageSize,
+    int MessageTextMaxLength,
+    int MessagePageSize);

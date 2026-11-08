@@ -199,7 +199,9 @@ describe('SightingComments', () => {
     );
     expect(time?.getAttribute('datetime')).toBe(other.createdAt);
     expect(time?.textContent?.trim()).toBe('5 min ago');
-    expect(time?.getAttribute('title')).not.toBe('');
+    expect(
+      document.getElementById(time?.getAttribute('aria-describedby') ?? '')?.textContent,
+    ).toMatch(/\d{4}/);
     expect(item(root, 'other').querySelector('.sighting-comments__edited')?.textContent?.trim()).toBe(
       'edited',
     );

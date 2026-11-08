@@ -1,0 +1,167 @@
+<section class="message-thread" [attr.aria-labelledby]="titleId">
+  <header class="message-thread__header">
+    <div class="message-thread__heading">
+      <h2 #heading class="message-thread__title" tabindex="-1" [id]="titleId">
+        {{ title() }}
+      </h2>
+      <a
+        class="message-thread__sighting pw-text-small"
+        [routerLink]="['/sightings', sightingId()]"
+        >{{ sightingLinkText() }}</a
+      >
+    </div>
+    <button
+      mat-icon-button
+      type="button"
+      class="message-thread__expand"
+      [attr.aria-label]="expandLabel() | translate"
+      [appTooltip]="expandLabel() | translate"
+      (click)="expandToggle.emit()"
+    >
+      <svg
+        class="message-thread__expand-icon"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        focusable="false"
+      >
+        @if (expanded()) {
+          <path
+            class="message-thread__close-glyph"
+            fill="currentColor"
+            d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"
+          />
+        } @else {
+          <path
+            class="message-thread__maximize-glyph"
+            fill="currentColor"
+            d="M3 3h7v2H6.41l4.3 4.29-1.42 1.42L5 6.41V10H3V3Zm11 0h7v7h-2V6.41l-4.29 4.3-1.42-1.42L17.59 5H14V3ZM3 14h2v3.59l4.29-4.3 1.42 1.42L6.41 19H10v2H3v-7Zm16 0h2v7h-7v-2h3.59l-4.3-4.29 1.42-1.42L19 17.59V14Z"
+          />
+        }
+      </svg>
+    </button>
+  </header>
+  @switch (state().kind) {
+    @case ('loading') {
+      <app-loading-indicator [label]="'sighting.messages.thread.loading' | translate" />
+    }
+    @case ('error') {
+      <app-error-retry [retryLabel]="'sighting.messages.retry' | translate" (retry)="retry()">
+        {{ 'sighting.messages.errors.generic' | translate }}
+        <app-error-reference [traceId]="loadErrorTraceId()" />
+      </app-error-retry>
+    }
+    @case ('loaded') {
+      @if (items().length === 0) {
+        <p class="pw-text-muted">{{ 'sighting.messages.thread.empty' | translate }}</p>
+      } @else {
+        <div
+          #list
+          class="message-thread__list"
+          role="region"
+          tabindex="0"
+          [attr.aria-label]="'sighting.messages.thread.listLabel' | translate"
+        >
+          @if (hasOlder()) {
+            <div class="message-thread__older pw-cluster">
+              @switch (older().kind) {
+                @case ('loading') {
+                  <app-loading-indicator
+                    layout="inline"
+                    [label]="'sighting.messages.thread.loadingOlder' | translate"
+                  />
+                }
+                @case ('error') {
+                  <app-error-retry
+                    [retryLabel]="'sighting.messages.retry' | translate"
+                    (retry)="showOlder()"
+                  >
+                    {{ 'sighting.messages.thread.olderError' | translate }}
+                    <app-error-reference [traceId]="olderErrorTraceId()" />
+                  </app-error-retry>
+                }
+                @default {
+                  <button mat-stroked-button type="button" (click)="showOlder()">
+                    {{ 'sighting.messages.thread.showOlder' | translate }}
+                  </button>
+                }
+              }
+            </div>
+          }
+          <ul class="message-thread__items">
+            @for (entry of entries(); track entry.message.id) {
+              @let message = entry.message;
+              <li
+                class="message-thread__item"
+                [class.message-thread__item--mine]="message.isMine"
+                [attr.data-message-id]="message.id"
+              >
+                <div class="message-thread__bubble">
+                  <p class="message-thread__meta pw-text-small">
+                    <span class="message-thread__sender">{{ message.senderDisplayName }}</span>
+                    <time
+                      class="pw-text-muted"
+                      [attr.datetime]="message.createdAt"
+                      [appTooltip]="message.createdAt | date: 'medium'"
+                      >{{ entry.age.key | translate: entry.age.value }}</time
+                    >
+                  </p>
+                  <p class="message-thread__text">{{ message.text }}</p>
+                </div>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    }
+  }
+  <form class="message-thread__reply" [formRoot]="replyForm" (submit)="send()">
+    <div class="message-thread__compose">
+      <mat-form-field class="message-thread__field">
+        <mat-label>{{ replyLabel() }}</mat-label>
+        <textarea
+          matInput
+          cdkTextareaAutosize
+          cdkAutosizeMinRows="1"
+          cdkAutosizeMaxRows="6"
+          [formField]="replyForm.text"
+          [aria-describedby]="hintId"
+          (keydown.enter)="sendOnEnter($event)"
+        ></textarea>
+        <mat-error>
+          <app-field-errors [field]="replyForm.text" [messages]="textMessages()" />
+        </mat-error>
+      </mat-form-field>
+      <button
+        mat-icon-button
+        type="submit"
+        class="message-thread__send"
+        disabledInteractive
+        [disabled]="sending() || blank()"
+        [attr.aria-busy]="sending()"
+        [attr.aria-label]="'sighting.messages.thread.send' | translate"
+        [appTooltip]="sending() || blank() ? null : ('sighting.messages.thread.send' | translate)"
+      >
+        <svg
+          class="message-thread__send-icon"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            fill="currentColor"
+            d="M3.4 20.4 21.85 12.4a.5.5 0 0 0 0-.8L3.4 3.6a.5.5 0 0 0-.69.58L5 11l9 1-9 1-2.29 6.82a.5.5 0 0 0 .69.58Z"
+          />
+        </svg>
+      </button>
+    </div>
+    <p [id]="hintId" class="message-thread__hint pw-text-small pw-text-muted">
+      {{ 'sighting.messages.hint' | translate: rules().textMaxLength }}
+    </p>
+    @if (sendErrorText(); as text) {
+      <app-alert kind="error">
+        {{ text }}
+        <app-error-reference [traceId]="sendErrorTraceId()" />
+      </app-alert>
+    }
+  </form>
+</section>

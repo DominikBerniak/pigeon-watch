@@ -16,6 +16,7 @@ public static class BusinessLogicServiceCollectionExtensions
         services.AddScoped<ISightingCommentService, SightingCommentService>();
         services.AddScoped<ISightingService, SightingService>();
         services.AddScoped<ISightingStatusTransitionProvider, SightingStatusTransitionProvider>();
+        services.AddScoped<ISightingThreadService, SightingThreadService>();
         services.AddScoped<ISubmissionCooldownProvider, SubmissionCooldownProvider>();
         services.AddScoped<IUiResourceService, UiResourceService>();
 

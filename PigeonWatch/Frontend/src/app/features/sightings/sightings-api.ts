@@ -11,7 +11,11 @@ import {
   SightingFilters,
   SightingList,
   SightingListRequest,
+  SightingMessage,
+  SightingMessagePage,
   SightingPage,
+  SightingThreadPage,
+  SightingThreadStart,
 } from './sighting.types';
 
 @Injectable({ providedIn: 'root' })
@@ -78,6 +82,40 @@ export class SightingsApi {
   deleteComment(sightingId: string, commentId: string): Observable<SightingComment> {
     return this.http.delete<SightingComment>(commentUrl(sightingId, commentId));
   }
+
+  threads(sightingId: string, page: number): Observable<SightingThreadPage> {
+    return this.http.get<SightingThreadPage>(threadsUrl(sightingId), {
+      params: new HttpParams().set('page', page),
+    });
+  }
+
+  startThread(sightingId: string, text: string): Observable<SightingThreadStart> {
+    return this.http.post<SightingThreadStart>(threadsUrl(sightingId), { text });
+  }
+
+  threadMessages(
+    sightingId: string,
+    threadId: string,
+    page: number,
+  ): Observable<SightingMessagePage> {
+    return this.http.get<SightingMessagePage>(messagesUrl(sightingId, threadId), {
+      params: new HttpParams().set('page', page),
+    });
+  }
+
+  sendMessage(sightingId: string, threadId: string, text: string): Observable<SightingMessage> {
+    return this.http.post<SightingMessage>(messagesUrl(sightingId, threadId), { text });
+  }
+
+  markThreadRead(sightingId: string, threadId: string, seenAt: string): Observable<void> {
+    return this.http.put<void>(threadReadUrl(sightingId, threadId), { seenAt });
+  }
+
+  inbox(page: number): Observable<SightingThreadPage> {
+    return this.http.get<SightingThreadPage>(`${environment.apiUrl}/threads`, {
+      params: new HttpParams().set('page', page),
+    });
+  }
 }
 
 export const sightingPhotoFileName = 'photo.jpg';
@@ -88,6 +126,18 @@ function commentsUrl(sightingId: string): string {
 
 function commentUrl(sightingId: string, commentId: string): string {
   return `${commentsUrl(sightingId)}/${encodeURIComponent(commentId)}`;
+}
+
+function threadsUrl(sightingId: string): string {
+  return `${environment.apiUrl}/sightings/${encodeURIComponent(sightingId)}/threads`;
+}
+
+function threadReadUrl(sightingId: string, threadId: string): string {
+  return `${threadsUrl(sightingId)}/${encodeURIComponent(threadId)}/read`;
+}
+
+function messagesUrl(sightingId: string, threadId: string): string {
+  return `${threadsUrl(sightingId)}/${encodeURIComponent(threadId)}/messages`;
 }
 
 function sightingForm(sighting: NewSighting): FormData {

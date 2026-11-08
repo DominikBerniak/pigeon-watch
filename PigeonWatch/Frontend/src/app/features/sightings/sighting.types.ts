@@ -1,4 +1,4 @@
-import { CommentRules, SightingRules } from '../../core/configuration/configuration.service';
+import { CommentRules, MessageRules, SightingRules } from '../../core/configuration/configuration.service';
 import { MapMarkerKind } from '../../shared/map/map-marker';
 
 export const SightingStatus = {
@@ -35,6 +35,7 @@ export interface Sighting {
   reporterDisplayName: string;
   createdAt: string;
   hasPhoto: boolean;
+  isMine: boolean;
 }
 
 export interface SightingList {
@@ -59,6 +60,39 @@ export interface SightingComment {
 export interface SightingCommentPage {
   items: SightingComment[];
   totalCount: number;
+}
+
+export interface SightingThread {
+  id: string;
+  sightingId: string;
+  sightingName: string | null;
+  counterpartDisplayName: string;
+  isOwner: boolean;
+  lastMessageAt: string;
+  hasUnread: boolean;
+}
+
+export interface SightingThreadPage {
+  items: SightingThread[];
+  totalCount: number;
+}
+
+export interface SightingMessage {
+  id: string;
+  text: string;
+  senderDisplayName: string;
+  createdAt: string;
+  isMine: boolean;
+}
+
+export interface SightingMessagePage {
+  items: SightingMessage[];
+  totalCount: number;
+}
+
+export interface SightingThreadStart {
+  thread: SightingThread;
+  message: SightingMessage;
 }
 
 export interface SightingListRequest {
@@ -179,5 +213,10 @@ export const fallbackSightingRules: SightingRules = {
 export const fallbackCommentRules: CommentRules = {
   textMaxLength: 500,
   cooldownSeconds: 60,
+  pageSize: 20,
+};
+
+export const fallbackMessageRules: MessageRules = {
+  textMaxLength: 1000,
   pageSize: 20,
 };

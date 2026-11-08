@@ -9,4 +9,6 @@ public sealed class ClientConfigurationModel
     public required SightingRulesModel SightingRules { get; init; }
 
     public required CommentRulesModel CommentRules { get; init; }
+
+    public required MessageRulesModel MessageRules { get; init; }
 }

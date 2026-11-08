@@ -544,6 +544,7 @@ public class SightingServicePhotoTests
             sighting.Longitude,
             sighting.Status,
             sighting.Criticality,
+            sighting.ReporterId,
             "Pidgey",
             now.UtcDateTime,
             sighting.PhotoBlobName is not null);

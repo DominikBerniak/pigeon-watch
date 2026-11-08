@@ -1,0 +1,159 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+textarea {
+  max-height: var(--pw-textarea-max-height);
+  resize: none;
+}
+
+.message-thread {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--pw-space-3);
+  min-height: 0;
+}
+
+.message-thread__header {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--pw-space-2);
+}
+
+.message-thread__heading {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--pw-space-1);
+  min-width: 0;
+}
+
+.message-thread__expand {
+  flex: none;
+}
+
+.message-thread__expand-icon {
+  display: block;
+  width: var(--pw-header-icon-size);
+  height: var(--pw-header-icon-size);
+}
+
+.message-thread__title {
+  margin: 0;
+  font-size: var(--pw-font-size-lg);
+  font-weight: var(--pw-font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.message-thread__sighting {
+  align-self: flex-start;
+  overflow-wrap: anywhere;
+}
+
+.message-thread__reply {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--pw-space-3);
+  margin-block-start: auto;
+}
+
+.message-thread__compose {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--pw-space-2);
+}
+
+.message-thread__hint {
+  margin: 0;
+  padding-inline: var(--pw-space-4);
+}
+
+.message-thread__field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.message-thread__send {
+  flex: none;
+  margin-block-end: var(--pw-space-2);
+}
+
+.message-thread__send-icon {
+  display: block;
+  width: var(--pw-header-icon-size);
+  height: var(--pw-header-icon-size);
+}
+
+.message-thread__list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--pw-space-3);
+  border: var(--pw-border-width) solid var(--pw-color-border-subtle);
+  border-radius: var(--pw-radius-md);
+}
+
+.message-thread__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.message-thread__item {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.message-thread__item--mine {
+  justify-content: flex-end;
+}
+
+.message-thread__bubble {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-space-1);
+  max-width: var(--pw-message-bubble-max-width);
+  padding: var(--pw-space-2) var(--pw-space-3);
+  border-radius: var(--pw-radius-lg);
+  border-end-start-radius: var(--pw-radius-sm);
+  background-color: var(--pw-color-message-theirs);
+}
+
+.message-thread__item--mine .message-thread__bubble {
+  border-end-start-radius: var(--pw-radius-lg);
+  border-end-end-radius: var(--pw-radius-sm);
+  background-color: var(--pw-color-message-mine);
+}
+
+.message-thread__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--pw-space-2);
+  margin: 0;
+}
+
+.message-thread__sender {
+  font-weight: var(--pw-font-weight-semibold);
+}
+
+.message-thread__text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.message-thread__older {
+  justify-content: center;
+  padding-block-end: var(--pw-space-3);
+}

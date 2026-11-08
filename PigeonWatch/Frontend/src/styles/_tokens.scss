@@ -23,6 +23,11 @@
   --pw-color-criticality-monitor: #2b8a3e;
   --pw-color-criticality-needs-help-soon: #e8890c;
   --pw-color-criticality-urgent: #c92a2a;
+  --pw-color-message-mine: #dbe4ff;
+  --pw-color-message-theirs: #eef1f6;
+  --pw-color-unread-badge: #c92a2a;
+  --pw-color-on-unread-badge: #ffffff;
+  --pw-color-unread-dot: #3b5bdb;
 
   --pw-gradient-brand: linear-gradient(135deg, #3b5bdb 0%, #8b5cf6 55%, #14b8a6 100%);
   --pw-gradient-backdrop:
@@ -52,6 +57,8 @@
   --pw-font-weight-bold: 700;
   --pw-line-height-tight: 1.25;
   --pw-line-height-normal: 1.5;
+  --pw-tooltip-font-size: 0.75rem;
+  --pw-tooltip-line-height: 1rem;
   --pw-letter-spacing-tight: -0.02em;
 
   --pw-radius-sm: 4px;
@@ -78,16 +85,27 @@
   --pw-form-max-width-xl: 34rem;
   --pw-page-card-wide-max-width: 90rem;
   --pw-control-height: 3rem;
-  --pw-user-menu-width: 12rem;
-  --pw-user-button-width: var(--pw-user-menu-width);
   --pw-textarea-max-height: 16rem;
   --pw-photo-preview-max-height: 16rem;
   --pw-photo-thumb-size: 12.5rem;
   --pw-photo-dialog-max-height: 60vh;
   --pw-photo-dialog-max-width: min(92vw, 64rem);
+  --pw-dialog-fullscreen-inset: var(--pw-space-3);
+  --pw-dialog-fullscreen-width: calc(100vw - 2 * var(--pw-dialog-fullscreen-inset));
+  --pw-dialog-fullscreen-height: calc(100dvh - 2 * var(--pw-dialog-fullscreen-inset));
   --pw-detail-fact-min-width: 10rem;
   --pw-comments-list-max-height: 28rem;
+  --pw-messages-sidebar-width: 18rem;
+  --pw-fill-min-height: 24rem;
+  --pw-message-bubble-max-width: 85%;
   --pw-row-icon-size: 1rem;
+  --pw-inline-icon-size: 1.25rem;
+  --pw-header-icon-size: 1.5rem;
+  --pw-unread-badge-size: 1.125rem;
+  --pw-unread-badge-offset: 0.125rem;
+  --pw-unread-badge-padding: 0.25rem;
+  --pw-unread-badge-font-size: 0.6875rem;
+  --pw-unread-dot-size: 0.5rem;
   --pw-row-thumb-size: 3rem;
   --pw-brand-mark-size-md: 2rem;
   --pw-brand-mark-size-lg: 3rem;
@@ -109,6 +127,12 @@
 
   --pw-z-header: 100;
   --pw-z-overlay: 1000;
+}
+
+@media (min-width: 480px) {
+  :root {
+    --pw-dialog-fullscreen-inset: var(--pw-space-5);
+  }
 }
 
 @media (min-width: 1280px) {

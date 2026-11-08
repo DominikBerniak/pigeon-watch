@@ -38,6 +38,8 @@ namespace PigeonWatch.WebApi.Host
                 });
             });
 
+            int authPermitLimit = builder.Configuration.GetValue("RateLimiting:AuthPermitLimit", 10);
+
             builder.Services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -68,7 +70,7 @@ namespace PigeonWatch.WebApi.Host
                         httpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
                         _ => new FixedWindowRateLimiterOptions
                         {
-                            PermitLimit = 10,
+                            PermitLimit = authPermitLimit,
                             Window = TimeSpan.FromMinutes(1),
                             QueueLimit = 0
                         });

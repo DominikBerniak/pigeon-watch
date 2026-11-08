@@ -79,7 +79,7 @@ html {
   @include mat.menu-overrides(
     (
       container-color: var(--pw-color-surface),
-      container-shape: 0 0 var(--pw-radius-md) var(--pw-radius-md),
+      container-shape: var(--pw-radius-md),
       container-elevation-shadow: var(--pw-shadow-md),
       item-hover-state-layer-color: var(--pw-color-info-surface),
       item-focus-state-layer-color: var(--pw-color-info-surface),
@@ -92,6 +92,16 @@ html {
       selected-state-layer-color: var(--pw-color-info-surface),
       hover-state-layer-color: var(--pw-color-info-surface),
       focus-state-layer-color: var(--pw-color-info-surface),
+    )
+  );
+
+  @include mat.tooltip-overrides(
+    (
+      container-color: var(--pw-color-surface),
+      supporting-text-color: var(--pw-color-text),
+      supporting-text-size: var(--pw-tooltip-font-size),
+      supporting-text-line-height: var(--pw-tooltip-line-height),
+      container-shape: var(--pw-radius-md),
     )
   );
 
@@ -120,14 +130,6 @@ app-submit-button[data-tone='success'] {
     (
       filled-container-color: var(--pw-color-success),
       filled-label-text-color: var(--pw-color-on-primary),
-    )
-  );
-}
-
-button.app-header__user-button {
-  @include mat.button-overrides(
-    (
-      outlined-pressed-state-layer-opacity: 0,
     )
   );
 }
@@ -164,7 +166,11 @@ app-sighting-filters {
   );
 }
 
-.sighting-list__page-actions {
+.sighting-detail__contact,
+.app-header__report,
+.app-header__messages,
+.app-header__account,
+.message-thread__expand {
   @include mat.icon-button-overrides(
     (
       focus-state-layer-opacity: 0,
@@ -172,10 +178,29 @@ app-sighting-filters {
   );
 }
 
-button.app-header__user-button.app-header__user-button--open {
-  @include mat.button-overrides(
+.message-thread__send {
+  @include mat.icon-button-overrides(
     (
-      outlined-container-shape: var(--pw-radius-md) var(--pw-radius-md) 0 0,
+      icon-color: var(--pw-color-primary),
+      focus-state-layer-opacity: 0,
+    )
+  );
+}
+
+.message-thread__send[aria-disabled='true'] {
+  @include mat.icon-button-overrides(
+    (
+      hover-state-layer-opacity: 0,
+      pressed-state-layer-opacity: 0,
+      ripple-color: transparent,
+    )
+  );
+}
+
+.sighting-list__page-actions {
+  @include mat.icon-button-overrides(
+    (
+      focus-state-layer-opacity: 0,
     )
   );
 }

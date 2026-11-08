@@ -48,6 +48,13 @@ public sealed class EndpointFixtureRegistry
         new(["POST sightings/{sightingId:guid}/comments"], BuildCreateComment),
         new(["PUT sightings/{sightingId:guid}/comments/{commentId:guid}"], BuildUpdateComment),
         new(["DELETE sightings/{sightingId:guid}/comments/{commentId:guid}"], BuildDeleteComment),
+        new(["GET sightings/{sightingId:guid}/threads"], BuildListSightingThreads),
+        new(["POST sightings/{sightingId:guid}/threads"], BuildStartThread),
+        new(["GET sightings/{sightingId:guid}/threads/{threadId:guid}/messages"], BuildListMessages),
+        new(["POST sightings/{sightingId:guid}/threads/{threadId:guid}/messages"], BuildReply),
+        new(["PUT sightings/{sightingId:guid}/threads/{threadId:guid}/read"], BuildMarkThreadRead),
+        new(["GET threads"], BuildListThreads),
+        new(["GET threads/unread-count"], BuildUnreadMessageCount),
         new(["POST auth/login"], BuildLogin),
         new(["POST auth/refresh"], BuildRefresh),
         new([.. NotFoundStubKeys, .. ManageStubKeys], BuildStubs)
@@ -329,6 +336,113 @@ public sealed class EndpointFixtureRegistry
             Make(key, "unknown comment", new HttpRequestMessage(HttpMethod.Delete, $"/sightings/{context.SightingId}/comments/{Guid.NewGuid()}")),
             Make(key, "seeded comment", new HttpRequestMessage(HttpMethod.Delete, $"/sightings/{context.SightingId}/comments/{context.CommentId}")),
             Make(key, "seeded comment again", new HttpRequestMessage(HttpMethod.Delete, $"/sightings/{context.SightingId}/comments/{context.CommentId}"))
+        ];
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildListSightingThreads(FixtureContext context)
+    {
+        const string key = "GET sightings/{sightingId:guid}/threads";
+
+        return
+        [
+            Make(key, "first page", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}/threads")),
+            Make(key, "page 2", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}/threads?page=2")),
+            Make(key, "page 0", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}/threads?page=0")),
+            Make(key, "page int.MaxValue", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}/threads?page={int.MaxValue}")),
+            Make(key, "non numeric page", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}/threads?page=abc")),
+            Make(key, "unknown sighting", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{Guid.NewGuid()}/threads"))
+        ];
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildStartThread(FixtureContext context)
+    {
+        const string key = "POST sightings/{sightingId:guid}/threads";
+        string uri = $"/sightings/{context.SightingId}/threads";
+        List<FixtureRequest> requests =
+        [
+            Make(key, "valid message", JsonOf(HttpMethod.Post, uri, new { text = "Sweep message" })),
+            Make(key, "second valid message", JsonOf(HttpMethod.Post, uri, new { text = "Another sweep message" })),
+            Make(key, "whitespace only text", JsonOf(HttpMethod.Post, uri, new { text = "   " })),
+            Make(key, "text over the limit", JsonOf(HttpMethod.Post, uri, new { text = new string('x', 1001) })),
+            Make(key, "unknown sighting", JsonOf(HttpMethod.Post, $"/sightings/{Guid.NewGuid()}/threads", new { text = "Sweep message" }))
+        ];
+
+        AddMalformed(requests, key, HttpMethod.Post, uri);
+
+        return requests;
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildListMessages(FixtureContext context)
+    {
+        const string key = "GET sightings/{sightingId:guid}/threads/{threadId:guid}/messages";
+        string uri = $"/sightings/{context.SightingId}/threads/{context.ThreadId}/messages";
+
+        return
+        [
+            Make(key, "first page", new HttpRequestMessage(HttpMethod.Get, uri)),
+            Make(key, "page 2", new HttpRequestMessage(HttpMethod.Get, $"{uri}?page=2")),
+            Make(key, "page 0", new HttpRequestMessage(HttpMethod.Get, $"{uri}?page=0")),
+            Make(key, "page int.MaxValue", new HttpRequestMessage(HttpMethod.Get, $"{uri}?page={int.MaxValue}")),
+            Make(key, "non numeric page", new HttpRequestMessage(HttpMethod.Get, $"{uri}?page=abc")),
+            Make(key, "unknown thread", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{context.SightingId}/threads/{Guid.NewGuid()}/messages")),
+            Make(key, "seeded thread under an unknown sighting", new HttpRequestMessage(HttpMethod.Get, $"/sightings/{Guid.NewGuid()}/threads/{context.ThreadId}/messages"))
+        ];
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildReply(FixtureContext context)
+    {
+        const string key = "POST sightings/{sightingId:guid}/threads/{threadId:guid}/messages";
+        string uri = $"/sightings/{context.SightingId}/threads/{context.ThreadId}/messages";
+        List<FixtureRequest> requests =
+        [
+            Make(key, "valid reply", JsonOf(HttpMethod.Post, uri, new { text = "Sweep reply" })),
+            Make(key, "second valid reply", JsonOf(HttpMethod.Post, uri, new { text = "Another sweep reply" })),
+            Make(key, "whitespace only text", JsonOf(HttpMethod.Post, uri, new { text = "   " })),
+            Make(key, "text over the limit", JsonOf(HttpMethod.Post, uri, new { text = new string('x', 1001) })),
+            Make(key, "unknown thread", JsonOf(HttpMethod.Post, $"/sightings/{context.SightingId}/threads/{Guid.NewGuid()}/messages", new { text = "Sweep reply" })),
+            Make(key, "seeded thread under an unknown sighting", JsonOf(HttpMethod.Post, $"/sightings/{Guid.NewGuid()}/threads/{context.ThreadId}/messages", new { text = "Sweep reply" }))
+        ];
+
+        AddMalformed(requests, key, HttpMethod.Post, uri);
+
+        return requests;
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildMarkThreadRead(FixtureContext context)
+    {
+        const string key = "PUT sightings/{sightingId:guid}/threads/{threadId:guid}/read";
+        string uri = $"/sightings/{context.SightingId}/threads/{context.ThreadId}/read";
+        object body = new { seenAt = DateTimeOffset.UtcNow };
+        List<FixtureRequest> requests =
+        [
+            Make(key, "seeded thread", JsonOf(HttpMethod.Put, uri, body)),
+            Make(key, "seeded thread again", JsonOf(HttpMethod.Put, uri, body)),
+            Make(key, "missing seen time", JsonOf(HttpMethod.Put, uri, new { })),
+            Make(key, "unknown thread", JsonOf(HttpMethod.Put, $"/sightings/{context.SightingId}/threads/{Guid.NewGuid()}/read", body)),
+            Make(key, "seeded thread under an unknown sighting", JsonOf(HttpMethod.Put, $"/sightings/{Guid.NewGuid()}/threads/{context.ThreadId}/read", body))
+        ];
+
+        AddMalformed(requests, key, HttpMethod.Put, uri);
+
+        return requests;
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildUnreadMessageCount(FixtureContext context)
+    {
+        return [Make("GET threads/unread-count", "unread message count", new HttpRequestMessage(HttpMethod.Get, "/threads/unread-count"))];
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildListThreads(FixtureContext context)
+    {
+        const string key = "GET threads";
+
+        return
+        [
+            Make(key, "first page", new HttpRequestMessage(HttpMethod.Get, "/threads")),
+            Make(key, "page 2", new HttpRequestMessage(HttpMethod.Get, "/threads?page=2")),
+            Make(key, "page 0", new HttpRequestMessage(HttpMethod.Get, "/threads?page=0")),
+            Make(key, "page int.MaxValue", new HttpRequestMessage(HttpMethod.Get, $"/threads?page={int.MaxValue}")),
+            Make(key, "non numeric page", new HttpRequestMessage(HttpMethod.Get, "/threads?page=abc"))
         ];
     }
 

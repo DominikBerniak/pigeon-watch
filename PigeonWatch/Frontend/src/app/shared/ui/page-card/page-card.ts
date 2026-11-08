@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, input, viewChild } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 
-export type PageCardWidth = 'form' | 'wide';
+export type PageCardWidth = 'form' | 'wide' | 'full';
 
 @Component({
   selector: 'app-page-card',
@@ -11,12 +11,15 @@ export type PageCardWidth = 'form' | 'wide';
   styleUrl: './page-card.scss',
   host: {
     '[class.page-card-host--wide]': "width() === 'wide'",
+    '[class.page-card-host--full]': "width() === 'full'",
+    '[class.page-card-host--fill]': 'fillHeight()',
   },
 })
 export class PageCard {
   readonly title = input.required<string>();
   readonly subtitle = input<string>();
   readonly width = input<PageCardWidth>('form');
+  readonly fillHeight = input(false);
 
   private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
 

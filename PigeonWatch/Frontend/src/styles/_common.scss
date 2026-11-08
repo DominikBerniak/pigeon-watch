@@ -6,9 +6,36 @@
 }
 
 .pw-user-menu-panel.pw-user-menu-panel {
-  min-width: max(var(--pw-user-menu-width), var(--pw-user-button-width));
-  max-width: none;
-  border: var(--pw-border-width) solid var(--pw-color-border);
+  margin-top: calc(var(--pw-space-3) + var(--pw-border-width));
+}
+
+.pw-tooltip {
+  position: fixed;
+  inset: auto;
+  z-index: var(--pw-z-overlay);
+  overflow: visible;
+  margin: var(--pw-space-1) 0 0;
+  border: 0;
+  padding: var(--pw-space-1) var(--pw-space-2);
+  border-radius: var(--pw-radius-md);
+  background-color: var(--pw-color-surface);
+  color: var(--pw-color-text);
+  box-shadow: var(--pw-shadow-md);
+  font-size: var(--pw-tooltip-font-size);
+  line-height: var(--pw-tooltip-line-height);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: pw-tooltip-in var(--pw-duration-fast) var(--pw-easing-standard);
+}
+
+.pw-tooltip--above {
+  margin-top: calc(var(--pw-space-1) * -1);
+}
+
+@keyframes pw-tooltip-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .pw-select-panel.pw-select-panel {

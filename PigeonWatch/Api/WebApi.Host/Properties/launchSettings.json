@@ -3,7 +3,8 @@
     "http": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "RateLimiting__AuthPermitLimit": "100"
       },
       "dotnetRunMessages": true,
       "launchBrowser": true,
@@ -13,7 +14,8 @@
     "https": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "RateLimiting__AuthPermitLimit": "100"
       },
       "dotnetRunMessages": true,
       "launchBrowser": true,

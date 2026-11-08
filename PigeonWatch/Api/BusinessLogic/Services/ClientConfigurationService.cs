@@ -24,6 +24,8 @@ public class ClientConfigurationService : IClientConfigurationService
             SightingRules.PhotoAllowedContentTypes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
             SightingCommentRules.TextMaxLength,
             SightingRules.CooldownSeconds,
-            SightingCommentRules.PageSize));
+            SightingCommentRules.PageSize,
+            SightingMessageRules.TextMaxLength,
+            SightingMessageRules.PageSize));
     }
 }

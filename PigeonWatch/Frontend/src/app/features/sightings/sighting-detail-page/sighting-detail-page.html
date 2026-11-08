@@ -77,7 +77,33 @@
               </app-criticality-badge>
             </div>
             <div app-detail-item [label]="'sighting.detail.reporter' | translate">
-              {{ sighting.reporterDisplayName }}
+              <span class="sighting-detail__reporter">
+                {{ sighting.reporterDisplayName }}
+                @if (!sighting.isMine) {
+                  @if (ownThread(); as thread) {
+                    <a
+                      mat-icon-button
+                      class="sighting-detail__contact"
+                      [routerLink]="['/messages', sighting.id, thread.id]"
+                      [attr.aria-label]="'sighting.messages.openConversation' | translate: sighting.reporterDisplayName"
+                      [appTooltip]="'sighting.messages.openConversation' | translate: sighting.reporterDisplayName"
+                    >
+                      <app-icon name="mail" />
+                    </a>
+                  } @else {
+                    <button
+                      mat-icon-button
+                      type="button"
+                      class="sighting-detail__contact"
+                      [attr.aria-label]="'sighting.messages.contactButton' | translate: sighting.reporterDisplayName"
+                      [appTooltip]="'sighting.messages.contactButton' | translate: sighting.reporterDisplayName"
+                      (click)="openMessageDialog(sighting)"
+                    >
+                      <app-icon name="mail" />
+                    </button>
+                  }
+                }
+              </span>
             </div>
             <div app-detail-item [label]="'sighting.detail.reportedAt' | translate">
               <time [attr.datetime]="sighting.createdAt">{{

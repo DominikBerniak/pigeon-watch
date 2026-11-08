@@ -12,6 +12,8 @@ import {
   waitForText,
 } from './cell-driver';
 import {
+  HeaderModes,
+  MessagesModes,
   NearbyMapModes,
   ProfileModes,
   SightingDetailModes,
@@ -22,6 +24,7 @@ import {
 export interface CellScenario {
   readonly action: string;
   readonly steps: readonly CellStep[];
+  readonly trigger?: CellStep;
 }
 
 interface CellBase {
@@ -36,6 +39,8 @@ export type ProfileCell = CellBase & ProfileModes;
 export type NearbyMapCell = CellBase & NearbyMapModes;
 export type SightingDetailCell = CellBase & SightingDetailModes;
 export type SightingListCell = CellBase & SightingListModes;
+export type MessagesCell = CellBase & MessagesModes;
+export type HeaderCell = CellBase & HeaderModes;
 export type CellDefinition = CellBase & StubModes;
 
 export interface CellGroup {
@@ -383,6 +388,13 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
 const detailMap = '#sighting-detail-map app-map-view';
 const commentForm = 'form.sighting-comments__add';
 const commentField = `${commentForm} textarea`;
+const contactButton = 'button.sighting-detail__contact';
+const messageField = 'textarea';
+const openMessageDialog = (...steps: CellStep[]): CellScenario => ({
+  action: 'Open dialog',
+  trigger: click(contactButton),
+  steps: [waitFor(messageField), ...steps],
+});
 
 const detailCells: readonly SightingDetailCell[] = [
   {
@@ -561,6 +573,69 @@ const detailCells: readonly SightingDetailCell[] = [
       steps: [press('sighting.comments.edit'), waitFor('.sighting-comments__edit textarea')],
     },
   },
+  {
+    id: 'detail-message-own',
+    label: 'Own sighting (no "Message {owner}" button)',
+    group: 'sightingDetail',
+    detail: 'loadedOwn',
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'detail-message-existing',
+    label: 'Existing conversation (the email icon links to it instead of opening the dialog)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    ownThread: 'existing',
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'detail-message-dialog-open',
+    label: 'Message dialog, open (empty field)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    leaflet: 'tileless',
+    steps: [],
+    dialog: openMessageDialog(),
+  },
+  {
+    id: 'detail-message-dialog-validation',
+    label: 'Message dialog, validation error (whitespace only)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    leaflet: 'tileless',
+    steps: [],
+    dialog: openMessageDialog(fill(messageField, ['   ']), submitForm(), waitFor(fieldError)),
+  },
+  {
+    id: 'detail-message-dialog-sending',
+    label: 'Message dialog, sending (request never completes)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    startThread: 'pending',
+    leaflet: 'tileless',
+    steps: [],
+    dialog: openMessageDialog(
+      fill(messageField, ['Is it still under the bench?']),
+      submitForm(),
+      waitFor(busyButton),
+    ),
+  },
+  {
+    id: 'detail-message-dialog-failure',
+    label: 'Message dialog, send failed (500 with a reference)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    startThread: 'failure',
+    leaflet: 'tileless',
+    steps: [],
+    dialog: openMessageDialog(
+      fill(messageField, ['Is it still under the bench?']),
+      submitForm(),
+      waitFor('app-alert'),
+    ),
+  },
 ];
 
 const listRow = 'li[app-sighting-row]';
@@ -654,9 +729,126 @@ const listCells: readonly SightingListCell[] = [
   },
 ];
 
+const messagesCells: readonly MessagesCell[] = [
+  {
+    id: 'messages-loading',
+    label: 'Loading (threads request never completes)',
+    group: 'messages',
+    inbox: 'pending',
+    steps: [],
+  },
+  {
+    id: 'messages-empty',
+    label: 'Empty (no conversations yet)',
+    group: 'messages',
+    inbox: 'empty',
+    steps: [],
+  },
+  {
+    id: 'messages-error',
+    label: 'Threads failed to load (500, Try again)',
+    group: 'messages',
+    inbox: 'failure',
+    steps: [],
+  },
+  {
+    id: 'messages-list',
+    label:
+      'Threads, none chosen (three unread rows, prompt in the pane, "Show more" in the sidebar)',
+    group: 'messages',
+    inbox: 'items',
+    steps: [],
+  },
+  {
+    id: 'messages-thread',
+    label:
+      'Thread chosen (bubbles, own on the right, "Show older messages" at the top, its row marked read)',
+    group: 'messages',
+    inbox: 'items',
+    selected: true,
+    steps: [],
+  },
+  {
+    id: 'messages-thread-loading',
+    label: 'Thread chosen, messages loading (request never completes)',
+    group: 'messages',
+    inbox: 'items',
+    selected: true,
+    thread: 'pending',
+    steps: [],
+  },
+  {
+    id: 'messages-thread-error',
+    label: 'Thread chosen, messages failed to load (500, Try again)',
+    group: 'messages',
+    inbox: 'items',
+    selected: true,
+    thread: 'failure',
+    steps: [],
+  },
+  {
+    id: 'messages-thread-fullscreen',
+    label: 'Thread in the full screen popup (opened from the header, focus moves to the popup)',
+    group: 'messages',
+    inbox: 'items',
+    selected: true,
+    steps: [],
+    dialog: {
+      action: 'Open full screen',
+      trigger: click('button.message-thread__expand'),
+      steps: [waitFor('li.message-thread__item')],
+    },
+  },
+];
+
+const messagesPhoneCells: readonly MessagesCell[] = [
+  {
+    id: 'messages-phone-list',
+    label: 'Narrow, none chosen (threads only)',
+    group: 'messages',
+    inbox: 'items',
+    steps: [],
+  },
+  {
+    id: 'messages-phone-thread',
+    label: 'Narrow, thread chosen (conversation with "All conversations", threads hidden)',
+    group: 'messages',
+    inbox: 'items',
+    selected: true,
+    steps: [],
+  },
+];
+
+const headerCells: readonly HeaderCell[] = [
+  {
+    id: 'header-messages-read',
+    label: 'Messages button, nothing unread (no badge)',
+    group: 'header',
+    unreadCount: 0,
+    steps: [],
+  },
+  {
+    id: 'header-messages-unread',
+    label: 'Messages button with 3 unread messages',
+    group: 'header',
+    unreadCount: 3,
+    steps: [],
+  },
+  {
+    id: 'header-messages-unread-many',
+    label: 'Messages button with 128 unread messages',
+    group: 'header',
+    unreadCount: 128,
+    steps: [],
+  },
+];
+
 export const cellGroups: readonly CellGroup[] = [
   { title: 'Profile', wide: false, cells: [...profileCells, ...dialogCells] },
   { title: 'Nearby map', wide: true, cells: nearbyMapCells },
   { title: 'Sighting detail', wide: true, cells: detailCells },
   { title: 'Sighting list', wide: false, cells: listCells },
+  { title: 'Messages', wide: true, cells: messagesCells },
+  { title: 'Messages, narrow', wide: false, cells: messagesPhoneCells },
+  { title: 'Header', wide: false, cells: headerCells },
 ];

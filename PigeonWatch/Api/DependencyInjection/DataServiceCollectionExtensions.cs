@@ -61,6 +61,8 @@ public static class DataServiceCollectionExtensions
         services.AddScoped<ISightingRepository, SightingRepository>();
         services.AddScoped<ISightingCommentMapper, SightingCommentMapper>();
         services.AddScoped<ISightingCommentRepository, SightingCommentRepository>();
+        services.AddScoped<ISightingThreadMapper, SightingThreadMapper>();
+        services.AddScoped<ISightingThreadRepository, SightingThreadRepository>();
 
         return services;
     }

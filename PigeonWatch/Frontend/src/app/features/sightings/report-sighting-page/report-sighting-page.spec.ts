@@ -33,6 +33,7 @@ const created: Sighting = {
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T12:00:00Z',
   hasPhoto: false,
+  isMine: false,
 };
 
 function spyOnNavigate() {

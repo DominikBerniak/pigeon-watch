@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import type * as Leaflet from 'leaflet';
 import { NEVER, Observable, map, of, throwError, timer } from 'rxjs';
 import {
@@ -19,8 +20,13 @@ import {
   SightingFilters,
   SightingList,
   SightingListRequest,
+  SightingMessage,
+  SightingMessagePage,
   SightingPage,
   SightingStatus,
+  SightingThread,
+  SightingThreadPage,
+  SightingThreadStart,
 } from '../../features/sightings/sighting.types';
 
 export type SaveMode = 'success' | 'duplicate' | 'failure' | 'pending';
@@ -38,6 +44,7 @@ export type DetailMode =
   | 'loadedUnnamed'
   | 'loadedLongName'
   | 'loadedWithPhoto'
+  | 'loadedOwn'
   | 'notFound'
   | 'failure'
   | 'pending'
@@ -45,6 +52,10 @@ export type DetailMode =
 export type PhotoMode = 'image' | 'pending' | 'failure';
 export type CommentsMode = 'empty' | 'items' | 'failure' | 'pending';
 export type AddCommentMode = 'success' | 'cooldown';
+export type StartThreadMode = 'success' | 'failure' | 'pending';
+export type OwnThreadMode = 'none' | 'existing';
+export type InboxMode = 'items' | 'empty' | 'failure' | 'pending';
+export type ThreadMessagesMode = 'items' | 'failure' | 'pending';
 
 export interface ProfileModes {
   readonly group: 'profile';
@@ -68,6 +79,8 @@ export interface SightingDetailModes {
   readonly photo?: PhotoMode;
   readonly comments?: CommentsMode;
   readonly addComment?: AddCommentMode;
+  readonly startThread?: StartThreadMode;
+  readonly ownThread?: OwnThreadMode;
 }
 
 export interface SightingListModes {
@@ -77,7 +90,25 @@ export interface SightingListModes {
   readonly thumbnail?: PhotoMode;
 }
 
-export type StubModes = ProfileModes | NearbyMapModes | SightingDetailModes | SightingListModes;
+export interface MessagesModes {
+  readonly group: 'messages';
+  readonly inbox: InboxMode;
+  readonly selected?: boolean;
+  readonly thread?: ThreadMessagesMode;
+}
+
+export interface HeaderModes {
+  readonly group: 'header';
+  readonly unreadCount: number;
+}
+
+export type StubModes =
+  | ProfileModes
+  | NearbyMapModes
+  | SightingDetailModes
+  | SightingListModes
+  | MessagesModes
+  | HeaderModes;
 
 type LeafletModule = typeof Leaflet;
 
@@ -115,6 +146,7 @@ function sinkSighting(
     reporterDisplayName: sinkUser.displayName,
     createdAt: new Date(sinkLoadedAt - ageMinutes * minuteMilliseconds).toISOString(),
     hasPhoto,
+    isMine: false,
   };
 }
 
@@ -265,6 +297,61 @@ export const sinkComments: readonly SightingComment[] = Array.from(
 
 export const sinkCommentCooldownSeconds = 42;
 
+export const sinkOwnSighting: Sighting = {
+  ...sinkSightings[0],
+  id: 'sink-own',
+  isMine: true,
+};
+
+export const sinkStartThreadTraceId = '00-sink-thread-start-01';
+
+export const sinkContactThread: SightingThread = {
+  id: 'sink-thread-contact',
+  sightingId: sinkSightings[0].id,
+  sightingName: sinkSightings[0].name,
+  counterpartDisplayName: sinkSightings[0].reporterDisplayName,
+  isOwner: false,
+  lastMessageAt: new Date(sinkLoadedAt).toISOString(),
+  hasUnread: false,
+};
+
+export const sinkInboxPageSize = 20;
+export const sinkInboxTotal = 23;
+
+export const sinkThreads: readonly SightingThread[] = Array.from(
+  { length: sinkInboxTotal },
+  (_, index) => ({
+    id: `sink-thread-${index + 1}`,
+    sightingId: index === 0 ? sinkSightings[0].id : `sink-thread-sighting-${index + 1}`,
+    sightingName: index === 1 ? null : index === 0 ? sinkSightings[0].name : `Pigeon ${index + 1}`,
+    counterpartDisplayName: index % 3 === 0 ? 'Ola N' : `Helper ${index + 1}`,
+    isOwner: index % 2 === 0,
+    lastMessageAt: new Date(sinkLoadedAt - (index * 95 + 3) * minuteMilliseconds).toISOString(),
+    hasUnread: index < 3,
+  }),
+);
+
+export const sinkMessagePageSize = 20;
+export const sinkMessageTotal = 25;
+
+export const sinkMessages: readonly SightingMessage[] = Array.from(
+  { length: sinkMessageTotal },
+  (_, index) => {
+    const isMine = index % 3 === 1;
+
+    return {
+      id: `sink-message-${index + 1}`,
+      text:
+        index === 0
+          ? 'Thanks, I can be there in twenty minutes.\nIs it still under the bench?'
+          : `Update ${sinkMessageTotal - index} about the pigeon.`,
+      senderDisplayName: isMine ? sinkUser.displayName : sinkThreads[0].counterpartDisplayName,
+      createdAt: new Date(sinkLoadedAt - (index * 17 + 1) * minuteMilliseconds).toISOString(),
+      isMine,
+    };
+  },
+);
+
 const busyHoldMilliseconds = 30000;
 
 function badRequest(errors: Record<string, string[]>): HttpErrorResponse {
@@ -365,6 +452,22 @@ export class CellStubs {
           isDeleted: true,
         }),
       ),
+    threads: (): Observable<SightingThreadPage> => this.ownThreadResult(),
+    startThread: (_sightingId: string, text: string): Observable<SightingThreadStart> =>
+      this.startThreadResult(text),
+    inbox: (page: number): Observable<SightingThreadPage> => this.inboxResult(page),
+    threadMessages: (
+      _sightingId: string,
+      _threadId: string,
+      page: number,
+    ): Observable<SightingMessagePage> => this.threadMessagesResult(page),
+    sendMessage: (_sightingId: string, _threadId: string, text: string): Observable<SightingMessage> =>
+      of(this.newMessage(text)),
+    markThreadRead: (): Observable<void> => of(undefined),
+  };
+  readonly unreadCount = {
+    count: signal(0).asReadonly(),
+    refresh: (): void => undefined,
   };
   readonly geolocation = {
     currentPosition: (): Observable<GeolocationOutcome> => this.positionResult(),
@@ -384,6 +487,19 @@ export class CellStubs {
 
   chooseNextLocation(mode: NextLocationMode): void {
     this.chosenNextLocation.set(mode);
+  }
+
+  route(parent: ActivatedRoute): ActivatedRoute {
+    const modes = this.modes();
+
+    if (modes.group !== 'messages' || !modes.selected) return parent;
+
+    const params = convertToParamMap({
+      sightingId: sinkThreads[0].sightingId,
+      threadId: sinkThreads[0].id,
+    });
+
+    return Object.create(parent, { paramMap: { value: of(params) } }) as ActivatedRoute;
   }
 
   leafletLoader(load: LeafletLoader): LeafletLoader {
@@ -492,6 +608,8 @@ export class CellStubs {
         return of(sinkLongNameSighting);
       case 'loadedWithPhoto':
         return of(sinkPhotoSighting);
+      case 'loadedOwn':
+        return of(sinkOwnSighting);
       case 'notFound':
         return throwError(() => new HttpErrorResponse({ status: 404 }));
       case 'failure':
@@ -567,6 +685,82 @@ export class CellStubs {
         isMine: true,
       }),
     );
+  }
+
+  private startThreadResult(text: string): Observable<SightingThreadStart> {
+    const modes = this.modes();
+
+    switch (modes.group === 'sightingDetail' ? (modes.startThread ?? 'success') : 'success') {
+      case 'failure':
+        return throwError(
+          () =>
+            new HttpErrorResponse({ status: 500, error: { traceId: sinkStartThreadTraceId } }),
+        );
+      case 'pending':
+        return NEVER;
+      default:
+        return of({ thread: sinkContactThread, message: this.newMessage(text) });
+    }
+  }
+
+  private ownThreadResult(): Observable<SightingThreadPage> {
+    const modes = this.modes();
+
+    if (modes.group === 'sightingDetail' && modes.ownThread === 'existing') {
+      return of({ items: [sinkContactThread], totalCount: 1 });
+    }
+
+    return of({ items: [], totalCount: 0 });
+  }
+
+  private inboxResult(page: number): Observable<SightingThreadPage> {
+    const modes = this.modes();
+
+    switch (modes.group === 'messages' ? modes.inbox : 'empty') {
+      case 'items': {
+        const start = (page - 1) * sinkInboxPageSize;
+
+        return of({
+          items: sinkThreads.slice(start, start + sinkInboxPageSize),
+          totalCount: sinkThreads.length,
+        });
+      }
+      case 'failure':
+        return throwError(() => new HttpErrorResponse({ status: 500 }));
+      case 'pending':
+        return NEVER;
+      default:
+        return of({ items: [], totalCount: 0 });
+    }
+  }
+
+  private threadMessagesResult(page: number): Observable<SightingMessagePage> {
+    const modes = this.modes();
+
+    switch (modes.group === 'messages' ? (modes.thread ?? 'items') : 'items') {
+      case 'failure':
+        return throwError(() => new HttpErrorResponse({ status: 500 }));
+      case 'pending':
+        return NEVER;
+      default: {
+        const start = (page - 1) * sinkMessagePageSize;
+
+        return of({
+          items: sinkMessages.slice(start, start + sinkMessagePageSize),
+          totalCount: sinkMessages.length,
+        });
+      }
+    }
+  }
+
+  private newMessage(text: string): SightingMessage {
+    return {
+      id: `sink-message-new-${Date.now()}`,
+      text,
+      senderDisplayName: sinkUser.displayName,
+      createdAt: new Date().toISOString(),
+      isMine: true,
+    };
   }
 
   private thumbnailResult(): Observable<Blob> {

@@ -727,6 +727,7 @@ public class SightingServiceTests
             sighting.Longitude,
             sighting.Status,
             sighting.Criticality,
+            sighting.ReporterId,
             "Pidgey",
             now.UtcDateTime);
     }
@@ -742,6 +743,7 @@ public class SightingServiceTests
             longitude,
             SightingStatus.Spotted,
             SightingCriticality.Monitor,
+            Guid.NewGuid(),
             "Pidgey",
             createdAt);
     }

@@ -1,0 +1,26 @@
+:host {
+  display: inline-flex;
+  flex: none;
+}
+
+.app-header__messages {
+  position: relative;
+}
+
+.messages-link__badge {
+  position: absolute;
+  inset-block-start: var(--pw-unread-badge-offset);
+  inset-inline-end: var(--pw-unread-badge-offset);
+  box-sizing: border-box;
+  min-width: var(--pw-unread-badge-size);
+  height: var(--pw-unread-badge-size);
+  padding-inline: var(--pw-unread-badge-padding);
+  border-radius: var(--pw-radius-full);
+  background-color: var(--pw-color-unread-badge);
+  color: var(--pw-color-on-unread-badge);
+  font-size: var(--pw-unread-badge-font-size);
+  font-weight: var(--pw-font-weight-bold);
+  line-height: var(--pw-unread-badge-size);
+  text-align: center;
+  pointer-events: none;
+}
