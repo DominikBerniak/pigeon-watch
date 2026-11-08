@@ -500,85 +500,85 @@ Additive migration only (two new tables); no data backfill. `SightingModel.isMin
 
 #### Automated
 
-- [x] 1.1 API builds with style rules — da04df4
-- [x] 1.2 Architecture tests pass, including table naming and service registration — da04df4
-- [x] 1.3 Unit tests pass, including SightingThreadRepositoryTests — da04df4
-- [x] 1.4 Migration matches the model — da04df4
+- [x] 1.1 API builds with style rules — 7143780
+- [x] 1.2 Architecture tests pass, including table naming and service registration — 7143780
+- [x] 1.3 Unit tests pass, including SightingThreadRepositoryTests — 7143780
+- [x] 1.4 Migration matches the model — 7143780
 
 #### Manual
 
-- [x] 1.5 Migration applied to LocalDB creates SIGHTING_THREAD and SIGHTING_MESSAGE with the unique index and Restrict FKs — da04df4
+- [x] 1.5 Migration applied to LocalDB creates SIGHTING_THREAD and SIGHTING_MESSAGE with the unique index and Restrict FKs — 7143780
 
 ### Phase 2: Messaging API
 
 #### Automated
 
-- [x] 2.1 API builds with style rules — 3a7cf0f
-- [x] 2.2 Architecture tests pass, including controller action shape — 3a7cf0f
-- [x] 2.3 Unit tests pass, including the new service, controller and view-model creator tests — 3a7cf0f
+- [x] 2.1 API builds with style rules — 7143780
+- [x] 2.2 Architecture tests pass, including controller action shape — 7143780
+- [x] 2.3 Unit tests pass, including the new service, controller and view-model creator tests — 7143780
 
 #### Manual
 
-- [x] 2.4 Bob starts a thread on Alice's sighting via curl.exe and Alice lists it via GET threads — 3a7cf0f
+- [x] 2.4 Bob starts a thread on Alice's sighting via curl.exe and Alice lists it via GET threads — 7143780
 
 ### Phase 3: Privacy and access contract tests
 
 #### Automated
 
-- [x] 3.1 Integration tests pass, including coverage guard, anonymous 401 sweep, privacy sweep, audit columns and SightingThreadContractTests — 8ac4806
-- [x] 3.2 Unit tests still pass — 8ac4806
+- [x] 3.1 Integration tests pass, including coverage guard, anonymous 401 sweep, privacy sweep, audit columns and SightingThreadContractTests — 7143780
+- [x] 3.2 Unit tests still pass — 7143780
 
 #### Manual
 
-- [x] 3.3 Review the §7 wording in test-plan.md — 8ac4806
+- [x] 3.3 Review the §7 wording in test-plan.md — 7143780
 
 ### Phase 4: Sighting-detail messages panel (SPA)
 
 #### Automated
 
-- [x] 4.1 SPA unit tests pass, including the new specs, label coverage and style-token coverage — 512b599
-- [x] 4.2 Production build passes within the bundle budget — 512b599
+- [x] 4.1 SPA unit tests pass, including the new specs, label coverage and style-token coverage — 7143780
+- [x] 4.2 Production build passes within the bundle budget — 7143780
 
 #### Manual
 
-- [x] 4.3 Bob contacts Alice and Alice replies on the detail page; no contact action on own sighting — 512b599
-- [x] 4.4 Panel layout is usable at phone width — 512b599
+- [x] 4.3 Bob contacts Alice and Alice replies on the detail page; no contact action on own sighting — 7143780
+- [x] 4.4 Panel layout is usable at phone width — 7143780
 
 ### Phase 5: Messages inbox page (SPA)
 
 #### Automated
 
-- [x] 5.1 SPA unit tests pass — 6af9f69
-- [x] 5.2 Production build passes within the bundle budget — 6af9f69
+- [x] 5.1 SPA unit tests pass — 7143780
+- [x] 5.2 Production build passes within the bundle budget — 7143780
 
 #### Manual
 
-- [x] 5.3 Both users see the thread on /messages and it opens on the sighting — 6af9f69
-- [x] 5.4 Menu item reads well next to Profile and works from every page — 6af9f69
+- [x] 5.3 Both users see the thread on /messages and it opens on the sighting — 7143780
+- [x] 5.4 Menu item reads well next to Profile and works from every page — 7143780
 
 ### Phase 6: Read state and unread badge
 
 #### Automated
 
-- [x] 6.1 API builds with style rules — bb72edf
-- [x] 6.2 Migration matches the model — bb72edf
-- [x] 6.3 All .NET tests pass, including architecture, unit and integration — bb72edf
-- [x] 6.4 SPA unit tests pass — bb72edf
-- [x] 6.5 Production build passes within the bundle budget — bb72edf
+- [x] 6.1 API builds with style rules — 7143780
+- [x] 6.2 Migration matches the model — 7143780
+- [x] 6.3 All .NET tests pass, including architecture, unit and integration — 7143780
+- [x] 6.4 SPA unit tests pass — 7143780
+- [x] 6.5 Production build passes within the bundle budget — 7143780
 
 #### Manual
 
-- [x] 6.6 Bob messages Alice; badge and unread mark appear and clear when Alice opens the thread — bb72edf
-- [x] 6.7 No badge when nothing is unread — bb72edf
+- [x] 6.6 Bob messages Alice; badge and unread mark appear and clear when Alice opens the thread — 7143780
+- [x] 6.7 No badge when nothing is unread — 7143780
 
 ### Phase 7: Two-user E2E and docs
 
 #### Automated
 
-- [x] 7.1 E2E suite passes, including sighting-messages.spec.ts — 8ae5364
-- [x] 7.2 SPA unit tests still pass — 8ae5364
-- [x] 7.3 All .NET tests still pass — 8ae5364
+- [x] 7.1 E2E suite passes, including sighting-messages.spec.ts — 7143780
+- [x] 7.2 SPA unit tests still pass — 7143780
+- [x] 7.3 All .NET tests still pass — 7143780
 
 #### Manual
 
-- [x] 7.4 Docs read correctly and no longer claim messaging is missing — 8ae5364
+- [x] 7.4 Docs read correctly and no longer claim messaging is missing — 7143780
