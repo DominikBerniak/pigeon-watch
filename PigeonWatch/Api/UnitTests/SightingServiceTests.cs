@@ -674,6 +674,235 @@ public class SightingServiceTests
         Assert.Empty(permissions.AllowedNextStatuses);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(10)]
+    public async Task Update_rejects_an_undefined_status_before_reading_the_sighting(int status)
+    {
+        Sighting stored = StoredSighting();
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Status = (SightingStatus)status }, cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([SightingErrorCodes.InvalidStatus], result.Errors.Select(error => error.Code));
+        await sightingRepository.DidNotReceive().GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await AssertNoUpdateAsync();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(4)]
+    public async Task Update_rejects_an_undefined_criticality(int criticality)
+    {
+        Sighting stored = StoredSighting();
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Criticality = (SightingCriticality)criticality }, cancellationToken);
+
+        Assert.Equal([SightingErrorCodes.InvalidCriticality], result.Errors.Select(error => error.Code));
+        await AssertNoUpdateAsync();
+    }
+
+    [Fact]
+    public async Task Update_rejects_a_description_that_is_blank_after_trimming()
+    {
+        Sighting stored = StoredSighting();
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Description = "   " }, cancellationToken);
+
+        Assert.Equal([SightingErrorCodes.DescriptionRequired], result.Errors.Select(error => error.Code));
+        await AssertNoUpdateAsync();
+    }
+
+    [Fact]
+    public async Task Update_rejects_a_new_photo_together_with_remove_photo_before_reading_the_sighting()
+    {
+        Sighting stored = StoredSighting();
+        byte[] upload = [0x01, 0x02];
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(
+            UpdateOf(stored) with { Photo = new NewSightingPhoto(new MemoryStream(upload), upload.Length), RemovePhoto = true },
+            cancellationToken);
+
+        Assert.Equal([SightingErrorCodes.PhotoConflict], result.Errors.Select(error => error.Code));
+        await sightingRepository.DidNotReceive().GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await AssertNoUpdateAsync();
+    }
+
+    [Fact]
+    public async Task Update_returns_sighting_not_found_for_an_unknown_id()
+    {
+        Guid unknownId = Guid.NewGuid();
+        sightingRepository.GetByIdAsync(unknownId, Arg.Any<CancellationToken>()).Returns((Sighting?)null);
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(
+            new SightingUpdate(unknownId, Guid.NewGuid(), null, "Limping", "Cannot fly", SightingStatus.Spotted, SightingCriticality.Monitor),
+            cancellationToken);
+
+        Assert.Equal([SightingErrorCodes.SightingNotFound], result.Errors.Select(error => error.Code));
+        await AssertNoUpdateAsync();
+    }
+
+    [Fact]
+    public async Task Update_by_anyone_but_the_reporter_is_not_sighting_owner_before_the_transition_and_lock_checks()
+    {
+        Sighting stored = StoredSighting();
+        sightingRepository.HasOtherUserEngagementAsync(stored.Id, stored.ReporterId, Arg.Any<CancellationToken>()).Returns(true);
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(
+            UpdateOf(stored) with { UserId = Guid.NewGuid(), Status = SightingStatus.AtTheVet, Description = "Changed" },
+            cancellationToken);
+
+        Assert.Equal([SightingErrorCodes.NotSightingOwner], result.Errors.Select(error => error.Code));
+        Assert.Null(result.Permissions);
+        await sightingRepository.DidNotReceive().HasOtherUserEngagementAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await AssertNoUpdateAsync();
+    }
+
+    [Fact]
+    public async Task Update_rejects_a_status_that_is_not_an_allowed_transition_before_the_lock_check()
+    {
+        Sighting stored = StoredSighting();
+        sightingRepository.HasOtherUserEngagementAsync(stored.Id, stored.ReporterId, Arg.Any<CancellationToken>()).Returns(true);
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(
+            UpdateOf(stored) with { Status = SightingStatus.AtTheVet, Description = "Changed" },
+            cancellationToken);
+
+        Assert.Equal([SightingErrorCodes.InvalidStatusTransition], result.Errors.Select(error => error.Code));
+        await sightingRepository.DidNotReceive().HasOtherUserEngagementAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await AssertNoUpdateAsync();
+    }
+
+    [Theory]
+    [InlineData(SightingStatus.Adopted, SightingStatus.AwaitingAdoption)]
+    [InlineData(SightingStatus.Released, SightingStatus.Caught)]
+    [InlineData(SightingStatus.PassedAway, SightingStatus.AtTheVet)]
+    [InlineData(SightingStatus.NotFound, SightingStatus.Spotted)]
+    public async Task Update_rejects_any_status_change_from_an_end_state(SightingStatus from, SightingStatus to)
+    {
+        Sighting stored = StoredSighting(from);
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Status = to }, cancellationToken);
+
+        Assert.Equal([SightingErrorCodes.InvalidStatusTransition], result.Errors.Select(error => error.Code));
+        await AssertNoUpdateAsync();
+    }
+
+    [Fact]
+    public async Task Update_accepts_an_allowed_transition_and_returns_the_recomputed_permissions()
+    {
+        Sighting stored = StoredSighting();
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Status = SightingStatus.Caught }, cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(SightingStatus.Caught, result.Sighting!.Status);
+        Assert.NotNull(result.Permissions);
+        Assert.True(result.Permissions.CanEditDescription);
+        Assert.Equal([SightingStatus.AtTheVet, SightingStatus.InHomeCare, SightingStatus.Released], result.Permissions.AllowedNextStatuses);
+        await sightingRepository.Received(1).UpdateAsync(
+            stored.Id,
+            stored.ReporterId,
+            Arg.Is<SightingUpdate>(update => update.Status == SightingStatus.Caught),
+            null,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(SightingStatus.Spotted)]
+    [InlineData(SightingStatus.Adopted)]
+    public async Task Update_with_an_unchanged_status_skips_the_transition_check(SightingStatus status)
+    {
+        Sighting stored = StoredSighting(status);
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Criticality = SightingCriticality.Monitor }, cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(SightingCriticality.Monitor, result.Sighting!.Criticality);
+    }
+
+    [Fact]
+    public async Task Update_rejects_a_changed_description_while_another_user_engaged()
+    {
+        Sighting stored = StoredSighting();
+        sightingRepository.HasOtherUserEngagementAsync(stored.Id, stored.ReporterId, Arg.Any<CancellationToken>()).Returns(true);
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Description = "Changed" }, cancellationToken);
+
+        Assert.Equal([SightingErrorCodes.DescriptionLocked], result.Errors.Select(error => error.Code));
+        await AssertNoUpdateAsync();
+    }
+
+    [Fact]
+    public async Task Update_accepts_the_unchanged_description_after_trimming_while_another_user_engaged()
+    {
+        Sighting stored = StoredSighting();
+        sightingRepository.HasOtherUserEngagementAsync(stored.Id, stored.ReporterId, Arg.Any<CancellationToken>()).Returns(true);
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(
+            UpdateOf(stored) with { Description = $"  {stored.Description}  ", Status = SightingStatus.Caught },
+            cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(SightingStatus.Caught, result.Sighting!.Status);
+        Assert.False(result.Permissions!.CanEditDescription);
+    }
+
+    [Fact]
+    public async Task Update_accepts_a_changed_description_while_nobody_else_engaged()
+    {
+        Sighting stored = StoredSighting();
+        sightingRepository.HasOtherUserEngagementAsync(stored.Id, stored.ReporterId, Arg.Any<CancellationToken>()).Returns(false);
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Description = "Changed" }, cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal("Changed", result.Sighting!.Description);
+    }
+
+    [Fact]
+    public async Task Update_trims_text_and_stores_a_blank_name_as_null()
+    {
+        Sighting stored = StoredSighting();
+
+        await CreateService().UpdateAsync(
+            UpdateOf(stored) with { Name = "   ", Description = "  Limping near the fountain  ", Behaviour = " Hides " },
+            cancellationToken);
+
+        await sightingRepository.Received(1).UpdateAsync(
+            stored.Id,
+            stored.ReporterId,
+            Arg.Is<SightingUpdate>(update => update.Name == null && update.Description == "Limping near the fountain" && update.Behaviour == "Hides"),
+            Arg.Any<string?>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Update_with_remove_photo_on_a_sighting_without_a_photo_is_a_no_op_for_storage()
+    {
+        Sighting stored = StoredSighting();
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { RemovePhoto = true }, cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.False(result.Sighting!.HasPhoto);
+        Assert.Empty(sightingPhotoStore.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task Update_returns_sighting_not_found_when_the_row_is_gone_at_write_time()
+    {
+        Sighting stored = StoredSighting();
+        sightingRepository
+            .UpdateAsync(stored.Id, stored.ReporterId, Arg.Any<SightingUpdate>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns((Sighting?)null);
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored), cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([SightingErrorCodes.SightingNotFound], result.Errors.Select(error => error.Code));
+    }
+
     private SightingService CreateService()
     {
         return new(
@@ -685,6 +914,56 @@ public class SightingServiceTests
             sightingPhotoStore,
             new SubmissionCooldownProvider(timeProvider),
             NullLogger<SightingService>.Instance);
+    }
+
+    private Sighting StoredSighting(SightingStatus status = SightingStatus.Spotted)
+    {
+        Sighting stored = new(
+            Guid.NewGuid(),
+            "Grey",
+            "Limping near the fountain",
+            "Cannot fly",
+            centreLatitude,
+            centreLongitude,
+            status,
+            SightingCriticality.Urgent,
+            Guid.NewGuid(),
+            "Pidgey",
+            now.UtcDateTime);
+        sightingRepository.GetByIdAsync(stored.Id, Arg.Any<CancellationToken>()).Returns(stored);
+        sightingRepository
+            .UpdateAsync(stored.Id, stored.ReporterId, Arg.Any<SightingUpdate>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(call => Updated(stored, call.ArgAt<SightingUpdate>(2), call.ArgAt<string?>(3)));
+
+        return stored;
+    }
+
+    private static Sighting Updated(Sighting stored, SightingUpdate update, string? photoBlobName)
+    {
+        return stored with
+        {
+            Name = update.Name,
+            Description = update.Description,
+            Behaviour = update.Behaviour,
+            Status = update.Status,
+            Criticality = update.Criticality,
+            HasPhoto = photoBlobName is not null
+        };
+    }
+
+    private static SightingUpdate UpdateOf(Sighting stored)
+    {
+        return new(stored.Id, stored.ReporterId, stored.Name, stored.Description, stored.Behaviour, stored.Status, stored.Criticality);
+    }
+
+    private async Task AssertNoUpdateAsync()
+    {
+        await sightingRepository.DidNotReceive().UpdateAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
+            Arg.Any<SightingUpdate>(),
+            Arg.Any<string?>(),
+            Arg.Any<CancellationToken>());
     }
 
     private void LatestCreateDate(Guid reporterId, DateTimeOffset createdAt)

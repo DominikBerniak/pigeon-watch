@@ -57,6 +57,13 @@ public abstract class FailureLoggingControllerBase(ILogger logger) : ControllerB
         return StatusCode(StatusCodes.Status403Forbidden);
     }
 
+    protected StatusCodeResult ForbiddenForNonOwner()
+    {
+        logger.LogWarning("Request rejected because the current user is not the owner on {Route}", GetRoute());
+
+        return StatusCode(StatusCodes.Status403Forbidden);
+    }
+
     protected ActionResult<TResponseModel> GetValidationProblem<TResponseModel>(IEnumerable<(string Code, string Description)> errors, int? retryAfterSeconds = null)
     {
         foreach ((string code, string description) in errors)

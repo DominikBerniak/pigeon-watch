@@ -16,6 +16,7 @@ namespace PigeonWatch.WebApi.Controllers;
 public class SightingsController(
     ISightingService sightingService,
     ICreateSightingRequestMapper createSightingRequestMapper,
+    IUpdateSightingRequestMapper updateSightingRequestMapper,
     INearbySightingsRequestMapper nearbySightingsRequestMapper,
     ISightingListRequestMapper sightingListRequestMapper,
     ISightingViewModelCreator sightingViewModelCreator,
@@ -28,6 +29,9 @@ public class SightingsController(
     [
         SightingErrorCodes.InvalidLocation,
         SightingErrorCodes.InvalidInitialStatus,
+        SightingErrorCodes.InvalidStatus,
+        SightingErrorCodes.InvalidStatusTransition,
+        SightingErrorCodes.PhotoConflict,
         SightingErrorCodes.InvalidCriticality,
         SightingErrorCodes.InvalidFilterStatus,
         SightingErrorCodes.InvalidFilterCriticality,
@@ -66,6 +70,36 @@ public class SightingsController(
         SightingModel model = sightingViewModelCreator.Create(result.Sighting, userId, permissions);
 
         return CreatedAtAction(nameof(Get), new { id = model.Id }, model);
+    }
+
+    [HttpPut("{id:guid}")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(SightingRules.PhotoRequestMaxBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = SightingRules.PhotoRequestMaxBytes)]
+    public async Task<ActionResult<SightingModel>> Update(Guid id, [FromForm] UpdateSightingRequestModel request, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+            return UnauthorizedForInvalidIdentity();
+
+        SightingUpdate update = updateSightingRequestMapper.Map(id, userId, request);
+        await using Stream? photoContent = update.Photo?.Content;
+        SightingUpdateResult result = await sightingService.UpdateAsync(update, cancellationToken);
+
+        if (result.Errors.Any(error => error.Code == SightingErrorCodes.SightingNotFound))
+            return NotFoundForSighting(id);
+
+        if (result.Errors.Any(error => error.Code == SightingErrorCodes.NotSightingOwner))
+            return ForbiddenForNonOwner();
+
+        if (!result.Succeeded || result.Sighting is null)
+        {
+            foreach (SightingError error in result.Errors.Where(error => loggedErrorCodes.Contains(error.Code)))
+                LogInvalidInput(error.Code);
+
+            return GetValidationProblem<SightingModel>(result.Errors.Select(error => (error.Code, error.Description)));
+        }
+
+        return Ok(sightingViewModelCreator.Create(result.Sighting, userId, result.Permissions));
     }
 
     [HttpGet("{id:guid}")]

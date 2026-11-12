@@ -130,6 +130,79 @@ public class ControllerFailureLoggingTests
         Assert.Equal(id, call.State["SightingId"]);
     }
 
+    [Theory]
+    [InlineData(SightingErrorCodes.InvalidStatus)]
+    [InlineData(SightingErrorCodes.InvalidCriticality)]
+    [InlineData(SightingErrorCodes.InvalidStatusTransition)]
+    [InlineData(SightingErrorCodes.PhotoConflict)]
+    [InlineData(SightingErrorCodes.PhotoTooLarge)]
+    [InlineData(SightingErrorCodes.PhotoUnsupportedType)]
+    [InlineData(SightingErrorCodes.PhotoUnreadable)]
+    public async Task Update_logs_a_warning_with_the_error_code_for_invalid_input(string code)
+    {
+        sightingService
+            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<CancellationToken>())
+            .Returns(SightingUpdateResult.Failure([new SightingError(code, "invalid")]));
+        SightingsController controller = CreateSightingsController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Update(Guid.NewGuid(), UpdateRequest(), cancellationToken);
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        LogCall call = Assert.Single(LogCalls(sightingsLogger));
+        Assert.Equal(LogLevel.Warning, call.Level);
+        Assert.Equal(code, call.State["ErrorCode"]);
+    }
+
+    [Theory]
+    [InlineData(SightingErrorCodes.DescriptionLocked)]
+    [InlineData(SightingErrorCodes.DescriptionRequired)]
+    public async Task Update_logs_nothing_for_an_expected_rejection(string code)
+    {
+        sightingService
+            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<CancellationToken>())
+            .Returns(SightingUpdateResult.Failure([new SightingError(code, "rejected")]));
+        SightingsController controller = CreateSightingsController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Update(Guid.NewGuid(), UpdateRequest(), cancellationToken);
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Empty(LogCalls(sightingsLogger));
+    }
+
+    [Fact]
+    public async Task Update_logs_a_warning_with_the_route_when_the_caller_is_not_the_owner()
+    {
+        sightingService
+            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<CancellationToken>())
+            .Returns(SightingUpdateResult.Failure([new SightingError(SightingErrorCodes.NotSightingOwner, "not owner")]));
+        SightingsController controller = CreateSightingsController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Update(Guid.NewGuid(), UpdateRequest(), cancellationToken);
+
+        Assert.IsType<StatusCodeResult>(result.Result);
+        LogCall call = Assert.Single(LogCalls(sightingsLogger));
+        Assert.Equal(LogLevel.Warning, call.Level);
+        Assert.Contains("Route", call.State.Keys);
+        Assert.Contains("owner", call.Message);
+    }
+
+    [Fact]
+    public async Task Update_logs_one_information_with_the_sighting_id_when_it_is_missing()
+    {
+        Guid id = Guid.NewGuid();
+        sightingService
+            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<CancellationToken>())
+            .Returns(SightingUpdateResult.Failure([new SightingError(SightingErrorCodes.SightingNotFound, "missing")]));
+        SightingsController controller = CreateSightingsController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Update(id, UpdateRequest(), cancellationToken);
+
+        Assert.IsType<NotFoundResult>(result.Result);
+        LogCall call = Assert.Single(LogCalls(sightingsLogger));
+        Assert.Equal(LogLevel.Information, call.Level);
+        Assert.Equal(id, call.State["SightingId"]);
+    }
+
     [Fact]
     public async Task Update_profile_logs_a_warning_when_the_user_no_longer_exists()
     {
@@ -209,7 +282,7 @@ public class ControllerFailureLoggingTests
 
     private SightingsController CreateSightingsController(ClaimsPrincipal user)
     {
-        return new(sightingService, new CreateSightingRequestMapper(), new NearbySightingsRequestMapper(), new SightingListRequestMapper(), new SightingViewModelCreator(), sightingsLogger)
+        return new(sightingService, new CreateSightingRequestMapper(), new UpdateSightingRequestMapper(), new NearbySightingsRequestMapper(), new SightingListRequestMapper(), new SightingViewModelCreator(), sightingsLogger)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } },
             ProblemDetailsFactory = CreateProblemDetailsFactory()
@@ -282,6 +355,18 @@ public class ControllerFailureLoggingTests
         string message = state["{OriginalFormat}"]?.ToString() ?? string.Empty;
 
         return new LogCall((LogLevel)arguments[0]!, state, message);
+    }
+
+    private static UpdateSightingRequestModel UpdateRequest()
+    {
+        return new()
+        {
+            Name = "Grey",
+            Description = "Limping near the fountain",
+            Behaviour = "Cannot fly",
+            Status = 2,
+            Criticality = 3
+        };
     }
 
     private static CreateSightingRequestModel Request()

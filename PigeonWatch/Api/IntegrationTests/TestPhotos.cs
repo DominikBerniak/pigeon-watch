@@ -26,6 +26,18 @@ public sealed class TestPhotos
         return InsertExifSegment(jpeg, CreateOrientationExifPayload());
     }
 
+    public static byte[] TruncatedJpeg()
+    {
+        using SKBitmap bitmap = new(400, 300, SKColorType.Rgba8888, SKAlphaType.Premul);
+        using (SKCanvas canvas = new(bitmap))
+            canvas.Clear(SKColors.SkyBlue);
+
+        using SKData data = bitmap.Encode(SKEncodedImageFormat.Jpeg, 90);
+        byte[] jpeg = data.ToArray();
+
+        return jpeg[..(jpeg.Length / 2)];
+    }
+
     public static bool IsJpeg(byte[] bytes)
     {
         return bytes.Length > 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[^2] == 0xFF && bytes[^1] == 0xD9;

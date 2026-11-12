@@ -87,6 +87,25 @@ public sealed class ControllerFailureLoggingTests : IDisposable
         Assert.Equal(missingId.ToString(), State(information, "SightingId"));
     }
 
+    [Fact]
+    public async Task Update_of_another_users_sighting_logs_one_warning_with_the_route_and_returns_403()
+    {
+        using TestUser owner = await factory.CreateUserAsync(email, password, displayName, cancellationToken);
+        using TestUser other = await factory.CreateUserAsync("failure.other@example.com", password, "FailureOther", cancellationToken);
+        Guid sightingId = await owner.CreateSightingAsync(cancellationToken: cancellationToken);
+        factory.ClearLogs();
+
+        using HttpResponseMessage response = await other.UpdateSightingAsync(sightingId, SightingForm.UpdateFields(), cancellationToken: cancellationToken);
+
+        FakeLogRecord warning = Assert.Single(factory.Logs.GetSnapshot(), record => record.Level >= LogLevel.Warning);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(403, await ReadProblemStatusAsync(response));
+        Assert.Equal(LogLevel.Warning, warning.Level);
+        Assert.Equal("sightings/{id:guid}", State(warning, "Route"));
+        Assert.Equal(other.Id.ToString(), ScopeValue(warning, "UserId"));
+        Assert.DoesNotContain(email, warning.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     public void Dispose()
     {
         factory.Dispose();

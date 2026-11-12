@@ -15,4 +15,11 @@ public static class SightingErrorCodes
     public const string PhotoTooLarge = "PhotoTooLarge";
     public const string PhotoUnsupportedType = "PhotoUnsupportedType";
     public const string PhotoUnreadable = "PhotoUnreadable";
+    public const string SightingNotFound = "SightingNotFound";
+    public const string NotSightingOwner = "NotSightingOwner";
+    public const string InvalidStatus = "InvalidStatus";
+    public const string InvalidStatusTransition = "InvalidStatusTransition";
+    public const string DescriptionRequired = "DescriptionRequired";
+    public const string DescriptionLocked = "DescriptionLocked";
+    public const string PhotoConflict = "PhotoConflict";
 }

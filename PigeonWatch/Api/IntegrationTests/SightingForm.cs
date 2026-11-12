@@ -32,6 +32,43 @@ public sealed class SightingForm
         return fields;
     }
 
+    public static Dictionary<string, string> UpdateFields(
+        int status = 1,
+        int criticality = 2,
+        string name = "Test pigeon",
+        string description = "A pigeon with a bent wing near the fountain.",
+        string behaviour = "Hops instead of flying.",
+        bool? removePhoto = null)
+    {
+        Dictionary<string, string> fields = new(StringComparer.Ordinal)
+        {
+            ["name"] = name,
+            ["description"] = description,
+            ["behaviour"] = behaviour,
+            ["status"] = status.ToString(CultureInfo.InvariantCulture),
+            ["criticality"] = criticality.ToString(CultureInfo.InvariantCulture)
+        };
+
+        if (removePhoto is bool remove)
+            fields["removePhoto"] = remove ? "true" : "false";
+
+        return fields;
+    }
+
+    public static HttpRequestMessage UpdateRequest(
+        Guid sightingId,
+        IReadOnlyDictionary<string, string> fields,
+        byte[]? photo = null,
+        string photoContentType = JpegContentType)
+    {
+        HttpRequestMessage message = new(HttpMethod.Put, $"/sightings/{sightingId}")
+        {
+            Content = Content(fields, photo, photoContentType)
+        };
+
+        return message;
+    }
+
     public static MultipartFormDataContent Content(
         IReadOnlyDictionary<string, string> fields,
         byte[]? photo = null,

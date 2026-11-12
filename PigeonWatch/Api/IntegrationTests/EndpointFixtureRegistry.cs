@@ -44,6 +44,7 @@ public sealed class EndpointFixtureRegistry
         new(["GET sightings/nearby"], BuildNearby),
         new(["POST sightings/list"], BuildList),
         new(["GET sightings/mine"], BuildMine),
+        new(["PUT sightings/{id:guid}"], BuildUpdateSighting),
         new(["GET sightings/{sightingId:guid}/comments"], BuildListComments),
         new(["POST sightings/{sightingId:guid}/comments"], BuildCreateComment),
         new(["PUT sightings/{sightingId:guid}/comments/{commentId:guid}"], BuildUpdateComment),
@@ -278,6 +279,32 @@ public sealed class EndpointFixtureRegistry
         return [Make("GET sightings/mine", "own sightings", new HttpRequestMessage(HttpMethod.Get, "/sightings/mine"))];
     }
 
+    private static IReadOnlyList<FixtureRequest> BuildUpdateSighting(FixtureContext context)
+    {
+        const string key = "PUT sightings/{id:guid}";
+        string uri = $"/sightings/{context.SightingId}";
+        Dictionary<string, string> forgedLocation = UpdateFields(1, 2);
+        forgedLocation["latitude"] = "10.5";
+        forgedLocation["longitude"] = "-20.25";
+        List<FixtureRequest> requests =
+        [
+            Make(key, "unchanged description of the engaged sighting", SightingForm.UpdateRequest(context.SightingId, UpdateFields(1, 2))),
+            Make(key, "unchanged description with a new photo", SightingForm.UpdateRequest(context.SightingId, UpdateFields(1, 3), TestPhotos.JpegWithExif())),
+            Make(key, "forged location parts", SightingForm.UpdateRequest(context.SightingId, forgedLocation)),
+            Make(key, "photo of an unsupported type", SightingForm.UpdateRequest(context.SightingId, UpdateFields(1, 2), TestPhotos.Gif, "image/gif")),
+            Make(key, "photo together with remove photo", SightingForm.UpdateRequest(context.SightingId, UpdateFields(1, 2, removePhoto: true), TestPhotos.JpegWithExif())),
+            Make(key, "changed description of the engaged sighting", SightingForm.UpdateRequest(context.SightingId, UpdateFields(1, 2, "Sweep changed description."))),
+            Make(key, "invalid status transition", SightingForm.UpdateRequest(context.SightingId, UpdateFields(3, 2))),
+            Make(key, "undefined status", SightingForm.UpdateRequest(context.SightingId, UpdateFields(99, 2))),
+            Make(key, "undefined criticality", SightingForm.UpdateRequest(context.SightingId, UpdateFields(1, 99))),
+            Make(key, "unknown sighting", SightingForm.UpdateRequest(Guid.NewGuid(), UpdateFields(1, 2)))
+        ];
+
+        AddMalformedMultipart(requests, key, HttpMethod.Put, uri);
+
+        return requests;
+    }
+
     private static IReadOnlyList<FixtureRequest> BuildListComments(FixtureContext context)
     {
         const string key = "GET sightings/{sightingId:guid}/comments";
@@ -487,6 +514,13 @@ public sealed class EndpointFixtureRegistry
     private static Dictionary<string, string> SightingFields(int status, int criticality, double latitude)
     {
         return SightingForm.Fields(status, criticality, latitude, 21.0122, "Sweep pigeon");
+    }
+
+    private static Dictionary<string, string> UpdateFields(int status, int criticality, string? description = null, bool? removePhoto = null)
+    {
+        return description is null
+            ? SightingForm.UpdateFields(status, criticality, "Sweep pigeon", removePhoto: removePhoto)
+            : SightingForm.UpdateFields(status, criticality, "Sweep pigeon", description, removePhoto: removePhoto);
     }
 
     private static void AddMalformed(List<FixtureRequest> requests, string key, HttpMethod method, string uri)

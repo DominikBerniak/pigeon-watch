@@ -450,28 +450,28 @@ Keep a browser-level test of the two-user lock flow, and bring the PRD, roadmap 
 
 #### Automated
 
-- [x] 1.1 API builds with the style rules
-- [x] 1.2 Architecture tests pass
-- [x] 1.3 Unit tests pass, including the new engagement repository cases
-- [x] 1.4 Integration tests pass, including the editPermissions visibility tests in SightingEditContractTests
+- [x] 1.1 API builds with the style rules — 6899cbc
+- [x] 1.2 Architecture tests pass — 6899cbc
+- [x] 1.3 Unit tests pass, including the new engagement repository cases — 6899cbc
+- [x] 1.4 Integration tests pass, including the editPermissions visibility tests in SightingEditContractTests — 6899cbc
 
 #### Manual
 
-- [x] 1.5 Swagger shows editPermissions for the owner and null for another user
+- [x] 1.5 Swagger shows editPermissions for the owner and null for another user — 6899cbc
 
 ### Phase 2: API — PUT sightings/{id}
 
 #### Automated
 
-- [ ] 2.1 API builds with the style rules
-- [ ] 2.2 Architecture tests pass (new mapper interface and registration)
-- [ ] 2.3 Unit tests pass, including the update service and controller tests
-- [ ] 2.4 Integration tests pass, including update contract, coverage, ownership, privacy sweep and failure logging
-- [ ] 2.5 No pending EF model changes
+- [x] 2.1 API builds with the style rules
+- [x] 2.2 Architecture tests pass (new mapper interface and registration)
+- [x] 2.3 Unit tests pass, including the update service and controller tests
+- [x] 2.4 Integration tests pass, including update contract, coverage, ownership, privacy sweep and failure logging
+- [x] 2.5 No pending EF model changes
 
 #### Manual
 
-- [ ] 2.6 Swagger: Spotted to Caught succeeds, Spotted to At the vet rejected, replaced photo leaves no old blob
+- [x] 2.6 Swagger: Spotted to Caught succeeds, Spotted to At the vet rejected, replaced photo leaves no old blob
 
 ### Phase 3: SPA — edit page
 

@@ -25,6 +25,7 @@ public static class WebApiServiceCollectionExtensions
         services.AddScoped<IGeneralConfigurationViewModelCreator, GeneralConfigurationViewModelCreator>();
         services.AddScoped<IUiResourcesViewModelCreator, UiResourcesViewModelCreator>();
         services.AddScoped<ICreateSightingRequestMapper, CreateSightingRequestMapper>();
+        services.AddScoped<IUpdateSightingRequestMapper, UpdateSightingRequestMapper>();
         services.AddScoped<INearbySightingsRequestMapper, NearbySightingsRequestMapper>();
         services.AddScoped<ISightingListRequestMapper, SightingListRequestMapper>();
         services.AddScoped<ISightingViewModelCreator, SightingViewModelCreator>();

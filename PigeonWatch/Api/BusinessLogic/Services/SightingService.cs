@@ -50,29 +50,15 @@ public class SightingService(
         if (trimmed.Photo is null)
             return await InsertAsync(trimmed, cancellationToken);
 
-        PhotoNormalizationResult normalized = await photoNormalizationProvider.NormalizeAsync(trimmed.Photo.Content, trimmed.Photo.Length, cancellationToken);
+        (SightingError? photoError, string? blobName) = await StorePhotoAsync(trimmed.Photo, cancellationToken);
 
-        if (!normalized.Succeeded || normalized.Jpeg is null)
-        {
-            SightingError error = normalized.Error ?? new SightingError(SightingErrorCodes.PhotoUnreadable, "The photo could not be read.");
-
-            return SightingCreateResult.Failure([error]);
-        }
-
-        byte[] thumbnail = photoThumbnailProvider.CreateThumbnail(normalized.Jpeg);
-        string blobName = $"{Guid.NewGuid():D}{SightingRules.PhotoBlobExtension}";
-        string thumbnailBlobName = GetThumbnailBlobName(blobName);
-
-        using (MemoryStream jpeg = new(normalized.Jpeg, writable: false))
-            await sightingPhotoStore.SaveAsync(blobName, jpeg, cancellationToken);
+        if (photoError is not null || blobName is null)
+            return SightingCreateResult.Failure([photoError ?? UnreadablePhotoError()]);
 
         bool inserted = false;
 
         try
         {
-            using (MemoryStream thumbnailJpeg = new(thumbnail, writable: false))
-                await sightingPhotoStore.SaveAsync(thumbnailBlobName, thumbnailJpeg, cancellationToken);
-
             SightingCreateResult result = await InsertAsync(trimmed with { Photo = null, PhotoBlobName = blobName }, cancellationToken);
             inserted = result.Succeeded;
 
@@ -81,11 +67,87 @@ public class SightingService(
         finally
         {
             if (!inserted)
-            {
-                await DeleteOrphanedPhotoAsync(thumbnailBlobName, CancellationToken.None);
-                await DeleteOrphanedPhotoAsync(blobName, CancellationToken.None);
-            }
+                await DeleteOrphanedPhotoBlobsAsync(blobName, CancellationToken.None);
         }
+    }
+
+    public async Task<SightingUpdateResult> UpdateAsync(SightingUpdate update, CancellationToken cancellationToken = default)
+    {
+        SightingUpdate trimmed = update with
+        {
+            Name = string.IsNullOrWhiteSpace(update.Name) ? null : update.Name.Trim(),
+            Description = update.Description.Trim(),
+            Behaviour = update.Behaviour.Trim()
+        };
+
+        List<SightingError> errors = ValidateUpdate(trimmed);
+
+        if (errors.Count > 0)
+            return SightingUpdateResult.Failure(errors);
+
+        Sighting? current = await sightingRepository.GetByIdAsync(trimmed.SightingId, cancellationToken);
+
+        if (current is null)
+            return SightingUpdateResult.Failure([SightingNotFoundError()]);
+
+        if (current.ReporterId != trimmed.UserId)
+            return SightingUpdateResult.Failure([new SightingError(SightingErrorCodes.NotSightingOwner, "Only the reporter can edit this sighting.")]);
+
+        if (trimmed.Status != current.Status && !sightingStatusTransitionProvider.IsTransitionAllowed(current.Status, trimmed.Status))
+        {
+            return SightingUpdateResult.Failure(
+                [new SightingError(SightingErrorCodes.InvalidStatusTransition, $"The status cannot change from {current.Status} to {trimmed.Status}.")]);
+        }
+
+        if (!string.Equals(trimmed.Description, current.Description, StringComparison.Ordinal)
+            && await sightingRepository.HasOtherUserEngagementAsync(current.Id, current.ReporterId, cancellationToken))
+        {
+            return SightingUpdateResult.Failure(
+                [new SightingError(SightingErrorCodes.DescriptionLocked, "The description cannot change once another user has commented or made contact.")]);
+        }
+
+        string? currentBlobName = current.HasPhoto
+            ? await sightingRepository.GetPhotoBlobNameAsync(current.Id, cancellationToken)
+            : null;
+
+        if (trimmed.Photo is null)
+        {
+            string? keptBlobName = trimmed.RemovePhoto ? null : currentBlobName;
+            Sighting? saved = await sightingRepository.UpdateAsync(current.Id, current.ReporterId, trimmed, keptBlobName, cancellationToken);
+
+            if (saved is null)
+                return SightingUpdateResult.Failure([SightingNotFoundError()]);
+
+            if (currentBlobName is not null && keptBlobName is null)
+                await DeleteReplacedPhotoBlobsAsync(currentBlobName, current.Id, CancellationToken.None);
+
+            return await UpdatedAsync(saved, trimmed.UserId, cancellationToken);
+        }
+
+        (SightingError? photoError, string? newBlobName) = await StorePhotoAsync(trimmed.Photo, cancellationToken);
+
+        if (photoError is not null || newBlobName is null)
+            return SightingUpdateResult.Failure([photoError ?? UnreadablePhotoError()]);
+
+        Sighting? updated = null;
+
+        try
+        {
+            updated = await sightingRepository.UpdateAsync(current.Id, current.ReporterId, trimmed with { Photo = null }, newBlobName, cancellationToken);
+        }
+        finally
+        {
+            if (updated is null)
+                await DeleteOrphanedPhotoBlobsAsync(newBlobName, CancellationToken.None);
+        }
+
+        if (updated is null)
+            return SightingUpdateResult.Failure([SightingNotFoundError()]);
+
+        if (currentBlobName is not null)
+            await DeleteReplacedPhotoBlobsAsync(currentBlobName, current.Id, CancellationToken.None);
+
+        return await UpdatedAsync(updated, trimmed.UserId, cancellationToken);
     }
 
     public async Task<Stream?> OpenPhotoAsync(Guid sightingId, CancellationToken cancellationToken = default)
@@ -222,6 +284,103 @@ public class SightingService(
             return SightingCreateResult.Failure([new SightingError(SightingErrorCodes.ReporterNotFound, "The reporting user does not exist.")]);
 
         return SightingCreateResult.Success(created);
+    }
+
+    private async Task<SightingUpdateResult> UpdatedAsync(Sighting sighting, Guid userId, CancellationToken cancellationToken = default)
+    {
+        SightingEditPermissions? permissions = await GetEditPermissionsAsync(sighting, userId, cancellationToken);
+
+        return SightingUpdateResult.Success(sighting, permissions);
+    }
+
+    private async Task<(SightingError? Error, string? BlobName)> StorePhotoAsync(NewSightingPhoto photo, CancellationToken cancellationToken = default)
+    {
+        PhotoNormalizationResult normalized = await photoNormalizationProvider.NormalizeAsync(photo.Content, photo.Length, cancellationToken);
+
+        if (!normalized.Succeeded || normalized.Jpeg is null)
+            return (normalized.Error ?? UnreadablePhotoError(), null);
+
+        byte[] thumbnail = photoThumbnailProvider.CreateThumbnail(normalized.Jpeg);
+        string blobName = $"{Guid.NewGuid():D}{SightingRules.PhotoBlobExtension}";
+
+        using (MemoryStream jpeg = new(normalized.Jpeg, writable: false))
+            await sightingPhotoStore.SaveAsync(blobName, jpeg, cancellationToken);
+
+        bool stored = false;
+
+        try
+        {
+            using (MemoryStream thumbnailJpeg = new(thumbnail, writable: false))
+                await sightingPhotoStore.SaveAsync(GetThumbnailBlobName(blobName), thumbnailJpeg, cancellationToken);
+
+            stored = true;
+        }
+        finally
+        {
+            if (!stored)
+                await DeleteOrphanedPhotoBlobsAsync(blobName, CancellationToken.None);
+        }
+
+        return (null, blobName);
+    }
+
+    private async Task DeleteOrphanedPhotoBlobsAsync(string blobName, CancellationToken cancellationToken = default)
+    {
+        await DeleteOrphanedPhotoAsync(GetThumbnailBlobName(blobName), cancellationToken);
+        await DeleteOrphanedPhotoAsync(blobName, cancellationToken);
+    }
+
+    private async Task DeleteReplacedPhotoBlobsAsync(string blobName, Guid sightingId, CancellationToken cancellationToken = default)
+    {
+        await DeleteReplacedPhotoAsync(GetThumbnailBlobName(blobName), sightingId, cancellationToken);
+        await DeleteReplacedPhotoAsync(blobName, sightingId, cancellationToken);
+    }
+
+    private async Task DeleteReplacedPhotoAsync(string blobName, Guid sightingId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await sightingPhotoStore.DeleteAsync(blobName, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            string traceId = Activity.Current?.TraceId.ToString() ?? "none";
+            logger.LogError(
+                exception,
+                "Replaced photo blob {BlobName} of sighting {SightingId} could not be deleted after the sighting was saved (trace {TraceId}); the blob is left orphaned",
+                blobName,
+                sightingId,
+                traceId);
+        }
+    }
+
+    private static SightingError SightingNotFoundError()
+    {
+        return new SightingError(SightingErrorCodes.SightingNotFound, "The sighting does not exist.");
+    }
+
+    private static SightingError UnreadablePhotoError()
+    {
+        return new SightingError(SightingErrorCodes.PhotoUnreadable, "The photo could not be read.");
+    }
+
+    private static List<SightingError> ValidateUpdate(SightingUpdate update)
+    {
+        List<SightingError> errors = [];
+
+        if (!Enum.IsDefined(update.Status))
+            errors.Add(new SightingError(SightingErrorCodes.InvalidStatus, "Status must be a defined sighting status."));
+
+        if (!Enum.IsDefined(update.Criticality))
+            errors.Add(new SightingError(SightingErrorCodes.InvalidCriticality, "Criticality must be Monitor, Needs help soon or Urgent."));
+
+        if (update.Description.Length == 0)
+            errors.Add(new SightingError(SightingErrorCodes.DescriptionRequired, "A description is required."));
+
+        if (update.Photo is not null && update.RemovePhoto)
+            errors.Add(new SightingError(SightingErrorCodes.PhotoConflict, "Send either a new photo or removePhoto, not both."));
+
+        return errors;
     }
 
     private async Task DeleteOrphanedPhotoAsync(string blobName, CancellationToken cancellationToken = default)

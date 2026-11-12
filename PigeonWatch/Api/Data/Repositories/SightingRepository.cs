@@ -150,6 +150,26 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
         return blobName;
     }
 
+    public async Task<Sighting?> UpdateAsync(Guid sightingId, Guid reporterId, SightingUpdate update, string? photoBlobName, CancellationToken cancellationToken = default)
+    {
+        SightingEntity? entity = await db.Sightings
+            .Include(e => e.Reporter)
+            .FirstOrDefaultAsync(e => e.Id == sightingId && e.ReporterId == reporterId, cancellationToken);
+
+        if (entity is null)
+            return null;
+
+        entity.Name = update.Name;
+        entity.Description = update.Description;
+        entity.Behaviour = update.Behaviour;
+        entity.Status = update.Status;
+        entity.Criticality = update.Criticality;
+        entity.PhotoBlobName = photoBlobName;
+        await db.SaveChangesAsync(cancellationToken);
+
+        return sightingMapper.ToSighting(entity);
+    }
+
     public async Task<bool> HasOtherUserEngagementAsync(Guid sightingId, Guid reporterId, CancellationToken cancellationToken = default)
     {
         bool engaged = await db.Sightings
