@@ -11,4 +11,5 @@ public interface ISightingRepository
     Task<IReadOnlyList<Sighting>> ListByReporterAsync(Guid reporterId, int take, CancellationToken cancellationToken = default);
     Task<DateTime?> GetLatestCreateDateByReporterAsync(Guid reporterId, CancellationToken cancellationToken = default);
     Task<string?> GetPhotoBlobNameAsync(Guid sightingId, CancellationToken cancellationToken = default);
+    Task<bool> HasOtherUserEngagementAsync(Guid sightingId, Guid reporterId, CancellationToken cancellationToken = default);
 }

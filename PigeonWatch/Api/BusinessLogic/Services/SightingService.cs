@@ -136,6 +136,16 @@ public class SightingService(
         return await sightingRepository.GetByIdAsync(id, cancellationToken);
     }
 
+    public async Task<SightingEditPermissions?> GetEditPermissionsAsync(Sighting sighting, Guid userId, CancellationToken cancellationToken = default)
+    {
+        if (sighting.ReporterId != userId)
+            return null;
+
+        bool engaged = await sightingRepository.HasOtherUserEngagementAsync(sighting.Id, sighting.ReporterId, cancellationToken);
+
+        return new SightingEditPermissions(!engaged, sightingStatusTransitionProvider.GetAllowedNextStatuses(sighting.Status));
+    }
+
     public async Task<SightingNearbyResult> GetNearbyAsync(
         double latitude,
         double longitude,

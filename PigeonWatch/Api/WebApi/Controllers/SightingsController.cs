@@ -62,7 +62,8 @@ public class SightingsController(
             return GetValidationProblem<SightingModel>(result.Errors.Select(error => (error.Code, error.Description)), result.RetryAfterSeconds);
         }
 
-        SightingModel model = sightingViewModelCreator.Create(result.Sighting, userId);
+        SightingEditPermissions? permissions = await sightingService.GetEditPermissionsAsync(result.Sighting, userId, cancellationToken);
+        SightingModel model = sightingViewModelCreator.Create(result.Sighting, userId, permissions);
 
         return CreatedAtAction(nameof(Get), new { id = model.Id }, model);
     }
@@ -80,7 +81,9 @@ public class SightingsController(
         if (sighting is null)
             return NotFoundForSighting(id);
 
-        return Ok(sightingViewModelCreator.Create(sighting, userId));
+        SightingEditPermissions? permissions = await sightingService.GetEditPermissionsAsync(sighting, userId, cancellationToken);
+
+        return Ok(sightingViewModelCreator.Create(sighting, userId, permissions));
     }
 
     [HttpGet("{id:guid}/photo")]

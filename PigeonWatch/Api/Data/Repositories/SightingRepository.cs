@@ -149,4 +149,15 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
 
         return blobName;
     }
+
+    public async Task<bool> HasOtherUserEngagementAsync(Guid sightingId, Guid reporterId, CancellationToken cancellationToken = default)
+    {
+        bool engaged = await db.Sightings
+            .Where(e => e.Id == sightingId)
+            .Select(e => db.SightingComments.Any(comment => comment.SightingId == sightingId && comment.AuthorId != reporterId && comment.DeletedAt == null)
+                || db.SightingThreads.Any(thread => thread.SightingId == sightingId))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return engaged;
+    }
 }

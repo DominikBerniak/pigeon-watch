@@ -25,4 +25,6 @@ public sealed class SightingModel
     public required bool HasPhoto { get; init; }
 
     public required bool IsMine { get; init; }
+
+    public required SightingEditPermissionsModel? EditPermissions { get; init; }
 }

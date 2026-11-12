@@ -392,6 +392,85 @@ public sealed class SightingRepositoryTests : IDisposable
         Assert.Null(await CreateRepository(db).GetLatestCreateDateByReporterAsync(reporterId, cancellationToken));
     }
 
+    [Fact]
+    public async Task Other_user_engagement_is_false_when_nobody_commented_or_made_contact()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+
+        Assert.False(await HasOtherUserEngagementAsync(sighting.Id, reporterId));
+    }
+
+    [Fact]
+    public async Task Other_user_engagement_is_false_when_only_the_reporter_commented()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        await CreateCommentAsync(sighting.Id, reporterId);
+
+        Assert.False(await HasOtherUserEngagementAsync(sighting.Id, reporterId));
+    }
+
+    [Fact]
+    public async Task Other_user_engagement_is_true_when_another_user_has_a_live_comment()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid bobId = await CreateUserAsync("bob@example.com", "Bob");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        await CreateCommentAsync(sighting.Id, bobId);
+
+        Assert.True(await HasOtherUserEngagementAsync(sighting.Id, reporterId));
+    }
+
+    [Fact]
+    public async Task Other_user_engagement_is_false_when_another_users_only_comment_is_soft_deleted()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid bobId = await CreateUserAsync("bob@example.com", "Bob");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        SightingComment comment = await CreateCommentAsync(sighting.Id, bobId);
+
+        await using (PigeonWatchDbContext db = CreateContext())
+        {
+            SightingComment? deleted = await new SightingCommentRepository(db, new SightingCommentMapper())
+                .SoftDeleteAsync(sighting.Id, comment.Id, bobId, timeProvider.UtcNow.UtcDateTime, cancellationToken);
+
+            Assert.NotNull(deleted);
+        }
+
+        Assert.False(await HasOtherUserEngagementAsync(sighting.Id, reporterId));
+    }
+
+    [Fact]
+    public async Task Other_user_engagement_is_true_when_a_thread_exists()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid bobId = await CreateUserAsync("bob@example.com", "Bob");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+
+        await using (PigeonWatchDbContext db = CreateContext())
+        {
+            (SightingThread Thread, SightingMessage Message)? started = await new SightingThreadRepository(db, new SightingThreadMapper())
+                .StartOrAppendAsync(sighting.Id, bobId, "I can help", timeProvider.UtcNow.UtcDateTime, cancellationToken);
+
+            Assert.NotNull(started);
+        }
+
+        Assert.True(await HasOtherUserEngagementAsync(sighting.Id, reporterId));
+    }
+
+    [Fact]
+    public async Task Other_user_engagement_ignores_comments_on_another_sighting()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid bobId = await CreateUserAsync("bob@example.com", "Bob");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        Sighting other = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        await CreateCommentAsync(other.Id, bobId);
+
+        Assert.False(await HasOtherUserEngagementAsync(sighting.Id, reporterId));
+    }
+
     public void Dispose()
     {
         connection.Dispose();
@@ -412,6 +491,24 @@ public sealed class SightingRepositoryTests : IDisposable
         await using PigeonWatchDbContext db = CreateContext();
 
         return await CreateRepository(db).CreateAsync(sighting, cancellationToken);
+    }
+
+    private async Task<SightingComment> CreateCommentAsync(Guid sightingId, Guid authorId)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+        SightingComment? comment = await new SightingCommentRepository(db, new SightingCommentMapper())
+            .CreateAsync(new NewSightingComment(sightingId, authorId, "Seen it too"), cancellationToken);
+
+        Assert.NotNull(comment);
+
+        return comment;
+    }
+
+    private async Task<bool> HasOtherUserEngagementAsync(Guid sightingId, Guid reporterId)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+
+        return await CreateRepository(db).HasOtherUserEngagementAsync(sightingId, reporterId, cancellationToken);
     }
 
     private async Task<Guid> CreateUserAsync(string email, string displayName)

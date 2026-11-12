@@ -37,11 +37,39 @@ public class SightingViewModelCreatorTests
         Sighting sighting = Sighting(SightingStatus.Spotted, SightingCriticality.Urgent);
         SightingViewModelCreator creator = new();
 
-        SightingModel mine = creator.Create(sighting, reporterId);
-        SightingModel other = creator.Create(sighting, Guid.NewGuid());
+        SightingModel mine = creator.Create(sighting, reporterId, null);
+        SightingModel other = creator.Create(sighting, Guid.NewGuid(), null);
 
         Assert.True(mine.IsMine);
         Assert.False(other.IsMine);
+    }
+
+    [Fact]
+    public void Create_maps_the_edit_permissions_to_integers_and_leaves_them_null_without_permissions()
+    {
+        Sighting sighting = Sighting(SightingStatus.Spotted, SightingCriticality.Urgent);
+        SightingViewModelCreator creator = new();
+
+        SightingModel withPermissions = creator.Create(sighting, reporterId, new SightingEditPermissions(false, [SightingStatus.Caught, SightingStatus.NotFound]));
+        SightingModel withoutPermissions = creator.Create(sighting, reporterId, null);
+
+        Assert.NotNull(withPermissions.EditPermissions);
+        Assert.False(withPermissions.EditPermissions.CanEditDescription);
+        Assert.Equal([2, 9], withPermissions.EditPermissions.AllowedNextStatuses);
+        Assert.Null(withoutPermissions.EditPermissions);
+    }
+
+    [Fact]
+    public void CreateList_and_CreatePage_leave_the_edit_permissions_null_even_for_the_owner()
+    {
+        Sighting mine = Sighting(SightingStatus.Spotted, SightingCriticality.Urgent);
+        SightingViewModelCreator creator = new();
+
+        SightingListModel list = creator.CreateList([mine], reporterId);
+        SightingPageModel page = creator.CreatePage(new SightingPage([mine], 1), reporterId);
+
+        Assert.All(list.Items, item => Assert.Null(item.EditPermissions));
+        Assert.All(page.Items, item => Assert.Null(item.EditPermissions));
     }
 
     [Fact]

@@ -626,6 +626,54 @@ public class SightingServiceTests
         await sightingRepository.Received(1).ListByReporterAsync(reporterId, 50, Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task Edit_permissions_are_null_for_anyone_but_the_reporter()
+    {
+        Sighting sighting = ToSighting(NewSighting());
+
+        SightingEditPermissions? permissions = await CreateService().GetEditPermissionsAsync(sighting, Guid.NewGuid(), cancellationToken);
+
+        Assert.Null(permissions);
+        await sightingRepository.DidNotReceive().HasOtherUserEngagementAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Edit_permissions_let_the_reporter_edit_the_description_while_nobody_else_engaged()
+    {
+        Sighting sighting = ToSighting(NewSighting());
+        sightingRepository.HasOtherUserEngagementAsync(sighting.Id, sighting.ReporterId, Arg.Any<CancellationToken>()).Returns(false);
+
+        SightingEditPermissions? permissions = await CreateService().GetEditPermissionsAsync(sighting, sighting.ReporterId, cancellationToken);
+
+        Assert.NotNull(permissions);
+        Assert.True(permissions.CanEditDescription);
+        Assert.Equal([SightingStatus.Caught, SightingStatus.NotFound], permissions.AllowedNextStatuses);
+    }
+
+    [Fact]
+    public async Task Edit_permissions_lock_the_description_once_another_user_engaged()
+    {
+        Sighting sighting = ToSighting(NewSighting() with { Status = SightingStatus.Caught });
+        sightingRepository.HasOtherUserEngagementAsync(sighting.Id, sighting.ReporterId, Arg.Any<CancellationToken>()).Returns(true);
+
+        SightingEditPermissions? permissions = await CreateService().GetEditPermissionsAsync(sighting, sighting.ReporterId, cancellationToken);
+
+        Assert.NotNull(permissions);
+        Assert.False(permissions.CanEditDescription);
+        Assert.Equal([SightingStatus.AtTheVet, SightingStatus.InHomeCare, SightingStatus.Released], permissions.AllowedNextStatuses);
+    }
+
+    [Fact]
+    public async Task Edit_permissions_offer_no_next_status_for_a_resolved_sighting()
+    {
+        Sighting sighting = ToSighting(NewSighting()) with { Status = SightingStatus.Adopted };
+
+        SightingEditPermissions? permissions = await CreateService().GetEditPermissionsAsync(sighting, sighting.ReporterId, cancellationToken);
+
+        Assert.NotNull(permissions);
+        Assert.Empty(permissions.AllowedNextStatuses);
+    }
+
     private SightingService CreateService()
     {
         return new(
