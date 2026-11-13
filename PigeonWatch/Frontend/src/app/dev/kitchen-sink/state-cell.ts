@@ -31,6 +31,7 @@ import { ProfileApi } from '../../features/profile/profile-api';
 import { ActivatedRoute } from '@angular/router';
 import { MessagesPage } from '../../features/messages/messages-page/messages-page';
 import { ProfilePage } from '../../features/profile/profile-page/profile-page';
+import { EditSightingPage } from '../../features/sightings/edit-sighting-page/edit-sighting-page';
 import { NearbyMapPage } from '../../features/sightings/nearby-map-page/nearby-map-page';
 import { SightingDetailPage } from '../../features/sightings/sighting-detail-page/sighting-detail-page';
 import { SightingListPage } from '../../features/sightings/sighting-list-page/sighting-list-page';
@@ -52,6 +53,7 @@ interface NextLocationOption {
     ProfilePage,
     NearbyMapPage,
     SightingDetailPage,
+    EditSightingPage,
     SightingListPage,
     MessagesPage,
     MessagesLink,

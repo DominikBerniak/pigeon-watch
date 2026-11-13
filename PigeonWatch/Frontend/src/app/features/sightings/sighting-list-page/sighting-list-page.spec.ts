@@ -43,6 +43,7 @@ const urgent: Sighting = {
   createdAt: '2026-10-11T12:00:00Z',
   hasPhoto: false,
   isMine: false,
+  editPermissions: null,
 };
 
 const monitor: Sighting = {
@@ -54,6 +55,7 @@ const monitor: Sighting = {
   createdAt: '2026-10-11T11:00:00Z',
   hasPhoto: false,
   isMine: false,
+  editPermissions: null,
 };
 
 function requestAt(

@@ -1,0 +1,53 @@
+@use 'breakpoints' as bp;
+
+.edit-sighting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-stack-gap);
+}
+
+@include bp.from(xl) {
+  .edit-sighting {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    column-gap: var(--pw-space-6);
+  }
+
+  .edit-sighting__footer {
+    grid-column: 1 / -1;
+  }
+}
+
+.edit-sighting__current-photo-label {
+  font-weight: var(--pw-font-weight-semibold);
+}
+
+.edit-sighting__current-photo-frame {
+  display: flex;
+  align-items: center;
+  align-self: flex-start;
+  justify-content: center;
+  width: var(--pw-photo-thumb-size);
+  height: var(--pw-photo-thumb-size);
+  overflow: hidden;
+  border-radius: var(--pw-radius-md);
+  background-color: var(--pw-color-info-surface);
+}
+
+.edit-sighting__current-photo-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.edit-sighting__current-photo-remove {
+  align-self: flex-start;
+}
+
+textarea {
+  max-height: var(--pw-textarea-max-height);
+  resize: vertical;
+}

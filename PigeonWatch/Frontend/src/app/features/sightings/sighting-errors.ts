@@ -4,6 +4,7 @@ import {
   isExpectedClientStatus,
   problemErrorCodes,
   problemExtension,
+  problemTraceId,
   unexpectedTraceId,
 } from '../../shared/http/problem-details';
 
@@ -57,7 +58,9 @@ export function isPhotoStorageOutage(error: HttpErrorResponse): boolean {
   return hasCode(error, photoStorageUnavailableCode);
 }
 
-export function isPhotoProblem(failure: SightingFailure): failure is { readonly kind: PhotoProblem } {
+export function isPhotoProblem(
+  failure: { readonly kind: string },
+): failure is { readonly kind: PhotoProblem } {
   return Object.hasOwn(photoProblemLabels, failure.kind);
 }
 
@@ -89,10 +92,100 @@ export function sightingErrorMessage(resources: ResourceService, failure: Sighti
   return resources.translate('sighting.errors.generic');
 }
 
+export type SightingUpdateFailure =
+  | SightingFailure
+  | { readonly kind: 'forbidden'; readonly traceId?: string }
+  | { readonly kind: 'descriptionLocked' }
+  | { readonly kind: 'invalidStatusTransition' }
+  | { readonly kind: 'photoConflict'; readonly traceId?: string };
+
+const descriptionLockedCode = 'descriptionlocked';
+const invalidStatusTransitionCode = 'invalidstatustransition';
+const photoConflictCode = 'photoconflict';
+
+export function sightingUpdateFailure(error: unknown): SightingUpdateFailure {
+  if (!(error instanceof HttpErrorResponse)) return sightingFailure(error);
+
+  if (error.status === 403) return withOptionalTraceId('forbidden', unexpectedTraceId(error));
+
+  if (error.status !== 400) return sightingFailure(error);
+
+  if (hasCode(error, descriptionLockedCode)) return { kind: 'descriptionLocked' };
+
+  if (hasCode(error, invalidStatusTransitionCode)) return { kind: 'invalidStatusTransition' };
+
+  if (hasCode(error, photoConflictCode)) {
+    return withOptionalTraceId('photoConflict', problemTraceId(error) ?? undefined);
+  }
+
+  return sightingFailure(error);
+}
+
+export function isStaleEditFailure(failure: SightingUpdateFailure): boolean {
+  return failure.kind === 'descriptionLocked' || failure.kind === 'invalidStatusTransition';
+}
+
+export function isReportableSightingUpdateFailure(
+  error: unknown,
+  failure: SightingUpdateFailure,
+): boolean {
+  switch (failure.kind) {
+    case 'forbidden':
+    case 'photoConflict':
+      return true;
+    case 'descriptionLocked':
+    case 'invalidStatusTransition':
+      return false;
+    default:
+      return isReportableSightingFailure(error, failure);
+  }
+}
+
+export function sightingUpdateFailureTraceId(failure: SightingUpdateFailure | null): string | null {
+  switch (failure?.kind) {
+    case 'forbidden':
+    case 'photoConflict':
+    case 'photoStorageUnavailable':
+    case 'generic':
+      return failure.traceId ?? null;
+    default:
+      return null;
+  }
+}
+
+export function sightingUpdateErrorMessage(
+  resources: ResourceService,
+  failure: SightingUpdateFailure,
+): string {
+  switch (failure.kind) {
+    case 'forbidden':
+      return resources.translate('sighting.edit.errors.forbidden');
+    case 'descriptionLocked':
+      return resources.translate('sighting.edit.errors.descriptionLocked');
+    case 'invalidStatusTransition':
+      return resources.translate('sighting.edit.errors.invalidStatusTransition');
+    case 'photoConflict':
+      return resources.translate('sighting.edit.errors.photoConflict');
+    case 'photoStorageUnavailable':
+      return resources.translate('sighting.edit.errors.photoStorageUnavailable');
+    case 'generic':
+      return resources.translate('sighting.edit.errors.generic');
+    default:
+      return sightingErrorMessage(resources, failure);
+  }
+}
+
 function genericFailure(error: unknown): SightingFailure {
   const traceId = unexpectedTraceId(error);
 
   return traceId === undefined ? { kind: 'generic' } : { kind: 'generic', traceId };
+}
+
+function withOptionalTraceId<K extends 'forbidden' | 'photoConflict'>(
+  kind: K,
+  traceId: string | undefined,
+): { readonly kind: K; readonly traceId?: string } {
+  return traceId === undefined ? { kind } : { kind, traceId };
 }
 
 function photoStorageFailure(error: HttpErrorResponse): SightingFailure {

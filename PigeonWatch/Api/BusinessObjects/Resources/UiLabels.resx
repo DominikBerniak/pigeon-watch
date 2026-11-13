@@ -435,6 +435,54 @@
   <data name="sighting.detail.photoClose" xml:space="preserve">
     <value>Close</value>
   </data>
+  <data name="sighting.detail.edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="sighting.edit.title" xml:space="preserve">
+    <value>Edit sighting</value>
+  </data>
+  <data name="sighting.edit.save" xml:space="preserve">
+    <value>Save changes</value>
+  </data>
+  <data name="sighting.edit.cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="sighting.edit.back" xml:space="preserve">
+    <value>Back to sighting</value>
+  </data>
+  <data name="sighting.edit.statusHint" xml:space="preserve">
+    <value>Statuses only move forward, so a change can't be undone.</value>
+  </data>
+  <data name="sighting.edit.descriptionLocked" xml:space="preserve">
+    <value>The description can't change any more because someone else has commented on this sighting or contacted you about it.</value>
+  </data>
+  <data name="sighting.edit.currentPhoto" xml:space="preserve">
+    <value>Current photo</value>
+  </data>
+  <data name="sighting.edit.removePhoto" xml:space="preserve">
+    <value>Remove current photo</value>
+  </data>
+  <data name="sighting.edit.notOwner" xml:space="preserve">
+    <value>You can only edit sightings you reported.</value>
+  </data>
+  <data name="sighting.edit.errors.forbidden" xml:space="preserve">
+    <value>Only the person who reported this sighting can change it. Reload the page and try again.</value>
+  </data>
+  <data name="sighting.edit.errors.descriptionLocked" xml:space="preserve">
+    <value>Someone else has just commented on this sighting or contacted you, so the description can no longer change. It is back to the saved text; save again to keep your other changes.</value>
+  </data>
+  <data name="sighting.edit.errors.invalidStatusTransition" xml:space="preserve">
+    <value>The sighting changed in the meantime, so this status change is no longer possible. The status choices are updated; choose again and save.</value>
+  </data>
+  <data name="sighting.edit.errors.photoConflict" xml:space="preserve">
+    <value>We couldn't tell whether to replace or remove the photo. Try again.</value>
+  </data>
+  <data name="sighting.edit.errors.photoStorageUnavailable" xml:space="preserve">
+    <value>We couldn't save the photo right now. Try again, or keep the current photo.</value>
+  </data>
+  <data name="sighting.edit.errors.generic" xml:space="preserve">
+    <value>We couldn't save your changes right now. Try again.</value>
+  </data>
   <data name="sighting.comments.title" xml:space="preserve">
     <value>Comments</value>
   </data>

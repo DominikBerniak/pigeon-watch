@@ -2,7 +2,16 @@ import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ResourceService } from '../../core/resources/resource.service';
-import { isReportableSightingFailure, sightingErrorMessage, sightingFailure } from './sighting-errors';
+import {
+  isReportableSightingFailure,
+  isReportableSightingUpdateFailure,
+  isStaleEditFailure,
+  sightingErrorMessage,
+  sightingFailure,
+  sightingUpdateErrorMessage,
+  sightingUpdateFailure,
+  sightingUpdateFailureTraceId,
+} from './sighting-errors';
 
 describe('sighting errors', () => {
   function badRequest(
@@ -123,6 +132,167 @@ describe('sighting errors', () => {
         labels.translate('sighting.form.photoStorageUnavailable'),
       );
       expect(labels.translate('sighting.form.photoStorageUnavailable')).toContain('remove the photo');
+    });
+  });
+
+  describe('sightingUpdateFailure', () => {
+    it('maps a 403 to a reported forbidden failure with its reference', () => {
+      const error = new HttpErrorResponse({ status: 403, error: { traceId: '00-abc-def-01' } });
+      const failure = sightingUpdateFailure(error);
+
+      expect(failure).toEqual({ kind: 'forbidden', traceId: '00-abc-def-01' });
+      expect(isReportableSightingUpdateFailure(error, failure)).toBe(true);
+      expect(isStaleEditFailure(failure)).toBe(false);
+      expect(sightingUpdateFailureTraceId(failure)).toBe('00-abc-def-01');
+    });
+
+    it('maps a 404 to a silent not found failure', () => {
+      const error = new HttpErrorResponse({ status: 404 });
+      const failure = sightingUpdateFailure(error);
+
+      expect(failure).toEqual({ kind: 'notFound' });
+      expect(isReportableSightingUpdateFailure(error, failure)).toBe(false);
+    });
+
+    it.each([
+      ['DescriptionLocked', 'descriptionLocked'],
+      ['InvalidStatusTransition', 'invalidStatusTransition'],
+    ])('maps a 400 carrying %s to the silent stale-form failure %s', (code, kind) => {
+      const error = badRequest([code], { traceId: '00-abc-def-01' });
+      const failure = sightingUpdateFailure(error);
+
+      expect(failure).toEqual({ kind });
+      expect(isReportableSightingUpdateFailure(error, failure)).toBe(false);
+      expect(isStaleEditFailure(failure)).toBe(true);
+      expect(sightingUpdateFailureTraceId(failure)).toBeNull();
+    });
+
+    it('maps a 400 carrying PhotoConflict to a reported client bug with its reference', () => {
+      const error = badRequest(['PhotoConflict'], { traceId: '00-abc-def-01' });
+      const failure = sightingUpdateFailure(error);
+
+      expect(failure).toEqual({ kind: 'photoConflict', traceId: '00-abc-def-01' });
+      expect(isReportableSightingUpdateFailure(error, failure)).toBe(true);
+      expect(isStaleEditFailure(failure)).toBe(false);
+      expect(sightingUpdateFailureTraceId(failure)).toBe('00-abc-def-01');
+    });
+
+    it('maps a PhotoConflict without a reference to photoConflict alone', () => {
+      expect(sightingUpdateFailure(badRequest(['PhotoConflict']))).toEqual({
+        kind: 'photoConflict',
+      });
+    });
+
+    it.each([
+      ['PhotoTooLarge', 'photoTooLarge'],
+      ['PhotoUnsupportedType', 'photoUnsupportedType'],
+      ['PhotoUnreadable', 'photoUnreadable'],
+    ])('reuses the %s photo problem as %s without a report', (code, kind) => {
+      const error = badRequest([code]);
+      const failure = sightingUpdateFailure(error);
+
+      expect(failure).toEqual({ kind });
+      expect(isReportableSightingUpdateFailure(error, failure)).toBe(false);
+    });
+
+    it('reuses the reported photo storage outage', () => {
+      const error = new HttpErrorResponse({
+        status: 503,
+        error: { status: 503, traceId: '00-abc-def-01', errors: { PhotoStorageUnavailable: ['x'] } },
+      });
+      const failure = sightingUpdateFailure(error);
+
+      expect(failure).toEqual({ kind: 'photoStorageUnavailable', traceId: '00-abc-def-01' });
+      expect(isReportableSightingUpdateFailure(error, failure)).toBe(true);
+      expect(sightingUpdateFailureTraceId(failure)).toBe('00-abc-def-01');
+    });
+
+    it.each(['InvalidStatus', 'InvalidCriticality', 'DescriptionRequired', 'Description'])(
+      'keeps a 400 carrying %s generic and silent',
+      (code) => {
+        const error = badRequest([code]);
+        const failure = sightingUpdateFailure(error);
+
+        expect(failure).toEqual({ kind: 'generic' });
+        expect(isReportableSightingUpdateFailure(error, failure)).toBe(false);
+      },
+    );
+
+    it('reports a 500 as generic with its reference', () => {
+      const error = new HttpErrorResponse({ status: 500, error: { traceId: '00-abc-def-01' } });
+      const failure = sightingUpdateFailure(error);
+
+      expect(failure).toEqual({ kind: 'generic', traceId: '00-abc-def-01' });
+      expect(isReportableSightingUpdateFailure(error, failure)).toBe(true);
+      expect(sightingUpdateFailureTraceId(failure)).toBe('00-abc-def-01');
+    });
+
+    it('reports a non-HTTP error as generic', () => {
+      const error = new Error('boom');
+      const failure = sightingUpdateFailure(error);
+
+      expect(failure).toEqual({ kind: 'generic' });
+      expect(isReportableSightingUpdateFailure(error, failure)).toBe(true);
+    });
+  });
+
+  describe('sightingUpdateErrorMessage', () => {
+    function resources(): ResourceService {
+      TestBed.configureTestingModule({
+        providers: [provideHttpClient(), provideHttpClientTesting()],
+      });
+
+      return TestBed.inject(ResourceService);
+    }
+
+    it('renders an edit message for each update failure', () => {
+      const labels = resources();
+
+      expect(sightingUpdateErrorMessage(labels, { kind: 'forbidden' })).toBe(
+        labels.translate('sighting.edit.errors.forbidden'),
+      );
+      expect(sightingUpdateErrorMessage(labels, { kind: 'descriptionLocked' })).toBe(
+        labels.translate('sighting.edit.errors.descriptionLocked'),
+      );
+      expect(sightingUpdateErrorMessage(labels, { kind: 'invalidStatusTransition' })).toBe(
+        labels.translate('sighting.edit.errors.invalidStatusTransition'),
+      );
+      expect(sightingUpdateErrorMessage(labels, { kind: 'photoConflict' })).toBe(
+        labels.translate('sighting.edit.errors.photoConflict'),
+      );
+      expect(sightingUpdateErrorMessage(labels, { kind: 'photoStorageUnavailable' })).toBe(
+        labels.translate('sighting.edit.errors.photoStorageUnavailable'),
+      );
+      expect(sightingUpdateErrorMessage(labels, { kind: 'generic' })).toBe(
+        labels.translate('sighting.edit.errors.generic'),
+      );
+    });
+
+    it('reuses the not found and photo problem messages', () => {
+      const labels = resources();
+
+      expect(sightingUpdateErrorMessage(labels, { kind: 'notFound' })).toBe(
+        labels.translate('sighting.errors.notFound'),
+      );
+      expect(sightingUpdateErrorMessage(labels, { kind: 'photoUnreadable' })).toBe(
+        labels.translate('sighting.form.photoUnreadable'),
+      );
+    });
+
+    it('has a distinct label behind every edit error key', () => {
+      const labels = resources();
+      const keys = [
+        'sighting.edit.errors.forbidden',
+        'sighting.edit.errors.descriptionLocked',
+        'sighting.edit.errors.invalidStatusTransition',
+        'sighting.edit.errors.photoConflict',
+        'sighting.edit.errors.photoStorageUnavailable',
+        'sighting.edit.errors.generic',
+      ];
+      const texts = keys.map((key) => labels.translate(key));
+
+      expect(texts.filter((text, index) => text === keys[index])).toEqual([]);
+      expect(new Set(texts).size).toBe(keys.length);
     });
   });
 });

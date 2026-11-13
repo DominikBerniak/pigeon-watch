@@ -17,6 +17,7 @@ import {
   NearbyMapModes,
   ProfileModes,
   SightingDetailModes,
+  SightingEditModes,
   SightingListModes,
   StubModes,
 } from './cell-stubs';
@@ -38,6 +39,7 @@ interface CellBase {
 export type ProfileCell = CellBase & ProfileModes;
 export type NearbyMapCell = CellBase & NearbyMapModes;
 export type SightingDetailCell = CellBase & SightingDetailModes;
+export type SightingEditCell = CellBase & SightingEditModes;
 export type SightingListCell = CellBase & SightingListModes;
 export type MessagesCell = CellBase & MessagesModes;
 export type HeaderCell = CellBase & HeaderModes;
@@ -638,6 +640,30 @@ const detailCells: readonly SightingDetailCell[] = [
   },
 ];
 
+const editCells: readonly SightingEditCell[] = [
+  {
+    id: 'edit-editable',
+    label: 'Editable (current photo with Remove, status offers the allowed next steps)',
+    group: 'sightingEdit',
+    edit: 'editable',
+    steps: [],
+  },
+  {
+    id: 'edit-description-locked',
+    label: 'Description locked (read-only with the lock hint, status still editable)',
+    group: 'sightingEdit',
+    edit: 'locked',
+    steps: [],
+  },
+  {
+    id: 'edit-not-owner',
+    label: 'Not the owner (cannot-edit alert and Back link)',
+    group: 'sightingEdit',
+    edit: 'notOwner',
+    steps: [],
+  },
+];
+
 const listRow = 'li[app-sighting-row]';
 
 const listCells: readonly SightingListCell[] = [
@@ -847,6 +873,7 @@ export const cellGroups: readonly CellGroup[] = [
   { title: 'Profile', wide: false, cells: [...profileCells, ...dialogCells] },
   { title: 'Nearby map', wide: true, cells: nearbyMapCells },
   { title: 'Sighting detail', wide: true, cells: detailCells },
+  { title: 'Sighting edit', wide: true, cells: editCells },
   { title: 'Sighting list', wide: false, cells: listCells },
   { title: 'Messages', wide: true, cells: messagesCells },
   { title: 'Messages, narrow', wide: false, cells: messagesPhoneCells },

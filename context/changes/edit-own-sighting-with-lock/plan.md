@@ -463,30 +463,30 @@ Keep a browser-level test of the two-user lock flow, and bring the PRD, roadmap 
 
 #### Automated
 
-- [x] 2.1 API builds with the style rules
-- [x] 2.2 Architecture tests pass (new mapper interface and registration)
-- [x] 2.3 Unit tests pass, including the update service and controller tests
-- [x] 2.4 Integration tests pass, including update contract, coverage, ownership, privacy sweep and failure logging
-- [x] 2.5 No pending EF model changes
+- [x] 2.1 API builds with the style rules — 2cbaa07
+- [x] 2.2 Architecture tests pass (new mapper interface and registration) — 2cbaa07
+- [x] 2.3 Unit tests pass, including the update service and controller tests — 2cbaa07
+- [x] 2.4 Integration tests pass, including update contract, coverage, ownership, privacy sweep and failure logging — 2cbaa07
+- [x] 2.5 No pending EF model changes — 2cbaa07
 
 #### Manual
 
-- [x] 2.6 Swagger: Spotted to Caught succeeds, Spotted to At the vet rejected, replaced photo leaves no old blob
+- [x] 2.6 Swagger: Spotted to Caught succeeds, Spotted to At the vet rejected, replaced photo leaves no old blob — 2cbaa07
 
 ### Phase 3: SPA — edit page
 
 #### Automated
 
-- [ ] 3.1 SPA production build passes within the bundle budget
-- [ ] 3.2 SPA unit tests pass, including edit page, detail page, API client, error mapping and kitchen-sink specs
-- [ ] 3.3 API still builds after the resx change
+- [x] 3.1 SPA production build passes within the bundle budget
+- [x] 3.2 SPA unit tests pass, including edit page, detail page, API client, error mapping and kitchen-sink specs
+- [x] 3.3 API still builds after the resx change
 
 #### Manual
 
-- [ ] 3.4 Owner edits criticality and status to Caught and sees the new values
-- [ ] 3.5 Edit page shows location as text with no map tiles
-- [ ] 3.6 After another user's comment the description is read-only while status still saves
-- [ ] 3.7 Photo replace and remove reflected on detail page and list thumbnails
+- [x] 3.4 Owner edits criticality and status to Caught and sees the new values
+- [x] 3.5 Edit page shows location as text with no map tiles
+- [x] 3.6 After another user's comment the description is read-only while status still saves
+- [x] 3.7 Photo replace and remove reflected on detail page and list thumbnails
 
 ### Phase 4: E2E and product docs
 

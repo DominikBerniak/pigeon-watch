@@ -287,7 +287,7 @@ describe('App', () => {
     expect(main.classList).not.toContain('app-main--fill');
   });
 
-  it('declares the wide layout on the home, report, sighting list, sighting detail and messages routes among product routes', () => {
+  it('declares the wide layout on the home, report, sighting list, sighting edit, sighting detail and messages routes among product routes', () => {
     const wide = routes
       .filter((route) => !devRoutes.includes(route))
       .filter((route) => route.data?.['layout'] === 'wide');
@@ -296,6 +296,7 @@ describe('App', () => {
       '',
       'sightings/new',
       'sightings/list',
+      'sightings/:id/edit',
       'sightings/:id',
       'messagesUrlMatcher',
     ]);
