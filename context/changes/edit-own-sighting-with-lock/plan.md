@@ -492,9 +492,9 @@ Keep a browser-level test of the two-user lock flow, and bring the PRD, roadmap 
 
 #### Automated
 
-- [x] 4.1 The new edit spec passes
-- [x] 4.2 The full Playwright suite still passes
+- [x] 4.1 The new edit spec passes — 90ced99
+- [x] 4.2 The full Playwright suite still passes — 90ced99
 
 #### Manual
 
-- [x] 4.3 PRD FR-006, roadmap S-09 and test-plan wording match the plan decisions
+- [x] 4.3 PRD FR-006, roadmap S-09 and test-plan wording match the plan decisions — 90ced99
