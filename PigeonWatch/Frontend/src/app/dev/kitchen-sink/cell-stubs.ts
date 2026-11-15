@@ -50,6 +50,7 @@ export type DetailMode =
   | 'pending'
   | 'failureThenLoaded';
 export type PhotoMode = 'image' | 'pending' | 'failure';
+export type EditMode = 'editable' | 'locked' | 'notOwner';
 export type CommentsMode = 'empty' | 'items' | 'failure' | 'pending';
 export type AddCommentMode = 'success' | 'cooldown';
 export type StartThreadMode = 'success' | 'failure' | 'pending';
@@ -83,6 +84,11 @@ export interface SightingDetailModes {
   readonly ownThread?: OwnThreadMode;
 }
 
+export interface SightingEditModes {
+  readonly group: 'sightingEdit';
+  readonly edit: EditMode;
+}
+
 export interface SightingListModes {
   readonly group: 'sightingList';
   readonly list: ListMode;
@@ -106,6 +112,7 @@ export type StubModes =
   | ProfileModes
   | NearbyMapModes
   | SightingDetailModes
+  | SightingEditModes
   | SightingListModes
   | MessagesModes
   | HeaderModes;
@@ -147,6 +154,7 @@ function sinkSighting(
     createdAt: new Date(sinkLoadedAt - ageMinutes * minuteMilliseconds).toISOString(),
     hasPhoto,
     isMine: false,
+    editPermissions: null,
   };
 }
 
@@ -301,6 +309,25 @@ export const sinkOwnSighting: Sighting = {
   ...sinkSightings[0],
   id: 'sink-own',
   isMine: true,
+  editPermissions: {
+    canEditDescription: true,
+    allowedNextStatuses: [SightingStatus.caught, SightingStatus.notFound],
+  },
+};
+
+export const sinkEditableSighting: Sighting = {
+  ...sinkOwnSighting,
+  id: 'sink-edit',
+  hasPhoto: true,
+};
+
+export const sinkLockedSighting: Sighting = {
+  ...sinkOwnSighting,
+  id: 'sink-edit-locked',
+  editPermissions: {
+    canEditDescription: false,
+    allowedNextStatuses: [SightingStatus.caught, SightingStatus.notFound],
+  },
 };
 
 export const sinkStartThreadTraceId = '00-sink-thread-start-01';
@@ -353,6 +380,17 @@ export const sinkMessages: readonly SightingMessage[] = Array.from(
 );
 
 const busyHoldMilliseconds = 30000;
+
+function editedSighting(mode: EditMode): Sighting {
+  switch (mode) {
+    case 'locked':
+      return sinkLockedSighting;
+    case 'notOwner':
+      return sinkSightings[0];
+    default:
+      return sinkEditableSighting;
+  }
+}
 
 function badRequest(errors: Record<string, string[]>): HttpErrorResponse {
   return new HttpErrorResponse({ status: 400, error: { status: 400, errors } });
@@ -429,6 +467,7 @@ export class CellStubs {
     nearby: (_centre: GeoPoint, filters?: SightingFilters): Observable<SightingList> =>
       this.nearbyResult(filters),
     get: (): Observable<Sighting> => this.detailResult(),
+    update: (): Observable<Sighting> => this.detailResult(),
     photo: (): Observable<Blob> => this.photoResult(),
     photoThumbnail: (): Observable<Blob> => this.thumbnailResult(),
     list: (request: SightingListRequest): Observable<SightingPage> => this.listResult(request),
@@ -599,6 +638,8 @@ export class CellStubs {
 
   private detailResult(): Observable<Sighting> {
     const modes = this.modes();
+
+    if (modes.group === 'sightingEdit') return of(editedSighting(modes.edit));
     const firstRequest = this.detailRequests++ === 0;
 
     switch (modes.group === 'sightingDetail' ? modes.detail : 'loaded') {

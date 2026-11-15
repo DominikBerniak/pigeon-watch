@@ -5,7 +5,7 @@ namespace PigeonWatch.WebApi.ViewModelCreators;
 
 public class SightingViewModelCreator : ISightingViewModelCreator
 {
-    public SightingModel Create(Sighting sighting, Guid currentUserId)
+    public SightingModel Create(Sighting sighting, Guid currentUserId, SightingEditPermissions? permissions)
     {
         return new()
         {
@@ -20,7 +20,14 @@ public class SightingViewModelCreator : ISightingViewModelCreator
             ReporterDisplayName = sighting.ReporterDisplayName,
             CreatedAt = sighting.CreatedAt,
             HasPhoto = sighting.HasPhoto,
-            IsMine = sighting.ReporterId == currentUserId
+            IsMine = sighting.ReporterId == currentUserId,
+            EditPermissions = permissions is null
+                ? null
+                : new SightingEditPermissionsModel
+                {
+                    CanEditDescription = permissions.CanEditDescription,
+                    AllowedNextStatuses = permissions.AllowedNextStatuses.Select(status => (int)status).ToList()
+                }
         };
     }
 
@@ -28,7 +35,7 @@ public class SightingViewModelCreator : ISightingViewModelCreator
     {
         return new()
         {
-            Items = sightings.Select(sighting => Create(sighting, currentUserId)).ToList()
+            Items = sightings.Select(sighting => Create(sighting, currentUserId, null)).ToList()
         };
     }
 
@@ -36,7 +43,7 @@ public class SightingViewModelCreator : ISightingViewModelCreator
     {
         return new()
         {
-            Items = page.Items.Select(sighting => Create(sighting, currentUserId)).ToList(),
+            Items = page.Items.Select(sighting => Create(sighting, currentUserId, null)).ToList(),
             TotalCount = page.TotalCount
         };
     }

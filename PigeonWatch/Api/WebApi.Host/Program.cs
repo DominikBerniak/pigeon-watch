@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Diagnostics;
+using System.Globalization;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Diagnostics;
@@ -39,6 +40,7 @@ namespace PigeonWatch.WebApi.Host
             });
 
             int authPermitLimit = builder.Configuration.GetValue("RateLimiting:AuthPermitLimit", 10);
+            int sightingEditPermitLimit = builder.Configuration.GetValue("RateLimiting:SightingEditPermitLimit", 10);
 
             builder.Services.AddRateLimiter(options =>
             {
@@ -58,6 +60,9 @@ namespace PigeonWatch.WebApi.Host
                             route,
                             policyName,
                             remoteIpMissing);
+
+                    if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out TimeSpan retryAfter))
+                        context.HttpContext.Response.Headers.RetryAfter = ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString(CultureInfo.InvariantCulture);
 
                     return ValueTask.CompletedTask;
                 };
@@ -84,6 +89,22 @@ namespace PigeonWatch.WebApi.Host
                             Window = TimeSpan.FromMinutes(1),
                             QueueLimit = 0
                         }));
+                options.AddPolicy(RateLimitPolicyNames.SightingEdits, httpContext =>
+                {
+                    string? userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                    if (string.IsNullOrEmpty(userId))
+                        return RateLimitPartition.GetNoLimiter(string.Empty);
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        userId,
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = sightingEditPermitLimit,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0
+                        });
+                });
             });
 
             WebApplication app = builder.Build();

@@ -35,6 +35,7 @@ const sighting: Sighting = {
   createdAt: '2026-10-11T12:00:00Z',
   hasPhoto: false,
   isMine: false,
+  editPermissions: null,
 };
 
 const withPhoto: Sighting = { ...sighting, hasPhoto: true };
@@ -584,6 +585,32 @@ describe('SightingDetailPage', () => {
     expect(rows(root)).toHaveLength(7);
     expect(contactButton(root)).toBeNull();
     expect(root.textContent).not.toContain('Message Jan K');
+  });
+
+  it('offers the owner an Edit link to the edit page in the card header', async () => {
+    get.mockReturnValue(of({ ...sighting, isMine: true }));
+
+    const root = await open();
+    const edit = root.querySelector<HTMLAnchorElement>('app-page-card header a');
+
+    expect(edit?.textContent?.trim()).toBe('Edit');
+    expect(edit?.getAttribute('href')).toBe('/sightings/sighting-1/edit');
+    expect(root.querySelector('app-page-card header button')).toBe(button(root, 'Show map'));
+  });
+
+  it('shows no Edit link on a sighting of someone else', async () => {
+    const root = await open();
+
+    expect(root.querySelector('app-page-card header a')).toBeNull();
+    expect(pageLinks(root).map((link) => link.textContent?.trim())).not.toContain('Edit');
+  });
+
+  it('shows no Edit link while the sighting loads', async () => {
+    get.mockReturnValue(NEVER);
+
+    const root = await open();
+
+    expect(root.querySelector('app-page-card header a')).toBeNull();
   });
 
   it('opens the message dialog for the reporter without sending anything', async () => {

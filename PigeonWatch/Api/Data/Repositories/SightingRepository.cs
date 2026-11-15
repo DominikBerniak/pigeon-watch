@@ -149,4 +149,48 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
 
         return blobName;
     }
+
+    public async Task<SightingUpdateOutcome?> UpdateAsync(
+        Guid sightingId,
+        Guid reporterId,
+        SightingUpdate update,
+        SightingPhotoChange photoChange,
+        string? newPhotoBlobName,
+        CancellationToken cancellationToken = default)
+    {
+        SightingEntity? entity = await db.Sightings
+            .Include(e => e.Reporter)
+            .FirstOrDefaultAsync(e => e.Id == sightingId && e.ReporterId == reporterId, cancellationToken);
+
+        if (entity is null)
+            return null;
+
+        string? previousBlobName = entity.PhotoBlobName;
+        entity.Name = update.Name;
+        entity.Description = update.Description;
+        entity.Behaviour = update.Behaviour;
+        entity.Status = update.Status;
+        entity.Criticality = update.Criticality;
+
+        if (photoChange == SightingPhotoChange.Replace)
+            entity.PhotoBlobName = newPhotoBlobName;
+        else if (photoChange == SightingPhotoChange.Remove)
+            entity.PhotoBlobName = null;
+
+        await db.SaveChangesAsync(cancellationToken);
+        string? replacedBlobName = photoChange == SightingPhotoChange.Keep ? null : previousBlobName;
+
+        return new SightingUpdateOutcome(sightingMapper.ToSighting(entity), replacedBlobName);
+    }
+
+    public async Task<bool> HasOtherUserEngagementAsync(Guid sightingId, Guid reporterId, CancellationToken cancellationToken = default)
+    {
+        bool engaged = await db.Sightings
+            .Where(e => e.Id == sightingId)
+            .Select(e => db.SightingComments.Any(comment => comment.SightingId == sightingId && comment.AuthorId != reporterId && comment.DeletedAt == null)
+                || db.SightingThreads.Any(thread => thread.SightingId == sightingId))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return engaged;
+    }
 }

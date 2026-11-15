@@ -23,6 +23,11 @@ export const SightingCriticality = {
 
 export type SightingCriticality = (typeof SightingCriticality)[keyof typeof SightingCriticality];
 
+export interface SightingEditPermissions {
+  canEditDescription: boolean;
+  allowedNextStatuses: SightingStatus[];
+}
+
 export interface Sighting {
   id: string;
   name: string | null;
@@ -36,6 +41,7 @@ export interface Sighting {
   createdAt: string;
   hasPhoto: boolean;
   isMine: boolean;
+  editPermissions: SightingEditPermissions | null;
 }
 
 export interface SightingList {
@@ -119,6 +125,16 @@ export interface NewSighting {
   photo: Blob | null;
 }
 
+export interface SightingUpdate {
+  name: string | null;
+  description: string;
+  behaviour: string;
+  status: SightingStatus;
+  criticality: SightingCriticality;
+  photo: Blob | null;
+  removePhoto: boolean;
+}
+
 export const sightingStatusLabels: Readonly<Record<SightingStatus, string>> = {
   1: 'sighting.status.spotted',
   2: 'sighting.status.caught',
@@ -193,6 +209,12 @@ export const allSightingStatuses: readonly SightingStatus[] = [
   SightingStatus.passedAway,
   SightingStatus.notFound,
 ];
+
+export function editableSightingStatuses(sighting: Sighting): readonly SightingStatus[] {
+  const next = sighting.editPermissions?.allowedNextStatuses ?? [];
+
+  return [sighting.status, ...next.filter((status) => status !== sighting.status)];
+}
 
 export interface SightingFilters {
   statuses: readonly SightingStatus[];

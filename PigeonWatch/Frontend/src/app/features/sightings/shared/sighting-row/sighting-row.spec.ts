@@ -26,6 +26,7 @@ const named: Sighting = {
   createdAt: '2026-10-11T11:55:00Z',
   hasPhoto: false,
   isMine: false,
+  editPermissions: null,
 };
 
 @Component({

@@ -5,7 +5,9 @@ namespace PigeonWatch.BusinessLogic.Services;
 public interface ISightingService
 {
     Task<SightingCreateResult> CreateAsync(NewSighting sighting, CancellationToken cancellationToken = default);
+    Task<SightingUpdateResult> UpdateAsync(SightingUpdate update, CancellationToken cancellationToken = default);
     Task<Sighting?> GetAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<SightingEditPermissions?> GetEditPermissionsAsync(Sighting sighting, Guid userId, CancellationToken cancellationToken = default);
     Task<SightingNearbyResult> GetNearbyAsync(
         double latitude,
         double longitude,

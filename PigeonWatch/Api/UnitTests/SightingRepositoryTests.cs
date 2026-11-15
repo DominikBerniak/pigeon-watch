@@ -392,6 +392,226 @@ public sealed class SightingRepositoryTests : IDisposable
         Assert.Null(await CreateRepository(db).GetLatestCreateDateByReporterAsync(reporterId, cancellationToken));
     }
 
+    [Fact]
+    public async Task Other_user_engagement_is_false_when_nobody_commented_or_made_contact()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+
+        Assert.False(await HasOtherUserEngagementAsync(sighting.Id, reporterId));
+    }
+
+    [Fact]
+    public async Task Other_user_engagement_is_false_when_only_the_reporter_commented()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        await CreateCommentAsync(sighting.Id, reporterId);
+
+        Assert.False(await HasOtherUserEngagementAsync(sighting.Id, reporterId));
+    }
+
+    [Fact]
+    public async Task Other_user_engagement_is_true_when_another_user_has_a_live_comment()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid bobId = await CreateUserAsync("bob@example.com", "Bob");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        await CreateCommentAsync(sighting.Id, bobId);
+
+        Assert.True(await HasOtherUserEngagementAsync(sighting.Id, reporterId));
+    }
+
+    [Fact]
+    public async Task Other_user_engagement_is_false_when_another_users_only_comment_is_soft_deleted()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid bobId = await CreateUserAsync("bob@example.com", "Bob");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        SightingComment comment = await CreateCommentAsync(sighting.Id, bobId);
+
+        await using (PigeonWatchDbContext db = CreateContext())
+        {
+            SightingComment? deleted = await new SightingCommentRepository(db, new SightingCommentMapper())
+                .SoftDeleteAsync(sighting.Id, comment.Id, bobId, timeProvider.UtcNow.UtcDateTime, cancellationToken);
+
+            Assert.NotNull(deleted);
+        }
+
+        Assert.False(await HasOtherUserEngagementAsync(sighting.Id, reporterId));
+    }
+
+    [Fact]
+    public async Task Other_user_engagement_is_true_when_a_thread_exists()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid bobId = await CreateUserAsync("bob@example.com", "Bob");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+
+        await using (PigeonWatchDbContext db = CreateContext())
+        {
+            (SightingThread Thread, SightingMessage Message)? started = await new SightingThreadRepository(db, new SightingThreadMapper())
+                .StartOrAppendAsync(sighting.Id, bobId, "I can help", timeProvider.UtcNow.UtcDateTime, cancellationToken);
+
+            Assert.NotNull(started);
+        }
+
+        Assert.True(await HasOtherUserEngagementAsync(sighting.Id, reporterId));
+    }
+
+    [Fact]
+    public async Task Other_user_engagement_ignores_comments_on_another_sighting()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid bobId = await CreateUserAsync("bob@example.com", "Bob");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        Sighting other = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        await CreateCommentAsync(other.Id, bobId);
+
+        Assert.False(await HasOtherUserEngagementAsync(sighting.Id, reporterId));
+    }
+
+    [Fact]
+    public async Task Update_writes_the_editable_columns_and_keeps_the_location()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.2297, 21.0122, SightingStatus.Spotted)))!;
+        SightingUpdate update = new(sighting.Id, reporterId, "Grey", "Limping badly", "Hides under a bench", SightingStatus.Caught, SightingCriticality.Monitor);
+        string blobName = $"{Guid.NewGuid():D}.jpg";
+
+        SightingUpdateOutcome? outcome = await UpdateSightingAsync(sighting.Id, reporterId, update, SightingPhotoChange.Replace, blobName);
+        Sighting? loaded = await GetSightingAsync(sighting.Id);
+        string? storedBlobName = await GetPhotoBlobNameAsync(sighting.Id);
+
+        Assert.NotNull(outcome);
+        Assert.Equal(loaded, outcome.Sighting);
+        Assert.Equal("Grey", loaded!.Name);
+        Assert.Equal("Limping badly", loaded.Description);
+        Assert.Equal("Hides under a bench", loaded.Behaviour);
+        Assert.Equal(SightingStatus.Caught, loaded.Status);
+        Assert.Equal(SightingCriticality.Monitor, loaded.Criticality);
+        Assert.Equal(52.2297, loaded.Latitude);
+        Assert.Equal(21.0122, loaded.Longitude);
+        Assert.Equal("Pidgey", loaded.ReporterDisplayName);
+        Assert.Equal(sighting.CreatedAt, loaded.CreatedAt);
+        Assert.True(loaded.HasPhoto);
+        Assert.Equal(blobName, storedBlobName);
+    }
+
+    [Fact]
+    public async Task Update_with_keep_leaves_a_photo_name_changed_after_the_callers_read_untouched()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        string readBlobName = $"{Guid.NewGuid():D}.jpg";
+        string newerBlobName = $"{Guid.NewGuid():D}.jpg";
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted) with { PhotoBlobName = readBlobName }))!;
+        await SetPhotoBlobNameAsync(sighting.Id, newerBlobName);
+        SightingUpdate update = new(sighting.Id, reporterId, "Grey", sighting.Description, sighting.Behaviour, SightingStatus.Caught, sighting.Criticality);
+
+        SightingUpdateOutcome? outcome = await UpdateSightingAsync(sighting.Id, reporterId, update, SightingPhotoChange.Keep, null);
+
+        Assert.NotNull(outcome);
+        Assert.True(outcome.Sighting.HasPhoto);
+        Assert.Equal(SightingStatus.Caught, outcome.Sighting.Status);
+        Assert.Null(outcome.ReplacedPhotoBlobName);
+        Assert.Equal(newerBlobName, await GetPhotoBlobNameAsync(sighting.Id));
+    }
+
+    [Fact]
+    public async Task Update_with_replace_stores_the_new_name_and_returns_the_name_the_row_pointed_at()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        string readBlobName = $"{Guid.NewGuid():D}.jpg";
+        string currentBlobName = $"{Guid.NewGuid():D}.jpg";
+        string newBlobName = $"{Guid.NewGuid():D}.jpg";
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted) with { PhotoBlobName = readBlobName }))!;
+        await SetPhotoBlobNameAsync(sighting.Id, currentBlobName);
+        SightingUpdate update = new(sighting.Id, reporterId, null, sighting.Description, sighting.Behaviour, sighting.Status, sighting.Criticality);
+
+        SightingUpdateOutcome? outcome = await UpdateSightingAsync(sighting.Id, reporterId, update, SightingPhotoChange.Replace, newBlobName);
+
+        Assert.NotNull(outcome);
+        Assert.True(outcome.Sighting.HasPhoto);
+        Assert.Equal(currentBlobName, outcome.ReplacedPhotoBlobName);
+        Assert.Equal(newBlobName, await GetPhotoBlobNameAsync(sighting.Id));
+    }
+
+    [Fact]
+    public async Task Update_with_replace_on_a_sighting_without_a_photo_returns_no_replaced_name()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        string newBlobName = $"{Guid.NewGuid():D}.jpg";
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        SightingUpdate update = new(sighting.Id, reporterId, null, sighting.Description, sighting.Behaviour, sighting.Status, sighting.Criticality);
+
+        SightingUpdateOutcome? outcome = await UpdateSightingAsync(sighting.Id, reporterId, update, SightingPhotoChange.Replace, newBlobName);
+
+        Assert.NotNull(outcome);
+        Assert.True(outcome.Sighting.HasPhoto);
+        Assert.Null(outcome.ReplacedPhotoBlobName);
+        Assert.Equal(newBlobName, await GetPhotoBlobNameAsync(sighting.Id));
+    }
+
+    [Fact]
+    public async Task Update_with_remove_clears_the_photo_name_and_returns_the_name_the_row_pointed_at()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        string readBlobName = $"{Guid.NewGuid():D}.jpg";
+        string currentBlobName = $"{Guid.NewGuid():D}.jpg";
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted) with { PhotoBlobName = readBlobName }))!;
+        await SetPhotoBlobNameAsync(sighting.Id, currentBlobName);
+        SightingUpdate update = new(sighting.Id, reporterId, null, sighting.Description, sighting.Behaviour, sighting.Status, sighting.Criticality);
+
+        SightingUpdateOutcome? outcome = await UpdateSightingAsync(sighting.Id, reporterId, update, SightingPhotoChange.Remove, null);
+
+        Assert.NotNull(outcome);
+        Assert.False(outcome.Sighting.HasPhoto);
+        Assert.Equal(currentBlobName, outcome.ReplacedPhotoBlobName);
+        Assert.Null(await GetPhotoBlobNameAsync(sighting.Id));
+    }
+
+    [Fact]
+    public async Task Update_with_remove_on_a_sighting_without_a_photo_returns_no_replaced_name()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        SightingUpdate update = new(sighting.Id, reporterId, null, sighting.Description, sighting.Behaviour, sighting.Status, sighting.Criticality);
+
+        SightingUpdateOutcome? outcome = await UpdateSightingAsync(sighting.Id, reporterId, update, SightingPhotoChange.Remove, null);
+
+        Assert.NotNull(outcome);
+        Assert.False(outcome.Sighting.HasPhoto);
+        Assert.Null(outcome.ReplacedPhotoBlobName);
+    }
+
+    [Fact]
+    public async Task Update_returns_null_and_writes_nothing_when_the_caller_is_not_the_reporter()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid bobId = await CreateUserAsync("bob@example.com", "Bob");
+        string blobName = $"{Guid.NewGuid():D}.jpg";
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted) with { PhotoBlobName = blobName }))!;
+        SightingUpdate update = new(sighting.Id, bobId, "Forged", "Forged description", "Forged behaviour", SightingStatus.Caught, SightingCriticality.Monitor);
+
+        SightingUpdateOutcome? outcome = await UpdateSightingAsync(sighting.Id, bobId, update, SightingPhotoChange.Remove, null);
+
+        Assert.Null(outcome);
+        Assert.Equal(sighting, await GetSightingAsync(sighting.Id));
+        Assert.Equal(blobName, await GetPhotoBlobNameAsync(sighting.Id));
+    }
+
+    [Fact]
+    public async Task Update_returns_null_for_an_unknown_id()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid unknownId = Guid.NewGuid();
+        SightingUpdate update = new(unknownId, reporterId, null, "Limping", "Cannot fly", SightingStatus.Spotted, SightingCriticality.Monitor);
+
+        SightingUpdateOutcome? outcome = await UpdateSightingAsync(unknownId, reporterId, update, SightingPhotoChange.Keep, null);
+
+        Assert.Null(outcome);
+    }
+
     public void Dispose()
     {
         connection.Dispose();
@@ -412,6 +632,60 @@ public sealed class SightingRepositoryTests : IDisposable
         await using PigeonWatchDbContext db = CreateContext();
 
         return await CreateRepository(db).CreateAsync(sighting, cancellationToken);
+    }
+
+    private async Task<SightingComment> CreateCommentAsync(Guid sightingId, Guid authorId)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+        SightingComment? comment = await new SightingCommentRepository(db, new SightingCommentMapper())
+            .CreateAsync(new NewSightingComment(sightingId, authorId, "Seen it too"), cancellationToken);
+
+        Assert.NotNull(comment);
+
+        return comment;
+    }
+
+    private async Task<SightingUpdateOutcome?> UpdateSightingAsync(
+        Guid sightingId,
+        Guid reporterId,
+        SightingUpdate update,
+        SightingPhotoChange photoChange,
+        string? newPhotoBlobName)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+
+        return await CreateRepository(db).UpdateAsync(sightingId, reporterId, update, photoChange, newPhotoBlobName, cancellationToken);
+    }
+
+    private async Task SetPhotoBlobNameAsync(Guid sightingId, string photoBlobName)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+        int affected = await db.Sightings
+            .Where(e => e.Id == sightingId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(e => e.PhotoBlobName, photoBlobName), cancellationToken);
+
+        Assert.Equal(1, affected);
+    }
+
+    private async Task<Sighting?> GetSightingAsync(Guid sightingId)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+
+        return await CreateRepository(db).GetByIdAsync(sightingId, cancellationToken);
+    }
+
+    private async Task<string?> GetPhotoBlobNameAsync(Guid sightingId)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+
+        return await CreateRepository(db).GetPhotoBlobNameAsync(sightingId, cancellationToken);
+    }
+
+    private async Task<bool> HasOtherUserEngagementAsync(Guid sightingId, Guid reporterId)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+
+        return await CreateRepository(db).HasOtherUserEngagementAsync(sightingId, reporterId, cancellationToken);
     }
 
     private async Task<Guid> CreateUserAsync(string email, string displayName)

@@ -16,6 +16,7 @@ import {
   SightingThread,
   SightingThreadPage,
   SightingThreadStart,
+  SightingUpdate,
 } from './sighting.types';
 import { SightingsApi } from './sightings-api';
 
@@ -34,6 +35,7 @@ const sighting: Sighting = {
   createdAt: '2026-10-11T12:00:00Z',
   hasPhoto: false,
   isMine: false,
+  editPermissions: null,
 };
 
 describe('SightingsApi', () => {
@@ -113,6 +115,90 @@ describe('SightingsApi', () => {
     expect((part as File).name).toBe('photo.jpg');
     expect((part as File).type).toBe('image/jpeg');
     expect((part as File).size).toBe(photo.size);
+  });
+
+  const sightingUpdate: SightingUpdate = {
+    name: 'Limpy',
+    description: 'Grey pigeon, left wing ruffled',
+    behaviour: 'Walks slowly',
+    status: SightingStatus.caught,
+    criticality: SightingCriticality.needsHelpSoon,
+    photo: null,
+    removePhoto: false,
+  };
+
+  function sentUpdate(id: string, update: SightingUpdate, url: string): FormData {
+    const owned: Sighting = {
+      ...sighting,
+      isMine: true,
+      editPermissions: { canEditDescription: true, allowedNextStatuses: [SightingStatus.atTheVet] },
+    };
+    let result: Sighting | undefined;
+
+    api.update(id, update).subscribe((value) => (result = value));
+    const request = httpMock.expectOne(url);
+    request.flush(owned);
+
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.headers.has('Content-Type')).toBe(false);
+    expect(request.request.body).toBeInstanceOf(FormData);
+    expect(result).toEqual(owned);
+
+    return request.request.body as FormData;
+  }
+
+  it('updates a sighting with a multipart PUT of the editable fields and no location', () => {
+    const form = sentUpdate(sighting.id, sightingUpdate, `${sightingsUrl}/${sighting.id}`);
+
+    expect([...form.keys()]).toEqual([
+      'name',
+      'description',
+      'behaviour',
+      'status',
+      'criticality',
+      'removePhoto',
+    ]);
+    expect(form.get('name')).toBe('Limpy');
+    expect(form.get('description')).toBe('Grey pigeon, left wing ruffled');
+    expect(form.get('behaviour')).toBe('Walks slowly');
+    expect(form.get('status')).toBe('2');
+    expect(form.get('criticality')).toBe('2');
+    expect(form.get('removePhoto')).toBe('false');
+    expect(form.has('latitude')).toBe(false);
+    expect(form.has('longitude')).toBe(false);
+    expect(form.has('photo')).toBe(false);
+  });
+
+  it('encodes the id into the update path and leaves out a null name', () => {
+    const form = sentUpdate('a/b', { ...sightingUpdate, name: null }, `${sightingsUrl}/a%2Fb`);
+
+    expect(form.has('name')).toBe(false);
+  });
+
+  it('asks to remove the photo with removePhoto true', () => {
+    const form = sentUpdate(
+      sighting.id,
+      { ...sightingUpdate, removePhoto: true },
+      `${sightingsUrl}/${sighting.id}`,
+    );
+
+    expect(form.get('removePhoto')).toBe('true');
+    expect(form.has('photo')).toBe(false);
+  });
+
+  it('sends a replacement photo as a part named photo.jpg', () => {
+    const photo = new Blob(['jpeg-bytes'], { type: 'image/jpeg' });
+    const form = sentUpdate(
+      sighting.id,
+      { ...sightingUpdate, photo },
+      `${sightingsUrl}/${sighting.id}`,
+    );
+    const part = form.get('photo');
+
+    expect(part).toBeInstanceOf(File);
+    expect((part as File).name).toBe('photo.jpg');
+    expect((part as File).size).toBe(photo.size);
+    expect(form.get('removePhoto')).toBe('false');
   });
 
   it('downloads the photo of a sighting as a blob', () => {

@@ -168,6 +168,40 @@ public sealed class OwnershipContractTests : IDisposable
     }
 
     [Fact]
+    public async Task Sighting_update_by_bob_with_forged_ownership_fields_is_403_and_alices_sighting_is_unchanged()
+    {
+        TestUser alice = await SeedUserAsync(aliceEmail, alicePassword, aliceDisplayName);
+        TestUser bob = await SeedUserAsync(bobEmail, bobPassword, bobDisplayName);
+        Guid aliceSightingId = await alice.CreateSightingAsync(cancellationToken: cancellationToken);
+        using HttpResponseMessage before = await alice.Client.GetAsync($"/sightings/{aliceSightingId}", cancellationToken);
+        string beforeBody = await before.Content.ReadAsStringAsync(cancellationToken);
+
+        Dictionary<string, string> forgedFields = SightingForm.UpdateFields(status: 2, criticality: 3, name: "Forged pigeon", description: "Forged description.");
+        forgedFields["id"] = aliceSightingId.ToString();
+        forgedFields["reporterId"] = bob.Id.ToString();
+        forgedFields["userId"] = alice.Id.ToString();
+        forgedFields["email"] = aliceEmail;
+        forgedFields["createUser"] = alice.Id.ToString();
+        forgedFields["reporter.id"] = bob.Id.ToString();
+        forgedFields["isMine"] = "true";
+        forgedFields["photoBlobName"] = $"{Guid.NewGuid():D}.jpg";
+        using HttpResponseMessage update = await bob.UpdateSightingAsync(aliceSightingId, forgedFields, cancellationToken: cancellationToken);
+        IReadOnlyList<LeakHit> leaks = await scanner.ScanAsync(update, ResponseLeakScanner.NeedlesFor(aliceEmail), cancellationToken);
+        using HttpResponseMessage after = await alice.Client.GetAsync($"/sightings/{aliceSightingId}", cancellationToken);
+        string afterBody = await after.Content.ReadAsStringAsync(cancellationToken);
+        List<SightingSummary> aliceMine = await ReadMineAsync(alice);
+        List<SightingSummary> bobMine = await ReadMineAsync(bob);
+        List<AuditUsers> audit = factory.ReadSightingAuditUsers().ToList();
+
+        Assert.Equal(HttpStatusCode.Forbidden, update.StatusCode);
+        Assert.Empty(leaks);
+        Assert.Equal(beforeBody, afterBody);
+        Assert.Equal([new SightingSummary(aliceSightingId, aliceDisplayName)], aliceMine);
+        Assert.Empty(bobMine);
+        Assert.Equal([new AuditUsers(alice.Id.ToString(), alice.Id.ToString())], audit);
+    }
+
+    [Fact]
     public async Task Open_reads_by_design_show_alices_sighting_to_bob_by_id_and_nearby_with_a_display_name_and_no_email()
     {
         TestUser alice = await SeedUserAsync(aliceEmail, alicePassword, aliceDisplayName);

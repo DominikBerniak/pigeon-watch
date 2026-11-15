@@ -1,8 +1,10 @@
 import { defaultLabels } from '../../core/resources/generated/snapshots';
 import {
+  Sighting,
   SightingCriticality,
   SightingStatus,
   allSightingStatuses,
+  editableSightingStatuses,
   filterableSightingStatuses,
   initialSightingStatuses,
   selectableSightingCriticalities,
@@ -63,5 +65,62 @@ describe('sighting types', () => {
 
   it('offers the three criticality levels in rising order', () => {
     expect(selectableSightingCriticalities).toEqual([1, 2, 3]);
+  });
+
+  describe('editableSightingStatuses', () => {
+    const sighting: Sighting = {
+      id: 'sighting-1',
+      name: null,
+      description: 'Grey pigeon',
+      behaviour: 'Cannot fly',
+      latitude: 52.2297,
+      longitude: 21.0122,
+      status: SightingStatus.spotted,
+      criticality: SightingCriticality.urgent,
+      reporterDisplayName: 'Jan K',
+      createdAt: '2026-10-11T12:00:00Z',
+      hasPhoto: false,
+      isMine: true,
+      editPermissions: {
+        canEditDescription: true,
+        allowedNextStatuses: [SightingStatus.caught, SightingStatus.notFound],
+      },
+    };
+
+    it('offers the current status first, then the allowed next statuses', () => {
+      expect(editableSightingStatuses(sighting)).toEqual([
+        SightingStatus.spotted,
+        SightingStatus.caught,
+        SightingStatus.notFound,
+      ]);
+    });
+
+    it('offers only the current status in an end state', () => {
+      expect(
+        editableSightingStatuses({
+          ...sighting,
+          status: SightingStatus.adopted,
+          editPermissions: { canEditDescription: true, allowedNextStatuses: [] },
+        }),
+      ).toEqual([SightingStatus.adopted]);
+    });
+
+    it('lists the current status once even when the server repeats it', () => {
+      expect(
+        editableSightingStatuses({
+          ...sighting,
+          editPermissions: {
+            canEditDescription: true,
+            allowedNextStatuses: [SightingStatus.spotted, SightingStatus.caught],
+          },
+        }),
+      ).toEqual([SightingStatus.spotted, SightingStatus.caught]);
+    });
+
+    it('offers only the current status without permissions', () => {
+      expect(editableSightingStatuses({ ...sighting, editPermissions: null })).toEqual([
+        SightingStatus.spotted,
+      ]);
+    });
   });
 });

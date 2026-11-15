@@ -22,6 +22,11 @@
       </app-error-retry>
     }
   }
+  @if (sighting()?.isMine) {
+    <a headerActions mat-stroked-button [routerLink]="['/sightings', sighting()?.id, 'edit']">{{
+      'sighting.detail.edit' | translate
+    }}</a>
+  }
   @if (sighting()) {
     <button
       headerActions

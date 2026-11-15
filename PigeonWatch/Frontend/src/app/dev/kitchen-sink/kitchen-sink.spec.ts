@@ -18,9 +18,12 @@ import {
   sinkComments,
   sinkCommentTotal,
   sinkContactThread,
+  sinkEditableSighting,
   sinkInboxPageSize,
   sinkListSightings,
+  sinkLockedSighting,
   sinkLongNameSighting,
+  sinkOwnSighting,
   sinkMessagePageSize,
   sinkPhotoSighting,
   sinkPosition,
@@ -62,7 +65,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
     fixture = TestBed.createComponent(KitchenSink);
     root = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
-  });
+  }, sinkTestTimeout);
 
   function cell(id: string): HTMLElement {
     const element = root.querySelector<HTMLElement>(`[data-cell="${id}"]`);
@@ -157,6 +160,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
       profile: 'app-profile-page',
       nearbyMap: 'app-nearby-map-page',
       sightingDetail: 'app-sighting-detail-page',
+      sightingEdit: 'app-edit-sighting-page',
       sightingList: 'app-sighting-list-page',
       messages: 'app-messages-page',
       header: 'app-messages-link',
@@ -171,7 +175,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
       expect(textOf(element.querySelector('h3'))).toBe(definition.label);
       expect(
         element.querySelectorAll(
-          'app-profile-page, app-nearby-map-page, app-sighting-detail-page, app-sighting-list-page, app-messages-page, app-messages-link',
+          'app-profile-page, app-nearby-map-page, app-sighting-detail-page, app-edit-sighting-page, app-sighting-list-page, app-messages-page, app-messages-link',
         ),
       ).toHaveLength(1);
       expect(element.querySelector(pageOf[definition.group])).not.toBeNull();
@@ -805,6 +809,60 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
     await eventually(() => {
       expect(factRowsOf('detail-message-own')).toHaveLength(7);
       expect(contactButtonOf('detail-message-own')).toBeNull();
+    });
+  });
+
+  it('offers the Edit link in the header of an own sighting only', async () => {
+    await eventually(() => {
+      const edit = cell('detail-message-own').querySelector('app-page-card header a');
+
+      expect(textOf(edit)).toBe(label('sighting.detail.edit'));
+      expect(edit?.getAttribute('href')).toBe(`/sightings/${sinkOwnSighting.id}/edit`);
+      expect(cell('detail-loaded').querySelector('app-page-card header a')).toBeNull();
+    });
+  });
+
+  it('shows the editable edit page with the current photo, Remove and the allowed statuses', async () => {
+    const id = 'edit-editable';
+
+    await eventually(() => {
+      const description = cell(id).querySelector<HTMLTextAreaElement>('textarea');
+
+      expect(textOf(cell(id).querySelector('app-page-card h1'))).toBe(label('sighting.edit.title'));
+      expect(description?.value).toBe(sinkEditableSighting.description);
+      expect(description?.disabled).toBe(false);
+      expect(
+        cell(id).querySelector('img.edit-sighting__current-photo-image')?.getAttribute('src'),
+      ).toBe(sinkPhotoUrl);
+      expect(buttonOf(id, 'sighting.edit.removePhoto')).not.toBeNull();
+      expect(cell(id).querySelector('dl')).toBeNull();
+      expect(cell(id).querySelector('app-map-view')).toBeNull();
+      expect(textOf(cell(id).querySelector('mat-select'))).toBe(label('sighting.status.spotted'));
+    });
+  });
+
+  it('shows the locked description as disabled with the lock hint', async () => {
+    const id = 'edit-description-locked';
+
+    await eventually(() => {
+      const description = cell(id).querySelector<HTMLTextAreaElement>('textarea');
+
+      expect(description?.value).toBe(sinkLockedSighting.description);
+      expect(description?.disabled).toBe(true);
+      expect(textOf(cell(id).querySelectorAll('mat-form-field')[1]?.querySelector('mat-hint'))).toBe(
+        label('sighting.edit.descriptionLocked'),
+      );
+      expect(cell(id).querySelector('img.edit-sighting__current-photo-image')).toBeNull();
+    });
+  });
+
+  it('shows the cannot-edit alert and the Back link to someone who is not the owner', async () => {
+    const id = 'edit-not-owner';
+
+    await eventually(() => {
+      expect(textOf(cell(id).querySelector('app-alert'))).toBe(label('sighting.edit.notOwner'));
+      expect(cell(id).querySelector('form')).toBeNull();
+      expect(textOf(cell(id).querySelector('mat-card-actions a'))).toBe(label('sighting.edit.back'));
     });
   });
 

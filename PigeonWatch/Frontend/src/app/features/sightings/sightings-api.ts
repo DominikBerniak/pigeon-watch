@@ -16,6 +16,7 @@ import {
   SightingPage,
   SightingThreadPage,
   SightingThreadStart,
+  SightingUpdate,
 } from './sighting.types';
 
 @Injectable({ providedIn: 'root' })
@@ -28,6 +29,13 @@ export class SightingsApi {
 
   get(id: string): Observable<Sighting> {
     return this.http.get<Sighting>(`${environment.apiUrl}/sightings/${encodeURIComponent(id)}`);
+  }
+
+  update(id: string, update: SightingUpdate): Observable<Sighting> {
+    return this.http.put<Sighting>(
+      `${environment.apiUrl}/sightings/${encodeURIComponent(id)}`,
+      sightingUpdateForm(update),
+    );
   }
 
   photo(id: string): Observable<Blob> {
@@ -153,6 +161,22 @@ function sightingForm(sighting: NewSighting): FormData {
   form.append('criticality', String(sighting.criticality));
 
   if (sighting.photo !== null) form.append('photo', sighting.photo, sightingPhotoFileName);
+
+  return form;
+}
+
+function sightingUpdateForm(update: SightingUpdate): FormData {
+  const form = new FormData();
+
+  if (update.name !== null) form.append('name', update.name);
+
+  form.append('description', update.description);
+  form.append('behaviour', update.behaviour);
+  form.append('status', String(update.status));
+  form.append('criticality', String(update.criticality));
+  form.append('removePhoto', String(update.removePhoto));
+
+  if (update.photo !== null) form.append('photo', update.photo, sightingPhotoFileName);
 
   return form;
 }

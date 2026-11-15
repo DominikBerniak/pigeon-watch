@@ -1,11 +1,13 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
 using PigeonWatch.BusinessLogic.Services;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.WebApi.Mappers;
 using PigeonWatch.WebApi.Models;
+using PigeonWatch.WebApi.RateLimiting;
 using PigeonWatch.WebApi.ViewModelCreators;
 
 namespace PigeonWatch.WebApi.Controllers;
@@ -16,6 +18,7 @@ namespace PigeonWatch.WebApi.Controllers;
 public class SightingsController(
     ISightingService sightingService,
     ICreateSightingRequestMapper createSightingRequestMapper,
+    IUpdateSightingRequestMapper updateSightingRequestMapper,
     INearbySightingsRequestMapper nearbySightingsRequestMapper,
     ISightingListRequestMapper sightingListRequestMapper,
     ISightingViewModelCreator sightingViewModelCreator,
@@ -28,6 +31,9 @@ public class SightingsController(
     [
         SightingErrorCodes.InvalidLocation,
         SightingErrorCodes.InvalidInitialStatus,
+        SightingErrorCodes.InvalidStatus,
+        SightingErrorCodes.InvalidStatusTransition,
+        SightingErrorCodes.PhotoConflict,
         SightingErrorCodes.InvalidCriticality,
         SightingErrorCodes.InvalidFilterStatus,
         SightingErrorCodes.InvalidFilterCriticality,
@@ -62,9 +68,40 @@ public class SightingsController(
             return GetValidationProblem<SightingModel>(result.Errors.Select(error => (error.Code, error.Description)), result.RetryAfterSeconds);
         }
 
-        SightingModel model = sightingViewModelCreator.Create(result.Sighting, userId);
+        SightingModel model = sightingViewModelCreator.Create(result.Sighting, userId, result.Permissions);
 
         return CreatedAtAction(nameof(Get), new { id = model.Id }, model);
+    }
+
+    [HttpPut("{id:guid}")]
+    [EnableRateLimiting(RateLimitPolicyNames.SightingEdits)]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(SightingRules.PhotoRequestMaxBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = SightingRules.PhotoRequestMaxBytes)]
+    public async Task<ActionResult<SightingModel>> Update(Guid id, [FromForm] UpdateSightingRequestModel request, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+            return UnauthorizedForInvalidIdentity();
+
+        SightingUpdate update = updateSightingRequestMapper.Map(id, userId, request);
+        await using Stream? photoContent = update.Photo?.Content;
+        SightingUpdateResult result = await sightingService.UpdateAsync(update, cancellationToken);
+
+        if (result.Errors.Any(error => error.Code == SightingErrorCodes.SightingNotFound))
+            return NotFoundForSighting(id);
+
+        if (result.Errors.Any(error => error.Code == SightingErrorCodes.NotSightingOwner))
+            return ForbiddenForNonOwner();
+
+        if (!result.Succeeded || result.Sighting is null)
+        {
+            foreach (SightingError error in result.Errors.Where(error => loggedErrorCodes.Contains(error.Code)))
+                LogInvalidInput(error.Code);
+
+            return GetValidationProblem<SightingModel>(result.Errors.Select(error => (error.Code, error.Description)));
+        }
+
+        return Ok(sightingViewModelCreator.Create(result.Sighting, userId, result.Permissions));
     }
 
     [HttpGet("{id:guid}")]
@@ -80,7 +117,9 @@ public class SightingsController(
         if (sighting is null)
             return NotFoundForSighting(id);
 
-        return Ok(sightingViewModelCreator.Create(sighting, userId));
+        SightingEditPermissions? permissions = await sightingService.GetEditPermissionsAsync(sighting, userId, cancellationToken);
+
+        return Ok(sightingViewModelCreator.Create(sighting, userId, permissions));
     }
 
     [HttpGet("{id:guid}/photo")]

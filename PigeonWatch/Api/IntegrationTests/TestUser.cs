@@ -79,6 +79,18 @@ public sealed class TestUser(
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<HttpResponseMessage> UpdateSightingAsync(
+        Guid sightingId,
+        IReadOnlyDictionary<string, string> fields,
+        byte[]? photo = null,
+        CancellationToken cancellationToken = default)
+    {
+        using HttpRequestMessage request = SightingForm.UpdateRequest(sightingId, fields, photo);
+        HttpResponseMessage response = await Client.SendAsync(request, cancellationToken);
+
+        return response;
+    }
+
     public void Dispose()
     {
         Client.Dispose();

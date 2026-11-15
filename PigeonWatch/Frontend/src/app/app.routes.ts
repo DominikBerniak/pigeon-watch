@@ -48,6 +48,15 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'sightings/:id/edit',
+    canActivate: [authGuard],
+    data: { layout: 'wide' },
+    loadComponent: () =>
+      import('./features/sightings/edit-sighting-page/edit-sighting-page').then(
+        (m) => m.EditSightingPage,
+      ),
+  },
+  {
     path: 'sightings/:id',
     canActivate: [authGuard],
     data: { layout: 'wide' },

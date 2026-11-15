@@ -27,7 +27,7 @@ public class SightingsControllerTests
         Sighting created = Sighting();
         sightingService
             .CreateAsync(Arg.Any<NewSighting>(), Arg.Any<CancellationToken>())
-            .Returns(SightingCreateResult.Success(created));
+            .Returns(SightingCreateResult.Success(created, null));
         SightingsController controller = CreateController(Authenticated(userId));
 
         ActionResult<SightingModel> result = await controller.Create(Request(), cancellationToken);
@@ -56,7 +56,7 @@ public class SightingsControllerTests
         Guid userId = Guid.NewGuid();
         sightingService
             .CreateAsync(Arg.Any<NewSighting>(), Arg.Any<CancellationToken>())
-            .Returns(SightingCreateResult.Success(Sighting(userId)));
+            .Returns(SightingCreateResult.Success(Sighting(userId), null));
         SightingsController controller = CreateController(Authenticated(userId));
 
         ActionResult<SightingModel> result = await controller.Create(Request(), cancellationToken);
@@ -66,12 +66,31 @@ public class SightingsControllerTests
     }
 
     [Fact]
+    public async Task Create_returns_the_edit_permissions_from_the_create_result_without_asking_the_service_again()
+    {
+        Guid userId = Guid.NewGuid();
+        SightingEditPermissions permissions = new(true, [SightingStatus.AtTheVet, SightingStatus.InHomeCare, SightingStatus.Released]);
+        sightingService
+            .CreateAsync(Arg.Any<NewSighting>(), Arg.Any<CancellationToken>())
+            .Returns(SightingCreateResult.Success(Sighting(userId), permissions));
+        SightingsController controller = CreateController(Authenticated(userId));
+
+        ActionResult<SightingModel> result = await controller.Create(Request(), cancellationToken);
+
+        SightingModel model = Assert.IsType<SightingModel>(Assert.IsType<CreatedAtActionResult>(result.Result).Value);
+        Assert.NotNull(model.EditPermissions);
+        Assert.True(model.EditPermissions.CanEditDescription);
+        Assert.Equal([3, 4, 7], model.EditPermissions.AllowedNextStatuses);
+        await sightingService.DidNotReceive().GetEditPermissionsAsync(Arg.Any<Sighting>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Create_maps_the_request_with_the_current_user_as_reporter()
     {
         Guid userId = Guid.NewGuid();
         sightingService
             .CreateAsync(Arg.Any<NewSighting>(), Arg.Any<CancellationToken>())
-            .Returns(SightingCreateResult.Success(Sighting()));
+            .Returns(SightingCreateResult.Success(Sighting(), null));
         SightingsController controller = CreateController(Authenticated(userId));
 
         await controller.Create(Request(), cancellationToken);
@@ -141,6 +160,113 @@ public class SightingsControllerTests
         ActionResult<SightingModel> result = await controller.Create(Request(), cancellationToken);
 
         Assert.IsType<UnauthorizedResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task Update_returns_200_with_the_updated_sighting_and_its_edit_permissions()
+    {
+        Guid userId = Guid.NewGuid();
+        Sighting updated = Sighting(userId);
+        SightingEditPermissions permissions = new(false, [SightingStatus.AtTheVet, SightingStatus.Released]);
+        sightingService
+            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<CancellationToken>())
+            .Returns(SightingUpdateResult.Success(updated, permissions));
+        SightingsController controller = CreateController(Authenticated(userId));
+
+        ActionResult<SightingModel> result = await controller.Update(updated.Id, UpdateRequest(), cancellationToken);
+
+        SightingModel model = Assert.IsType<SightingModel>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal(updated.Id, model.Id);
+        Assert.True(model.IsMine);
+        Assert.NotNull(model.EditPermissions);
+        Assert.False(model.EditPermissions.CanEditDescription);
+        Assert.Equal([3, 7], model.EditPermissions.AllowedNextStatuses);
+    }
+
+    [Fact]
+    public async Task Update_maps_the_request_with_the_route_id_and_the_current_user()
+    {
+        Guid userId = Guid.NewGuid();
+        Guid sightingId = Guid.NewGuid();
+        sightingService
+            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<CancellationToken>())
+            .Returns(SightingUpdateResult.Success(Sighting(userId), null));
+        SightingsController controller = CreateController(Authenticated(userId));
+
+        await controller.Update(sightingId, UpdateRequest(), cancellationToken);
+
+        await sightingService.Received(1).UpdateAsync(
+            new SightingUpdate(sightingId, userId, "Grey", "Limping near the fountain", "Cannot fly", SightingStatus.Caught, SightingCriticality.Urgent, null, true),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Update_returns_404_for_an_unknown_sighting()
+    {
+        sightingService
+            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<CancellationToken>())
+            .Returns(SightingUpdateResult.Failure([new SightingError(SightingErrorCodes.SightingNotFound, "missing")]));
+        SightingsController controller = CreateController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Update(Guid.NewGuid(), UpdateRequest(), cancellationToken);
+
+        Assert.IsType<NotFoundResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task Update_returns_403_for_someone_who_is_not_the_owner()
+    {
+        sightingService
+            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<CancellationToken>())
+            .Returns(SightingUpdateResult.Failure([new SightingError(SightingErrorCodes.NotSightingOwner, "not owner")]));
+        SightingsController controller = CreateController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Update(Guid.NewGuid(), UpdateRequest(), cancellationToken);
+
+        StatusCodeResult forbidden = Assert.IsType<StatusCodeResult>(result.Result);
+        Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(SightingErrorCodes.InvalidStatus)]
+    [InlineData(SightingErrorCodes.InvalidCriticality)]
+    [InlineData(SightingErrorCodes.InvalidStatusTransition)]
+    [InlineData(SightingErrorCodes.DescriptionRequired)]
+    [InlineData(SightingErrorCodes.DescriptionLocked)]
+    [InlineData(SightingErrorCodes.PhotoConflict)]
+    [InlineData(SightingErrorCodes.PhotoUnreadable)]
+    public async Task Update_returns_400_keyed_by_code_for_every_other_failure(string code)
+    {
+        sightingService
+            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<CancellationToken>())
+            .Returns(SightingUpdateResult.Failure([new SightingError(code, "rejected")]));
+        SightingsController controller = CreateController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Update(Guid.NewGuid(), UpdateRequest(), cancellationToken);
+
+        ValidationProblemDetails problem = Assert.IsType<ValidationProblemDetails>(Assert.IsType<BadRequestObjectResult>(result.Result).Value);
+        Assert.Equal([code], problem.Errors.Keys);
+    }
+
+    [Fact]
+    public async Task Update_returns_401_when_the_name_identifier_claim_is_missing()
+    {
+        SightingsController controller = CreateController(new ClaimsPrincipal(new ClaimsIdentity()));
+
+        ActionResult<SightingModel> result = await controller.Update(Guid.NewGuid(), UpdateRequest(), cancellationToken);
+
+        Assert.IsType<UnauthorizedResult>(result.Result);
+        await sightingService.DidNotReceive().UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void Update_request_model_has_no_location_or_ownership_properties()
+    {
+        PropertyInfo[] properties = typeof(UpdateSightingRequestModel).GetProperties();
+
+        Assert.Equal(
+            ["Behaviour", "Criticality", "Description", "Name", "Photo", "RemovePhoto", "Status"],
+            properties.Select(property => property.Name).Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -492,7 +618,7 @@ public class SightingsControllerTests
                 Arg.Any<string?>())
             .Returns(call => new ValidationProblemDetails(call.Arg<ModelStateDictionary>()) { Status = StatusCodes.Status400BadRequest });
 
-        return new(sightingService, new CreateSightingRequestMapper(), new NearbySightingsRequestMapper(), new SightingListRequestMapper(), new SightingViewModelCreator(), NullLogger<SightingsController>.Instance)
+        return new(sightingService, new CreateSightingRequestMapper(), new UpdateSightingRequestMapper(), new NearbySightingsRequestMapper(), new SightingListRequestMapper(), new SightingViewModelCreator(), NullLogger<SightingsController>.Instance)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = user } },
             ProblemDetailsFactory = problemDetailsFactory
@@ -510,6 +636,19 @@ public class SightingsControllerTests
             Longitude = 21.0122,
             Status = 2,
             Criticality = 3
+        };
+    }
+
+    private static UpdateSightingRequestModel UpdateRequest()
+    {
+        return new()
+        {
+            Name = "Grey",
+            Description = "Limping near the fountain",
+            Behaviour = "Cannot fly",
+            Status = 2,
+            Criticality = 3,
+            RemovePhoto = true
         };
     }
 

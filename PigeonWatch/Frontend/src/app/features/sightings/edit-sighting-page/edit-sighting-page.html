@@ -1,0 +1,156 @@
+<app-page-card [title]="'sighting.edit.title' | translate" [subtitle]="subtitle()" width="wide">
+  @if (!sighting()) {
+    <a actions mat-button [routerLink]="['/sightings', sightingId()]">{{
+      'sighting.edit.back' | translate
+    }}</a>
+  }
+  @switch (state().kind) {
+    @case ('loading') {
+      <app-loading-indicator [label]="'common.loading' | translate" />
+    }
+    @case ('notFound') {
+      <app-alert kind="info">{{ 'sighting.errors.notFound' | translate }}</app-alert>
+    }
+    @case ('error') {
+      <app-error-retry [retryLabel]="'sighting.detail.retry' | translate" (retry)="retry()">
+        {{ 'sighting.errors.generic' | translate }}
+        <app-error-reference [traceId]="loadTraceId()" />
+      </app-error-retry>
+    }
+    @case ('notOwner') {
+      <app-alert kind="info">{{ 'sighting.edit.notOwner' | translate }}</app-alert>
+    }
+  }
+  @if (sighting(); as sighting) {
+    <form class="edit-sighting" [formRoot]="editForm" (submit)="submit()">
+      <div class="pw-stack">
+        <mat-form-field class="pw-full-width">
+          <mat-label>{{ 'sighting.form.nameLabel' | translate }}</mat-label>
+          <input
+            matInput
+            type="text"
+            autocomplete="off"
+            [placeholder]="'sighting.form.namePlaceholder' | translate"
+            [formField]="editForm.name"
+          />
+          <mat-hint>{{ 'sighting.form.nameHint' | translate: rules().nameMaxLength }}</mat-hint>
+          <mat-error>
+            <app-field-errors [field]="editForm.name" [messages]="nameMessages()" />
+          </mat-error>
+        </mat-form-field>
+        <mat-form-field class="pw-full-width">
+          <mat-label>{{ 'sighting.form.descriptionLabel' | translate }}</mat-label>
+          <textarea matInput rows="4" [formField]="editForm.description"></textarea>
+          @if (canEditDescription()) {
+            <mat-hint>{{
+              'sighting.form.descriptionHint' | translate: rules().descriptionMaxLength
+            }}</mat-hint>
+          } @else {
+            <mat-hint>{{ 'sighting.edit.descriptionLocked' | translate }}</mat-hint>
+          }
+          <mat-error>
+            <app-field-errors [field]="editForm.description" [messages]="descriptionMessages()" />
+          </mat-error>
+        </mat-form-field>
+        <mat-form-field class="pw-full-width">
+          <mat-label>{{ 'sighting.form.behaviourLabel' | translate }}</mat-label>
+          <textarea
+            matInput
+            rows="3"
+            [placeholder]="'sighting.form.behaviourPlaceholder' | translate"
+            [formField]="editForm.behaviour"
+          ></textarea>
+          <mat-hint>{{
+            'sighting.form.behaviourHint' | translate: rules().behaviourMaxLength
+          }}</mat-hint>
+          <mat-error>
+            <app-field-errors [field]="editForm.behaviour" [messages]="behaviourMessages()" />
+          </mat-error>
+        </mat-form-field>
+        <mat-form-field class="pw-full-width" floatLabel="always">
+          <mat-label>{{ 'sighting.form.statusLabel' | translate }}</mat-label>
+          <mat-select panelClass="pw-select-panel" [formField]="editForm.status">
+            @for (status of statuses(); track status) {
+              <mat-option [value]="status">{{ statusLabel(status) | translate }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>{{ 'sighting.edit.statusHint' | translate }}</mat-hint>
+        </mat-form-field>
+        <mat-form-field class="pw-full-width" floatLabel="always">
+          <mat-label>{{ 'sighting.form.criticalityLabel' | translate }}</mat-label>
+          <mat-select panelClass="pw-select-panel" [formField]="editForm.criticality">
+            @for (criticality of criticalities; track criticality) {
+              <mat-option [value]="criticality">{{
+                criticalityLabels[criticality] | translate
+              }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>{{ 'sighting.form.criticalityHint' | translate }}</mat-hint>
+        </mat-form-field>
+      </div>
+      <div class="pw-stack">
+        @if (currentPhotoShown()) {
+          <div class="edit-sighting__current-photo pw-stack">
+            <p class="edit-sighting__current-photo-label">
+              {{ 'sighting.edit.currentPhoto' | translate }}
+            </p>
+            @switch (thumbnail().kind) {
+              @case ('loading') {
+                <div class="edit-sighting__current-photo-frame">
+                  <app-loading-indicator [label]="'sighting.detail.photoLoading' | translate" />
+                </div>
+              }
+              @case ('error') {
+                <app-alert kind="info">{{ 'sighting.detail.photoError' | translate }}</app-alert>
+              }
+            }
+            @if (thumbnailUrl(); as url) {
+              <div class="edit-sighting__current-photo-frame">
+                <img
+                  class="edit-sighting__current-photo-image"
+                  [src]="url"
+                  [alt]="'sighting.detail.photoAlt' | translate: subtitle()"
+                />
+              </div>
+            }
+            <button
+              mat-stroked-button
+              type="button"
+              class="edit-sighting__current-photo-remove"
+              [disabled]="busy()"
+              (click)="removePhoto()"
+            >
+              {{ 'sighting.edit.removePhoto' | translate }}
+            </button>
+          </div>
+        }
+        <app-photo-picker
+          [formField]="editForm.photo"
+          (processingChange)="photoProcessing.set($event)"
+        />
+      </div>
+      <div class="edit-sighting__footer pw-stack">
+        @if (errorText(); as text) {
+          <app-alert kind="error">
+            {{ text }}
+            <app-error-reference [traceId]="errorTraceId()" />
+          </app-alert>
+        }
+        <app-form-actions>
+          <button
+            mat-stroked-button
+            type="button"
+            class="pw-full-width"
+            [disabled]="busy()"
+            (click)="cancel()"
+          >
+            {{ 'sighting.edit.cancel' | translate }}
+          </button>
+          <app-submit-button [busy]="busy()" [disabled]="photoProcessing()">{{
+            'sighting.edit.save' | translate
+          }}</app-submit-button>
+        </app-form-actions>
+      </div>
+    </form>
+  }
+</app-page-card>
