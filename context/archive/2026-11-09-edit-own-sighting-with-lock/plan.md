@@ -458,51 +458,51 @@ Decisions taken during implementation that supersede the phase text above. The p
 
 #### Automated
 
-- [x] 1.1 API builds with the style rules — 6899cbc
-- [x] 1.2 Architecture tests pass — 6899cbc
-- [x] 1.3 Unit tests pass, including the new engagement repository cases — 6899cbc
-- [x] 1.4 Integration tests pass, including the editPermissions visibility tests in SightingEditContractTests — 6899cbc
+- [x] 1.1 API builds with the style rules — 172968d
+- [x] 1.2 Architecture tests pass — 172968d
+- [x] 1.3 Unit tests pass, including the new engagement repository cases — 172968d
+- [x] 1.4 Integration tests pass, including the editPermissions visibility tests in SightingEditContractTests — 172968d
 
 #### Manual
 
-- [x] 1.5 Swagger shows editPermissions for the owner and null for another user — 6899cbc
+- [x] 1.5 Swagger shows editPermissions for the owner and null for another user — 172968d
 
 ### Phase 2: API — PUT sightings/{id}
 
 #### Automated
 
-- [x] 2.1 API builds with the style rules — 2cbaa07
-- [x] 2.2 Architecture tests pass (new mapper interface and registration) — 2cbaa07
-- [x] 2.3 Unit tests pass, including the update service and controller tests — 2cbaa07
-- [x] 2.4 Integration tests pass, including update contract, coverage, ownership, privacy sweep and failure logging — 2cbaa07
-- [x] 2.5 No pending EF model changes — 2cbaa07
+- [x] 2.1 API builds with the style rules — 172968d
+- [x] 2.2 Architecture tests pass (new mapper interface and registration) — 172968d
+- [x] 2.3 Unit tests pass, including the update service and controller tests — 172968d
+- [x] 2.4 Integration tests pass, including update contract, coverage, ownership, privacy sweep and failure logging — 172968d
+- [x] 2.5 No pending EF model changes — 172968d
 
 #### Manual
 
-- [x] 2.6 Swagger: Spotted to Caught succeeds, Spotted to At the vet rejected, replaced photo leaves no old blob — 2cbaa07
+- [x] 2.6 Swagger: Spotted to Caught succeeds, Spotted to At the vet rejected, replaced photo leaves no old blob — 172968d
 
 ### Phase 3: SPA — edit page
 
 #### Automated
 
-- [x] 3.1 SPA production build passes within the bundle budget — 982d296
-- [x] 3.2 SPA unit tests pass, including edit page, detail page, API client, error mapping and kitchen-sink specs — 982d296
-- [x] 3.3 API still builds after the resx change — 982d296
+- [x] 3.1 SPA production build passes within the bundle budget — 172968d
+- [x] 3.2 SPA unit tests pass, including edit page, detail page, API client, error mapping and kitchen-sink specs — 172968d
+- [x] 3.3 API still builds after the resx change — 172968d
 
 #### Manual
 
-- [x] 3.4 Owner edits criticality and status to Caught and sees the new values — 982d296
-- [x] 3.5 Edit page shows location as text with no map tiles — 982d296
-- [x] 3.6 After another user's comment the description is read-only while status still saves — 982d296
-- [x] 3.7 Photo replace and remove reflected on detail page and list thumbnails — 982d296
+- [x] 3.4 Owner edits criticality and status to Caught and sees the new values — 172968d
+- [x] 3.5 Edit page shows location as text with no map tiles — 172968d
+- [x] 3.6 After another user's comment the description is read-only while status still saves — 172968d
+- [x] 3.7 Photo replace and remove reflected on detail page and list thumbnails — 172968d
 
 ### Phase 4: E2E and product docs
 
 #### Automated
 
-- [x] 4.1 The new edit spec passes — 90ced99
-- [x] 4.2 The full Playwright suite still passes — 90ced99
+- [x] 4.1 The new edit spec passes — 172968d
+- [x] 4.2 The full Playwright suite still passes — 172968d
 
 #### Manual
 
-- [x] 4.3 PRD FR-006, roadmap S-09 and test-plan wording match the plan decisions — 90ced99
+- [x] 4.3 PRD FR-006, roadmap S-09 and test-plan wording match the plan decisions — 172968d
