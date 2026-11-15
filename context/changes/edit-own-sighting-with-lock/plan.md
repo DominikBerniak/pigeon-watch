@@ -477,24 +477,24 @@ Keep a browser-level test of the two-user lock flow, and bring the PRD, roadmap 
 
 #### Automated
 
-- [x] 3.1 SPA production build passes within the bundle budget
-- [x] 3.2 SPA unit tests pass, including edit page, detail page, API client, error mapping and kitchen-sink specs
-- [x] 3.3 API still builds after the resx change
+- [x] 3.1 SPA production build passes within the bundle budget — 982d296
+- [x] 3.2 SPA unit tests pass, including edit page, detail page, API client, error mapping and kitchen-sink specs — 982d296
+- [x] 3.3 API still builds after the resx change — 982d296
 
 #### Manual
 
-- [x] 3.4 Owner edits criticality and status to Caught and sees the new values
-- [x] 3.5 Edit page shows location as text with no map tiles
-- [x] 3.6 After another user's comment the description is read-only while status still saves
-- [x] 3.7 Photo replace and remove reflected on detail page and list thumbnails
+- [x] 3.4 Owner edits criticality and status to Caught and sees the new values — 982d296
+- [x] 3.5 Edit page shows location as text with no map tiles — 982d296
+- [x] 3.6 After another user's comment the description is read-only while status still saves — 982d296
+- [x] 3.7 Photo replace and remove reflected on detail page and list thumbnails — 982d296
 
 ### Phase 4: E2E and product docs
 
 #### Automated
 
-- [ ] 4.1 The new edit spec passes
-- [ ] 4.2 The full Playwright suite still passes
+- [x] 4.1 The new edit spec passes
+- [x] 4.2 The full Playwright suite still passes
 
 #### Manual
 
-- [ ] 4.3 PRD FR-006, roadmap S-09 and test-plan wording match the plan decisions
+- [x] 4.3 PRD FR-006, roadmap S-09 and test-plan wording match the plan decisions

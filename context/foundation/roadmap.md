@@ -50,7 +50,7 @@ Active members of the city pigeon/bird rescue community coordinate sightings of 
 | S-06 | urgency-ranked-sighting-list | browse nearby sightings as a list ordered by urgency                       | S-03          | FR-020                         | done        |
 | S-07 | comment-on-sighting         | add comments to a sighting                                                  | S-03          | FR-009, FR-019                 | done        |
 | S-08 | sighting-message-threads    | contact a sighting's owner and continue the conversation in a per-sighting thread | S-03    | FR-012, FR-013                 | done        |
-| S-09 | edit-own-sighting-with-lock | edit their own sighting, with location and description locked once others engage | S-07, S-08 | FR-006                    | in-progress |
+| S-09 | edit-own-sighting-with-lock | edit their own sighting, with a fixed location and the description locked once others engage | S-07, S-08 | FR-006                    | in-progress |
 | S-10 | admin-remove-sightings      | (as admin) remove sightings                                                 | S-03          | FR-017                         | proposed |
 | S-11 | admin-moderate-users        | (as admin) message, warn or ban users                                       | S-08, S-10    | FR-018                         | proposed |
 | S-12 | switch-ui-language          | switch the UI language between English and Polish, remembered in the browser | S-01         | FR-021                         | proposed |
@@ -197,13 +197,13 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-09: Edit own sighting with engagement lock
 
-- **Outcome:** user can edit their own sighting and change its status, and location and description lock once another user has commented or made contact.
+- **Outcome:** user can edit their own sighting (name, description, behaviour, criticality, photo) and change its status along the strict workflow; the location never changes after creation, and the description locks while another user has a visible comment or any message thread exists.
 - **Change ID:** edit-own-sighting-with-lock
 - **PRD refs:** FR-006
 - **Prerequisites:** S-07, S-08
 - **Parallel with:** S-02, S-04, S-05, S-06, S-10
 - **Blockers:** —
-- **Unknowns:** — (status changes follow the strict PRD workflow with no undo, decided 2026-10-11)
+- **Unknowns:** — (status changes follow the strict PRD workflow with no undo, decided 2026-10-11; the location is immutable for everyone and a deleted comment releases the description lock while a message thread keeps it, decided in `edit-own-sighting-with-lock` planning)
 - **Risk:** Sequenced after comments and messaging because those are the engagement signals that trigger the lock.
 - **Status:** in-progress
 
