@@ -47,6 +47,31 @@ public class SightingServiceTests
     }
 
     [Fact]
+    public async Task Create_returns_the_edit_permissions_of_a_new_sighting_without_the_engagement_query()
+    {
+        NewSighting sighting = NewSighting() with { Status = SightingStatus.Caught };
+
+        SightingCreateResult result = await CreateService().CreateAsync(sighting, cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.Permissions);
+        Assert.True(result.Permissions.CanEditDescription);
+        Assert.Equal([SightingStatus.AtTheVet, SightingStatus.InHomeCare, SightingStatus.Released], result.Permissions.AllowedNextStatuses);
+        await sightingRepository.DidNotReceive().HasOtherUserEngagementAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Create_returns_no_edit_permissions_when_the_reporter_is_not_found()
+    {
+        sightingRepository.CreateAsync(Arg.Any<NewSighting>(), Arg.Any<CancellationToken>()).Returns((Sighting?)null);
+
+        SightingCreateResult result = await CreateService().CreateAsync(NewSighting(), cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Null(result.Permissions);
+    }
+
+    [Fact]
     public async Task Create_is_blocked_59_seconds_after_the_previous_sighting_with_1_second_remaining()
     {
         NewSighting sighting = NewSighting();
@@ -804,7 +829,25 @@ public class SightingServiceTests
             stored.Id,
             stored.ReporterId,
             Arg.Is<SightingUpdate>(update => update.Status == SightingStatus.Caught),
+            SightingPhotoChange.Keep,
             null,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Update_scopes_the_write_to_the_caller_as_the_reporter()
+    {
+        Sighting stored = StoredSighting();
+        SightingUpdate update = UpdateOf(stored) with { Criticality = SightingCriticality.Monitor };
+
+        await CreateService().UpdateAsync(update, cancellationToken);
+
+        await sightingRepository.Received(1).UpdateAsync(
+            stored.Id,
+            update.UserId,
+            Arg.Any<SightingUpdate>(),
+            Arg.Any<SightingPhotoChange>(),
+            Arg.Any<string?>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -861,6 +904,33 @@ public class SightingServiceTests
     }
 
     [Fact]
+    public async Task Update_with_a_changed_description_queries_the_engagement_once_and_reuses_it_for_the_permissions()
+    {
+        Sighting stored = StoredSighting();
+        sightingRepository.HasOtherUserEngagementAsync(stored.Id, stored.ReporterId, Arg.Any<CancellationToken>()).Returns(false);
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Description = "Changed" }, cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.Permissions);
+        Assert.True(result.Permissions.CanEditDescription);
+        await sightingRepository.Received(1).HasOtherUserEngagementAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Update_with_an_unchanged_description_queries_the_engagement_once_for_the_permissions()
+    {
+        Sighting stored = StoredSighting();
+        sightingRepository.HasOtherUserEngagementAsync(stored.Id, stored.ReporterId, Arg.Any<CancellationToken>()).Returns(true);
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Criticality = SightingCriticality.Monitor }, cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.False(result.Permissions!.CanEditDescription);
+        await sightingRepository.Received(1).HasOtherUserEngagementAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Update_trims_text_and_stores_a_blank_name_as_null()
     {
         Sighting stored = StoredSighting();
@@ -873,6 +943,7 @@ public class SightingServiceTests
             stored.Id,
             stored.ReporterId,
             Arg.Is<SightingUpdate>(update => update.Name == null && update.Description == "Limping near the fountain" && update.Behaviour == "Hides"),
+            Arg.Any<SightingPhotoChange>(),
             Arg.Any<string?>(),
             Arg.Any<CancellationToken>());
     }
@@ -887,6 +958,13 @@ public class SightingServiceTests
         Assert.True(result.Succeeded);
         Assert.False(result.Sighting!.HasPhoto);
         Assert.Empty(sightingPhotoStore.ReceivedCalls());
+        await sightingRepository.Received(1).UpdateAsync(
+            stored.Id,
+            stored.ReporterId,
+            Arg.Any<SightingUpdate>(),
+            SightingPhotoChange.Remove,
+            null,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -894,8 +972,8 @@ public class SightingServiceTests
     {
         Sighting stored = StoredSighting();
         sightingRepository
-            .UpdateAsync(stored.Id, stored.ReporterId, Arg.Any<SightingUpdate>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
-            .Returns((Sighting?)null);
+            .UpdateAsync(stored.Id, stored.ReporterId, Arg.Any<SightingUpdate>(), Arg.Any<SightingPhotoChange>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns((SightingUpdateOutcome?)null);
 
         SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored), cancellationToken);
 
@@ -932,23 +1010,25 @@ public class SightingServiceTests
             now.UtcDateTime);
         sightingRepository.GetByIdAsync(stored.Id, Arg.Any<CancellationToken>()).Returns(stored);
         sightingRepository
-            .UpdateAsync(stored.Id, stored.ReporterId, Arg.Any<SightingUpdate>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
-            .Returns(call => Updated(stored, call.ArgAt<SightingUpdate>(2), call.ArgAt<string?>(3)));
+            .UpdateAsync(stored.Id, stored.ReporterId, Arg.Any<SightingUpdate>(), Arg.Any<SightingPhotoChange>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(call => Updated(stored, call.ArgAt<SightingUpdate>(2), call.ArgAt<SightingPhotoChange>(3)));
 
         return stored;
     }
 
-    private static Sighting Updated(Sighting stored, SightingUpdate update, string? photoBlobName)
+    private static SightingUpdateOutcome Updated(Sighting stored, SightingUpdate update, SightingPhotoChange photoChange)
     {
-        return stored with
+        Sighting sighting = stored with
         {
             Name = update.Name,
             Description = update.Description,
             Behaviour = update.Behaviour,
             Status = update.Status,
             Criticality = update.Criticality,
-            HasPhoto = photoBlobName is not null
+            HasPhoto = photoChange == SightingPhotoChange.Replace || (photoChange == SightingPhotoChange.Keep && stored.HasPhoto)
         };
+
+        return new SightingUpdateOutcome(sighting, null);
     }
 
     private static SightingUpdate UpdateOf(Sighting stored)
@@ -962,6 +1042,7 @@ public class SightingServiceTests
             Arg.Any<Guid>(),
             Arg.Any<Guid>(),
             Arg.Any<SightingUpdate>(),
+            Arg.Any<SightingPhotoChange>(),
             Arg.Any<string?>(),
             Arg.Any<CancellationToken>());
     }

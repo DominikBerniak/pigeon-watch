@@ -99,29 +99,28 @@ public class SightingService(
                 [new SightingError(SightingErrorCodes.InvalidStatusTransition, $"The status cannot change from {current.Status} to {trimmed.Status}.")]);
         }
 
-        if (!string.Equals(trimmed.Description, current.Description, StringComparison.Ordinal)
-            && await sightingRepository.HasOtherUserEngagementAsync(current.Id, current.ReporterId, cancellationToken))
-        {
-            return SightingUpdateResult.Failure(
-                [new SightingError(SightingErrorCodes.DescriptionLocked, "The description cannot change once another user has commented or made contact.")]);
-        }
+        bool? engaged = null;
 
-        string? currentBlobName = current.HasPhoto
-            ? await sightingRepository.GetPhotoBlobNameAsync(current.Id, cancellationToken)
-            : null;
+        if (!string.Equals(trimmed.Description, current.Description, StringComparison.Ordinal))
+        {
+            engaged = await sightingRepository.HasOtherUserEngagementAsync(current.Id, current.ReporterId, cancellationToken);
+
+            if (engaged.Value)
+            {
+                return SightingUpdateResult.Failure(
+                    [new SightingError(SightingErrorCodes.DescriptionLocked, "The description cannot change once another user has commented or made contact.")]);
+            }
+        }
 
         if (trimmed.Photo is null)
         {
-            string? keptBlobName = trimmed.RemovePhoto ? null : currentBlobName;
-            Sighting? saved = await sightingRepository.UpdateAsync(current.Id, current.ReporterId, trimmed, keptBlobName, cancellationToken);
+            SightingPhotoChange photoChange = trimmed.RemovePhoto ? SightingPhotoChange.Remove : SightingPhotoChange.Keep;
+            SightingUpdateOutcome? saved = await sightingRepository.UpdateAsync(current.Id, trimmed.UserId, trimmed, photoChange, null, cancellationToken);
 
             if (saved is null)
                 return SightingUpdateResult.Failure([SightingNotFoundError()]);
 
-            if (currentBlobName is not null && keptBlobName is null)
-                await DeleteReplacedPhotoBlobsAsync(currentBlobName, current.Id, CancellationToken.None);
-
-            return await UpdatedAsync(saved, trimmed.UserId, cancellationToken);
+            return await CompleteUpdateAsync(saved, trimmed.UserId, engaged, cancellationToken);
         }
 
         (SightingError? photoError, string? newBlobName) = await StorePhotoAsync(trimmed.Photo, cancellationToken);
@@ -129,11 +128,17 @@ public class SightingService(
         if (photoError is not null || newBlobName is null)
             return SightingUpdateResult.Failure([photoError ?? UnreadablePhotoError()]);
 
-        Sighting? updated = null;
+        SightingUpdateOutcome? updated = null;
 
         try
         {
-            updated = await sightingRepository.UpdateAsync(current.Id, current.ReporterId, trimmed with { Photo = null }, newBlobName, cancellationToken);
+            updated = await sightingRepository.UpdateAsync(
+                current.Id,
+                trimmed.UserId,
+                trimmed with { Photo = null },
+                SightingPhotoChange.Replace,
+                newBlobName,
+                cancellationToken);
         }
         finally
         {
@@ -144,10 +149,7 @@ public class SightingService(
         if (updated is null)
             return SightingUpdateResult.Failure([SightingNotFoundError()]);
 
-        if (currentBlobName is not null)
-            await DeleteReplacedPhotoBlobsAsync(currentBlobName, current.Id, CancellationToken.None);
-
-        return await UpdatedAsync(updated, trimmed.UserId, cancellationToken);
+        return await CompleteUpdateAsync(updated, trimmed.UserId, engaged, cancellationToken);
     }
 
     public async Task<Stream?> OpenPhotoAsync(Guid sightingId, CancellationToken cancellationToken = default)
@@ -283,12 +285,24 @@ public class SightingService(
         if (created is null)
             return SightingCreateResult.Failure([new SightingError(SightingErrorCodes.ReporterNotFound, "The reporting user does not exist.")]);
 
-        return SightingCreateResult.Success(created);
+        SightingEditPermissions permissions = new(true, sightingStatusTransitionProvider.GetAllowedNextStatuses(created.Status));
+
+        return SightingCreateResult.Success(created, permissions);
     }
 
-    private async Task<SightingUpdateResult> UpdatedAsync(Sighting sighting, Guid userId, CancellationToken cancellationToken = default)
+    private async Task<SightingUpdateResult> CompleteUpdateAsync(
+        SightingUpdateOutcome outcome,
+        Guid userId,
+        bool? engaged,
+        CancellationToken cancellationToken = default)
     {
-        SightingEditPermissions? permissions = await GetEditPermissionsAsync(sighting, userId, cancellationToken);
+        if (outcome.ReplacedPhotoBlobName is not null)
+            await DeleteReplacedPhotoBlobsAsync(outcome.ReplacedPhotoBlobName, outcome.Sighting.Id, CancellationToken.None);
+
+        Sighting sighting = outcome.Sighting;
+        SightingEditPermissions? permissions = engaged is null
+            ? await GetEditPermissionsAsync(sighting, userId, cancellationToken)
+            : new SightingEditPermissions(!engaged.Value, sightingStatusTransitionProvider.GetAllowedNextStatuses(sighting.Status));
 
         return SightingUpdateResult.Success(sighting, permissions);
     }

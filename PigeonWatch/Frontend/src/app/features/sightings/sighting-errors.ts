@@ -97,7 +97,8 @@ export type SightingUpdateFailure =
   | { readonly kind: 'forbidden'; readonly traceId?: string }
   | { readonly kind: 'descriptionLocked' }
   | { readonly kind: 'invalidStatusTransition' }
-  | { readonly kind: 'photoConflict'; readonly traceId?: string };
+  | { readonly kind: 'photoConflict'; readonly traceId?: string }
+  | { readonly kind: 'tooManyEdits' };
 
 const descriptionLockedCode = 'descriptionlocked';
 const invalidStatusTransitionCode = 'invalidstatustransition';
@@ -107,6 +108,8 @@ export function sightingUpdateFailure(error: unknown): SightingUpdateFailure {
   if (!(error instanceof HttpErrorResponse)) return sightingFailure(error);
 
   if (error.status === 403) return withOptionalTraceId('forbidden', unexpectedTraceId(error));
+
+  if (error.status === 429) return { kind: 'tooManyEdits' };
 
   if (error.status !== 400) return sightingFailure(error);
 
@@ -135,6 +138,7 @@ export function isReportableSightingUpdateFailure(
       return true;
     case 'descriptionLocked':
     case 'invalidStatusTransition':
+    case 'tooManyEdits':
       return false;
     default:
       return isReportableSightingFailure(error, failure);
@@ -170,6 +174,8 @@ export function sightingUpdateErrorMessage(
       return resources.translate('sighting.edit.errors.photoStorageUnavailable');
     case 'generic':
       return resources.translate('sighting.edit.errors.generic');
+    case 'tooManyEdits':
+      return resources.translate('sighting.edit.errors.tooManyEdits');
     default:
       return sightingErrorMessage(resources, failure);
   }

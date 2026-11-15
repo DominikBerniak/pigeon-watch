@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { FormField, form } from '@angular/forms/signals';
 import { Observable, Subject, of, throwError } from 'rxjs';
 import { ErrorReportingService } from '../../../../core/error-reporting/error-reporting.service';
@@ -156,6 +157,15 @@ describe('PhotoPicker', () => {
     expect(preview()).toBeNull();
     expect(revokePreviewUrl).toHaveBeenCalledExactlyOnceWith('blob:preview-1');
     expect(button('Remove photo')).toBeUndefined();
+    expect(document.activeElement).toBe(button('Choose photo'));
+  });
+
+  it('moves focus to the choose button through focus()', () => {
+    const picker = fixture.debugElement.query(By.directive(PhotoPicker))
+      .componentInstance as PhotoPicker;
+
+    picker.focus();
+
     expect(document.activeElement).toBe(button('Choose photo'));
   });
 

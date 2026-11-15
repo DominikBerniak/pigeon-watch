@@ -442,6 +442,14 @@ Keep a browser-level test of the two-user lock flow, and bring the PRD, roadmap 
 - Photo pipeline: `PigeonWatch/Api/BusinessLogic/Services/SightingService.cs:26-89`
 - Two-user E2E pattern: `PigeonWatch/Frontend/tests/e2e/sighting-messages.spec.ts:3-71`
 
+## Implementation Notes
+
+Decisions taken during implementation that supersede the phase text above. The phase blocks and the Progress titles stay as written.
+
+- **Phase 3, location (user decision):** the edit page shows no location at all, neither as text nor as a map. The `sighting.edit.locationLabel` key was dropped. "Desired End State" ("shows the location as read-only text") and manual criterion 3.5 ("shows location as text") were verified as "no location and no map tiles".
+- **Phase 3, locked description (user decision):** a locked description is `disabled()` (greyed out, cannot be focused) instead of `readonly()`. The locked form still sends the stored description, so a status-only save works. The E2E spec asserts `toBeDisabled()`.
+- **Implementation review (`reviews/impl-review.md`):** the photo update passes a Keep/Replace/Remove intent to the repository, and it deletes exactly the blob the saved row replaced. `PUT sightings/{id}` gets a per-user rate limit (429). Smaller fixes are recorded in the review report.
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.

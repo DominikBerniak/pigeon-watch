@@ -218,6 +218,19 @@ describe('sighting errors', () => {
       },
     );
 
+    it('maps a 429 to the silent too many edits failure without a reference', () => {
+      const error = new HttpErrorResponse({
+        status: 429,
+        error: { status: 429, title: 'Too Many Requests', traceId: '00-abc-def-01' },
+      });
+      const failure = sightingUpdateFailure(error);
+
+      expect(failure).toEqual({ kind: 'tooManyEdits' });
+      expect(isReportableSightingUpdateFailure(error, failure)).toBe(false);
+      expect(isStaleEditFailure(failure)).toBe(false);
+      expect(sightingUpdateFailureTraceId(failure)).toBeNull();
+    });
+
     it('reports a 500 as generic with its reference', () => {
       const error = new HttpErrorResponse({ status: 500, error: { traceId: '00-abc-def-01' } });
       const failure = sightingUpdateFailure(error);
@@ -266,6 +279,9 @@ describe('sighting errors', () => {
       expect(sightingUpdateErrorMessage(labels, { kind: 'generic' })).toBe(
         labels.translate('sighting.edit.errors.generic'),
       );
+      expect(sightingUpdateErrorMessage(labels, { kind: 'tooManyEdits' })).toBe(
+        "You've saved a lot of changes in a short time. Wait a minute and try again.",
+      );
     });
 
     it('reuses the not found and photo problem messages', () => {
@@ -288,6 +304,7 @@ describe('sighting errors', () => {
         'sighting.edit.errors.photoConflict',
         'sighting.edit.errors.photoStorageUnavailable',
         'sighting.edit.errors.generic',
+        'sighting.edit.errors.tooManyEdits',
       ];
       const texts = keys.map((key) => labels.translate(key));
 

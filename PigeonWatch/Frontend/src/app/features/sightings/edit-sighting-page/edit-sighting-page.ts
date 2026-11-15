@@ -1,12 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   Injector,
   afterNextRender,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -28,6 +28,7 @@ import {
   Observable,
   Subject,
   catchError,
+  distinctUntilChanged,
   finalize,
   map,
   merge,
@@ -55,6 +56,7 @@ import { PhotoPicker } from '../report-sighting-page/photo-picker/photo-picker';
 import { PhotoEncoder } from '../shared/photo-encoder';
 import {
   PhotoProblem,
+  SightingFailure,
   SightingUpdateFailure,
   isPhotoProblem,
   isReportablePhotoFailure,
@@ -86,10 +88,15 @@ type EditState =
   | { readonly kind: 'notOwner'; readonly sighting: Sighting }
   | { readonly kind: 'editing'; readonly sighting: Sighting };
 
+type ReloadFailure =
+  | { readonly kind: 'notFound' }
+  | { readonly kind: 'generic'; readonly traceId?: string };
+
 type LoadResult =
   | { readonly kind: 'loading' }
   | { readonly kind: 'notFound' }
   | { readonly kind: 'error'; readonly traceId?: string }
+  | { readonly kind: 'reloadFailed'; readonly failure: ReloadFailure }
   | { readonly kind: 'loaded'; readonly sighting: Sighting; readonly keepEdits: boolean };
 
 type ThumbnailState =
@@ -161,8 +168,8 @@ export class EditSightingPage {
   private readonly resources = inject(ResourceService);
   private readonly reporting = inject(ErrorReportingService);
   private readonly photoUrls = inject(PhotoEncoder);
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+  private readonly photoPicker = viewChild(PhotoPicker);
   private readonly reloads = new Subject<Load>();
   private readonly shownSightings = new Subject<Sighting | null>();
   private readonly model = signal<EditModel>({ ...emptyModel });
@@ -255,6 +262,7 @@ export class EditSightingPage {
   constructor() {
     this.shownSightings
       .pipe(
+        distinctUntilChanged(isSamePhoto),
         switchMap((sighting) => this.thumbnailOf(sighting)),
         takeUntilDestroyed(),
       )
@@ -283,11 +291,7 @@ export class EditSightingPage {
 
   protected removePhoto(): void {
     this.removeCurrentPhoto.set(true);
-    afterNextRender(
-      () =>
-        this.host.nativeElement.querySelector<HTMLButtonElement>('app-photo-picker button')?.focus(),
-      { injector: this.injector },
-    );
+    afterNextRender(() => this.photoPicker()?.focus(), { injector: this.injector });
   }
 
   protected submit(): void {
@@ -313,7 +317,7 @@ export class EditSightingPage {
   private loadOf(load: Load): Observable<LoadResult> {
     const loaded = this.sightingsApi.get(load.id).pipe(
       map((sighting): LoadResult => ({ kind: 'loaded', sighting, keepEdits: load.keepEdits })),
-      catchError((error: unknown) => of(this.loadFailure(error))),
+      catchError((error: unknown) => of(this.loadFailure(error, load.keepEdits))),
     );
 
     this.sightingId.set(load.id);
@@ -321,21 +325,31 @@ export class EditSightingPage {
     return load.keepEdits ? loaded : loaded.pipe(startWith<LoadResult>({ kind: 'loading' }));
   }
 
-  private loadFailure(error: unknown): LoadResult {
+  private loadFailure(error: unknown, keepEdits: boolean): LoadResult {
     const failure = sightingFailure(error);
-
-    if (failure.kind === 'notFound') return { kind: 'notFound' };
 
     if (isReportableSightingFailure(error, failure)) {
       this.reporting.report('api-failure', 'sighting.edit.load', error);
     }
 
-    return failure.kind === 'generic' && failure.traceId !== undefined
-      ? { kind: 'error', traceId: failure.traceId }
+    const shown = reloadFailureOf(failure);
+
+    if (keepEdits) return { kind: 'reloadFailed', failure: shown };
+
+    if (shown.kind === 'notFound') return { kind: 'notFound' };
+
+    return shown.traceId !== undefined
+      ? { kind: 'error', traceId: shown.traceId }
       : { kind: 'error' };
   }
 
   private apply(result: LoadResult): void {
+    if (result.kind === 'reloadFailed') {
+      this.failure.set(result.failure);
+
+      return;
+    }
+
     if (result.kind !== 'loaded') {
       this.state.set(result);
       this.shownSightings.next(null);
@@ -443,6 +457,18 @@ export class EditSightingPage {
 
 function isBlank(value: string): boolean {
   return value !== '' && value.trim() === '';
+}
+
+function isSamePhoto(previous: Sighting | null, current: Sighting | null): boolean {
+  return previous?.id === current?.id && previous?.hasPhoto === current?.hasPhoto;
+}
+
+function reloadFailureOf(failure: SightingFailure): ReloadFailure {
+  if (failure.kind === 'notFound') return { kind: 'notFound' };
+
+  return failure.kind === 'generic' && failure.traceId !== undefined
+    ? { kind: 'generic', traceId: failure.traceId }
+    : { kind: 'generic' };
 }
 
 function modelOf(sighting: Sighting): EditModel {

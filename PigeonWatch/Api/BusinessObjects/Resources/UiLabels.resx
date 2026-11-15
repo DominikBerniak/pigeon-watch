@@ -483,6 +483,9 @@
   <data name="sighting.edit.errors.generic" xml:space="preserve">
     <value>We couldn't save your changes right now. Try again.</value>
   </data>
+  <data name="sighting.edit.errors.tooManyEdits" xml:space="preserve">
+    <value>You've saved a lot of changes in a short time. Wait a minute and try again.</value>
+  </data>
   <data name="sighting.comments.title" xml:space="preserve">
     <value>Comments</value>
   </data>

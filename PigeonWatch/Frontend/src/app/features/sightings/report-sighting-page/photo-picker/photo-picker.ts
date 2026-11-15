@@ -86,6 +86,10 @@ export class PhotoPicker implements FormValueControl<Blob | null> {
     });
   }
 
+  focus(): void {
+    this.chooseButton().nativeElement.focus();
+  }
+
   protected choose(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.item(0) ?? null;
@@ -130,7 +134,7 @@ export class PhotoPicker implements FormValueControl<Blob | null> {
     this.cancelEncoding();
     this.problem.set(null);
     this.select(null);
-    this.chooseButton().nativeElement.focus();
+    this.focus();
   }
 
   private encodingFailed(error: unknown): void {

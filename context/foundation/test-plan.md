@@ -228,6 +228,7 @@ contributors should respect these unless the underlying assumption changes.
 - 2026-10-18: §3 Phase 5 goal reworded so it no longer claims to wire the API integration suite (Phase 1 wired it; §5 already said so); §6.2, §6.7 and §7 filled by `testing-cold-start-registration-resilience`.
 - 2026-10-18: cookbook §6.3 (harness seams and probe outcomes), §6.4 and §6.7, six §7 exclusions and the approved §2 wording backport (Risks #2, #3, #6) filled by `testing-api-privacy-authorization-contract` Phase 7; the §3 Phase 2 row stays `change opened` until the human confirms the phase.
 - 2026-10-18: §3 Phase 2 marked `complete` (all Progress items `[x]`, manual rows 7.5 and 7.6 confirmed); the implementation review added a signed-in 401 guard to the sweep, a local-part needle to the leak scanner, an exemption guard, and refreshed §4 and §6.4.
+- 2026-11-15: `edit-own-sighting-with-lock` (S-09) closed the "no sighting edit endpoint" gap in §7 and extended Risk #3's modify gate to `PUT sightings/{id}` (owner only, in `EndpointFixtureRegistry` and `OwnershipContractTests`); its implementation review added a per-user rate limit on that endpoint.
 
 Refresh (`/10x-test-plan --refresh`) when:
 

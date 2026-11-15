@@ -27,7 +27,7 @@ public class SightingsControllerTests
         Sighting created = Sighting();
         sightingService
             .CreateAsync(Arg.Any<NewSighting>(), Arg.Any<CancellationToken>())
-            .Returns(SightingCreateResult.Success(created));
+            .Returns(SightingCreateResult.Success(created, null));
         SightingsController controller = CreateController(Authenticated(userId));
 
         ActionResult<SightingModel> result = await controller.Create(Request(), cancellationToken);
@@ -56,7 +56,7 @@ public class SightingsControllerTests
         Guid userId = Guid.NewGuid();
         sightingService
             .CreateAsync(Arg.Any<NewSighting>(), Arg.Any<CancellationToken>())
-            .Returns(SightingCreateResult.Success(Sighting(userId)));
+            .Returns(SightingCreateResult.Success(Sighting(userId), null));
         SightingsController controller = CreateController(Authenticated(userId));
 
         ActionResult<SightingModel> result = await controller.Create(Request(), cancellationToken);
@@ -66,12 +66,31 @@ public class SightingsControllerTests
     }
 
     [Fact]
+    public async Task Create_returns_the_edit_permissions_from_the_create_result_without_asking_the_service_again()
+    {
+        Guid userId = Guid.NewGuid();
+        SightingEditPermissions permissions = new(true, [SightingStatus.AtTheVet, SightingStatus.InHomeCare, SightingStatus.Released]);
+        sightingService
+            .CreateAsync(Arg.Any<NewSighting>(), Arg.Any<CancellationToken>())
+            .Returns(SightingCreateResult.Success(Sighting(userId), permissions));
+        SightingsController controller = CreateController(Authenticated(userId));
+
+        ActionResult<SightingModel> result = await controller.Create(Request(), cancellationToken);
+
+        SightingModel model = Assert.IsType<SightingModel>(Assert.IsType<CreatedAtActionResult>(result.Result).Value);
+        Assert.NotNull(model.EditPermissions);
+        Assert.True(model.EditPermissions.CanEditDescription);
+        Assert.Equal([3, 4, 7], model.EditPermissions.AllowedNextStatuses);
+        await sightingService.DidNotReceive().GetEditPermissionsAsync(Arg.Any<Sighting>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Create_maps_the_request_with_the_current_user_as_reporter()
     {
         Guid userId = Guid.NewGuid();
         sightingService
             .CreateAsync(Arg.Any<NewSighting>(), Arg.Any<CancellationToken>())
-            .Returns(SightingCreateResult.Success(Sighting()));
+            .Returns(SightingCreateResult.Success(Sighting(), null));
         SightingsController controller = CreateController(Authenticated(userId));
 
         await controller.Create(Request(), cancellationToken);

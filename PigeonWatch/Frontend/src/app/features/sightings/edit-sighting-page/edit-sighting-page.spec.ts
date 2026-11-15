@@ -413,6 +413,17 @@ describe('EditSightingPage', () => {
     expect(page.querySelector('form')).not.toBeNull();
   });
 
+  it('keeps the error state with Try again when the first load gets no answer', async () => {
+    const failure = new HttpErrorResponse({ status: 0 });
+
+    get.mockReturnValue(throwError(() => failure));
+    const page = await open();
+
+    expect(page.querySelector('form')).toBeNull();
+    expect(button('Try again')).not.toBeNull();
+    expect(report).toHaveBeenCalledExactlyOnceWith('api-failure', 'sighting.edit.load', failure);
+  });
+
   it('shows a loading indicator and no form while the sighting loads', async () => {
     get.mockReturnValue(NEVER);
     const page = await open();
@@ -504,6 +515,28 @@ describe('EditSightingPage', () => {
       expect(report).toHaveBeenCalledExactlyOnceWith('api-failure', 'sighting.edit.photo', failure);
     });
 
+    it('moves focus to the photo picker after Remove current photo', async () => {
+      get.mockReturnValue(of(withPhoto));
+      await open();
+      button('Remove current photo')!.click();
+      await settle();
+
+      expect(document.activeElement).toBe(button('Choose photo'));
+    });
+
+    it('does not load the thumbnail again when a stale reload keeps the same photo', async () => {
+      update.mockReturnValue(throwError(() => badRequest('DescriptionLocked')));
+      get.mockReturnValue(of(withPhoto));
+      await open();
+      get.mockReturnValue(of({ ...withPhoto, editPermissions: locked.editPermissions }));
+      await submit();
+
+      expect(get).toHaveBeenCalledTimes(2);
+      expect(photoThumbnail).toHaveBeenCalledOnce();
+      expect(revokePreviewUrl).not.toHaveBeenCalled();
+      expect(currentThumbnail()?.getAttribute('src')).toBe('blob:preview-1');
+    });
+
     it('revokes the thumbnail URL when the page is destroyed', async () => {
       get.mockReturnValue(of(withPhoto));
       await open();
@@ -582,6 +615,77 @@ describe('EditSightingPage', () => {
       expect(root().querySelector('form')).not.toBeNull();
       expect(root().querySelector('app-loading-indicator')).toBeNull();
       expect(formAlert()).not.toBeNull();
+    });
+
+    it('keeps the form and the edits when the stale-form reload fails, and reports it', async () => {
+      const failure = new HttpErrorResponse({ status: 500, error: { traceId } });
+
+      update.mockReturnValue(throwError(() => badRequest('DescriptionLocked')));
+      await open();
+      setValue(nameInput(), 'Limpy Jr');
+      setValue(textareas()[1], 'Walks slowly');
+      await settle();
+      get.mockReturnValue(throwError(() => failure));
+      await submit();
+
+      expect(get).toHaveBeenCalledTimes(2);
+      expect(root().querySelector('form')).not.toBeNull();
+      expect(root().querySelector('app-error-retry')).toBeNull();
+      expect(nameInput().value).toBe('Limpy Jr');
+      expect(textareas()[1].value).toBe('Walks slowly');
+      expect(formAlert()?.textContent).toContain(
+        "We couldn't save your changes right now. Try again.",
+      );
+      expect(formAlert()?.querySelector('app-error-reference')?.textContent).toContain(traceId);
+      expect(report).toHaveBeenCalledExactlyOnceWith('api-failure', 'sighting.edit.load', failure);
+
+      update.mockReturnValue(of(owned));
+      await submit();
+
+      expect(update).toHaveBeenCalledTimes(2);
+      expect(update.mock.calls[1][1]).toMatchObject({
+        name: 'Limpy Jr',
+        behaviour: 'Walks slowly',
+      });
+    });
+
+    it('keeps the form and shows the not-found message when the stale-form reload gets a 404', async () => {
+      update.mockReturnValue(throwError(() => badRequest('InvalidStatusTransition')));
+      await open();
+      setValue(nameInput(), 'Limpy Jr');
+      await settle();
+      get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+      await submit();
+
+      expect(root().querySelector('form')).not.toBeNull();
+      expect(nameInput().value).toBe('Limpy Jr');
+      expect(formAlert()?.textContent?.trim()).toBe(
+        "This sighting doesn't exist or is no longer available.",
+      );
+      expect(report).not.toHaveBeenCalled();
+    });
+
+    it('shows the too-many-edits message for a 429 without reporting and keeps the values', async () => {
+      update.mockReturnValue(
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 429,
+              error: { status: 429, title: 'Too Many Requests', traceId },
+            }),
+        ),
+      );
+      await open();
+      setValue(nameInput(), 'Limpy Jr');
+      await submit();
+
+      expect(formAlert()?.textContent?.trim()).toBe(
+        "You've saved a lot of changes in a short time. Wait a minute and try again.",
+      );
+      expect(formAlert()?.querySelector('app-error-reference')?.textContent?.trim() ?? '').toBe('');
+      expect(nameInput().value).toBe('Limpy Jr');
+      expect(get).toHaveBeenCalledOnce();
+      expect(report).not.toHaveBeenCalled();
     });
 
     it('reports a 403 as a client bug and shows the forbidden message with its reference', async () => {

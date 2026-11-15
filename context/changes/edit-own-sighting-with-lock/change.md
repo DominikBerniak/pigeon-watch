@@ -1,7 +1,7 @@
 ---
 change_id: edit-own-sighting-with-lock
 title: Edit own sighting with lock
-status: implemented
+status: impl_reviewed
 created: 2026-11-09
 updated: 2026-11-15
 archived_at: null

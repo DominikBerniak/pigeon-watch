@@ -1,11 +1,13 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
 using PigeonWatch.BusinessLogic.Services;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.WebApi.Mappers;
 using PigeonWatch.WebApi.Models;
+using PigeonWatch.WebApi.RateLimiting;
 using PigeonWatch.WebApi.ViewModelCreators;
 
 namespace PigeonWatch.WebApi.Controllers;
@@ -66,13 +68,13 @@ public class SightingsController(
             return GetValidationProblem<SightingModel>(result.Errors.Select(error => (error.Code, error.Description)), result.RetryAfterSeconds);
         }
 
-        SightingEditPermissions? permissions = await sightingService.GetEditPermissionsAsync(result.Sighting, userId, cancellationToken);
-        SightingModel model = sightingViewModelCreator.Create(result.Sighting, userId, permissions);
+        SightingModel model = sightingViewModelCreator.Create(result.Sighting, userId, result.Permissions);
 
         return CreatedAtAction(nameof(Get), new { id = model.Id }, model);
     }
 
     [HttpPut("{id:guid}")]
+    [EnableRateLimiting(RateLimitPolicyNames.SightingEdits)]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(SightingRules.PhotoRequestMaxBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = SightingRules.PhotoRequestMaxBytes)]

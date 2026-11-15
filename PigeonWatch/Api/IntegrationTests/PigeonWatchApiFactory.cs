@@ -19,8 +19,13 @@ using PigeonWatch.WebApi.Host;
 
 namespace PigeonWatch.IntegrationTests;
 
-public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null, CultureInfo? requestCulture = null) : WebApplicationFactory<Program>
+public sealed class PigeonWatchApiFactory(
+    TimeProvider? timeProvider = null,
+    CultureInfo? requestCulture = null,
+    int? sightingEditPermitLimit = PigeonWatchApiFactory.SharedSightingEditPermitLimit) : WebApplicationFactory<Program>
 {
+    public const int SharedSightingEditPermitLimit = 1000;
+
     private readonly SqliteConnection connection = OpenConnection();
     private readonly FakeLogCollector logs = new();
     private readonly InMemorySightingPhotoStore photoStore = new();
@@ -177,6 +182,9 @@ public sealed class PigeonWatchApiFactory(TimeProvider? timeProvider = null, Cul
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureLogging(logging => logging.AddProvider(new FakeLoggerProvider(logs)));
+
+        if (sightingEditPermitLimit is not null)
+            builder.UseSetting("RateLimiting:SightingEditPermitLimit", sightingEditPermitLimit.Value.ToString(CultureInfo.InvariantCulture));
 
         builder.ConfigureAppConfiguration(configuration => configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
