@@ -981,6 +981,79 @@ public class SightingServiceTests
         Assert.Equal([SightingErrorCodes.SightingNotFound], result.Errors.Select(error => error.Code));
     }
 
+    [Fact]
+    public async Task Remove_by_a_non_admin_is_not_admin_before_looking_up_the_sighting()
+    {
+        SightingRemovalResult result = await CreateService().RemoveAsync(Guid.NewGuid(), Guid.NewGuid(), false, cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Null(result.Sighting);
+        Assert.Equal([SightingErrorCodes.NotAdmin], result.Errors.Select(error => error.Code));
+        Assert.Empty(sightingRepository.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task Remove_by_an_admin_of_an_unknown_sighting_is_sighting_not_found()
+    {
+        Guid unknownId = Guid.NewGuid();
+        sightingRepository.RemoveAsync(unknownId, Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()).Returns((Sighting?)null);
+
+        SightingRemovalResult result = await CreateService().RemoveAsync(unknownId, Guid.NewGuid(), true, cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([SightingErrorCodes.SightingNotFound], result.Errors.Select(error => error.Code));
+    }
+
+    [Fact]
+    public async Task Remove_by_an_admin_records_the_admin_and_the_current_time()
+    {
+        Guid adminId = Guid.NewGuid();
+        Sighting removed = SightingAt(centreLatitude, centreLongitude, now.UtcDateTime) with { RemovedAt = now.UtcDateTime };
+        sightingRepository.RemoveAsync(removed.Id, adminId, now.UtcDateTime, Arg.Any<CancellationToken>()).Returns(removed);
+
+        SightingRemovalResult result = await CreateService().RemoveAsync(removed.Id, adminId, true, cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Empty(result.Errors);
+        Assert.Equal(removed, result.Sighting);
+        await sightingRepository.Received(1).RemoveAsync(removed.Id, adminId, now.UtcDateTime, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Restore_by_a_non_admin_is_not_admin_before_looking_up_the_sighting()
+    {
+        SightingRemovalResult result = await CreateService().RestoreAsync(Guid.NewGuid(), false, cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([SightingErrorCodes.NotAdmin], result.Errors.Select(error => error.Code));
+        Assert.Empty(sightingRepository.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task Restore_by_an_admin_of_an_unknown_sighting_is_sighting_not_found()
+    {
+        Guid unknownId = Guid.NewGuid();
+        sightingRepository.RestoreAsync(unknownId, Arg.Any<CancellationToken>()).Returns((Sighting?)null);
+
+        SightingRemovalResult result = await CreateService().RestoreAsync(unknownId, true, cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal([SightingErrorCodes.SightingNotFound], result.Errors.Select(error => error.Code));
+    }
+
+    [Fact]
+    public async Task Restore_by_an_admin_returns_the_restored_sighting()
+    {
+        Sighting restored = SightingAt(centreLatitude, centreLongitude, now.UtcDateTime);
+        sightingRepository.RestoreAsync(restored.Id, Arg.Any<CancellationToken>()).Returns(restored);
+
+        SightingRemovalResult result = await CreateService().RestoreAsync(restored.Id, true, cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(restored, result.Sighting);
+        Assert.Null(result.Sighting!.RemovedAt);
+    }
+
     private SightingService CreateService()
     {
         return new(
@@ -991,6 +1064,7 @@ public class SightingServiceTests
             photoThumbnailProvider,
             sightingPhotoStore,
             new SubmissionCooldownProvider(timeProvider),
+            timeProvider,
             NullLogger<SightingService>.Instance);
     }
 

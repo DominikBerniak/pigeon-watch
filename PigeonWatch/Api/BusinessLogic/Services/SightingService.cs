@@ -14,6 +14,7 @@ public class SightingService(
     IPhotoThumbnailProvider photoThumbnailProvider,
     ISightingPhotoStore sightingPhotoStore,
     ISubmissionCooldownProvider submissionCooldownProvider,
+    TimeProvider timeProvider,
     ILogger<SightingService> logger) : ISightingService
 {
     private static readonly HashSet<int> listPageSizes =
@@ -150,6 +151,32 @@ public class SightingService(
             return SightingUpdateResult.Failure([SightingNotFoundError()]);
 
         return await CompleteUpdateAsync(updated, trimmed.UserId, engaged, cancellationToken);
+    }
+
+    public async Task<SightingRemovalResult> RemoveAsync(Guid sightingId, Guid userId, bool isAdmin, CancellationToken cancellationToken = default)
+    {
+        if (!isAdmin)
+            return SightingRemovalResult.Failure([NotAdminError()]);
+
+        Sighting? removed = await sightingRepository.RemoveAsync(sightingId, userId, timeProvider.GetUtcNow().UtcDateTime, cancellationToken);
+
+        if (removed is null)
+            return SightingRemovalResult.Failure([SightingNotFoundError()]);
+
+        return SightingRemovalResult.Success(removed);
+    }
+
+    public async Task<SightingRemovalResult> RestoreAsync(Guid sightingId, bool isAdmin, CancellationToken cancellationToken = default)
+    {
+        if (!isAdmin)
+            return SightingRemovalResult.Failure([NotAdminError()]);
+
+        Sighting? restored = await sightingRepository.RestoreAsync(sightingId, cancellationToken);
+
+        if (restored is null)
+            return SightingRemovalResult.Failure([SightingNotFoundError()]);
+
+        return SightingRemovalResult.Success(restored);
     }
 
     public async Task<Stream?> OpenPhotoAsync(Guid sightingId, CancellationToken cancellationToken = default)
@@ -371,6 +398,11 @@ public class SightingService(
     private static SightingError SightingNotFoundError()
     {
         return new SightingError(SightingErrorCodes.SightingNotFound, "The sighting does not exist.");
+    }
+
+    private static SightingError NotAdminError()
+    {
+        return new SightingError(SightingErrorCodes.NotAdmin, "Only an admin can remove or restore a sighting.");
     }
 
     private static SightingError UnreadablePhotoError()

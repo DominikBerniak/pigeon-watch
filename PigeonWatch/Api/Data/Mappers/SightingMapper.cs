@@ -35,6 +35,7 @@ public class SightingMapper : ISightingMapper
             entity.ReporterId,
             entity.Reporter.DisplayName,
             DateTime.SpecifyKind(entity.CreateDate, DateTimeKind.Utc),
-            entity.PhotoBlobName is not null);
+            entity.PhotoBlobName is not null,
+            entity.RemovedAt is null ? null : DateTime.SpecifyKind(entity.RemovedAt.Value, DateTimeKind.Utc));
     }
 }

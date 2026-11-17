@@ -612,9 +612,113 @@ public sealed class SightingRepositoryTests : IDisposable
         Assert.Null(outcome);
     }
 
+    [Fact]
+    public async Task Remove_sets_the_utc_removal_time_and_the_remover()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid adminId = await CreateUserAsync("admin@example.com", "Warden");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        DateTime removedAt = timeProvider.UtcNow.AddMinutes(3).UtcDateTime;
+
+        Sighting? removed = await RemoveSightingAsync(sighting.Id, adminId, removedAt);
+        Sighting? loaded = await GetSightingAsync(sighting.Id);
+
+        Assert.NotNull(removed);
+        Assert.Equal(removedAt, removed.RemovedAt);
+        Assert.Equal(removed, loaded);
+        Assert.Equal(removedAt, loaded!.RemovedAt);
+        Assert.Equal(DateTimeKind.Utc, loaded.RemovedAt!.Value.Kind);
+        Assert.Equal(adminId, await GetRemovedByAsync(sighting.Id));
+    }
+
+    [Fact]
+    public async Task Remove_of_an_already_removed_sighting_keeps_the_first_removal()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid firstAdminId = await CreateUserAsync("admin@example.com", "Warden");
+        Guid secondAdminId = await CreateUserAsync("second.admin@example.com", "Keeper");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        DateTime firstRemovedAt = timeProvider.UtcNow.UtcDateTime;
+
+        await RemoveSightingAsync(sighting.Id, firstAdminId, firstRemovedAt);
+        Sighting? again = await RemoveSightingAsync(sighting.Id, secondAdminId, firstRemovedAt.AddHours(1));
+
+        Assert.NotNull(again);
+        Assert.Equal(firstRemovedAt, again.RemovedAt);
+        Assert.Equal(firstRemovedAt, (await GetSightingAsync(sighting.Id))!.RemovedAt);
+        Assert.Equal(firstAdminId, await GetRemovedByAsync(sighting.Id));
+    }
+
+    [Fact]
+    public async Task Remove_returns_null_for_an_unknown_id()
+    {
+        Guid adminId = await CreateUserAsync("admin@example.com", "Warden");
+
+        Assert.Null(await RemoveSightingAsync(Guid.NewGuid(), adminId, timeProvider.UtcNow.UtcDateTime));
+    }
+
+    [Fact]
+    public async Task Restore_clears_the_removal_time_and_the_remover()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid adminId = await CreateUserAsync("admin@example.com", "Warden");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        await RemoveSightingAsync(sighting.Id, adminId, timeProvider.UtcNow.UtcDateTime);
+
+        Sighting? restored = await RestoreSightingAsync(sighting.Id);
+
+        Assert.NotNull(restored);
+        Assert.Null(restored.RemovedAt);
+        Assert.Equal(sighting, await GetSightingAsync(sighting.Id));
+        Assert.Null(await GetRemovedByAsync(sighting.Id));
+    }
+
+    [Fact]
+    public async Task Restore_of_a_sighting_that_is_not_removed_returns_it_unchanged()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Sighting sighting = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+
+        Sighting? restored = await RestoreSightingAsync(sighting.Id);
+
+        Assert.Equal(sighting, restored);
+        Assert.Equal(sighting, await GetSightingAsync(sighting.Id));
+    }
+
+    [Fact]
+    public async Task Restore_returns_null_for_an_unknown_id()
+    {
+        Assert.Null(await RestoreSightingAsync(Guid.NewGuid()));
+    }
+
     public void Dispose()
     {
         connection.Dispose();
+    }
+
+    private async Task<Sighting?> RemoveSightingAsync(Guid sightingId, Guid removedBy, DateTime removedAt)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+
+        return await CreateRepository(db).RemoveAsync(sightingId, removedBy, removedAt, cancellationToken);
+    }
+
+    private async Task<Sighting?> RestoreSightingAsync(Guid sightingId)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+
+        return await CreateRepository(db).RestoreAsync(sightingId, cancellationToken);
+    }
+
+    private async Task<Guid?> GetRemovedByAsync(Guid sightingId)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+        Guid? removedBy = await db.Sightings
+            .Where(e => e.Id == sightingId)
+            .Select(e => e.RemovedBy)
+            .SingleAsync(cancellationToken);
+
+        return removedBy;
     }
 
     private static GeoRadiusFilter RadiusAroundCentre()

@@ -717,6 +717,7 @@ public class SightingServicePhotoTests
             photoThumbnailProvider,
             sightingPhotoStore,
             new SubmissionCooldownProvider(timeProvider),
+            timeProvider,
             logger);
     }
 

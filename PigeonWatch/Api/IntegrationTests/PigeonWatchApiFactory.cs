@@ -149,6 +149,16 @@ public sealed class PigeonWatchApiFactory(
         return value is null or DBNull ? null : (string)value;
     }
 
+    public Guid? ReadSightingRemovedBy(Guid sightingId)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = "SELECT REMOVED_BY FROM SIGHTING WHERE ID = $id";
+        command.Parameters.AddWithValue("$id", sightingId);
+        object? value = command.ExecuteScalar();
+
+        return value is null or DBNull ? null : Guid.Parse((string)value);
+    }
+
     public int DeleteUserAccount(Guid id)
     {
         using SqliteCommand command = connection.CreateCommand();

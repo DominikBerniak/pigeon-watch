@@ -606,30 +606,30 @@ The `RemovedAt == null` predicate is added to the box and radius queries. Their 
 
 #### Automated
 
-- [x] 1.1 Solution builds with style rules
-- [x] 1.2 Architecture tests pass, including the ID key, audit columns, naming and registration rules for the new types
-- [x] 1.3 No pending model changes after the migration
-- [x] 1.4 Unit tests pass, including the new store and bootstrapper tests
-- [x] 1.5 Integration tests pass, including AdminRoleContractTests and the unchanged privacy sweep
+- [x] 1.1 Solution builds with style rules — df5fd76
+- [x] 1.2 Architecture tests pass, including the ID key, audit columns, naming and registration rules for the new types — df5fd76
+- [x] 1.3 No pending model changes after the migration — df5fd76
+- [x] 1.4 Unit tests pass, including the new store and bootstrapper tests — df5fd76
+- [x] 1.5 Integration tests pass, including AdminRoleContractTests and the unchanged privacy sweep — df5fd76
 
 #### Manual
 
-- [x] 1.6 Configured admin sees roles ["Admin"] in general configuration against LocalDB; another account sees []
-- [x] 1.7 API keeps serving with one logged Error when the bootstrap cannot reach the database
+- [x] 1.6 Configured admin sees roles ["Admin"] in general configuration against LocalDB; another account sees [] — df5fd76
+- [x] 1.7 API keeps serving with one logged Error when the bootstrap cannot reach the database — df5fd76
 
 ### Phase 2: Remove and restore endpoints (API)
 
 #### Automated
 
-- [ ] 2.1 Solution builds
-- [ ] 2.2 Architecture tests pass, including the controller return-type rule for the two new actions
-- [ ] 2.3 No pending model changes
-- [ ] 2.4 Unit tests pass
-- [ ] 2.5 Integration tests pass, including SightingRemovalContractTests, EndpointCoverageTests, EndpointProtectionTests and PrivacySweepTests
+- [x] 2.1 Solution builds
+- [x] 2.2 Architecture tests pass, including the controller return-type rule for the two new actions
+- [x] 2.3 No pending model changes
+- [x] 2.4 Unit tests pass
+- [x] 2.5 Integration tests pass, including SightingRemovalContractTests, EndpointCoverageTests, EndpointProtectionTests and PrivacySweepTests
 
 #### Manual
 
-- [ ] 2.6 DELETE as admin returns 200 with removedAt, as member 403 with one Warning; restore clears removedAt
+- [x] 2.6 DELETE as admin returns 200 with removedAt, as member 403 with one Warning; restore clears removedAt
 
 ### Phase 3: Visibility rules on every read and write path (API)
 

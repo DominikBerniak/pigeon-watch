@@ -6,6 +6,8 @@ public interface ISightingService
 {
     Task<SightingCreateResult> CreateAsync(NewSighting sighting, CancellationToken cancellationToken = default);
     Task<SightingUpdateResult> UpdateAsync(SightingUpdate update, CancellationToken cancellationToken = default);
+    Task<SightingRemovalResult> RemoveAsync(Guid sightingId, Guid userId, bool isAdmin, CancellationToken cancellationToken = default);
+    Task<SightingRemovalResult> RestoreAsync(Guid sightingId, bool isAdmin, CancellationToken cancellationToken = default);
     Task<Sighting?> GetAsync(Guid id, CancellationToken cancellationToken = default);
     Task<SightingEditPermissions?> GetEditPermissionsAsync(Sighting sighting, Guid userId, CancellationToken cancellationToken = default);
     Task<SightingNearbyResult> GetNearbyAsync(

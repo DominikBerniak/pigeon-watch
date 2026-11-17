@@ -12,4 +12,5 @@ public sealed record Sighting(
     Guid ReporterId,
     string ReporterDisplayName,
     DateTime CreatedAt,
-    bool HasPhoto = false);
+    bool HasPhoto = false,
+    DateTime? RemovedAt = null);

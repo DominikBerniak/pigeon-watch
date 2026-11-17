@@ -204,6 +204,58 @@ public class ControllerFailureLoggingTests
     }
 
     [Fact]
+    public async Task Remove_logs_a_warning_with_the_route_when_the_caller_is_not_an_admin()
+    {
+        sightingService
+            .RemoveAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(SightingRemovalResult.Failure([new SightingError(SightingErrorCodes.NotAdmin, "not admin")]));
+        SightingsController controller = CreateSightingsController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Remove(Guid.NewGuid(), cancellationToken);
+
+        StatusCodeResult forbidden = Assert.IsType<StatusCodeResult>(result.Result);
+        Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
+        LogCall call = Assert.Single(LogCalls(sightingsLogger));
+        Assert.Equal(LogLevel.Warning, call.Level);
+        Assert.Contains("Route", call.State.Keys);
+        Assert.Contains("admin", call.Message);
+    }
+
+    [Fact]
+    public async Task Restore_logs_a_warning_with_the_route_when_the_caller_is_not_an_admin()
+    {
+        sightingService
+            .RestoreAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(SightingRemovalResult.Failure([new SightingError(SightingErrorCodes.NotAdmin, "not admin")]));
+        SightingsController controller = CreateSightingsController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Restore(Guid.NewGuid(), cancellationToken);
+
+        Assert.IsType<StatusCodeResult>(result.Result);
+        LogCall call = Assert.Single(LogCalls(sightingsLogger));
+        Assert.Equal(LogLevel.Warning, call.Level);
+        Assert.Contains("Route", call.State.Keys);
+        Assert.Contains("admin", call.Message);
+    }
+
+    [Fact]
+    public async Task Remove_logs_one_information_with_the_sighting_id_when_it_is_missing()
+    {
+        Guid id = Guid.NewGuid();
+        sightingService
+            .RemoveAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(SightingRemovalResult.Failure([new SightingError(SightingErrorCodes.SightingNotFound, "missing")]));
+        SightingsController controller = CreateSightingsController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Remove(id, cancellationToken);
+
+        Assert.IsType<NotFoundResult>(result.Result);
+        LogCall call = Assert.Single(LogCalls(sightingsLogger));
+        Assert.Equal(LogLevel.Information, call.Level);
+        Assert.Equal(id, call.State["SightingId"]);
+    }
+
+    [Fact]
     public async Task Update_profile_logs_a_warning_when_the_user_no_longer_exists()
     {
         Guid userId = Guid.NewGuid();

@@ -13,4 +13,6 @@ public interface ISightingRepository
     Task<string?> GetPhotoBlobNameAsync(Guid sightingId, CancellationToken cancellationToken = default);
     Task<bool> HasOtherUserEngagementAsync(Guid sightingId, Guid reporterId, CancellationToken cancellationToken = default);
     Task<SightingUpdateOutcome?> UpdateAsync(Guid sightingId, Guid reporterId, SightingUpdate update, SightingPhotoChange photoChange, string? newPhotoBlobName, CancellationToken cancellationToken = default);
+    Task<Sighting?> RemoveAsync(Guid sightingId, Guid removedBy, DateTime removedAt, CancellationToken cancellationToken = default);
+    Task<Sighting?> RestoreAsync(Guid sightingId, CancellationToken cancellationToken = default);
 }

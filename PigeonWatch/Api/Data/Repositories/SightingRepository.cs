@@ -183,6 +183,44 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
         return new SightingUpdateOutcome(sightingMapper.ToSighting(entity), replacedBlobName);
     }
 
+    public async Task<Sighting?> RemoveAsync(Guid sightingId, Guid removedBy, DateTime removedAt, CancellationToken cancellationToken = default)
+    {
+        SightingEntity? entity = await db.Sightings
+            .Include(e => e.Reporter)
+            .FirstOrDefaultAsync(e => e.Id == sightingId, cancellationToken);
+
+        if (entity is null)
+            return null;
+
+        if (entity.RemovedAt is null)
+        {
+            entity.RemovedAt = removedAt;
+            entity.RemovedBy = removedBy;
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        return sightingMapper.ToSighting(entity);
+    }
+
+    public async Task<Sighting?> RestoreAsync(Guid sightingId, CancellationToken cancellationToken = default)
+    {
+        SightingEntity? entity = await db.Sightings
+            .Include(e => e.Reporter)
+            .FirstOrDefaultAsync(e => e.Id == sightingId, cancellationToken);
+
+        if (entity is null)
+            return null;
+
+        if (entity.RemovedAt is not null || entity.RemovedBy is not null)
+        {
+            entity.RemovedAt = null;
+            entity.RemovedBy = null;
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        return sightingMapper.ToSighting(entity);
+    }
+
     public async Task<bool> HasOtherUserEngagementAsync(Guid sightingId, Guid reporterId, CancellationToken cancellationToken = default)
     {
         bool engaged = await db.Sightings

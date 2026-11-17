@@ -45,6 +45,10 @@ public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options
                 .WithMany()
                 .HasForeignKey(e => e.ReporterId)
                 .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<UserAccountEntity>()
+                .WithMany()
+                .HasForeignKey(e => e.RemovedBy)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.Latitude, e.Longitude });
             entity.HasIndex(e => new { e.ReporterId, e.CreateDate });
         });

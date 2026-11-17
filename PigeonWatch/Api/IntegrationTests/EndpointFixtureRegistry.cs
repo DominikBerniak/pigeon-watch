@@ -45,6 +45,8 @@ public sealed class EndpointFixtureRegistry
         new(["POST sightings/list"], BuildList),
         new(["GET sightings/mine"], BuildMine),
         new(["PUT sightings/{id:guid}"], BuildUpdateSighting),
+        new(["DELETE sightings/{id:guid}"], BuildRemoveSighting),
+        new(["POST sightings/{id:guid}/restore"], BuildRestoreSighting),
         new(["GET sightings/{sightingId:guid}/comments"], BuildListComments),
         new(["POST sightings/{sightingId:guid}/comments"], BuildCreateComment),
         new(["PUT sightings/{sightingId:guid}/comments/{commentId:guid}"], BuildUpdateComment),
@@ -303,6 +305,28 @@ public sealed class EndpointFixtureRegistry
         AddMalformedMultipart(requests, key, HttpMethod.Put, uri);
 
         return requests;
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildRemoveSighting(FixtureContext context)
+    {
+        const string key = "DELETE sightings/{id:guid}";
+
+        return
+        [
+            Make(key, "seeded sighting", new HttpRequestMessage(HttpMethod.Delete, $"/sightings/{context.SightingId}")),
+            Make(key, "unknown sighting", new HttpRequestMessage(HttpMethod.Delete, $"/sightings/{Guid.NewGuid()}"))
+        ];
+    }
+
+    private static IReadOnlyList<FixtureRequest> BuildRestoreSighting(FixtureContext context)
+    {
+        const string key = "POST sightings/{id:guid}/restore";
+
+        return
+        [
+            Make(key, "seeded sighting", new HttpRequestMessage(HttpMethod.Post, $"/sightings/{context.SightingId}/restore")),
+            Make(key, "unknown sighting", new HttpRequestMessage(HttpMethod.Post, $"/sightings/{Guid.NewGuid()}/restore"))
+        ];
     }
 
     private static IReadOnlyList<FixtureRequest> BuildListComments(FixtureContext context)

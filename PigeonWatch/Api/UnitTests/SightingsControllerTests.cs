@@ -270,6 +270,121 @@ public class SightingsControllerTests
     }
 
     [Fact]
+    public async Task Remove_returns_200_with_the_removed_sighting_and_its_removal_time()
+    {
+        Guid adminId = Guid.NewGuid();
+        DateTime removedAt = new(2026, 11, 17, 9, 30, 0, DateTimeKind.Utc);
+        Sighting removed = Sighting() with { RemovedAt = removedAt };
+        sightingService.RemoveAsync(removed.Id, adminId, true, Arg.Any<CancellationToken>()).Returns(SightingRemovalResult.Success(removed));
+        SightingsController controller = CreateController(Admin(adminId));
+
+        ActionResult<SightingModel> result = await controller.Remove(removed.Id, cancellationToken);
+
+        SightingModel model = Assert.IsType<SightingModel>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal(removed.Id, model.Id);
+        Assert.Equal(removedAt, model.RemovedAt);
+        Assert.False(model.IsMine);
+        Assert.Null(model.EditPermissions);
+    }
+
+    [Fact]
+    public async Task Remove_tells_the_service_whether_the_caller_holds_the_admin_role()
+    {
+        Guid adminId = Guid.NewGuid();
+        Guid memberId = Guid.NewGuid();
+        Guid sightingId = Guid.NewGuid();
+        sightingService
+            .RemoveAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(SightingRemovalResult.Failure([new SightingError(SightingErrorCodes.NotAdmin, "not admin")]));
+
+        await CreateController(Admin(adminId)).Remove(sightingId, cancellationToken);
+        await CreateController(Authenticated(memberId)).Remove(sightingId, cancellationToken);
+
+        await sightingService.Received(1).RemoveAsync(sightingId, adminId, true, Arg.Any<CancellationToken>());
+        await sightingService.Received(1).RemoveAsync(sightingId, memberId, false, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Remove_returns_403_for_a_caller_who_is_not_an_admin()
+    {
+        sightingService
+            .RemoveAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(SightingRemovalResult.Failure([new SightingError(SightingErrorCodes.NotAdmin, "not admin")]));
+        SightingsController controller = CreateController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Remove(Guid.NewGuid(), cancellationToken);
+
+        StatusCodeResult forbidden = Assert.IsType<StatusCodeResult>(result.Result);
+        Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
+    }
+
+    [Fact]
+    public async Task Remove_returns_404_for_an_unknown_sighting()
+    {
+        sightingService
+            .RemoveAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(SightingRemovalResult.Failure([new SightingError(SightingErrorCodes.SightingNotFound, "missing")]));
+        SightingsController controller = CreateController(Admin(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Remove(Guid.NewGuid(), cancellationToken);
+
+        Assert.IsType<NotFoundResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task Remove_returns_401_when_the_name_identifier_claim_is_missing()
+    {
+        SightingsController controller = CreateController(new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Role, RoleNames.Admin)])));
+
+        ActionResult<SightingModel> result = await controller.Remove(Guid.NewGuid(), cancellationToken);
+
+        Assert.IsType<UnauthorizedResult>(result.Result);
+        await sightingService.DidNotReceive().RemoveAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Restore_returns_200_with_the_restored_sighting()
+    {
+        Sighting restored = Sighting();
+        sightingService.RestoreAsync(restored.Id, true, Arg.Any<CancellationToken>()).Returns(SightingRemovalResult.Success(restored));
+        SightingsController controller = CreateController(Admin(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Restore(restored.Id, cancellationToken);
+
+        SightingModel model = Assert.IsType<SightingModel>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal(restored.Id, model.Id);
+        Assert.Null(model.RemovedAt);
+    }
+
+    [Fact]
+    public async Task Restore_returns_403_for_a_caller_who_is_not_an_admin()
+    {
+        Guid sightingId = Guid.NewGuid();
+        sightingService
+            .RestoreAsync(sightingId, false, Arg.Any<CancellationToken>())
+            .Returns(SightingRemovalResult.Failure([new SightingError(SightingErrorCodes.NotAdmin, "not admin")]));
+        SightingsController controller = CreateController(Authenticated(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Restore(sightingId, cancellationToken);
+
+        StatusCodeResult forbidden = Assert.IsType<StatusCodeResult>(result.Result);
+        Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
+    }
+
+    [Fact]
+    public async Task Restore_returns_404_for_an_unknown_sighting()
+    {
+        sightingService
+            .RestoreAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(SightingRemovalResult.Failure([new SightingError(SightingErrorCodes.SightingNotFound, "missing")]));
+        SightingsController controller = CreateController(Admin(Guid.NewGuid()));
+
+        ActionResult<SightingModel> result = await controller.Restore(Guid.NewGuid(), cancellationToken);
+
+        Assert.IsType<NotFoundResult>(result.Result);
+    }
+
+    [Fact]
     public async Task Get_returns_the_sighting_without_caching()
     {
         Sighting stored = Sighting();
@@ -599,6 +714,8 @@ public class SightingsControllerTests
 
         Assert.DoesNotContain(properties, property => property.Name.Contains("Email", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(properties, property => property.Name.Contains("ReporterId", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(properties, property => property.Name.Contains("RemovedBy", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(typeof(DateTime?), typeof(SightingModel).GetProperty(nameof(SightingModel.RemovedAt))!.PropertyType);
         Assert.DoesNotContain(properties, property => property.PropertyType.Assembly == typeof(Sighting).Assembly);
         Assert.Equal(typeof(int), typeof(SightingModel).GetProperty(nameof(SightingModel.Status))!.PropertyType);
         Assert.Equal(typeof(int), typeof(SightingModel).GetProperty(nameof(SightingModel.Criticality))!.PropertyType);
@@ -671,5 +788,10 @@ public class SightingsControllerTests
     private static ClaimsPrincipal Authenticated(Guid userId)
     {
         return new(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId.ToString())], "Bearer"));
+    }
+
+    private static ClaimsPrincipal Admin(Guid userId)
+    {
+        return new(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId.ToString()), new Claim(ClaimTypes.Role, RoleNames.Admin)], "Bearer"));
     }
 }

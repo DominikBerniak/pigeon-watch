@@ -189,6 +189,14 @@ namespace PigeonWatch.Data.Migrations
                         .HasColumnType("nvarchar(64)")
                         .HasColumnName("PHOTO_BLOB_NAME");
 
+                    b.Property<DateTime?>("RemovedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("REMOVED_AT");
+
+                    b.Property<Guid?>("RemovedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("REMOVED_BY");
+
                     b.Property<Guid>("ReporterId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("REPORTER_ID");
@@ -209,6 +217,9 @@ namespace PigeonWatch.Data.Migrations
 
                     b.HasKey("Id")
                         .HasName("PK_SIGHTING");
+
+                    b.HasIndex("RemovedBy")
+                        .HasDatabaseName("IX_SIGHTING_REMOVED_BY");
 
                     b.HasIndex("Latitude", "Longitude")
                         .HasDatabaseName("IX_SIGHTING_LATITUDE_LONGITUDE");
@@ -512,6 +523,12 @@ namespace PigeonWatch.Data.Migrations
 
             modelBuilder.Entity("PigeonWatch.Data.Entities.SightingEntity", b =>
                 {
+                    b.HasOne("PigeonWatch.Data.Entities.UserAccountEntity", null)
+                        .WithMany()
+                        .HasForeignKey("RemovedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_SIGHTING_USER_ACCOUNT_REMOVED_BY");
+
                     b.HasOne("PigeonWatch.Data.Entities.UserAccountEntity", "Reporter")
                         .WithMany()
                         .HasForeignKey("ReporterId")
