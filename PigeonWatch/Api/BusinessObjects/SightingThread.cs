@@ -9,4 +9,5 @@ public sealed record SightingThread(
     Guid ParticipantId,
     string ParticipantDisplayName,
     DateTime LastMessageAt,
-    bool HasUnread);
+    bool HasUnread,
+    bool IsSightingRemoved = false);

@@ -221,7 +221,7 @@ public class SightingServiceTests
         Guid unknownId = Guid.NewGuid();
         sightingRepository.GetByIdAsync(unknownId, Arg.Any<CancellationToken>()).Returns((Sighting?)null);
 
-        Sighting? sighting = await CreateService().GetAsync(unknownId, cancellationToken);
+        Sighting? sighting = await CreateService().GetAsync(unknownId, Guid.NewGuid(), false, cancellationToken);
 
         Assert.Null(sighting);
     }
@@ -232,9 +232,74 @@ public class SightingServiceTests
         Sighting stored = SightingAt(centreLatitude, centreLongitude, now.UtcDateTime);
         sightingRepository.GetByIdAsync(stored.Id, Arg.Any<CancellationToken>()).Returns(stored);
 
-        Sighting? sighting = await CreateService().GetAsync(stored.Id, cancellationToken);
+        Sighting? sighting = await CreateService().GetAsync(stored.Id, Guid.NewGuid(), false, cancellationToken);
 
         Assert.Equal(stored, sighting);
+    }
+
+    [Fact]
+    public async Task Get_hides_a_removed_sighting_from_a_member()
+    {
+        Sighting removed = RemovedSighting();
+
+        Sighting? sighting = await CreateService().GetAsync(removed.Id, Guid.NewGuid(), false, cancellationToken);
+
+        Assert.Null(sighting);
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task Get_returns_a_removed_sighting_to_its_reporter_and_an_admin(bool asReporter, bool isAdmin)
+    {
+        Sighting removed = RemovedSighting();
+        Guid viewerId = asReporter ? removed.ReporterId : Guid.NewGuid();
+
+        Sighting? sighting = await CreateService().GetAsync(removed.Id, viewerId, isAdmin, cancellationToken);
+
+        Assert.Equal(removed, sighting);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Nearby_includes_removed_sightings_only_for_an_admin(bool isAdmin)
+    {
+        CandidatesInBox([]);
+
+        SightingNearbyResult result = await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], isAdmin, cancellationToken);
+
+        Assert.True(result.Succeeded);
+        await sightingRepository.Received(1).ListInBoxAsync(
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Any<double>(),
+            Arg.Any<IReadOnlyCollection<SightingStatus>>(),
+            Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
+            Arg.Any<int>(),
+            isAdmin,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task List_includes_removed_sightings_only_for_an_admin(bool isAdmin)
+    {
+        PageInRadius(new SightingPage([], 0));
+
+        SightingListResult result = await CreateService().GetListPageAsync(ListQuery(), isAdmin, cancellationToken);
+
+        Assert.True(result.Succeeded);
+        await sightingRepository.Received(1).ListPageInRadiusAsync(
+            Arg.Any<GeoRadiusFilter>(),
+            Arg.Any<IReadOnlyCollection<SightingStatus>>(),
+            Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
+            Arg.Any<int>(),
+            Arg.Any<int>(),
+            isAdmin,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -245,7 +310,7 @@ public class SightingServiceTests
             [SightingStatus.Spotted, SightingStatus.Caught, SightingStatus.AtTheVet, SightingStatus.InHomeCare, SightingStatus.AwaitingAdoption];
         CandidatesInBox([]);
 
-        await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], cancellationToken);
+        await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], false, cancellationToken);
 
         await sightingRepository.Received(1).ListInBoxAsync(
             box.MinLatitude,
@@ -255,6 +320,7 @@ public class SightingServiceTests
             Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.Order().SequenceEqual(openStatuses)),
             Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.Count == 0),
             SightingRules.NearbyBoxMaxRows,
+            false,
             Arg.Any<CancellationToken>());
     }
 
@@ -265,7 +331,7 @@ public class SightingServiceTests
         Sighting outside = SightingAt(centreLatitude + (10.01 / kilometersPerLatitudeDegree), centreLongitude, now.UtcDateTime);
         CandidatesInBox([inside, outside]);
 
-        IReadOnlyList<Sighting> nearby = (await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], cancellationToken)).Sightings;
+        IReadOnlyList<Sighting> nearby = (await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], false, cancellationToken)).Sightings;
 
         Assert.Equal([inside.Id], nearby.Select(sighting => sighting.Id));
     }
@@ -279,7 +345,7 @@ public class SightingServiceTests
         Sighting corner = SightingAt(cornerLatitude, cornerLongitude, now.UtcDateTime);
         CandidatesInBox([corner]);
 
-        IReadOnlyList<Sighting> nearby = (await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], cancellationToken)).Sightings;
+        IReadOnlyList<Sighting> nearby = (await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], false, cancellationToken)).Sightings;
 
         Assert.InRange(cornerLatitude, box.MinLatitude, box.MaxLatitude);
         Assert.InRange(cornerLongitude, box.MinLongitude, box.MaxLongitude);
@@ -294,7 +360,7 @@ public class SightingServiceTests
             .ToList();
         CandidatesInBox(candidates);
 
-        IReadOnlyList<Sighting> nearby = (await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], cancellationToken)).Sightings;
+        IReadOnlyList<Sighting> nearby = (await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], false, cancellationToken)).Sightings;
 
         List<DateTime> expected = candidates
             .Select(sighting => sighting.CreatedAt)
@@ -311,7 +377,7 @@ public class SightingServiceTests
         Sighting inside = SightingAt(centreLatitude, centreLongitude, now.UtcDateTime);
         CandidatesInBox([inside]);
 
-        SightingNearbyResult result = await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], cancellationToken);
+        SightingNearbyResult result = await CreateService().GetNearbyAsync(centreLatitude, centreLongitude, [], [], false, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.Empty(result.Errors);
@@ -328,6 +394,7 @@ public class SightingServiceTests
             centreLongitude,
             [SightingStatus.Caught, SightingStatus.Spotted],
             [],
+            false,
             cancellationToken);
 
         Assert.True(result.Succeeded);
@@ -339,6 +406,7 @@ public class SightingServiceTests
             Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.Order().SequenceEqual(new[] { SightingStatus.Spotted, SightingStatus.Caught })),
             Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.Count == 0),
             SightingRules.NearbyBoxMaxRows,
+            false,
             Arg.Any<CancellationToken>());
     }
 
@@ -354,6 +422,7 @@ public class SightingServiceTests
             centreLongitude,
             [],
             [SightingCriticality.Urgent],
+            false,
             cancellationToken);
 
         Assert.True(result.Succeeded);
@@ -365,6 +434,7 @@ public class SightingServiceTests
             Arg.Is<IReadOnlyCollection<SightingStatus>>(statuses => statuses.Order().SequenceEqual(openStatuses)),
             Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.SequenceEqual(new[] { SightingCriticality.Urgent })),
             SightingRules.NearbyBoxMaxRows,
+            false,
             Arg.Any<CancellationToken>());
     }
 
@@ -378,6 +448,7 @@ public class SightingServiceTests
             centreLongitude,
             [SightingStatus.AtTheVet, SightingStatus.AtTheVet],
             [SightingCriticality.Monitor, SightingCriticality.NeedsHelpSoon, SightingCriticality.Monitor],
+            false,
             cancellationToken);
 
         Assert.True(result.Succeeded);
@@ -390,6 +461,7 @@ public class SightingServiceTests
             Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities =>
                 criticalities.Order().SequenceEqual(new[] { SightingCriticality.Monitor, SightingCriticality.NeedsHelpSoon })),
             SightingRules.NearbyBoxMaxRows,
+            false,
             Arg.Any<CancellationToken>());
     }
 
@@ -407,6 +479,7 @@ public class SightingServiceTests
             centreLongitude,
             [SightingStatus.Spotted, (SightingStatus)status],
             [],
+            false,
             cancellationToken);
 
         Assert.False(result.Succeeded);
@@ -426,6 +499,7 @@ public class SightingServiceTests
             centreLongitude,
             [],
             [SightingCriticality.Urgent, (SightingCriticality)criticality],
+            false,
             cancellationToken);
 
         Assert.False(result.Succeeded);
@@ -441,6 +515,7 @@ public class SightingServiceTests
             centreLongitude,
             [SightingStatus.Adopted],
             [(SightingCriticality)9],
+            false,
             cancellationToken);
 
         Assert.False(result.Succeeded);
@@ -458,7 +533,7 @@ public class SightingServiceTests
         Sighting stored = SightingAt(centreLatitude, centreLongitude, now.UtcDateTime);
         PageInRadius(new SightingPage([stored], 1));
 
-        SightingListResult result = await CreateService().GetListPageAsync(ListQuery(), cancellationToken);
+        SightingListResult result = await CreateService().GetListPageAsync(ListQuery(), false, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.Empty(result.Errors);
@@ -470,6 +545,7 @@ public class SightingServiceTests
             Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.Count == 0),
             0,
             SightingRules.ListDefaultPageSize,
+            false,
             Arg.Any<CancellationToken>());
     }
 
@@ -480,6 +556,7 @@ public class SightingServiceTests
 
         SightingListResult result = await CreateService().GetListPageAsync(
             ListQuery() with { Statuses = [SightingStatus.Adopted] },
+            false,
             cancellationToken);
 
         Assert.True(result.Succeeded);
@@ -489,6 +566,7 @@ public class SightingServiceTests
             Arg.Is<IReadOnlyCollection<SightingCriticality>>(criticalities => criticalities.Count == 0),
             Arg.Any<int>(),
             Arg.Any<int>(),
+            false,
             Arg.Any<CancellationToken>());
     }
 
@@ -503,6 +581,7 @@ public class SightingServiceTests
                 Statuses = [SightingStatus.Released, SightingStatus.Spotted, SightingStatus.Released],
                 Criticalities = [SightingCriticality.Urgent, SightingCriticality.Monitor, SightingCriticality.Urgent]
             },
+            false,
             cancellationToken);
 
         Assert.True(result.Succeeded);
@@ -514,6 +593,7 @@ public class SightingServiceTests
                 criticalities.Order().SequenceEqual(new[] { SightingCriticality.Monitor, SightingCriticality.Urgent })),
             Arg.Any<int>(),
             Arg.Any<int>(),
+            false,
             Arg.Any<CancellationToken>());
     }
 
@@ -527,6 +607,7 @@ public class SightingServiceTests
 
         SightingListResult result = await CreateService().GetListPageAsync(
             ListQuery() with { Page = page, PageSize = pageSize },
+            false,
             cancellationToken);
 
         Assert.True(result.Succeeded);
@@ -536,6 +617,7 @@ public class SightingServiceTests
             Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
             expectedSkip,
             pageSize,
+            false,
             Arg.Any<CancellationToken>());
     }
 
@@ -547,6 +629,7 @@ public class SightingServiceTests
     {
         SightingListResult result = await CreateService().GetListPageAsync(
             ListQuery() with { Statuses = [SightingStatus.Spotted, (SightingStatus)status] },
+            false,
             cancellationToken);
 
         Assert.False(result.Succeeded);
@@ -562,6 +645,7 @@ public class SightingServiceTests
     {
         SightingListResult result = await CreateService().GetListPageAsync(
             ListQuery() with { Criticalities = [SightingCriticality.Urgent, (SightingCriticality)criticality] },
+            false,
             cancellationToken);
 
         Assert.False(result.Succeeded);
@@ -576,6 +660,7 @@ public class SightingServiceTests
     {
         SightingListResult result = await CreateService().GetListPageAsync(
             ListQuery() with { Page = page },
+            false,
             cancellationToken);
 
         Assert.False(result.Succeeded);
@@ -590,6 +675,7 @@ public class SightingServiceTests
     {
         SightingListResult result = await CreateService().GetListPageAsync(
             ListQuery() with { Page = page, PageSize = 10 },
+            false,
             cancellationToken);
 
         Assert.False(result.Succeeded);
@@ -606,6 +692,7 @@ public class SightingServiceTests
     {
         SightingListResult result = await CreateService().GetListPageAsync(
             ListQuery() with { PageSize = pageSize },
+            false,
             cancellationToken);
 
         Assert.False(result.Succeeded);
@@ -624,6 +711,7 @@ public class SightingServiceTests
                 Page = 0,
                 PageSize = 15
             },
+            false,
             cancellationToken);
 
         Assert.False(result.Succeeded);
@@ -689,6 +777,17 @@ public class SightingServiceTests
     }
 
     [Fact]
+    public async Task Edit_permissions_are_null_for_the_reporter_of_a_removed_sighting()
+    {
+        Sighting removed = RemovedSighting();
+
+        SightingEditPermissions? permissions = await CreateService().GetEditPermissionsAsync(removed, removed.ReporterId, cancellationToken);
+
+        Assert.Null(permissions);
+        await sightingRepository.DidNotReceive().HasOtherUserEngagementAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Edit_permissions_offer_no_next_status_for_a_resolved_sighting()
     {
         Sighting sighting = ToSighting(NewSighting()) with { Status = SightingStatus.Adopted };
@@ -706,7 +805,7 @@ public class SightingServiceTests
     {
         Sighting stored = StoredSighting();
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Status = (SightingStatus)status }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Status = (SightingStatus)status }, false, cancellationToken);
 
         Assert.False(result.Succeeded);
         Assert.Equal([SightingErrorCodes.InvalidStatus], result.Errors.Select(error => error.Code));
@@ -721,7 +820,7 @@ public class SightingServiceTests
     {
         Sighting stored = StoredSighting();
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Criticality = (SightingCriticality)criticality }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Criticality = (SightingCriticality)criticality }, false, cancellationToken);
 
         Assert.Equal([SightingErrorCodes.InvalidCriticality], result.Errors.Select(error => error.Code));
         await AssertNoUpdateAsync();
@@ -732,7 +831,7 @@ public class SightingServiceTests
     {
         Sighting stored = StoredSighting();
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Description = "   " }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Description = "   " }, false, cancellationToken);
 
         Assert.Equal([SightingErrorCodes.DescriptionRequired], result.Errors.Select(error => error.Code));
         await AssertNoUpdateAsync();
@@ -746,6 +845,7 @@ public class SightingServiceTests
 
         SightingUpdateResult result = await CreateService().UpdateAsync(
             UpdateOf(stored) with { Photo = new NewSightingPhoto(new MemoryStream(upload), upload.Length), RemovePhoto = true },
+            false,
             cancellationToken);
 
         Assert.Equal([SightingErrorCodes.PhotoConflict], result.Errors.Select(error => error.Code));
@@ -761,6 +861,7 @@ public class SightingServiceTests
 
         SightingUpdateResult result = await CreateService().UpdateAsync(
             new SightingUpdate(unknownId, Guid.NewGuid(), null, "Limping", "Cannot fly", SightingStatus.Spotted, SightingCriticality.Monitor),
+            false,
             cancellationToken);
 
         Assert.Equal([SightingErrorCodes.SightingNotFound], result.Errors.Select(error => error.Code));
@@ -775,6 +876,7 @@ public class SightingServiceTests
 
         SightingUpdateResult result = await CreateService().UpdateAsync(
             UpdateOf(stored) with { UserId = Guid.NewGuid(), Status = SightingStatus.AtTheVet, Description = "Changed" },
+            false,
             cancellationToken);
 
         Assert.Equal([SightingErrorCodes.NotSightingOwner], result.Errors.Select(error => error.Code));
@@ -791,6 +893,7 @@ public class SightingServiceTests
 
         SightingUpdateResult result = await CreateService().UpdateAsync(
             UpdateOf(stored) with { Status = SightingStatus.AtTheVet, Description = "Changed" },
+            false,
             cancellationToken);
 
         Assert.Equal([SightingErrorCodes.InvalidStatusTransition], result.Errors.Select(error => error.Code));
@@ -807,7 +910,7 @@ public class SightingServiceTests
     {
         Sighting stored = StoredSighting(from);
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Status = to }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Status = to }, false, cancellationToken);
 
         Assert.Equal([SightingErrorCodes.InvalidStatusTransition], result.Errors.Select(error => error.Code));
         await AssertNoUpdateAsync();
@@ -818,7 +921,7 @@ public class SightingServiceTests
     {
         Sighting stored = StoredSighting();
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Status = SightingStatus.Caught }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Status = SightingStatus.Caught }, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.Equal(SightingStatus.Caught, result.Sighting!.Status);
@@ -840,7 +943,7 @@ public class SightingServiceTests
         Sighting stored = StoredSighting();
         SightingUpdate update = UpdateOf(stored) with { Criticality = SightingCriticality.Monitor };
 
-        await CreateService().UpdateAsync(update, cancellationToken);
+        await CreateService().UpdateAsync(update, false, cancellationToken);
 
         await sightingRepository.Received(1).UpdateAsync(
             stored.Id,
@@ -858,7 +961,7 @@ public class SightingServiceTests
     {
         Sighting stored = StoredSighting(status);
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Criticality = SightingCriticality.Monitor }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Criticality = SightingCriticality.Monitor }, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.Equal(SightingCriticality.Monitor, result.Sighting!.Criticality);
@@ -870,7 +973,7 @@ public class SightingServiceTests
         Sighting stored = StoredSighting();
         sightingRepository.HasOtherUserEngagementAsync(stored.Id, stored.ReporterId, Arg.Any<CancellationToken>()).Returns(true);
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Description = "Changed" }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Description = "Changed" }, false, cancellationToken);
 
         Assert.Equal([SightingErrorCodes.DescriptionLocked], result.Errors.Select(error => error.Code));
         await AssertNoUpdateAsync();
@@ -884,6 +987,7 @@ public class SightingServiceTests
 
         SightingUpdateResult result = await CreateService().UpdateAsync(
             UpdateOf(stored) with { Description = $"  {stored.Description}  ", Status = SightingStatus.Caught },
+            false,
             cancellationToken);
 
         Assert.True(result.Succeeded);
@@ -897,7 +1001,7 @@ public class SightingServiceTests
         Sighting stored = StoredSighting();
         sightingRepository.HasOtherUserEngagementAsync(stored.Id, stored.ReporterId, Arg.Any<CancellationToken>()).Returns(false);
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Description = "Changed" }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Description = "Changed" }, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.Equal("Changed", result.Sighting!.Description);
@@ -909,7 +1013,7 @@ public class SightingServiceTests
         Sighting stored = StoredSighting();
         sightingRepository.HasOtherUserEngagementAsync(stored.Id, stored.ReporterId, Arg.Any<CancellationToken>()).Returns(false);
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Description = "Changed" }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Description = "Changed" }, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.NotNull(result.Permissions);
@@ -923,7 +1027,7 @@ public class SightingServiceTests
         Sighting stored = StoredSighting();
         sightingRepository.HasOtherUserEngagementAsync(stored.Id, stored.ReporterId, Arg.Any<CancellationToken>()).Returns(true);
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Criticality = SightingCriticality.Monitor }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Criticality = SightingCriticality.Monitor }, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.False(result.Permissions!.CanEditDescription);
@@ -937,6 +1041,7 @@ public class SightingServiceTests
 
         await CreateService().UpdateAsync(
             UpdateOf(stored) with { Name = "   ", Description = "  Limping near the fountain  ", Behaviour = " Hides " },
+            false,
             cancellationToken);
 
         await sightingRepository.Received(1).UpdateAsync(
@@ -953,7 +1058,7 @@ public class SightingServiceTests
     {
         Sighting stored = StoredSighting();
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { RemovePhoto = true }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { RemovePhoto = true }, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.False(result.Sighting!.HasPhoto);
@@ -975,10 +1080,69 @@ public class SightingServiceTests
             .UpdateAsync(stored.Id, stored.ReporterId, Arg.Any<SightingUpdate>(), Arg.Any<SightingPhotoChange>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns((SightingUpdateOutcome?)null);
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored), cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored), false, cancellationToken);
 
         Assert.False(result.Succeeded);
         Assert.Equal([SightingErrorCodes.SightingNotFound], result.Errors.Select(error => error.Code));
+    }
+
+    [Fact]
+    public async Task Update_of_a_removed_sighting_by_a_member_is_sighting_not_found()
+    {
+        Sighting removed = RemovedSighting();
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(removed) with { UserId = Guid.NewGuid() }, false, cancellationToken);
+
+        Assert.Equal([SightingErrorCodes.SightingNotFound], result.Errors.Select(error => error.Code));
+        await AssertNoUpdateAsync();
+    }
+
+    [Fact]
+    public async Task Update_of_a_removed_sighting_by_an_admin_is_not_sighting_owner()
+    {
+        Sighting removed = RemovedSighting();
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(removed) with { UserId = Guid.NewGuid() }, true, cancellationToken);
+
+        Assert.Equal([SightingErrorCodes.NotSightingOwner], result.Errors.Select(error => error.Code));
+        await AssertNoUpdateAsync();
+    }
+
+    [Fact]
+    public async Task Update_of_a_removed_sighting_by_its_reporter_is_sighting_removed_before_the_transition_lock_and_photo_steps()
+    {
+        Sighting removed = RemovedSighting();
+        byte[] upload = [0x01, 0x02];
+        sightingRepository.HasOtherUserEngagementAsync(removed.Id, removed.ReporterId, Arg.Any<CancellationToken>()).Returns(true);
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(
+            UpdateOf(removed) with
+            {
+                Status = SightingStatus.AtTheVet,
+                Description = "Changed",
+                Photo = new NewSightingPhoto(new MemoryStream(upload), upload.Length)
+            },
+            false,
+            cancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Null(result.Permissions);
+        Assert.Equal([SightingErrorCodes.SightingRemoved], result.Errors.Select(error => error.Code));
+        await sightingRepository.DidNotReceive().HasOtherUserEngagementAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await photoNormalizationProvider.DidNotReceive().NormalizeAsync(Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<CancellationToken>());
+        Assert.Empty(sightingPhotoStore.ReceivedCalls());
+        await AssertNoUpdateAsync();
+    }
+
+    [Fact]
+    public async Task Update_of_a_removed_sighting_validates_the_fields_first()
+    {
+        Sighting removed = RemovedSighting();
+
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(removed) with { Description = "   " }, false, cancellationToken);
+
+        Assert.Equal([SightingErrorCodes.DescriptionRequired], result.Errors.Select(error => error.Code));
+        await sightingRepository.DidNotReceive().GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -1064,6 +1228,7 @@ public class SightingServiceTests
             photoThumbnailProvider,
             sightingPhotoStore,
             new SubmissionCooldownProvider(timeProvider),
+            new SightingVisibilityProvider(),
             timeProvider,
             NullLogger<SightingService>.Instance);
     }
@@ -1088,6 +1253,15 @@ public class SightingServiceTests
             .Returns(call => Updated(stored, call.ArgAt<SightingUpdate>(2), call.ArgAt<SightingPhotoChange>(3)));
 
         return stored;
+    }
+
+    private Sighting RemovedSighting()
+    {
+        Sighting stored = StoredSighting();
+        Sighting removed = stored with { RemovedAt = now.UtcDateTime.AddMinutes(-5) };
+        sightingRepository.GetByIdAsync(removed.Id, Arg.Any<CancellationToken>()).Returns(removed);
+
+        return removed;
     }
 
     private static SightingUpdateOutcome Updated(Sighting stored, SightingUpdate update, SightingPhotoChange photoChange)
@@ -1138,6 +1312,7 @@ public class SightingServiceTests
             Arg.Any<IReadOnlyCollection<SightingStatus>>(),
             Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
             Arg.Any<int>(),
+            Arg.Any<bool>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -1149,6 +1324,7 @@ public class SightingServiceTests
             Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
             Arg.Any<int>(),
             Arg.Any<int>(),
+            Arg.Any<bool>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -1161,6 +1337,7 @@ public class SightingServiceTests
                 Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
                 Arg.Any<int>(),
                 Arg.Any<int>(),
+                Arg.Any<bool>(),
                 Arg.Any<CancellationToken>())
             .Returns(page);
     }
@@ -1181,6 +1358,7 @@ public class SightingServiceTests
                 Arg.Any<IReadOnlyCollection<SightingStatus>>(),
                 Arg.Any<IReadOnlyCollection<SightingCriticality>>(),
                 Arg.Any<int>(),
+                Arg.Any<bool>(),
                 Arg.Any<CancellationToken>())
             .Returns(candidates);
     }

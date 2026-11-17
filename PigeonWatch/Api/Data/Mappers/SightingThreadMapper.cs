@@ -26,7 +26,8 @@ public class SightingThreadMapper : ISightingThreadMapper
             entity.ParticipantId,
             entity.Participant.DisplayName,
             DateTime.SpecifyKind(entity.LastMessageAt, DateTimeKind.Utc),
-            hasUnread);
+            hasUnread,
+            entity.Sighting.RemovedAt is not null);
     }
 
     SightingMessage ISightingThreadMapper.ToMessage(SightingMessageEntity entity)

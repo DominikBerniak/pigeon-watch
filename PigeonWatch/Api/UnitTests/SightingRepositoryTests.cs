@@ -99,7 +99,7 @@ public sealed class SightingRepositoryTests : IDisposable
         await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.5001, SightingStatus.Spotted));
 
         await using PigeonWatchDbContext db = CreateContext();
-        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, cancellationToken);
+        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, false, cancellationToken);
 
         Assert.Equal(
             new[] { minCorner.Id, maxCorner.Id, centre.Id }.Order(),
@@ -121,7 +121,7 @@ public sealed class SightingRepositoryTests : IDisposable
         }
 
         await using PigeonWatchDbContext db = CreateContext();
-        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, cancellationToken);
+        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, false, cancellationToken);
 
         Assert.Equal(openIds.Order(), found.Select(sighting => sighting.Id).Order());
         Assert.All(found, sighting => Assert.Contains(sighting.Status, openStatuses));
@@ -139,8 +139,8 @@ public sealed class SightingRepositoryTests : IDisposable
 
         await using PigeonWatchDbContext db = CreateContext();
         ISightingRepository repository = CreateRepository(db);
-        IReadOnlyList<Sighting> all = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, cancellationToken);
-        IReadOnlyList<Sighting> firstTwo = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 2, cancellationToken);
+        IReadOnlyList<Sighting> all = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, false, cancellationToken);
+        IReadOnlyList<Sighting> firstTwo = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 2, false, cancellationToken);
 
         Assert.Equal([newest.Id, middle.Id, oldest.Id], all.Select(sighting => sighting.Id));
         Assert.Equal([newest.Id, middle.Id], firstTwo.Select(sighting => sighting.Id));
@@ -169,6 +169,7 @@ public sealed class SightingRepositoryTests : IDisposable
             openStatuses,
             [SightingCriticality.NeedsHelpSoon, SightingCriticality.Urgent],
             50,
+            false,
             cancellationToken);
 
         Assert.Equal(matchingIds.Order(), found.Select(sighting => sighting.Id).Order());
@@ -187,7 +188,7 @@ public sealed class SightingRepositoryTests : IDisposable
         }
 
         await using PigeonWatchDbContext db = CreateContext();
-        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, cancellationToken);
+        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, false, cancellationToken);
 
         Assert.Equal(allIds.Order(), found.Select(sighting => sighting.Id).Order());
     }
@@ -213,6 +214,7 @@ public sealed class SightingRepositoryTests : IDisposable
             openStatuses,
             [SightingCriticality.Urgent],
             2,
+            false,
             cancellationToken);
 
         Assert.Equal([newerUrgent.Id, olderUrgent.Id], found.Select(sighting => sighting.Id));
@@ -228,7 +230,7 @@ public sealed class SightingRepositoryTests : IDisposable
         await CreateSightingAsync(NewSighting(reporterId, 52.08, 21.13, SightingStatus.Spotted));
 
         await using PigeonWatchDbContext db = CreateContext();
-        SightingPage page = await CreateRepository(db).ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 0, 50, cancellationToken);
+        SightingPage page = await CreateRepository(db).ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 0, 50, false, cancellationToken);
 
         Assert.Equal(new[] { centre.Id, justInside.Id }.Order(), page.Items.Select(sighting => sighting.Id).Order());
         Assert.Equal(2, page.TotalCount);
@@ -249,7 +251,7 @@ public sealed class SightingRepositoryTests : IDisposable
         Guid[] tiedUrgentIds = new[] { tiedUrgentFirst.Id, tiedUrgentSecond.Id }.Order().ToArray();
 
         await using PigeonWatchDbContext db = CreateContext();
-        SightingPage page = await CreateRepository(db).ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 0, 50, cancellationToken);
+        SightingPage page = await CreateRepository(db).ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 0, 50, false, cancellationToken);
 
         Assert.Equal(
             [oldUrgent.Id, tiedUrgentIds[0], tiedUrgentIds[1], newUrgent.Id, needsHelpSoon.Id, oldMonitor.Id],
@@ -270,9 +272,9 @@ public sealed class SightingRepositoryTests : IDisposable
 
         await using PigeonWatchDbContext db = CreateContext();
         ISightingRepository repository = CreateRepository(db);
-        SightingPage firstPage = await repository.ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 0, 2, cancellationToken);
-        SightingPage secondPage = await repository.ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 2, 2, cancellationToken);
-        SightingPage lastPage = await repository.ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 4, 2, cancellationToken);
+        SightingPage firstPage = await repository.ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 0, 2, false, cancellationToken);
+        SightingPage secondPage = await repository.ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 2, 2, false, cancellationToken);
+        SightingPage lastPage = await repository.ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 4, 2, false, cancellationToken);
 
         Assert.Equal([ids[0], ids[1]], firstPage.Items.Select(sighting => sighting.Id));
         Assert.Equal([ids[2], ids[3]], secondPage.Items.Select(sighting => sighting.Id));
@@ -289,7 +291,7 @@ public sealed class SightingRepositoryTests : IDisposable
         await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted));
 
         await using PigeonWatchDbContext db = CreateContext();
-        SightingPage page = await CreateRepository(db).ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 10, 10, cancellationToken);
+        SightingPage page = await CreateRepository(db).ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 10, 10, false, cancellationToken);
 
         Assert.Empty(page.Items);
         Assert.Equal(2, page.TotalCount);
@@ -321,14 +323,93 @@ public sealed class SightingRepositoryTests : IDisposable
             [SightingCriticality.NeedsHelpSoon, SightingCriticality.Urgent],
             0,
             2,
+            false,
             cancellationToken);
-        SightingPage withoutCriticalities = await repository.ListPageInRadiusAsync(RadiusAroundCentre(), requestedStatuses, [], 0, 50, cancellationToken);
+        SightingPage withoutCriticalities = await repository.ListPageInRadiusAsync(RadiusAroundCentre(), requestedStatuses, [], 0, 50, false, cancellationToken);
 
         Assert.Equal(4, filtered.TotalCount);
         Assert.Equal(2, filtered.Items.Count);
         Assert.All(filtered.Items, sighting => Assert.Contains(sighting.Id, matchingIds));
         Assert.Equal(6, withoutCriticalities.TotalCount);
         Assert.All(withoutCriticalities.Items, sighting => Assert.Contains(sighting.Status, requestedStatuses));
+    }
+
+    [Fact]
+    public async Task List_in_box_excludes_removed_sightings_unless_they_are_included()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid adminId = await CreateUserAsync("admin@example.com", "Admin");
+        Sighting visible = (await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.25, SightingStatus.Spotted)))!;
+        Sighting removed = (await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.25, SightingStatus.Spotted)))!;
+        await RemoveSightingAsync(removed.Id, adminId, timeProvider.UtcNow.UtcDateTime);
+
+        await using PigeonWatchDbContext db = CreateContext();
+        ISightingRepository repository = CreateRepository(db);
+        IReadOnlyList<Sighting> withoutRemoved = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, false, cancellationToken);
+        IReadOnlyList<Sighting> withRemoved = await repository.ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 50, true, cancellationToken);
+
+        Assert.Equal([visible.Id], withoutRemoved.Select(sighting => sighting.Id));
+        Assert.Equal(new[] { visible.Id, removed.Id }.Order(), withRemoved.Select(sighting => sighting.Id).Order());
+        Assert.NotNull(withRemoved.Single(sighting => sighting.Id == removed.Id).RemovedAt);
+    }
+
+    [Fact]
+    public async Task List_in_box_applies_the_take_after_excluding_removed_sightings()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid adminId = await CreateUserAsync("admin@example.com", "Admin");
+        Sighting visible = (await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.25, SightingStatus.Spotted)))!;
+        timeProvider.UtcNow = timeProvider.UtcNow.AddMinutes(5);
+        Sighting removed = (await CreateSightingAsync(NewSighting(reporterId, 52.25, 21.25, SightingStatus.Spotted)))!;
+        await RemoveSightingAsync(removed.Id, adminId, timeProvider.UtcNow.UtcDateTime);
+
+        await using PigeonWatchDbContext db = CreateContext();
+        IReadOnlyList<Sighting> found = await CreateRepository(db).ListInBoxAsync(52.0, 52.5, 21.0, 21.5, openStatuses, [], 1, false, cancellationToken);
+
+        Assert.Equal([visible.Id], found.Select(sighting => sighting.Id));
+    }
+
+    [Fact]
+    public async Task List_page_in_radius_excludes_removed_sightings_from_the_items_and_the_count_unless_they_are_included()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid adminId = await CreateUserAsync("admin@example.com", "Admin");
+        Sighting visible = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        Sighting removed = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        await RemoveSightingAsync(removed.Id, adminId, timeProvider.UtcNow.UtcDateTime);
+
+        await using PigeonWatchDbContext db = CreateContext();
+        ISightingRepository repository = CreateRepository(db);
+        SightingPage withoutRemoved = await repository.ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 0, 50, false, cancellationToken);
+        SightingPage withRemoved = await repository.ListPageInRadiusAsync(RadiusAroundCentre(), openStatuses, [], 0, 50, true, cancellationToken);
+
+        Assert.Equal([visible.Id], withoutRemoved.Items.Select(sighting => sighting.Id));
+        Assert.Equal(1, withoutRemoved.TotalCount);
+        Assert.Equal(new[] { visible.Id, removed.Id }.Order(), withRemoved.Items.Select(sighting => sighting.Id).Order());
+        Assert.Equal(2, withRemoved.TotalCount);
+    }
+
+    [Fact]
+    public async Task Get_access_returns_the_reporter_and_the_removal_state_or_null_for_an_unknown_id()
+    {
+        Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
+        Guid adminId = await CreateUserAsync("admin@example.com", "Admin");
+        Sighting visible = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        Sighting removed = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        DateTime removedAt = timeProvider.UtcNow.UtcDateTime;
+        await RemoveSightingAsync(removed.Id, adminId, removedAt);
+
+        await using PigeonWatchDbContext db = CreateContext();
+        ISightingRepository repository = CreateRepository(db);
+        SightingAccess? visibleAccess = await repository.GetAccessAsync(visible.Id, cancellationToken);
+        SightingAccess? removedAccess = await repository.GetAccessAsync(removed.Id, cancellationToken);
+        SightingAccess? unknownAccess = await repository.GetAccessAsync(Guid.NewGuid(), cancellationToken);
+
+        Assert.Equal(new SightingAccess(reporterId, null), visibleAccess);
+        Assert.NotNull(removedAccess);
+        Assert.Equal(reporterId, removedAccess.ReporterId);
+        Assert.Equal(removedAt, removedAccess.RemovedAt);
+        Assert.Null(unknownAccess);
     }
 
     [Fact]

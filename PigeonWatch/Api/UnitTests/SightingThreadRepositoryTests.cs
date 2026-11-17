@@ -44,6 +44,55 @@ public sealed class SightingThreadRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task Get_sighting_access_returns_the_reporter_and_the_removal_state_or_null_for_an_unknown_sighting()
+    {
+        Guid ownerId = await CreateUserAsync("owner@example.com", "Alice");
+        Guid adminId = await CreateUserAsync("admin@example.com", "Admin");
+        Guid visibleId = await CreateSightingAsync(ownerId);
+        Guid removedId = await CreateSightingAsync(ownerId);
+        DateTime removedAt = timeProvider.UtcNow.UtcDateTime;
+        await RemoveSightingAsync(removedId, adminId, removedAt);
+
+        await using PigeonWatchDbContext db = CreateContext();
+        ISightingThreadRepository repository = CreateRepository(db);
+        SightingAccess? removed = await repository.GetSightingAccessAsync(removedId, cancellationToken);
+
+        Assert.Equal(new SightingAccess(ownerId, null), await repository.GetSightingAccessAsync(visibleId, cancellationToken));
+        Assert.NotNull(removed);
+        Assert.Equal(ownerId, removed.ReporterId);
+        Assert.Equal(removedAt, removed.RemovedAt);
+        Assert.Null(await repository.GetSightingAccessAsync(Guid.NewGuid(), cancellationToken));
+    }
+
+    [Fact]
+    public async Task Every_thread_read_carries_whether_its_sighting_was_removed()
+    {
+        Guid ownerId = await CreateUserAsync("owner@example.com", "Alice");
+        Guid participantId = await CreateUserAsync("participant@example.com", "Bob");
+        Guid adminId = await CreateUserAsync("admin@example.com", "Admin");
+        Guid removedSightingId = await CreateSightingAsync(ownerId);
+        Guid visibleSightingId = await CreateSightingAsync(ownerId);
+        SightingThread removedThread = (await StartAsync(removedSightingId, participantId, "Hello", timeProvider.UtcNow.UtcDateTime))!.Value.Thread;
+        SightingThread visibleThread = (await StartAsync(visibleSightingId, participantId, "Hello", timeProvider.UtcNow.UtcDateTime.AddMinutes(1)))!.Value.Thread;
+        await RemoveSightingAsync(removedSightingId, adminId, timeProvider.UtcNow.UtcDateTime.AddMinutes(2));
+
+        await using PigeonWatchDbContext db = CreateContext();
+        ISightingThreadRepository repository = CreateRepository(db);
+        SightingThreadPage inbox = await repository.ListThreadsForUserAsync(participantId, 1, SightingMessageRules.PageSize, cancellationToken);
+        SightingThreadPage sightingThreads = await repository.ListThreadsForSightingAsync(removedSightingId, ownerId, 1, SightingMessageRules.PageSize, cancellationToken);
+        SightingThread? found = await repository.FindThreadAsync(removedSightingId, participantId, cancellationToken);
+        SightingThread? forUser = await repository.GetThreadForUserAsync(removedSightingId, removedThread.Id, participantId, cancellationToken);
+        (SightingThread Thread, SightingMessage Message)? appended = await StartAsync(removedSightingId, participantId, "Again", timeProvider.UtcNow.UtcDateTime.AddMinutes(3));
+
+        Assert.False(removedThread.IsSightingRemoved);
+        Assert.Equal([(visibleThread.Id, false), (removedThread.Id, true)], inbox.Items.Select(thread => (thread.Id, thread.IsSightingRemoved)));
+        Assert.True(Assert.Single(sightingThreads.Items).IsSightingRemoved);
+        Assert.True(found!.IsSightingRemoved);
+        Assert.True(forUser!.IsSightingRemoved);
+        Assert.True(appended!.Value.Thread.IsSightingRemoved);
+    }
+
+    [Fact]
     public async Task Start_creates_the_thread_and_its_first_message_with_display_names_and_utc_times()
     {
         Guid ownerId = await CreateUserAsync("owner@example.com", "Alice");
@@ -777,6 +826,14 @@ public sealed class SightingThreadRepositoryTests : IDisposable
         await using PigeonWatchDbContext db = CreateContext();
 
         return await CreateRepository(db).AppendAsync(sightingId, threadId, senderId, text, now, cancellationToken);
+    }
+
+    private async Task RemoveSightingAsync(Guid sightingId, Guid removedBy, DateTime removedAt)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+        Sighting? removed = await new SightingRepository(db, new SightingMapper()).RemoveAsync(sightingId, removedBy, removedAt, cancellationToken);
+
+        Assert.NotNull(removed);
     }
 
     private async Task<Guid> CreateSightingAsync(Guid reporterId, string? name = null)

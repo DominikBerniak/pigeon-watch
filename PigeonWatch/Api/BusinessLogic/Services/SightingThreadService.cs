@@ -3,9 +3,12 @@ using PigeonWatch.Data.Repositories;
 
 namespace PigeonWatch.BusinessLogic.Services;
 
-public class SightingThreadService(ISightingThreadRepository sightingThreadRepository, TimeProvider timeProvider) : ISightingThreadService
+public class SightingThreadService(
+    ISightingThreadRepository sightingThreadRepository,
+    ISightingVisibilityProvider sightingVisibilityProvider,
+    TimeProvider timeProvider) : ISightingThreadService
 {
-    public async Task<SightingThreadResult> StartAsync(Guid sightingId, Guid userId, string text, CancellationToken cancellationToken = default)
+    public async Task<SightingThreadResult> StartAsync(Guid sightingId, Guid userId, bool isAdmin, string text, CancellationToken cancellationToken = default)
     {
         string trimmed = text.Trim();
         SightingError? invalidText = ValidateText(trimmed);
@@ -13,13 +16,16 @@ public class SightingThreadService(ISightingThreadRepository sightingThreadRepos
         if (invalidText is not null)
             return SightingThreadResult.Failure([invalidText]);
 
-        Guid? ownerId = await sightingThreadRepository.GetSightingOwnerAsync(sightingId, cancellationToken);
+        SightingAccess? access = await sightingThreadRepository.GetSightingAccessAsync(sightingId, cancellationToken);
 
-        if (ownerId is null)
+        if (access is null || !sightingVisibilityProvider.CanView(access, userId, isAdmin))
             return SightingThreadResult.Failure([SightingNotFound()]);
 
-        if (ownerId.Value == userId)
+        if (access.ReporterId == userId)
             return SightingThreadResult.Failure([new SightingError(SightingMessageErrorCodes.OwnSightingContact, "The owner cannot start a thread on their own sighting.")]);
+
+        if (sightingVisibilityProvider.IsRemoved(access))
+            return SightingThreadResult.Failure([SightingRemoved()]);
 
         (SightingThread Thread, SightingMessage Message)? started = await sightingThreadRepository.StartOrAppendAsync(sightingId, userId, trimmed, timeProvider.GetUtcNow().UtcDateTime, cancellationToken);
 
@@ -42,13 +48,18 @@ public class SightingThreadService(ISightingThreadRepository sightingThreadRepos
         if (invalidText is not null)
             return SightingThreadResult.Failure([invalidText]);
 
-        if (await sightingThreadRepository.GetSightingOwnerAsync(sightingId, cancellationToken) is null)
+        SightingAccess? access = await sightingThreadRepository.GetSightingAccessAsync(sightingId, cancellationToken);
+
+        if (access is null)
             return SightingThreadResult.Failure([SightingNotFound()]);
 
         SightingThread? thread = await sightingThreadRepository.GetThreadForUserAsync(sightingId, threadId, userId, cancellationToken);
 
         if (thread is null)
             return SightingThreadResult.Failure([ThreadNotFound()]);
+
+        if (sightingVisibilityProvider.IsRemoved(access))
+            return SightingThreadResult.Failure([SightingRemoved()]);
 
         DateTime now = timeProvider.GetUtcNow().UtcDateTime;
         SightingMessage? message = await sightingThreadRepository.AppendAsync(sightingId, threadId, userId, trimmed, now, cancellationToken);
@@ -149,6 +160,11 @@ public class SightingThreadService(ISightingThreadRepository sightingThreadRepos
     private static SightingError SightingNotFound()
     {
         return new SightingError(SightingMessageErrorCodes.SightingNotFound, "The sighting does not exist.");
+    }
+
+    private static SightingError SightingRemoved()
+    {
+        return new SightingError(SightingMessageErrorCodes.SightingRemoved, "The sighting was removed by an admin and takes no new messages.");
     }
 
     private static SightingError ThreadNotFound()

@@ -57,7 +57,7 @@ public class ControllerFailureLoggingTests
     public async Task List_logs_a_warning_with_the_error_code_for_invalid_input(string code)
     {
         sightingService
-            .GetListPageAsync(Arg.Any<SightingListQuery>(), Arg.Any<CancellationToken>())
+            .GetListPageAsync(Arg.Any<SightingListQuery>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(SightingListResult.Failure([new SightingError(code, "invalid")]));
         SightingsController controller = CreateSightingsController(Authenticated(Guid.NewGuid()));
 
@@ -119,7 +119,7 @@ public class ControllerFailureLoggingTests
     public async Task Get_logs_one_information_with_the_sighting_id_when_it_is_missing()
     {
         Guid id = Guid.NewGuid();
-        sightingService.GetAsync(id, Arg.Any<CancellationToken>()).Returns((Sighting?)null);
+        sightingService.GetAsync(id, Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns((Sighting?)null);
         SightingsController controller = CreateSightingsController(Authenticated(Guid.NewGuid()));
 
         ActionResult<SightingModel> result = await controller.Get(id, cancellationToken);
@@ -138,10 +138,11 @@ public class ControllerFailureLoggingTests
     [InlineData(SightingErrorCodes.PhotoTooLarge)]
     [InlineData(SightingErrorCodes.PhotoUnsupportedType)]
     [InlineData(SightingErrorCodes.PhotoUnreadable)]
+    [InlineData(SightingErrorCodes.SightingRemoved)]
     public async Task Update_logs_a_warning_with_the_error_code_for_invalid_input(string code)
     {
         sightingService
-            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<CancellationToken>())
+            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(SightingUpdateResult.Failure([new SightingError(code, "invalid")]));
         SightingsController controller = CreateSightingsController(Authenticated(Guid.NewGuid()));
 
@@ -159,7 +160,7 @@ public class ControllerFailureLoggingTests
     public async Task Update_logs_nothing_for_an_expected_rejection(string code)
     {
         sightingService
-            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<CancellationToken>())
+            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(SightingUpdateResult.Failure([new SightingError(code, "rejected")]));
         SightingsController controller = CreateSightingsController(Authenticated(Guid.NewGuid()));
 
@@ -173,7 +174,7 @@ public class ControllerFailureLoggingTests
     public async Task Update_logs_a_warning_with_the_route_when_the_caller_is_not_the_owner()
     {
         sightingService
-            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<CancellationToken>())
+            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(SightingUpdateResult.Failure([new SightingError(SightingErrorCodes.NotSightingOwner, "not owner")]));
         SightingsController controller = CreateSightingsController(Authenticated(Guid.NewGuid()));
 
@@ -191,7 +192,7 @@ public class ControllerFailureLoggingTests
     {
         Guid id = Guid.NewGuid();
         sightingService
-            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<CancellationToken>())
+            .UpdateAsync(Arg.Any<SightingUpdate>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(SightingUpdateResult.Failure([new SightingError(SightingErrorCodes.SightingNotFound, "missing")]));
         SightingsController controller = CreateSightingsController(Authenticated(Guid.NewGuid()));
 

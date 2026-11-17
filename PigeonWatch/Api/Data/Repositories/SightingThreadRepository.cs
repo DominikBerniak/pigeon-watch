@@ -23,6 +23,16 @@ public class SightingThreadRepository(PigeonWatchDbContext db, ISightingThreadMa
         return ownerId;
     }
 
+    public async Task<SightingAccess?> GetSightingAccessAsync(Guid sightingId, CancellationToken cancellationToken = default)
+    {
+        SightingAccess? access = await db.Sightings
+            .Where(e => e.Id == sightingId)
+            .Select(e => new SightingAccess(e.ReporterId, e.RemovedAt))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return access;
+    }
+
     public async Task<SightingThread?> FindThreadAsync(Guid sightingId, Guid participantId, CancellationToken cancellationToken = default)
     {
         SightingThreadEntity? entity = await ThreadsWithNames()

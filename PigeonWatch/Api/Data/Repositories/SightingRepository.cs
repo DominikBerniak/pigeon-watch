@@ -40,6 +40,7 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
         IReadOnlyCollection<SightingStatus> statuses,
         IReadOnlyCollection<SightingCriticality> criticalities,
         int take,
+        bool includeRemoved,
         CancellationToken cancellationToken = default)
     {
         List<SightingStatus> statusList = statuses.ToList();
@@ -51,6 +52,9 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
                 && e.Longitude >= minLongitude
                 && e.Longitude <= maxLongitude
                 && statusList.Contains(e.Status));
+
+        if (!includeRemoved)
+            query = query.Where(e => e.RemovedAt == null);
 
         if (criticalities.Count > 0)
         {
@@ -72,6 +76,7 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
         IReadOnlyCollection<SightingCriticality> criticalities,
         int skip,
         int take,
+        bool includeRemoved,
         CancellationToken cancellationToken = default)
     {
         const double radiansPerDegree = Math.PI / 180;
@@ -96,6 +101,9 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
                 + cosCentreLatitude * Math.Cos(e.Latitude * radiansPerDegree)
                     * Math.Sin((e.Longitude * radiansPerDegree - centreLongitude) / 2) * Math.Sin((e.Longitude * radiansPerDegree - centreLongitude) / 2)
                 <= halfChordThreshold);
+
+        if (!includeRemoved)
+            query = query.Where(e => e.RemovedAt == null);
 
         if (criticalities.Count > 0)
         {
@@ -138,6 +146,16 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
             .FirstOrDefaultAsync(cancellationToken);
 
         return latest is null ? null : DateTime.SpecifyKind(latest.Value, DateTimeKind.Utc);
+    }
+
+    public async Task<SightingAccess?> GetAccessAsync(Guid sightingId, CancellationToken cancellationToken = default)
+    {
+        SightingAccess? access = await db.Sightings
+            .Where(e => e.Id == sightingId)
+            .Select(e => new SightingAccess(e.ReporterId, e.RemovedAt))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return access;
     }
 
     public async Task<string?> GetPhotoBlobNameAsync(Guid sightingId, CancellationToken cancellationToken = default)

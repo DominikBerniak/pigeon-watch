@@ -33,6 +33,9 @@ public class SightingServicePhotoTests
         sightingRepository
             .GetLatestCreateDateByReporterAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((DateTime?)null);
+        sightingRepository
+            .GetAccessAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new SightingAccess(Guid.NewGuid(), null));
         photoNormalizationProvider
             .NormalizeAsync(Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<CancellationToken>())
             .Returns(PhotoNormalizationResult.Success(normalizedJpeg));
@@ -254,12 +257,70 @@ public class SightingServicePhotoTests
     }
 
     [Fact]
+    public async Task Open_photo_and_thumbnail_of_a_removed_sighting_are_null_for_a_member_without_reading_the_blob_name()
+    {
+        Guid sightingId = Guid.NewGuid();
+        sightingRepository
+            .GetAccessAsync(sightingId, Arg.Any<CancellationToken>())
+            .Returns(new SightingAccess(Guid.NewGuid(), now.UtcDateTime));
+        sightingRepository.GetPhotoBlobNameAsync(sightingId, Arg.Any<CancellationToken>()).Returns($"{Guid.NewGuid():D}.jpg");
+
+        Stream? photo = await CreateService().OpenPhotoAsync(sightingId, Guid.NewGuid(), false, cancellationToken);
+        Stream? thumbnail = await CreateService().OpenPhotoThumbnailAsync(sightingId, Guid.NewGuid(), false, cancellationToken);
+
+        Assert.Null(photo);
+        Assert.Null(thumbnail);
+        await sightingRepository.DidNotReceive().GetPhotoBlobNameAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        Assert.Empty(sightingPhotoStore.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task Open_photo_and_thumbnail_of_an_unknown_sighting_are_null_without_reading_the_blob_name()
+    {
+        Guid sightingId = Guid.NewGuid();
+        sightingRepository.GetAccessAsync(sightingId, Arg.Any<CancellationToken>()).Returns((SightingAccess?)null);
+
+        Stream? photo = await CreateService().OpenPhotoAsync(sightingId, Guid.NewGuid(), true, cancellationToken);
+        Stream? thumbnail = await CreateService().OpenPhotoThumbnailAsync(sightingId, Guid.NewGuid(), true, cancellationToken);
+
+        Assert.Null(photo);
+        Assert.Null(thumbnail);
+        await sightingRepository.DidNotReceive().GetPhotoBlobNameAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        Assert.Empty(sightingPhotoStore.ReceivedCalls());
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task Open_photo_and_thumbnail_of_a_removed_sighting_are_served_to_its_reporter_and_an_admin(bool asReporter, bool isAdmin)
+    {
+        Guid sightingId = Guid.NewGuid();
+        Guid reporterId = Guid.NewGuid();
+        Guid viewerId = asReporter ? reporterId : Guid.NewGuid();
+        string blobName = $"{Guid.NewGuid():D}.jpg";
+        using MemoryStream storedPhoto = new(normalizedJpeg);
+        using MemoryStream storedThumbnail = new(thumbnailJpeg);
+        sightingRepository
+            .GetAccessAsync(sightingId, Arg.Any<CancellationToken>())
+            .Returns(new SightingAccess(reporterId, now.UtcDateTime));
+        sightingRepository.GetPhotoBlobNameAsync(sightingId, Arg.Any<CancellationToken>()).Returns(blobName);
+        sightingPhotoStore.OpenReadAsync(blobName, Arg.Any<CancellationToken>()).Returns(storedPhoto);
+        sightingPhotoStore.OpenReadAsync(ThumbnailNameOf(blobName), Arg.Any<CancellationToken>()).Returns(storedThumbnail);
+
+        Stream? photo = await CreateService().OpenPhotoAsync(sightingId, viewerId, isAdmin, cancellationToken);
+        Stream? thumbnail = await CreateService().OpenPhotoThumbnailAsync(sightingId, viewerId, isAdmin, cancellationToken);
+
+        Assert.Same(storedPhoto, photo);
+        Assert.Same(storedThumbnail, thumbnail);
+    }
+
+    [Fact]
     public async Task Open_photo_returns_null_without_a_store_call_when_the_sighting_has_no_photo()
     {
         Guid sightingId = Guid.NewGuid();
         sightingRepository.GetPhotoBlobNameAsync(sightingId, Arg.Any<CancellationToken>()).Returns((string?)null);
 
-        Stream? photo = await CreateService().OpenPhotoAsync(sightingId, cancellationToken);
+        Stream? photo = await CreateService().OpenPhotoAsync(sightingId, Guid.NewGuid(), false, cancellationToken);
 
         Assert.Null(photo);
         await sightingPhotoStore.DidNotReceive().OpenReadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
@@ -275,7 +336,7 @@ public class SightingServicePhotoTests
         sightingRepository.GetPhotoBlobNameAsync(sightingId, Arg.Any<CancellationToken>()).Returns(blobName);
         sightingPhotoStore.OpenReadAsync(blobName, Arg.Any<CancellationToken>()).Returns(stored);
 
-        Stream? photo = await CreateService().OpenPhotoAsync(sightingId, cancellationToken);
+        Stream? photo = await CreateService().OpenPhotoAsync(sightingId, Guid.NewGuid(), false, cancellationToken);
 
         Assert.Same(stored, photo);
         Assert.Empty(LogCalls());
@@ -289,7 +350,7 @@ public class SightingServicePhotoTests
         sightingRepository.GetPhotoBlobNameAsync(sightingId, Arg.Any<CancellationToken>()).Returns(blobName);
         sightingPhotoStore.OpenReadAsync(blobName, Arg.Any<CancellationToken>()).Returns((Stream?)null);
 
-        Stream? photo = await CreateService().OpenPhotoAsync(sightingId, cancellationToken);
+        Stream? photo = await CreateService().OpenPhotoAsync(sightingId, Guid.NewGuid(), false, cancellationToken);
 
         Assert.Null(photo);
         LogCall call = Assert.Single(LogCalls());
@@ -304,7 +365,7 @@ public class SightingServicePhotoTests
         Guid sightingId = Guid.NewGuid();
         sightingRepository.GetPhotoBlobNameAsync(sightingId, Arg.Any<CancellationToken>()).Returns((string?)null);
 
-        Stream? thumbnail = await CreateService().OpenPhotoThumbnailAsync(sightingId, cancellationToken);
+        Stream? thumbnail = await CreateService().OpenPhotoThumbnailAsync(sightingId, Guid.NewGuid(), false, cancellationToken);
 
         Assert.Null(thumbnail);
         AssertNoStoreCalls();
@@ -320,7 +381,7 @@ public class SightingServicePhotoTests
         sightingRepository.GetPhotoBlobNameAsync(sightingId, Arg.Any<CancellationToken>()).Returns(blobName);
         sightingPhotoStore.OpenReadAsync(ThumbnailNameOf(blobName), Arg.Any<CancellationToken>()).Returns(stored);
 
-        Stream? thumbnail = await CreateService().OpenPhotoThumbnailAsync(sightingId, cancellationToken);
+        Stream? thumbnail = await CreateService().OpenPhotoThumbnailAsync(sightingId, Guid.NewGuid(), false, cancellationToken);
 
         Assert.Same(stored, thumbnail);
         await sightingPhotoStore.DidNotReceive().OpenReadAsync(blobName, Arg.Any<CancellationToken>());
@@ -338,7 +399,7 @@ public class SightingServicePhotoTests
         sightingPhotoStore.OpenReadAsync(ThumbnailNameOf(blobName), Arg.Any<CancellationToken>()).Returns((Stream?)null);
         sightingPhotoStore.OpenReadAsync(blobName, Arg.Any<CancellationToken>()).Returns(new MemoryStream(normalizedJpeg));
 
-        Stream? thumbnail = await CreateService().OpenPhotoThumbnailAsync(sightingId, cancellationToken);
+        Stream? thumbnail = await CreateService().OpenPhotoThumbnailAsync(sightingId, Guid.NewGuid(), false, cancellationToken);
 
         Assert.Equal(thumbnailJpeg, ReadAll(thumbnail));
         photoThumbnailProvider.Received(1).CreateThumbnail(Arg.Is<byte[]>(bytes => bytes.SequenceEqual(normalizedJpeg)));
@@ -360,7 +421,7 @@ public class SightingServicePhotoTests
             .SaveAsync(Arg.Any<string>(), Arg.Any<Stream>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(saveFailure);
 
-        Stream? thumbnail = await CreateService().OpenPhotoThumbnailAsync(sightingId, cancellationToken);
+        Stream? thumbnail = await CreateService().OpenPhotoThumbnailAsync(sightingId, Guid.NewGuid(), false, cancellationToken);
 
         Assert.Equal(thumbnailJpeg, ReadAll(thumbnail));
         LogCall call = Assert.Single(LogCalls());
@@ -380,7 +441,7 @@ public class SightingServicePhotoTests
         sightingPhotoStore.OpenReadAsync(ThumbnailNameOf(blobName), Arg.Any<CancellationToken>()).ThrowsAsync(outage);
 
         PhotoStorageUnavailableException thrown = await Assert.ThrowsAsync<PhotoStorageUnavailableException>(
-            () => CreateService().OpenPhotoThumbnailAsync(sightingId, cancellationToken));
+            () => CreateService().OpenPhotoThumbnailAsync(sightingId, Guid.NewGuid(), false, cancellationToken));
 
         Assert.Same(outage, thrown);
         photoThumbnailProvider.DidNotReceive().CreateThumbnail(Arg.Any<byte[]>());
@@ -401,7 +462,7 @@ public class SightingServicePhotoTests
             .ThrowsAsync(saveFault);
 
         ArgumentException thrown = await Assert.ThrowsAsync<ArgumentException>(
-            () => CreateService().OpenPhotoThumbnailAsync(sightingId, cancellationToken));
+            () => CreateService().OpenPhotoThumbnailAsync(sightingId, Guid.NewGuid(), false, cancellationToken));
 
         Assert.Same(saveFault, thrown);
         Assert.Empty(LogCalls());
@@ -415,7 +476,7 @@ public class SightingServicePhotoTests
         sightingRepository.GetPhotoBlobNameAsync(sightingId, Arg.Any<CancellationToken>()).Returns(blobName);
         sightingPhotoStore.OpenReadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((Stream?)null);
 
-        Stream? thumbnail = await CreateService().OpenPhotoThumbnailAsync(sightingId, cancellationToken);
+        Stream? thumbnail = await CreateService().OpenPhotoThumbnailAsync(sightingId, Guid.NewGuid(), false, cancellationToken);
 
         Assert.Null(thumbnail);
         photoThumbnailProvider.DidNotReceive().CreateThumbnail(Arg.Any<byte[]>());
@@ -433,7 +494,7 @@ public class SightingServicePhotoTests
         Sighting stored = StoredSighting(oldBlobName);
         NewSightingPhoto photo = Photo();
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Photo = photo }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Photo = photo }, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.True(result.Sighting!.HasPhoto);
@@ -463,7 +524,7 @@ public class SightingServicePhotoTests
     {
         Sighting stored = StoredSighting(null);
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Photo = Photo() }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Photo = Photo() }, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.True(result.Sighting!.HasPhoto);
@@ -483,7 +544,7 @@ public class SightingServicePhotoTests
         string oldBlobName = $"{Guid.NewGuid():D}.jpg";
         Sighting stored = StoredSighting(oldBlobName);
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Criticality = SightingCriticality.Monitor }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Criticality = SightingCriticality.Monitor }, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.True(result.Sighting!.HasPhoto);
@@ -505,7 +566,7 @@ public class SightingServicePhotoTests
         string oldBlobName = $"{Guid.NewGuid():D}.jpg";
         Sighting stored = StoredSighting(oldBlobName);
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { RemovePhoto = true }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { RemovePhoto = true }, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.False(result.Sighting!.HasPhoto);
@@ -530,7 +591,7 @@ public class SightingServicePhotoTests
         Sighting stored = StoredSighting(savedRowBlobName);
         sightingRepository.GetPhotoBlobNameAsync(stored.Id, Arg.Any<CancellationToken>()).Returns(staleBlobName);
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { RemovePhoto = true }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { RemovePhoto = true }, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         await sightingPhotoStore.Received(1).DeleteAsync(savedRowBlobName, Arg.Any<CancellationToken>());
@@ -547,7 +608,7 @@ public class SightingServicePhotoTests
         Sighting stored = StoredSighting(savedRowBlobName);
         sightingRepository.GetPhotoBlobNameAsync(stored.Id, Arg.Any<CancellationToken>()).Returns(staleBlobName);
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Photo = Photo() }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Photo = Photo() }, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         string newBlobName = savedBlobNames[0];
@@ -563,7 +624,7 @@ public class SightingServicePhotoTests
         Sighting stored = StoredSighting($"{Guid.NewGuid():D}.jpg");
         sightingRepository.GetPhotoBlobNameAsync(stored.Id, Arg.Any<CancellationToken>()).Returns($"{Guid.NewGuid():D}.jpg");
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Name = "Renamed" }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Name = "Renamed" }, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         AssertNoStoreCalls();
@@ -580,7 +641,7 @@ public class SightingServicePhotoTests
             .NormalizeAsync(Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<CancellationToken>())
             .Returns(PhotoNormalizationResult.Failure(new SightingError(code, "rejected")));
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Photo = Photo() }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Photo = Photo() }, false, cancellationToken);
 
         Assert.False(result.Succeeded);
         Assert.Equal([code], result.Errors.Select(error => error.Code));
@@ -595,6 +656,7 @@ public class SightingServicePhotoTests
 
         SightingUpdateResult result = await CreateService().UpdateAsync(
             UpdateOf(stored) with { Status = SightingStatus.AtTheVet, Photo = Photo() },
+            false,
             cancellationToken);
 
         Assert.Equal([SightingErrorCodes.InvalidStatusTransition], result.Errors.Select(error => error.Code));
@@ -614,7 +676,7 @@ public class SightingServicePhotoTests
             .ThrowsAsync(updateFailure);
 
         InvalidOperationException thrown = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => CreateService().UpdateAsync(UpdateOf(stored) with { Photo = Photo() }, cancellationToken));
+            () => CreateService().UpdateAsync(UpdateOf(stored) with { Photo = Photo() }, false, cancellationToken));
 
         Assert.Same(updateFailure, thrown);
         AssertBothBlobsDeleted();
@@ -631,7 +693,7 @@ public class SightingServicePhotoTests
             .UpdateAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<SightingUpdate>(), Arg.Any<SightingPhotoChange>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns((SightingUpdateOutcome?)null);
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Photo = Photo() }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { Photo = Photo() }, false, cancellationToken);
 
         Assert.Equal([SightingErrorCodes.SightingNotFound], result.Errors.Select(error => error.Code));
         AssertBothBlobsDeleted();
@@ -649,7 +711,7 @@ public class SightingServicePhotoTests
             .ThrowsAsync(outage);
 
         PhotoStorageUnavailableException thrown = await Assert.ThrowsAsync<PhotoStorageUnavailableException>(
-            () => CreateService().UpdateAsync(UpdateOf(stored) with { Photo = Photo() }, cancellationToken));
+            () => CreateService().UpdateAsync(UpdateOf(stored) with { Photo = Photo() }, false, cancellationToken));
 
         Assert.Same(outage, thrown);
         await AssertNoUpdateAsync();
@@ -667,7 +729,7 @@ public class SightingServicePhotoTests
             .DeleteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(deleteFailure);
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { RemovePhoto = true }, cancellationToken);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { RemovePhoto = true }, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.NotNull(result.Permissions);
@@ -699,7 +761,7 @@ public class SightingServicePhotoTests
                 return Updated(stored, oldBlobName, call.ArgAt<SightingUpdate>(2), call.ArgAt<SightingPhotoChange>(3));
             });
 
-        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { RemovePhoto = true }, request.Token);
+        SightingUpdateResult result = await CreateService().UpdateAsync(UpdateOf(stored) with { RemovePhoto = true }, false, request.Token);
 
         Assert.True(result.Succeeded);
 
@@ -717,6 +779,7 @@ public class SightingServicePhotoTests
             photoThumbnailProvider,
             sightingPhotoStore,
             new SubmissionCooldownProvider(timeProvider),
+            new SightingVisibilityProvider(),
             timeProvider,
             logger);
     }

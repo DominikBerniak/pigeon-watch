@@ -10,5 +10,5 @@ public interface ISightingCommentRepository
     Task<SightingComment?> UpdateTextAsync(Guid sightingId, Guid commentId, Guid authorId, string text, DateTime editedAt, CancellationToken cancellationToken = default);
     Task<SightingComment?> SoftDeleteAsync(Guid sightingId, Guid commentId, Guid authorId, DateTime deletedAt, CancellationToken cancellationToken = default);
     Task<DateTime?> GetLatestSubmissionDateByAuthorAsync(Guid authorId, CancellationToken cancellationToken = default);
-    Task<bool> SightingExistsAsync(Guid sightingId, CancellationToken cancellationToken = default);
+    Task<SightingAccess?> GetSightingAccessAsync(Guid sightingId, CancellationToken cancellationToken = default);
 }

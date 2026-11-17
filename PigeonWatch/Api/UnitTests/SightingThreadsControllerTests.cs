@@ -90,7 +90,7 @@ public class SightingThreadsControllerTests
     {
         SightingThread thread = Thread();
         SightingMessage message = Message(userId);
-        service.StartAsync(sightingId, userId, "Hello", Arg.Any<CancellationToken>()).Returns(SightingThreadResult.Success(thread, message));
+        service.StartAsync(sightingId, userId, false, "Hello", Arg.Any<CancellationToken>()).Returns(SightingThreadResult.Success(thread, message));
         SightingThreadsController controller = CreateController(Authenticated(userId));
 
         ActionResult<SightingThreadStartModel> result = await controller.Start(sightingId, Request("Hello"), cancellationToken);
@@ -111,7 +111,7 @@ public class SightingThreadsControllerTests
     [Fact]
     public async Task Start_returns_400_logged_at_warning_when_the_owner_contacts_their_own_sighting()
     {
-        service.StartAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        service.StartAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(SightingThreadResult.Failure([Error(SightingMessageErrorCodes.OwnSightingContact)]));
         SightingThreadsController controller = CreateController(Authenticated(ownerId));
 
@@ -129,7 +129,7 @@ public class SightingThreadsControllerTests
     [InlineData(SightingMessageErrorCodes.MessageTextTooLong)]
     public async Task Start_returns_400_without_logging_for_invalid_text(string code)
     {
-        service.StartAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        service.StartAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(SightingThreadResult.Failure([Error(code)]));
         SightingThreadsController controller = CreateController(Authenticated(userId));
 
@@ -144,7 +144,7 @@ public class SightingThreadsControllerTests
     [Fact]
     public async Task Start_returns_404_for_an_unknown_sighting()
     {
-        service.StartAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        service.StartAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(SightingThreadResult.Failure([Error(SightingMessageErrorCodes.SightingNotFound)]));
         SightingThreadsController controller = CreateController(Authenticated(userId));
 
@@ -157,7 +157,7 @@ public class SightingThreadsControllerTests
     [Fact]
     public async Task Start_returns_401_logged_at_warning_when_the_sender_no_longer_exists()
     {
-        service.StartAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        service.StartAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(SightingThreadResult.Failure([Error(SightingMessageErrorCodes.SenderNotFound)]));
         SightingThreadsController controller = CreateController(Authenticated(userId));
 
@@ -175,7 +175,7 @@ public class SightingThreadsControllerTests
         ActionResult<SightingThreadStartModel> result = await controller.Start(sightingId, Request("Hello"), cancellationToken);
 
         Assert.IsType<UnauthorizedResult>(result.Result);
-        await service.DidNotReceive().StartAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await service.DidNotReceive().StartAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -308,6 +308,44 @@ public class SightingThreadsControllerTests
 
         Assert.IsType<UnauthorizedResult>(result.Result);
         await service.DidNotReceive().MarkReadAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Start_and_reply_on_a_removed_sighting_return_400_logged_at_warning()
+    {
+        SightingThreadResult removed = SightingThreadResult.Failure([Error(SightingMessageErrorCodes.SightingRemoved)]);
+        service.StartAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(removed);
+        service.ReplyAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(removed);
+        SightingThreadsController controller = CreateController(Authenticated(userId));
+
+        ActionResult<SightingThreadStartModel> start = await controller.Start(sightingId, Request("Hello"), cancellationToken);
+        ActionResult<SightingMessageModel> reply = await controller.Reply(sightingId, threadId, Request("Hello"), cancellationToken);
+
+        ValidationProblemDetails startProblem = Assert.IsType<ValidationProblemDetails>(Assert.IsType<BadRequestObjectResult>(start.Result).Value);
+        ValidationProblemDetails replyProblem = Assert.IsType<ValidationProblemDetails>(Assert.IsType<BadRequestObjectResult>(reply.Result).Value);
+        Assert.Equal([SightingMessageErrorCodes.SightingRemoved], startProblem.Errors.Keys);
+        Assert.Equal([SightingMessageErrorCodes.SightingRemoved], replyProblem.Errors.Keys);
+        List<LogCall> calls = LogCalls();
+        Assert.Equal(2, calls.Count);
+        Assert.All(calls, call => Assert.Equal(LogLevel.Warning, call.Level));
+        Assert.All(calls, call => Assert.Equal(SightingMessageErrorCodes.SightingRemoved, call.State["ErrorCode"]));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Start_passes_the_admin_role_to_the_service(bool isAdmin)
+    {
+        ClaimsPrincipal user = isAdmin
+            ? new(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId.ToString()), new Claim(ClaimTypes.Role, RoleNames.Admin)], "Bearer"))
+            : Authenticated(userId);
+        service.StartAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(SightingThreadResult.Failure([Error(SightingMessageErrorCodes.SightingNotFound)]));
+        SightingThreadsController controller = CreateController(user);
+
+        await controller.Start(sightingId, Request("Hello"), cancellationToken);
+
+        await service.Received(1).StartAsync(sightingId, userId, isAdmin, "Hello", Arg.Any<CancellationToken>());
     }
 
     private static SightingThreadReadRequestModel SeenNow()

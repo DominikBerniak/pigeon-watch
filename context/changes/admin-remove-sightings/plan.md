@@ -621,28 +621,28 @@ The `RemovedAt == null` predicate is added to the box and radius queries. Their 
 
 #### Automated
 
-- [x] 2.1 Solution builds
-- [x] 2.2 Architecture tests pass, including the controller return-type rule for the two new actions
-- [x] 2.3 No pending model changes
-- [x] 2.4 Unit tests pass
-- [x] 2.5 Integration tests pass, including SightingRemovalContractTests, EndpointCoverageTests, EndpointProtectionTests and PrivacySweepTests
+- [x] 2.1 Solution builds — 7110820
+- [x] 2.2 Architecture tests pass, including the controller return-type rule for the two new actions — 7110820
+- [x] 2.3 No pending model changes — 7110820
+- [x] 2.4 Unit tests pass — 7110820
+- [x] 2.5 Integration tests pass, including SightingRemovalContractTests, EndpointCoverageTests, EndpointProtectionTests and PrivacySweepTests — 7110820
 
 #### Manual
 
-- [x] 2.6 DELETE as admin returns 200 with removedAt, as member 403 with one Warning; restore clears removedAt
+- [x] 2.6 DELETE as admin returns 200 with removedAt, as member 403 with one Warning; restore clears removedAt — 7110820
 
 ### Phase 3: Visibility rules on every read and write path (API)
 
 #### Automated
 
-- [ ] 3.1 Solution builds
-- [ ] 3.2 Architecture tests pass
-- [ ] 3.3 Unit tests pass, including the visibility provider and the service check-order tests
-- [ ] 3.4 Integration tests pass, including SightingRemovalVisibilityContractTests and the existing contract tests unchanged
+- [x] 3.1 Solution builds
+- [x] 3.2 Architecture tests pass
+- [x] 3.3 Unit tests pass, including the visibility provider and the service check-order tests
+- [x] 3.4 Integration tests pass, including SightingRemovalVisibilityContractTests and the existing contract tests unchanged
 
 #### Manual
 
-- [ ] 3.5 Removed sighting is gone for a second member, "no longer available" on its URL, still in the reporter's My sightings
+- [x] 3.5 Removed sighting is gone for a second member, "no longer available" on its URL, still in the reporter's My sightings
 
 ### Phase 4: SPA moderation UI
 

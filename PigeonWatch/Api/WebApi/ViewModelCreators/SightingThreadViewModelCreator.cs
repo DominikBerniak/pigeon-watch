@@ -17,7 +17,8 @@ public class SightingThreadViewModelCreator : ISightingThreadViewModelCreator
             CounterpartDisplayName = isOwner ? thread.ParticipantDisplayName : thread.OwnerDisplayName,
             IsOwner = isOwner,
             LastMessageAt = thread.LastMessageAt,
-            HasUnread = thread.HasUnread
+            HasUnread = thread.HasUnread,
+            IsSightingRemoved = thread.IsSightingRemoved
         };
     }
 

@@ -15,4 +15,6 @@ public sealed class SightingThreadModel
     public required DateTime LastMessageAt { get; init; }
 
     public required bool HasUnread { get; init; }
+
+    public required bool IsSightingRemoved { get; init; }
 }
