@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data.Identity;
@@ -6,7 +7,7 @@ namespace PigeonWatch.DependencyInjection;
 
 public static class AccountServiceCollectionExtensions
 {
-    public static IServiceCollection AddAccounts(this IServiceCollection services)
+    public static IServiceCollection AddAccounts(this IServiceCollection services, IConfiguration configuration)
     {
         services
             .AddIdentityApiEndpoints<ApplicationUser>(options =>
@@ -26,7 +27,14 @@ public static class AccountServiceCollectionExtensions
 
                 options.SignIn.RequireConfirmedEmail = false;
             })
-            .AddUserStore<PigeonWatchUserStore>();
+            .AddUserStore<PigeonWatchUserStore>()
+            .AddRoles<ApplicationRole>()
+            .AddRoleStore<PigeonWatchRoleStore>();
+
+        services.AddOptions<ModerationOptions>()
+            .Bind(configuration.GetSection(ModerationOptions.SectionName));
+        services.AddSingleton<AdminRoleBootstrapper>();
+        services.AddHostedService<AdminRoleBootstrapWorker>();
 
         return services;
     }

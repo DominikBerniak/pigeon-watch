@@ -16,6 +16,10 @@ public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options
 
     internal DbSet<SightingMessageEntity> SightingMessages => Set<SightingMessageEntity>();
 
+    internal DbSet<RoleEntity> Roles => Set<RoleEntity>();
+
+    internal DbSet<UserRoleEntity> UserRoles => Set<UserRoleEntity>();
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder.Conventions.Add(_ => new UpperSnakeCaseNamingConvention());
@@ -90,6 +94,29 @@ public class PigeonWatchDbContext(DbContextOptions<PigeonWatchDbContext> options
                 .HasForeignKey(e => e.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.ThreadId, e.CreateDate });
+        });
+
+        modelBuilder.Entity<RoleEntity>(entity =>
+        {
+            entity.ToTable("Role");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ConcurrencyStamp).IsConcurrencyToken();
+            entity.HasIndex(e => e.NormalizedName).IsUnique();
+        });
+
+        modelBuilder.Entity<UserRoleEntity>(entity =>
+        {
+            entity.ToTable("UserRole");
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Role)
+                .WithMany()
+                .HasForeignKey(e => e.RoleId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => new { e.UserId, e.RoleId }).IsUnique();
         });
     }
 }

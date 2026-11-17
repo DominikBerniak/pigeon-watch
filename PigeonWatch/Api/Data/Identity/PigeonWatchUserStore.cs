@@ -17,7 +17,8 @@ public class PigeonWatchUserStore(
     IUserPasswordStore<ApplicationUser>,
     IUserEmailStore<ApplicationUser>,
     IUserSecurityStampStore<ApplicationUser>,
-    IUserLockoutStore<ApplicationUser>
+    IUserLockoutStore<ApplicationUser>,
+    IUserRoleStore<ApplicationUser>
 {
     private const int duplicateKeyRow = 2601;
     private const int uniqueConstraintViolation = 2627;
@@ -292,6 +293,56 @@ public class PigeonWatchUserStore(
         user.LockoutEnabled = enabled;
 
         return Task.CompletedTask;
+    }
+
+    public async Task AddToRoleAsync(ApplicationUser user, string normalizedRoleName, CancellationToken cancellationToken = default)
+    {
+        Guid? roleId = await db.Roles
+            .AsNoTracking()
+            .Where(r => r.NormalizedName == normalizedRoleName)
+            .Select(r => (Guid?)r.Id)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (roleId is null)
+            throw new InvalidOperationException($"Role {normalizedRoleName} does not exist.");
+
+        db.UserRoles.Add(new UserRoleEntity { UserId = user.Id, RoleId = roleId.Value });
+    }
+
+    public async Task RemoveFromRoleAsync(ApplicationUser user, string normalizedRoleName, CancellationToken cancellationToken = default)
+    {
+        UserRoleEntity? userRole = await db.UserRoles
+            .SingleOrDefaultAsync(ur => ur.UserId == user.Id && ur.Role.NormalizedName == normalizedRoleName, cancellationToken);
+
+        if (userRole is not null)
+            db.UserRoles.Remove(userRole);
+    }
+
+    public async Task<IList<string>> GetRolesAsync(ApplicationUser user, CancellationToken cancellationToken = default)
+    {
+        List<string> roles = await db.UserRoles
+            .AsNoTracking()
+            .Where(ur => ur.UserId == user.Id)
+            .Select(ur => ur.Role.Name)
+            .ToListAsync(cancellationToken);
+
+        return roles;
+    }
+
+    public Task<bool> IsInRoleAsync(ApplicationUser user, string normalizedRoleName, CancellationToken cancellationToken = default)
+    {
+        return db.UserRoles.AnyAsync(ur => ur.UserId == user.Id && ur.Role.NormalizedName == normalizedRoleName, cancellationToken);
+    }
+
+    public async Task<IList<ApplicationUser>> GetUsersInRoleAsync(string normalizedRoleName, CancellationToken cancellationToken = default)
+    {
+        List<UserAccountEntity> entities = await db.UserRoles
+            .AsNoTracking()
+            .Where(ur => ur.Role.NormalizedName == normalizedRoleName)
+            .Select(ur => ur.User)
+            .ToListAsync(cancellationToken);
+
+        return entities.Select(entity => userAccountMapper.ToUser(entity)).ToList();
     }
 
     public void Dispose()

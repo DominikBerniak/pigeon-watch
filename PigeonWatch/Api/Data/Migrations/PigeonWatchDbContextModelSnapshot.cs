@@ -22,6 +22,61 @@ namespace PigeonWatch.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("PigeonWatch.Data.Entities.RoleEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ID");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("CONCURRENCY_STAMP");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CREATE_DATE");
+
+                    b.Property<string>("CreateUser")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("CREATE_USER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnName("NAME");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnName("NORMALIZED_NAME");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("UPDATE_DATE");
+
+                    b.Property<string>("UpdateUser")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("UPDATE_USER");
+
+                    b.HasKey("Id")
+                        .HasName("PK_ROLE");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ROLE_NORMALIZED_NAME");
+
+                    b.ToTable("ROLE", (string)null);
+                });
+
             modelBuilder.Entity("PigeonWatch.Data.Entities.SightingCommentEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -386,6 +441,54 @@ namespace PigeonWatch.Data.Migrations
                     b.ToTable("USER_ACCOUNT", (string)null);
                 });
 
+            modelBuilder.Entity("PigeonWatch.Data.Entities.UserRoleEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ID");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CREATE_DATE");
+
+                    b.Property<string>("CreateUser")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("CREATE_USER");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ROLE_ID");
+
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("UPDATE_DATE");
+
+                    b.Property<string>("UpdateUser")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("UPDATE_USER");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("USER_ID");
+
+                    b.HasKey("Id")
+                        .HasName("PK_USER_ROLE");
+
+                    b.HasIndex("RoleId")
+                        .HasDatabaseName("IX_USER_ROLE_ROLE_ID");
+
+                    b.HasIndex("UserId", "RoleId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_USER_ROLE_USER_ID_ROLE_ID");
+
+                    b.ToTable("USER_ROLE", (string)null);
+                });
+
             modelBuilder.Entity("PigeonWatch.Data.Entities.SightingCommentEntity", b =>
                 {
                     b.HasOne("PigeonWatch.Data.Entities.UserAccountEntity", "Author")
@@ -459,6 +562,27 @@ namespace PigeonWatch.Data.Migrations
                     b.Navigation("Participant");
 
                     b.Navigation("Sighting");
+                });
+
+            modelBuilder.Entity("PigeonWatch.Data.Entities.UserRoleEntity", b =>
+                {
+                    b.HasOne("PigeonWatch.Data.Entities.RoleEntity", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_USER_ROLE_ROLE_ROLE_ID");
+
+                    b.HasOne("PigeonWatch.Data.Entities.UserAccountEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_USER_ROLE_USER_ACCOUNT_USER_ID");
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PigeonWatch.Data.Entities.SightingThreadEntity", b =>
