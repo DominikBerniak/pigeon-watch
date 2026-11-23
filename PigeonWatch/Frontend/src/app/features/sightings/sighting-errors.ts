@@ -98,8 +98,10 @@ export type SightingUpdateFailure =
   | { readonly kind: 'descriptionLocked' }
   | { readonly kind: 'invalidStatusTransition' }
   | { readonly kind: 'photoConflict'; readonly traceId?: string }
-  | { readonly kind: 'tooManyEdits' };
+  | { readonly kind: 'tooManyEdits' }
+  | { readonly kind: 'removed' };
 
+const sightingRemovedCode = 'sightingremoved';
 const descriptionLockedCode = 'descriptionlocked';
 const invalidStatusTransitionCode = 'invalidstatustransition';
 const photoConflictCode = 'photoconflict';
@@ -112,6 +114,8 @@ export function sightingUpdateFailure(error: unknown): SightingUpdateFailure {
   if (error.status === 429) return { kind: 'tooManyEdits' };
 
   if (error.status !== 400) return sightingFailure(error);
+
+  if (isSightingRemovedFailure(error)) return { kind: 'removed' };
 
   if (hasCode(error, descriptionLockedCode)) return { kind: 'descriptionLocked' };
 
@@ -139,6 +143,7 @@ export function isReportableSightingUpdateFailure(
     case 'descriptionLocked':
     case 'invalidStatusTransition':
     case 'tooManyEdits':
+    case 'removed':
       return false;
     default:
       return isReportableSightingFailure(error, failure);
@@ -176,8 +181,73 @@ export function sightingUpdateErrorMessage(
       return resources.translate('sighting.edit.errors.generic');
     case 'tooManyEdits':
       return resources.translate('sighting.edit.errors.tooManyEdits');
+    case 'removed':
+      return resources.translate('sighting.edit.errors.removed');
     default:
       return sightingErrorMessage(resources, failure);
+  }
+}
+
+export function isSightingRemovedFailure(error: unknown): boolean {
+  return (
+    error instanceof HttpErrorResponse &&
+    error.status === 400 &&
+    hasCode(error, sightingRemovedCode)
+  );
+}
+
+export type SightingModerationAction = 'remove' | 'restore';
+
+export type SightingModerationFailure =
+  | { readonly kind: 'notFound' }
+  | { readonly kind: 'forbidden'; readonly traceId?: string }
+  | { readonly kind: 'unexpected'; readonly traceId?: string };
+
+export function sightingModerationFailure(error: unknown): SightingModerationFailure {
+  if (error instanceof HttpErrorResponse && error.status === 404) return { kind: 'notFound' };
+
+  const traceId = unexpectedTraceId(error);
+  const kind =
+    error instanceof HttpErrorResponse && error.status === 403 ? 'forbidden' : 'unexpected';
+
+  return traceId === undefined ? { kind } : { kind, traceId };
+}
+
+export function isReportableSightingModerationFailure(
+  error: unknown,
+  failure: SightingModerationFailure,
+): boolean {
+  if (failure.kind === 'forbidden') return true;
+
+  return failure.kind === 'unexpected' && !isExpectedClientStatus(error);
+}
+
+export function sightingModerationFailureTraceId(
+  failure: SightingModerationFailure | null,
+): string | null {
+  if (failure?.kind === 'forbidden' || failure?.kind === 'unexpected') {
+    return failure.traceId ?? null;
+  }
+
+  return null;
+}
+
+export function sightingModerationErrorMessage(
+  resources: ResourceService,
+  action: SightingModerationAction,
+  failure: SightingModerationFailure,
+): string {
+  switch (failure.kind) {
+    case 'notFound':
+      return resources.translate('sighting.errors.notFound');
+    case 'forbidden':
+      return action === 'remove'
+        ? resources.translate('sighting.remove.errors.forbidden')
+        : resources.translate('sighting.restore.errors.forbidden');
+    default:
+      return action === 'remove'
+        ? resources.translate('sighting.remove.errors.generic')
+        : resources.translate('sighting.restore.errors.generic');
   }
 }
 

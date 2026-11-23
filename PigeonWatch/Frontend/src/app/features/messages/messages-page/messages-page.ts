@@ -353,6 +353,7 @@ function mergeThreads(
           lastMessageAt: update.lastMessageAt,
           sightingName: update.sightingName,
           counterpartDisplayName: update.counterpartDisplayName,
+          isSightingRemoved: update.isSightingRemoved,
         }
       : thread;
   });

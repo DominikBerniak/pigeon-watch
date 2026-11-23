@@ -42,6 +42,7 @@ const urgent: Sighting = {
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T12:00:00Z',
   hasPhoto: false,
+  removedAt: null,
   isMine: false,
   editPermissions: null,
 };
@@ -54,6 +55,7 @@ const monitor: Sighting = {
   criticality: SightingCriticality.monitor,
   createdAt: '2026-10-11T11:00:00Z',
   hasPhoto: false,
+  removedAt: null,
   isMine: false,
   editPermissions: null,
 };

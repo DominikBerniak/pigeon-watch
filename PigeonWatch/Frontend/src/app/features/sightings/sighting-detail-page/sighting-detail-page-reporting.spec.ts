@@ -1,9 +1,11 @@
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { Observable, of, throwError } from 'rxjs';
+import { SessionService } from '../../../core/auth/session.service';
 import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { MapView } from '../../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../../shared/map/testing/map-view-stub';
@@ -30,6 +32,7 @@ describe('SightingDetailPage failure reporting', () => {
             comments: (): Observable<SightingCommentPage> => of({ items: [], totalCount: 0 }),
           },
         },
+        { provide: SessionService, useValue: { isAdmin: signal(false) } },
         { provide: ErrorReportingService, useValue: { report } },
       ],
     });

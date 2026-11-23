@@ -34,6 +34,7 @@ const sighting: Sighting = {
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T12:00:00Z',
   hasPhoto: false,
+  removedAt: null,
   isMine: false,
   editPermissions: null,
 };
@@ -199,6 +200,30 @@ describe('SightingsApi', () => {
     expect((part as File).name).toBe('photo.jpg');
     expect((part as File).size).toBe(photo.size);
     expect(form.get('removePhoto')).toBe('false');
+  });
+
+  it('removes a sighting with a DELETE on its encoded path and returns the removed sighting', () => {
+    const removed: Sighting = { ...sighting, removedAt: '2026-11-18T09:00:00Z' };
+    let answer: Sighting | undefined;
+
+    api.remove('a/b').subscribe((value) => (answer = value));
+    const request = httpMock.expectOne(`${sightingsUrl}/a%2Fb`);
+    request.flush(removed);
+
+    expect(request.request.method).toBe('DELETE');
+    expect(answer).toEqual(removed);
+  });
+
+  it('restores a sighting with a POST to its encoded restore path and returns the sighting', () => {
+    let answer: Sighting | undefined;
+
+    api.restore('a/b').subscribe((value) => (answer = value));
+    const request = httpMock.expectOne(`${sightingsUrl}/a%2Fb/restore`);
+    request.flush(sighting);
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toBeNull();
+    expect(answer).toEqual(sighting);
   });
 
   it('downloads the photo of a sighting as a blob', () => {
@@ -379,6 +404,7 @@ describe('SightingsApi', () => {
     isOwner: false,
     lastMessageAt: '2026-11-07T12:00:00Z',
     hasUnread: true,
+    isSightingRemoved: false,
   };
 
   const message: SightingMessage = {

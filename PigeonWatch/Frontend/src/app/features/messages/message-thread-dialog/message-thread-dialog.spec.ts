@@ -25,6 +25,7 @@ const thread: SightingThread = {
   isOwner: true,
   lastMessageAt: new Date().toISOString(),
   hasUnread: false,
+  isSightingRemoved: false,
 };
 
 const message: SightingMessage = {

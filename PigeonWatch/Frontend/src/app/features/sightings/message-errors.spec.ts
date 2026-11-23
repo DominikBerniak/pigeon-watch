@@ -44,6 +44,15 @@ describe('message errors', () => {
     expect(isReportableMessageFailure(error, failure)).toBe(false);
   });
 
+  it('maps SightingRemoved to the silent removed state without a reference', () => {
+    const error = badRequest(['SightingRemoved']);
+    const failure = messageFailure(error);
+
+    expect(failure).toEqual({ kind: 'removed' });
+    expect(messageFailureTraceId(failure)).toBeNull();
+    expect(isReportableMessageFailure(error, failure)).toBe(false);
+  });
+
   it('maps a 404 to not found without a report', () => {
     const error = new HttpErrorResponse({ status: 404, error: { traceId } });
     const failure = messageFailure(error);
@@ -89,6 +98,12 @@ describe('message errors', () => {
     it('says the conversation is gone for a 404', () => {
       expect(messageErrorMessage(resources, { kind: 'notFound' })).toBe(
         'This conversation is no longer available. Reload the page.',
+      );
+    });
+
+    it('says the sighting was removed by an admin', () => {
+      expect(messageErrorMessage(resources, { kind: 'removed' })).toBe(
+        'This sighting was removed by an admin, so no new messages can be sent about it.',
       );
     });
 

@@ -635,28 +635,28 @@ The `RemovedAt == null` predicate is added to the box and radius queries. Their 
 
 #### Automated
 
-- [x] 3.1 Solution builds
-- [x] 3.2 Architecture tests pass
-- [x] 3.3 Unit tests pass, including the visibility provider and the service check-order tests
-- [x] 3.4 Integration tests pass, including SightingRemovalVisibilityContractTests and the existing contract tests unchanged
+- [x] 3.1 Solution builds — 4b0f2b3
+- [x] 3.2 Architecture tests pass — 4b0f2b3
+- [x] 3.3 Unit tests pass, including the visibility provider and the service check-order tests — 4b0f2b3
+- [x] 3.4 Integration tests pass, including SightingRemovalVisibilityContractTests and the existing contract tests unchanged — 4b0f2b3
 
 #### Manual
 
-- [x] 3.5 Removed sighting is gone for a second member, "no longer available" on its URL, still in the reporter's My sightings
+- [x] 3.5 Removed sighting is gone for a second member, "no longer available" on its URL, still in the reporter's My sightings — 4b0f2b3
 
 ### Phase 4: SPA moderation UI
 
 #### Automated
 
-- [ ] 4.1 Labels regenerate and the app and spec typechecks pass
-- [ ] 4.2 All frontend specs pass, including label coverage, the kitchen sink and the new component specs
+- [x] 4.1 Labels regenerate and the app and spec typechecks pass
+- [x] 4.2 All frontend specs pass, including label coverage, the kitchen sink and the new component specs
 
 #### Manual
 
-- [ ] 4.3 Admin remove and restore flow works on detail page and map
-- [ ] 4.4 Reporter sees the Removed badge and a read-only detail page
-- [ ] 4.5 Thread participant sees a read-only thread with the notice
-- [ ] 4.6 Removed states render correctly in light and dark theme
+- [x] 4.3 Admin remove and restore flow works on detail page and map
+- [x] 4.4 Reporter sees the Removed badge and a read-only detail page
+- [x] 4.5 Thread participant sees a read-only thread with the notice
+- [x] 4.6 Removed states render correctly in light and dark theme
 
 ### Phase 5: E2E scenario and docs
 

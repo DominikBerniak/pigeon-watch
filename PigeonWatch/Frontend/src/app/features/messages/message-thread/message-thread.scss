@@ -63,6 +63,11 @@ textarea {
   margin-block-start: auto;
 }
 
+.message-thread__removed {
+  flex: none;
+  margin-block-start: auto;
+}
+
 .message-thread__compose {
   display: flex;
   align-items: flex-end;

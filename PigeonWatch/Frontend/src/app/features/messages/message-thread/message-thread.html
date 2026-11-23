@@ -114,54 +114,60 @@
       }
     }
   }
-  <form class="message-thread__reply" [formRoot]="replyForm" (submit)="send()">
-    <div class="message-thread__compose">
-      <mat-form-field class="message-thread__field">
-        <mat-label>{{ replyLabel() }}</mat-label>
-        <textarea
-          matInput
-          cdkTextareaAutosize
-          cdkAutosizeMinRows="1"
-          cdkAutosizeMaxRows="6"
-          [formField]="replyForm.text"
-          [aria-describedby]="hintId"
-          (keydown.enter)="sendOnEnter($event)"
-        ></textarea>
-        <mat-error>
-          <app-field-errors [field]="replyForm.text" [messages]="textMessages()" />
-        </mat-error>
-      </mat-form-field>
-      <button
-        mat-icon-button
-        type="submit"
-        class="message-thread__send"
-        disabledInteractive
-        [disabled]="sending() || blank()"
-        [attr.aria-busy]="sending()"
-        [attr.aria-label]="'sighting.messages.thread.send' | translate"
-        [appTooltip]="sending() || blank() ? null : ('sighting.messages.thread.send' | translate)"
-      >
-        <svg
-          class="message-thread__send-icon"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          focusable="false"
+  @if (sightingRemoved()) {
+    <app-alert kind="info" class="message-thread__removed">{{
+      'sighting.messages.thread.removedNotice' | translate
+    }}</app-alert>
+  } @else {
+    <form class="message-thread__reply" [formRoot]="replyForm" (submit)="send()">
+      <div class="message-thread__compose">
+        <mat-form-field class="message-thread__field">
+          <mat-label>{{ replyLabel() }}</mat-label>
+          <textarea
+            matInput
+            cdkTextareaAutosize
+            cdkAutosizeMinRows="1"
+            cdkAutosizeMaxRows="6"
+            [formField]="replyForm.text"
+            [aria-describedby]="hintId"
+            (keydown.enter)="sendOnEnter($event)"
+          ></textarea>
+          <mat-error>
+            <app-field-errors [field]="replyForm.text" [messages]="textMessages()" />
+          </mat-error>
+        </mat-form-field>
+        <button
+          mat-icon-button
+          type="submit"
+          class="message-thread__send"
+          disabledInteractive
+          [disabled]="sending() || blank()"
+          [attr.aria-busy]="sending()"
+          [attr.aria-label]="'sighting.messages.thread.send' | translate"
+          [appTooltip]="sending() || blank() ? null : ('sighting.messages.thread.send' | translate)"
         >
-          <path
-            fill="currentColor"
-            d="M3.4 20.4 21.85 12.4a.5.5 0 0 0 0-.8L3.4 3.6a.5.5 0 0 0-.69.58L5 11l9 1-9 1-2.29 6.82a.5.5 0 0 0 .69.58Z"
-          />
-        </svg>
-      </button>
-    </div>
-    <p [id]="hintId" class="message-thread__hint pw-text-small pw-text-muted">
-      {{ 'sighting.messages.hint' | translate: rules().textMaxLength }}
-    </p>
-    @if (sendErrorText(); as text) {
-      <app-alert kind="error">
-        {{ text }}
-        <app-error-reference [traceId]="sendErrorTraceId()" />
-      </app-alert>
-    }
-  </form>
+          <svg
+            class="message-thread__send-icon"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              fill="currentColor"
+              d="M3.4 20.4 21.85 12.4a.5.5 0 0 0 0-.8L3.4 3.6a.5.5 0 0 0-.69.58L5 11l9 1-9 1-2.29 6.82a.5.5 0 0 0 .69.58Z"
+            />
+          </svg>
+        </button>
+      </div>
+      <p [id]="hintId" class="message-thread__hint pw-text-small pw-text-muted">
+        {{ 'sighting.messages.hint' | translate: rules().textMaxLength }}
+      </p>
+      @if (sendErrorText(); as text) {
+        <app-alert kind="error">
+          {{ text }}
+          <app-error-reference [traceId]="sendErrorTraceId()" />
+        </app-alert>
+      }
+    </form>
+  }
 </section>

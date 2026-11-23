@@ -25,6 +25,7 @@ const named: Sighting = {
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T11:55:00Z',
   hasPhoto: false,
+  removedAt: null,
   isMine: false,
   editPermissions: null,
 };
@@ -304,5 +305,22 @@ describe('SightingRow', () => {
     await fixture.whenStable();
 
     expect(row.querySelector('time')?.textContent?.trim()).toBe('1 h ago');
+  });
+
+  it('shows no Removed badge on a sighting that is not removed', async () => {
+    const row = await render(named);
+
+    expect(row.querySelector('app-removed-badge')).toBeNull();
+    expect(row.textContent).not.toContain('Removed');
+  });
+
+  it('ends the meta line with a Removed badge inside the row link when the sighting is removed', async () => {
+    const row = await render({ ...named, removedAt: '2026-10-11T11:58:00Z' });
+    const meta = row.querySelector('.sighting-row__meta');
+    const badge = meta?.querySelector('app-removed-badge');
+
+    expect(badge?.textContent?.trim()).toBe('Removed');
+    expect(meta?.lastElementChild).toBe(badge);
+    expect(badge?.closest('a')).toBe(row.querySelector('a'));
   });
 });

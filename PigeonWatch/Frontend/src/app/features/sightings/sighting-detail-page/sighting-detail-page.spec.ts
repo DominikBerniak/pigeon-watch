@@ -1,12 +1,13 @@
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
+import { Component, WritableSignal, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { By } from '@angular/platform-browser';
 import { Router, RouterLink, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { NEVER, Observable, Subject, of, throwError } from 'rxjs';
+import { SessionService } from '../../../core/auth/session.service';
 import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { MapView } from '../../../shared/map/map-view/map-view';
 import { MapViewStub } from '../../../shared/map/testing/map-view-stub';
@@ -34,6 +35,7 @@ const sighting: Sighting = {
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T12:00:00Z',
   hasPhoto: false,
+  removedAt: null,
   isMine: false,
   editPermissions: null,
 };
@@ -48,6 +50,7 @@ const started: SightingThreadStart = {
     isOwner: false,
     lastMessageAt: '2026-11-07T12:00:00Z',
     hasUnread: false,
+    isSightingRemoved: false,
   },
   message: {
     id: 'message-1',
@@ -74,6 +77,9 @@ describe('SightingDetailPage', () => {
   let threads: ReturnType<
     typeof vi.fn<(sightingId: string, page: number) => Observable<SightingThreadPage>>
   >;
+  let remove: ReturnType<typeof vi.fn<(id: string) => Observable<Sighting>>>;
+  let restore: ReturnType<typeof vi.fn<(id: string) => Observable<Sighting>>>;
+  let isAdmin: WritableSignal<boolean>;
   let report: ReturnType<typeof vi.fn>;
   let harness: RouterTestingHarness;
 
@@ -90,6 +96,9 @@ describe('SightingDetailPage', () => {
     threads = vi.fn<(sightingId: string, page: number) => Observable<SightingThreadPage>>(() =>
       of({ items: [], totalCount: 0 }),
     );
+    remove = vi.fn<(id: string) => Observable<Sighting>>(() => NEVER);
+    restore = vi.fn<(id: string) => Observable<Sighting>>(() => NEVER);
+    isAdmin = signal(false);
     report = vi.fn();
     TestBed.configureTestingModule({
       providers: [
@@ -107,8 +116,11 @@ describe('SightingDetailPage', () => {
             comments: (): Observable<SightingCommentPage> => of({ items: [], totalCount: 0 }),
             threads,
             startThread,
+            remove,
+            restore,
           },
         },
+        { provide: SessionService, useValue: { isAdmin } },
         { provide: PhotoEncoder, useValue: { createPreviewUrl, revokePreviewUrl } },
         { provide: ErrorReportingService, useValue: { report } },
       ],
@@ -920,5 +932,257 @@ describe('SightingDetailPage', () => {
     harness.fixture.destroy();
 
     expect(revokePreviewUrl).toHaveBeenCalledExactlyOnceWith('blob:photo-1');
+  });
+
+  describe('moderation', () => {
+    const removedAt = '2026-11-18T09:00:00Z';
+    const removed: Sighting = { ...sighting, removedAt };
+
+    function removeDialog(): HTMLElement | null {
+      return document.querySelector<HTMLElement>('app-remove-sighting-dialog');
+    }
+
+    function headerButtons(root: HTMLElement): string[] {
+      return [...root.querySelectorAll('app-page-card header button')].map(
+        (candidate) => candidate.textContent?.trim() ?? '',
+      );
+    }
+
+    function removedNotice(root: HTMLElement): Element | null {
+      return root.querySelector('app-alert.sighting-detail__removed');
+    }
+
+    async function confirmRemoval(root: HTMLElement): Promise<void> {
+      button(root, 'Remove').click();
+      await settle();
+      await vi.waitFor(() => expect(removeDialog()).not.toBeNull());
+      button(removeDialog()!, 'Remove sighting').click();
+      await vi.waitFor(() => expect(removeDialog()).toBeNull());
+      await settle();
+    }
+
+    afterEach(() => TestBed.inject(MatDialog).closeAll());
+
+    it('offers neither Remove nor Restore to a member', async () => {
+      const root = await open();
+
+      expect(headerButtons(root)).toEqual(['Show map']);
+    });
+
+    it('offers the admin Remove after the map toggle on a sighting that is not removed', async () => {
+      isAdmin.set(true);
+
+      const root = await open();
+
+      expect(headerButtons(root)).toEqual(['Show map', 'Remove']);
+      expect(removedNotice(root)).toBeNull();
+    });
+
+    it('asks for confirmation in a dialog before removing anything', async () => {
+      isAdmin.set(true);
+
+      const root = await open();
+
+      button(root, 'Remove').click();
+      await settle();
+      await vi.waitFor(() => expect(removeDialog()).not.toBeNull());
+
+      expect(removeDialog()!.querySelector('h2')?.textContent?.trim()).toBe(
+        'Remove this sighting?',
+      );
+      expect(
+        [...removeDialog()!.querySelectorAll('button')].map((candidate) =>
+          candidate.textContent?.trim(),
+        ),
+      ).toEqual(['Cancel', 'Remove sighting']);
+      expect(remove).not.toHaveBeenCalled();
+    });
+
+    it('removes nothing when the dialog is cancelled', async () => {
+      isAdmin.set(true);
+
+      const root = await open();
+
+      button(root, 'Remove').click();
+      await settle();
+      await vi.waitFor(() => expect(removeDialog()).not.toBeNull());
+      button(removeDialog()!, 'Cancel').click();
+      await vi.waitFor(() => expect(removeDialog()).toBeNull());
+      await settle();
+
+      expect(remove).not.toHaveBeenCalled();
+      expect(headerButtons(root)).toEqual(['Show map', 'Remove']);
+      expect(removedNotice(root)).toBeNull();
+    });
+
+    it('removes the sighting once confirmed, then shows the notice and Restore and focuses the heading', async () => {
+      isAdmin.set(true);
+      remove.mockReturnValue(of(removed));
+
+      const root = await open();
+
+      await confirmRemoval(root);
+
+      expect(remove).toHaveBeenCalledExactlyOnceWith('sighting-1');
+      expect(removedNotice(root)?.textContent?.trim()).toBe(
+        'This sighting was removed by an admin.',
+      );
+      expect(removedNotice(root)?.getAttribute('role')).toBe('status');
+      expect(headerButtons(root)).toEqual(['Show map', 'Restore']);
+      await vi.waitFor(() =>
+        expect(document.activeElement).toBe(root.querySelector('app-page-card h1')),
+      );
+      expect(sightingReports()).toEqual([]);
+    });
+
+    it('keeps Remove disabled and busy while the removal is pending', async () => {
+      isAdmin.set(true);
+      remove.mockReturnValue(NEVER);
+
+      const root = await open();
+
+      await confirmRemoval(root);
+
+      expect(button(root, 'Remove').getAttribute('aria-disabled')).toBe('true');
+      expect(button(root, 'Remove').getAttribute('aria-busy')).toBe('true');
+      expect(removedNotice(root)).toBeNull();
+    });
+
+    it('reports a 403 and shows the forbidden message with its reference', async () => {
+      const error = new HttpErrorResponse({ status: 403, error: { traceId: '00-remove-01' } });
+
+      isAdmin.set(true);
+      remove.mockReturnValue(throwError(() => error));
+
+      const root = await open();
+
+      await confirmRemoval(root);
+
+      const alert = root.querySelector('app-alert[role="alert"]');
+
+      expect(alert?.textContent).toContain('Only an admin can remove a sighting.');
+      expect(alert?.textContent).toContain('Reference: 00-remove-01');
+      expect(sightingReports()).toEqual([['api-failure', 'sighting.remove', error]]);
+      expect(button(root, 'Remove').getAttribute('aria-disabled')).not.toBe('true');
+      expect(removedNotice(root)).toBeNull();
+    });
+
+    it('shows the not-found message without a report or reference for a 404', async () => {
+      isAdmin.set(true);
+      remove.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 404, error: { traceId: '00-gone-01' } })),
+      );
+
+      const root = await open();
+
+      await confirmRemoval(root);
+
+      const alert = root.querySelector('app-alert[role="alert"]');
+
+      expect(alert?.textContent?.trim()).toBe(
+        "This sighting doesn't exist or is no longer available.",
+      );
+      expect(alert?.textContent).not.toContain('Reference');
+      expect(sightingReports()).toEqual([]);
+    });
+
+    it('restores a removed sighting without a dialog and offers Remove again', async () => {
+      isAdmin.set(true);
+      get.mockReturnValue(of(removed));
+      restore.mockReturnValue(of(sighting));
+
+      const root = await open();
+
+      expect(headerButtons(root)).toEqual(['Show map', 'Restore']);
+      expect(removedNotice(root)).not.toBeNull();
+
+      button(root, 'Restore').click();
+      await settle();
+
+      expect(removeDialog()).toBeNull();
+      expect(restore).toHaveBeenCalledExactlyOnceWith('sighting-1');
+      expect(remove).not.toHaveBeenCalled();
+      expect(removedNotice(root)).toBeNull();
+      expect(headerButtons(root)).toEqual(['Show map', 'Remove']);
+      await vi.waitFor(() =>
+        expect(document.activeElement).toBe(root.querySelector('app-page-card h1')),
+      );
+    });
+
+    it('reports an unexpected restore failure and shows the restore message with its reference', async () => {
+      const error = new HttpErrorResponse({ status: 500, error: { traceId: '00-restore-01' } });
+
+      isAdmin.set(true);
+      get.mockReturnValue(of(removed));
+      restore.mockReturnValue(throwError(() => error));
+
+      const root = await open();
+
+      button(root, 'Restore').click();
+      await settle();
+
+      const alert = root.querySelector('app-alert[role="alert"]');
+
+      expect(alert?.textContent).toContain("We couldn't restore this sighting. Try again.");
+      expect(alert?.textContent).toContain('Reference: 00-restore-01');
+      expect(sightingReports()).toEqual([['api-failure', 'sighting.restore', error]]);
+      expect(removedNotice(root)).not.toBeNull();
+    });
+
+    it('shows the reporter the notice with no Edit link and read-only comments', async () => {
+      get.mockReturnValue(of({ ...removed, isMine: true, editPermissions: null }));
+
+      const root = await open();
+
+      expect(removedNotice(root)?.textContent?.trim()).toBe(
+        'This sighting was removed by an admin.',
+      );
+      expect(root.querySelector('app-page-card header a')).toBeNull();
+      expect(pageLinks(root).map((link) => link.textContent?.trim())).not.toContain('Edit');
+      expect(headerButtons(root)).toEqual(['Show map']);
+      expect(root.querySelector('app-sighting-comments')).not.toBeNull();
+      expect(root.querySelector('form.sighting-comments__add')).toBeNull();
+      expect(rows(root)).toHaveLength(7);
+    });
+
+    it('hides the contact button on a removed sighting of someone else', async () => {
+      get.mockReturnValue(of(removed));
+
+      const root = await open();
+
+      expect(contactButton(root)).toBeNull();
+      expect(root.textContent).not.toContain('Message Jan K');
+      expect(root.querySelector('form.sighting-comments__add')).toBeNull();
+    });
+
+    it('keeps the link to an existing conversation on a removed sighting', async () => {
+      get.mockReturnValue(of(removed));
+      threads.mockReturnValue(of({ items: [started.thread], totalCount: 1 }));
+
+      const root = await open();
+
+      expect(contactButton(root)).toBeNull();
+      expect(
+        root.querySelector<HTMLAnchorElement>('a.sighting-detail__contact')?.getAttribute('href'),
+      ).toBe('/messages/sighting-1/thread-9');
+    });
+
+    it('clears a moderation failure when the route moves to another sighting', async () => {
+      isAdmin.set(true);
+      remove.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+      get.mockImplementation((id) => of({ ...sighting, id }));
+
+      const root = await open('a');
+
+      await confirmRemoval(root);
+
+      expect(root.querySelector('app-alert[role="alert"]')).not.toBeNull();
+
+      await harness.navigateByUrl('/sightings/b');
+      await settle();
+
+      expect(root.querySelector('app-alert[role="alert"]')).toBeNull();
+      expect(headerButtons(root)).toEqual(['Show map', 'Remove']);
+    });
   });
 });

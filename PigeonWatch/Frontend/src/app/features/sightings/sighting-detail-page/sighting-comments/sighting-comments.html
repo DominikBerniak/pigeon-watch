@@ -13,27 +13,31 @@
     </button>
   </div>
   <div id="sighting-comments-body" class="sighting-comments__body" [hidden]="!expanded()">
-    <form class="sighting-comments__add" [formRoot]="addForm" (submit)="submitAdd()">
-      <mat-form-field class="pw-full-width">
-        <mat-label>{{ 'sighting.comments.add.label' | translate }}</mat-label>
-        <textarea matInput rows="3" [formField]="addForm.text"></textarea>
-        <mat-hint>{{ 'sighting.comments.add.hint' | translate: rules().textMaxLength }}</mat-hint>
-        <mat-error>
-          <app-field-errors [field]="addForm.text" [messages]="textMessages()" />
-        </mat-error>
-      </mat-form-field>
-      @if (addErrorText(); as text) {
-        <app-alert kind="error">
-          {{ text }}
-          <app-error-reference [traceId]="addErrorTraceId()" />
-        </app-alert>
-      }
-      <div class="sighting-comments__submit">
-        <app-submit-button [busy]="adding()">{{
-          'sighting.comments.add.submit' | translate
-        }}</app-submit-button>
-      </div>
-    </form>
+    @if (!readOnly()) {
+      <form class="sighting-comments__add" [formRoot]="addForm" (submit)="submitAdd()">
+        <mat-form-field class="pw-full-width">
+          <mat-label>{{ 'sighting.comments.add.label' | translate }}</mat-label>
+          <textarea matInput rows="3" [formField]="addForm.text"></textarea>
+          <mat-hint>{{
+            'sighting.comments.add.hint' | translate: rules().textMaxLength
+          }}</mat-hint>
+          <mat-error>
+            <app-field-errors [field]="addForm.text" [messages]="textMessages()" />
+          </mat-error>
+        </mat-form-field>
+        @if (addErrorText(); as text) {
+          <app-alert kind="error">
+            {{ text }}
+            <app-error-reference [traceId]="addErrorTraceId()" />
+          </app-alert>
+        }
+        <div class="sighting-comments__submit">
+          <app-submit-button [busy]="adding()">{{
+            'sighting.comments.add.submit' | translate
+          }}</app-submit-button>
+        </div>
+      </form>
+    }
     @switch (state().kind) {
       @case ('loading') {
         <app-loading-indicator [label]="'sighting.comments.loading' | translate" />
@@ -78,7 +82,7 @@
                         }}</span>
                       }
                     </p>
-                    @if (editingId() === comment.id) {
+                    @if (!readOnly() && editingId() === comment.id) {
                       <form
                         #editFormElement
                         appFormSubmitScope
@@ -130,7 +134,7 @@
                           <app-error-reference [traceId]="itemErrorTraceId(comment.id)" />
                         </app-alert>
                       }
-                      @if (comment.isMine) {
+                      @if (comment.isMine && !readOnly()) {
                         <div class="sighting-comments__actions pw-cluster">
                           @if (deletingId() === comment.id) {
                             <app-loading-indicator

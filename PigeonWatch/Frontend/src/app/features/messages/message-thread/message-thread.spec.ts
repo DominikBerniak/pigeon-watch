@@ -39,6 +39,7 @@ const summary: SightingThread = {
   isOwner: true,
   lastMessageAt: new Date().toISOString(),
   hasUnread: false,
+  isSightingRemoved: false,
 };
 
 const theirs = messageOf('theirs');
@@ -609,5 +610,79 @@ describe('MessageThread', () => {
 
     expect(report).not.toHaveBeenCalled();
     expect(refreshCount).not.toHaveBeenCalled();
+  });
+
+  it('keeps the history readable and shows the removed notice instead of the reply box', async () => {
+    const root = await open({ ...summary, isSightingRemoved: true });
+    const notice = root.querySelector('app-alert.message-thread__removed');
+
+    expect(ids(root)).toEqual(['mine', 'theirs']);
+    expect(notice?.textContent?.trim()).toBe(
+      'This sighting was removed by an admin. You can still read this conversation, but no new messages can be sent.',
+    );
+    expect(notice?.getAttribute('role')).toBe('status');
+    expect(root.querySelector('form')).toBeNull();
+    expect(root.querySelector('textarea')).toBeNull();
+    expect(markThreadRead).toHaveBeenCalledOnce();
+  });
+
+  it('shows the reply box again when the thread summary says the sighting is back', async () => {
+    const root = await open({ ...summary, isSightingRemoved: true });
+
+    fixture.componentRef.setInput('thread', summary);
+    await settle();
+
+    expect(root.querySelector('app-alert.message-thread__removed')).toBeNull();
+    expect(field(root)).not.toBeNull();
+  });
+
+  it('replaces the reply box with the removed notice when a send races into a removal', async () => {
+    sendMessage.mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 400,
+            error: { errors: { SightingRemoved: ['Removed'] }, traceId: '00-removed-01' },
+          }),
+      ),
+    );
+
+    const root = await open();
+
+    await send(root, 'Still there?');
+
+    expect(root.querySelector('app-alert.message-thread__removed')?.textContent?.trim()).toBe(
+      'This sighting was removed by an admin. You can still read this conversation, but no new messages can be sent.',
+    );
+    expect(root.querySelector('form')).toBeNull();
+    expect(root.querySelector('app-alert[role="alert"]')).toBeNull();
+    expect(root.textContent).not.toContain('Reference');
+    expect(report).not.toHaveBeenCalled();
+    expect(ids(root)).toEqual(['mine', 'theirs']);
+  });
+
+  it('offers the reply box again after a removal race when another thread opens', async () => {
+    sendMessage.mockReturnValueOnce(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 400,
+            error: { errors: { SightingRemoved: ['Removed'] } },
+          }),
+      ),
+    );
+
+    const root = await open();
+
+    await send(root, 'Still there?');
+
+    expect(root.querySelector('form')).toBeNull();
+
+    fixture.componentRef.setInput('threadId', 'thread-2');
+    fixture.componentRef.setInput('thread', { ...summary, id: 'thread-2' });
+    await settle();
+
+    expect(root.querySelector('app-alert.message-thread__removed')).toBeNull();
+    expect(field(root)).not.toBeNull();
   });
 });

@@ -41,6 +41,15 @@ describe('comment errors', () => {
     expect(commentFailure(badRequest(['CommentTextRequired']))).toEqual({ kind: 'textRequired' });
   });
 
+  it('maps SightingRemoved to the silent removed state without a reference', () => {
+    const error = badRequest(['SightingRemoved']);
+    const failure = commentFailure(error);
+
+    expect(failure).toEqual({ kind: 'removed' });
+    expect(commentFailureTraceId(failure)).toBeNull();
+    expect(isReportableCommentFailure(error, failure)).toBe(false);
+  });
+
   it('maps a 404 to not found without a report', () => {
     const error = new HttpErrorResponse({ status: 404, error: { traceId } });
     const failure = commentFailure(error);
@@ -100,6 +109,12 @@ describe('comment errors', () => {
     it('asks to refresh when the comment no longer exists', () => {
       expect(commentErrorMessage(resources, { kind: 'notFound' })).toBe(
         'This comment no longer exists. Refresh the comments.',
+      );
+    });
+
+    it('says the sighting was removed by an admin', () => {
+      expect(commentErrorMessage(resources, { kind: 'removed' })).toBe(
+        'This sighting was removed by an admin. Comments can no longer be added or changed.',
       );
     });
 

@@ -47,6 +47,7 @@ import {
   sightingStatusLabel,
 } from '../sighting.types';
 import { SightingsApi } from '../sightings-api';
+import { RemovedBadge } from '../shared/removed-badge/removed-badge';
 import { SightingFilterRow } from '../shared/sighting-filters/sighting-filters';
 import {
   NearbyMapReturn,
@@ -108,6 +109,7 @@ let nextStatusId = 0;
     ErrorReference,
     LoadingIndicator,
     MapView,
+    RemovedBadge,
     SightingFilterRow,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -217,17 +219,25 @@ export class NearbyMapPage {
   protected readonly markers = computed<readonly MapMarker[]>(() => {
     const unnamed = this.resources.translate('sighting.unnamed');
 
-    return this.sightings().map((sighting) => ({
-      id: sighting.id,
-      latitude: sighting.latitude,
-      longitude: sighting.longitude,
-      kind: sightingCriticalityMarker(sighting.criticality),
-      label: this.resources.translate(
-        'map.markerLabel',
-        sighting.name ?? unnamed,
-        this.resources.translate(sightingCriticalityLabel(sighting.criticality)),
-      ),
-    }));
+    return this.sightings().map((sighting) => {
+      const name = sighting.name ?? unnamed;
+      const criticality = this.resources.translate(sightingCriticalityLabel(sighting.criticality));
+      const marker: MapMarker = {
+        id: sighting.id,
+        latitude: sighting.latitude,
+        longitude: sighting.longitude,
+        kind: sightingCriticalityMarker(sighting.criticality),
+        label: this.resources.translate('map.markerLabel', name, criticality),
+      };
+
+      return sighting.removedAt
+        ? {
+            ...marker,
+            removed: true,
+            label: this.resources.translate('map.markerLabelRemoved', name, criticality),
+          }
+        : marker;
+    });
   });
   protected readonly selected = computed(() => {
     const id = this.selectedId();

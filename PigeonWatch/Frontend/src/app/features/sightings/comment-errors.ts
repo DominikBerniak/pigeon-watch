@@ -12,6 +12,7 @@ export type CommentFailure =
   | { readonly kind: 'textRequired' }
   | { readonly kind: 'notFound' }
   | { readonly kind: 'forbidden'; readonly traceId?: string }
+  | { readonly kind: 'removed' }
   | { readonly kind: 'unexpected'; readonly traceId?: string };
 
 export type CommentContext =
@@ -22,6 +23,7 @@ export type CommentContext =
 
 const cooldownCode = 'cooldownactive';
 const textRequiredCode = 'commenttextrequired';
+const sightingRemovedCode = 'sightingremoved';
 const retryAfterSecondsExtension = 'retryAfterSeconds';
 
 export function commentFailure(error: unknown): CommentFailure {
@@ -40,6 +42,8 @@ export function commentFailure(error: unknown): CommentFailure {
       ? withTraceId('unexpected', error)
       : { kind: 'cooldown', retryAfterSeconds };
   }
+
+  if (hasCode(error, sightingRemovedCode)) return { kind: 'removed' };
 
   if (hasCode(error, textRequiredCode)) return { kind: 'textRequired' };
 
@@ -70,6 +74,8 @@ export function commentErrorMessage(resources: ResourceService, failure: Comment
       return resources.translate('sighting.comments.errors.notFound');
     case 'forbidden':
       return resources.translate('sighting.comments.errors.forbidden');
+    case 'removed':
+      return resources.translate('sighting.comments.errors.removed');
     default:
       return resources.translate('sighting.comments.errors.generic');
   }

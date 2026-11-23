@@ -24,9 +24,11 @@ import {
   sinkLockedSighting,
   sinkLongNameSighting,
   sinkOwnSighting,
+  sinkOwnRemovedSighting,
   sinkMessagePageSize,
   sinkPhotoSighting,
   sinkPosition,
+  sinkRemovedListSighting,
   sinkSightings,
   sinkStartThreadTraceId,
   sinkThreads,
@@ -36,6 +38,7 @@ import { KitchenSink } from './kitchen-sink';
 const patience = { timeout: 2000, interval: 25 };
 const manualRunPatience = { timeout: 10_000, interval: 25 };
 const sinkTestTimeout = 15_000;
+const sinkRenderTimeout = 30_000;
 const sinkPhotoUrl = 'blob:sink-photo';
 
 describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
@@ -65,7 +68,7 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
     fixture = TestBed.createComponent(KitchenSink);
     root = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
-  }, sinkTestTimeout);
+  }, sinkRenderTimeout);
 
   function cell(id: string): HTMLElement {
     const element = root.querySelector<HTMLElement>(`[data-cell="${id}"]`);
@@ -1425,5 +1428,142 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
     const messagesCells = [...root.querySelectorAll('[data-cell^="messages-"]')];
 
     expect(messagesCells.some((element) => element.contains(document.activeElement))).toBe(false);
+  });
+
+  function headerButtonsOf(id: string): string[] {
+    return [...cell(id).querySelectorAll('app-page-card header button')].map(textOf);
+  }
+
+  function removedNoticeOf(id: string): Element | null {
+    return cell(id).querySelector('app-alert.sighting-detail__removed');
+  }
+
+  it('shows the Removed badge only in the My sightings row of the removed sighting', async () => {
+    const id = 'read-only-my-sightings-removed';
+
+    await eventually(() => {
+      const items = [...cell(id).querySelectorAll('app-my-sightings li')];
+      const badged = items.filter((item) => item.querySelector('app-removed-badge'));
+
+      expect(items).toHaveLength(sinkSightings.length + 1);
+      expect(badged).toEqual([items[0]]);
+      expect(textOf(badged[0].querySelector('.sighting-row__name'))).toBe(
+        sinkRemovedListSighting.name,
+      );
+      expect(textOf(badged[0].querySelector('.sighting-row__meta app-removed-badge'))).toBe(
+        label('sighting.removed.badge'),
+      );
+    });
+  });
+
+  it('draws the removed sighting as a removed marker and badges its card once selected', async () => {
+    const id = 'map-removed';
+
+    await eventually(() => {
+      const markers = mapOf(id).markers();
+      const removed = markers.filter((marker) => marker.removed);
+
+      expect(markers).toHaveLength(sinkSightings.length + 1);
+      expect(removed.map((marker) => marker.id)).toEqual([sinkRemovedListSighting.id]);
+      expect(removed[0].label).toBe(
+        label(
+          'map.markerLabelRemoved',
+          sinkRemovedListSighting.name,
+          label('sighting.criticality.needsHelpSoon'),
+        ),
+      );
+    });
+
+    expect(textOf(cell(id).querySelector('header button'))).toBe('Select the removed marker');
+    expect(cell(id).querySelector('mat-card')).toBeNull();
+
+    mapOf(id).markerSelect.emit(sinkRemovedListSighting.id);
+
+    await eventually(() => {
+      expect(textOf(cell(id).querySelector('mat-card h2'))).toBe(sinkRemovedListSighting.name);
+      expect(textOf(cell(id).querySelector('mat-card app-removed-badge'))).toBe(
+        label('sighting.removed.badge'),
+      );
+    });
+  });
+
+  it('offers the admin Remove after the map toggle on a sighting that is not removed', async () => {
+    await eventually(() => {
+      expect(headerButtonsOf('detail-admin')).toEqual([
+        label('sighting.detail.showMap'),
+        label('sighting.detail.remove'),
+      ]);
+      expect(removedNoticeOf('detail-admin')).toBeNull();
+      expect(headerButtonsOf('detail-loaded')).toEqual([label('sighting.detail.showMap')]);
+    });
+  });
+
+  it('opens the remove confirmation from the cell header', async () => {
+    const id = 'detail-admin-remove-dialog';
+
+    await eventually(() => expect(buttonOf(id, 'sighting.detail.remove')).not.toBeNull());
+    cell(id).querySelector<HTMLButtonElement>('header button')?.click();
+
+    await eventually(() => {
+      const opened = document.querySelector('app-remove-sighting-dialog');
+
+      expect(textOf(opened?.querySelector('[mat-dialog-title]'))).toBe(
+        label('sighting.remove.confirmTitle'),
+      );
+      expect([...(opened?.querySelectorAll('button') ?? [])].map(textOf)).toEqual([
+        label('sighting.remove.cancel'),
+        label('sighting.remove.confirmAction'),
+      ]);
+    });
+  });
+
+  it('shows the admin the removed notice and Restore on a removed sighting', async () => {
+    const id = 'detail-admin-removed';
+
+    await eventually(() => {
+      expect(textOf(removedNoticeOf(id))).toBe(label('sighting.removed.notice'));
+      expect(removedNoticeOf(id)?.getAttribute('role')).toBe('status');
+      expect(headerButtonsOf(id)).toEqual([
+        label('sighting.detail.showMap'),
+        label('sighting.detail.restore'),
+      ]);
+      expect(contactButtonOf(id)).toBeNull();
+      expect(factRowsOf(id)).toHaveLength(7);
+    });
+  });
+
+  it('shows the reporter a removed sighting with the notice, no Edit and read-only comments', async () => {
+    const id = 'detail-removed-reporter';
+
+    await eventually(() => {
+      expect(headingOf(id)).toBe(sinkOwnRemovedSighting.name);
+      expect(textOf(removedNoticeOf(id))).toBe(label('sighting.removed.notice'));
+      expect(cell(id).querySelector('app-page-card header a')).toBeNull();
+      expect(headerButtonsOf(id)).toEqual([label('sighting.detail.showMap')]);
+      expect(commentItemsOf(id)).toHaveLength(sinkCommentPageSize);
+      expect(commentsOf(id).querySelector('form')).toBeNull();
+      expect(
+        commentItemsOf(id).some((item) =>
+          [...item.querySelectorAll('button')].some(
+            (button) =>
+              textOf(button) === label('sighting.comments.edit') ||
+              textOf(button) === label('sighting.comments.delete'),
+          ),
+        ),
+      ).toBe(false);
+    });
+  });
+
+  it('keeps the thread of a removed sighting readable with the notice instead of the reply box', async () => {
+    const id = 'messages-thread-removed';
+
+    await eventually(() => {
+      expect(bubblesOf(id)).toHaveLength(sinkMessagePageSize);
+      expect(textOf(cell(id).querySelector('app-message-thread app-alert'))).toBe(
+        label('sighting.messages.thread.removedNotice'),
+      );
+      expect(cell(id).querySelector('form.message-thread__reply')).toBeNull();
+      expect(cell('messages-thread').querySelector('form.message-thread__reply')).not.toBeNull();
+    });
   });
 });

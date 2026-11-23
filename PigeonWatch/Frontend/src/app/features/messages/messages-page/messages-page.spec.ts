@@ -34,6 +34,7 @@ function threadOf(index: number, overrides: Partial<SightingThread> = {}): Sight
     isOwner: index % 2 === 0,
     lastMessageAt: new Date(Date.now() - (index * 60 + 5) * minute).toISOString(),
     hasUnread: false,
+    isSightingRemoved: false,
     ...overrides,
   };
 }
@@ -514,6 +515,21 @@ describe('MessagesPage', () => {
     expect(TestBed.inject(Router).url).toBe('/messages/sighting-1/thread-1');
     expect(threadView()).toBe(view);
     expect(threadMessages).toHaveBeenCalledOnce();
+  });
+
+  it('takes the removed state of the open thread sighting from a background sync', async () => {
+    const root = await open('/messages/sighting-1/thread-1');
+
+    expect(root.querySelector('app-message-thread form')).not.toBeNull();
+
+    inbox.mockReturnValueOnce(
+      of({ items: [threadOf(1, { isSightingRemoved: true }), threadOf(2)], totalCount: 2 }),
+    );
+    unreadCount.set(1);
+    await settle();
+
+    expect(root.querySelector('app-message-thread form')).toBeNull();
+    expect(root.querySelector('app-message-thread app-alert.message-thread__removed')).not.toBeNull();
   });
 
   it('keeps later pages, adds new threads, takes a later unread mark from the server and updates the total on a sync', async () => {

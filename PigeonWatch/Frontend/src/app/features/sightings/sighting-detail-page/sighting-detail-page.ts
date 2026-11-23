@@ -19,15 +19,18 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   Observable,
   Subject,
+  Subscription,
   catchError,
   combineLatest,
   filter,
+  finalize,
   map,
   of,
   startWith,
   switchMap,
   tap,
 } from 'rxjs';
+import { SessionService } from '../../../core/auth/session.service';
 import { GeoPoint } from '../../../core/geolocation/geo-point';
 import { ErrorReportingService } from '../../../core/error-reporting/error-reporting.service';
 import { ResourceService } from '../../../core/resources/resource.service';
@@ -50,9 +53,15 @@ import {
 } from '../../../shared/ui';
 import { isReportableMessageFailure, messageFailure } from '../message-errors';
 import {
+  SightingModerationAction,
+  SightingModerationFailure,
   isReportablePhotoFailure,
   isReportableSightingFailure,
+  isReportableSightingModerationFailure,
   sightingFailure,
+  sightingModerationErrorMessage,
+  sightingModerationFailure,
+  sightingModerationFailureTraceId,
 } from '../sighting-errors';
 import {
   Sighting,
@@ -74,6 +83,7 @@ import {
   MessageOwnerDialogData,
 } from './message-owner-dialog/message-owner-dialog';
 import { PhotoDialog, PhotoDialogData } from './photo-dialog/photo-dialog';
+import { RemoveSightingDialog } from './remove-sighting-dialog/remove-sighting-dialog';
 import { SightingComments } from './sighting-comments/sighting-comments';
 
 type DetailState =
@@ -87,6 +97,11 @@ type PhotoState =
   | { readonly kind: 'loading' }
   | { readonly kind: 'error' }
   | { readonly kind: 'loaded'; readonly url: string };
+
+interface ModerationError {
+  readonly action: SightingModerationAction;
+  readonly failure: SightingModerationFailure;
+}
 
 const coordinateDecimals = 5;
 
@@ -117,6 +132,7 @@ const coordinateDecimals = 5;
 export class SightingDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly sightingsApi = inject(SightingsApi);
+  private readonly session = inject(SessionService);
   private readonly resources = inject(ResourceService);
   private readonly reporting = inject(ErrorReportingService);
   private readonly photoUrls = inject(PhotoEncoder);
@@ -129,6 +145,7 @@ export class SightingDetailPage {
   private readonly shownSightings = new Subject<Sighting | null>();
   private readonly card = viewChild(PageCard);
   private focusOnSettle = this.router.currentNavigation() !== null;
+  private moderationRequest: Subscription | null = null;
 
   protected readonly returnToList = readSightingDetailReturn(
     this.router.currentNavigation()?.extras.state,
@@ -159,6 +176,26 @@ export class SightingDetailPage {
 
     return state.kind === 'error' ? (state.traceId ?? null) : null;
   });
+  protected readonly moderating = signal(false);
+  protected readonly moderationError = signal<ModerationError | null>(null);
+  protected readonly canRemove = computed(
+    () => this.session.isAdmin() && this.sighting()?.removedAt === null,
+  );
+  protected readonly canRestore = computed(() => {
+    const removedAt = this.sighting()?.removedAt;
+
+    return this.session.isAdmin() && removedAt !== null && removedAt !== undefined;
+  });
+  protected readonly moderationErrorText = computed(() => {
+    const error = this.moderationError();
+
+    return error
+      ? sightingModerationErrorMessage(this.resources, error.action, error.failure)
+      : null;
+  });
+  protected readonly moderationErrorTraceId = computed(() =>
+    sightingModerationFailureTraceId(this.moderationError()?.failure ?? null),
+  );
   protected readonly title = computed(() => {
     const sighting = this.sighting();
 
@@ -213,9 +250,10 @@ export class SightingDetailPage {
       ),
     );
 
-    this.destroyRef.onDestroy(() =>
-      this.pageTitle.setTitle(this.resources.translate('common.appName')),
-    );
+    this.destroyRef.onDestroy(() => {
+      this.moderationRequest?.unsubscribe();
+      this.pageTitle.setTitle(this.resources.translate('common.appName'));
+    });
 
     this.shownSightings
       .pipe(
@@ -236,7 +274,10 @@ export class SightingDetailPage {
       this.reloads.pipe(startWith(undefined)),
     ])
       .pipe(
-        tap(() => this.mapShown.set(false)),
+        tap(() => {
+          this.mapShown.set(false);
+          this.resetModeration();
+        }),
         switchMap(([id]) =>
           this.sightingsApi.get(id).pipe(
             map((sighting): DetailState => ({ kind: 'loaded', sighting })),
@@ -278,6 +319,62 @@ export class SightingDetailPage {
       .subscribe(
         (started) => void this.router.navigate(['/messages', sighting.id, started.thread.id]),
       );
+  }
+
+  protected confirmRemove(): void {
+    const sighting = this.sighting();
+
+    if (!sighting || this.moderating()) return;
+
+    this.dialog
+      .open<RemoveSightingDialog, void, boolean>(RemoveSightingDialog)
+      .afterClosed()
+      .pipe(
+        filter((confirmed) => confirmed === true),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => this.moderate('remove', sighting.id));
+  }
+
+  protected restore(): void {
+    const sighting = this.sighting();
+
+    if (sighting) this.moderate('restore', sighting.id);
+  }
+
+  private moderate(action: SightingModerationAction, id: string): void {
+    if (this.moderating()) return;
+
+    const request =
+      action === 'remove' ? this.sightingsApi.remove(id) : this.sightingsApi.restore(id);
+
+    this.moderationError.set(null);
+    this.moderating.set(true);
+    this.moderationRequest = request
+      .pipe(finalize(() => this.moderating.set(false)))
+      .subscribe({
+        next: (sighting) => this.applyState({ kind: 'loaded', sighting }),
+        error: (error: unknown) => {
+          const failure = sightingModerationFailure(error);
+
+          if (isReportableSightingModerationFailure(error, failure)) {
+            this.reporting.report(
+              'api-failure',
+              action === 'remove' ? 'sighting.remove' : 'sighting.restore',
+              error,
+            );
+          }
+
+          this.moderationError.set({ action, failure });
+        },
+      });
+  }
+
+  private resetModeration(): void {
+    this.moderationRequest?.unsubscribe();
+    this.moderationRequest = null;
+    this.moderating.set(false);
+    this.moderationError.set(null);
   }
 
   private failureState(error: unknown): DetailState {

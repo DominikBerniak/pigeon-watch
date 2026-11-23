@@ -138,6 +138,9 @@
               <h2 #selectedHeading class="pw-subtitle nearby-selected__name" tabindex="-1">
                 {{ sighting.name ?? ('sighting.unnamed' | translate) }}
               </h2>
+              @if (sighting.removedAt) {
+                <app-removed-badge class="nearby-selected__removed" />
+              }
             </header>
             <dl app-detail-list layout="inline">
               <div app-detail-item [label]="'map.selected.status' | translate">

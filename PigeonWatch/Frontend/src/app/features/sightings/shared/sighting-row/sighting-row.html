@@ -39,6 +39,10 @@
       <time [attr.datetime]="sighting().createdAt" [appTooltip]="sighting().createdAt | date: 'medium'">{{
         age().key | translate: age().value
       }}</time>
+      @if (sighting().removedAt) {
+        ·
+        <app-removed-badge />
+      }
     </span>
   </span>
 </a>

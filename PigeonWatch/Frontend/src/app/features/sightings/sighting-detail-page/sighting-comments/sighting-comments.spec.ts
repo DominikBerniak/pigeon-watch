@@ -538,4 +538,68 @@ describe('SightingComments', () => {
 
     expect(comments).toHaveBeenLastCalledWith('sighting-2', 1);
   });
+
+  it('keeps the list but offers no add form, Edit or Delete when read-only', async () => {
+    fixture = TestBed.createComponent(SightingComments);
+    fixture.componentRef.setInput('sightingId', 'sighting-1');
+    fixture.componentRef.setInput('readOnly', true);
+    await settle();
+
+    const root = fixture.nativeElement as HTMLElement;
+
+    root.querySelector<HTMLButtonElement>('button.sighting-comments__toggle')!.click();
+    await settle();
+
+    expect(root.querySelector('h2')?.textContent?.trim()).toBe('Comments (2)');
+    expect(items(root)).toHaveLength(2);
+    expect(item(root, 'mine').querySelector('.sighting-comments__text')?.textContent).toBe(
+      'My note\nsecond line',
+    );
+    expect(root.querySelector('form')).toBeNull();
+    expect(root.querySelector('textarea')).toBeNull();
+    expect(buttonIn(item(root, 'mine'), 'Edit')).toBeNull();
+    expect(buttonIn(item(root, 'mine'), 'Delete')).toBeNull();
+  });
+
+  it('closes an open edit and hides the form once the comments become read-only', async () => {
+    const root = await open();
+
+    buttonIn(item(root, 'mine'), 'Edit')!.click();
+    await settle();
+
+    expect(root.querySelector('.sighting-comments__edit')).not.toBeNull();
+
+    fixture.componentRef.setInput('readOnly', true);
+    await settle();
+
+    expect(root.querySelector('.sighting-comments__edit')).toBeNull();
+    expect(root.querySelector('form.sighting-comments__add')).toBeNull();
+    expect(item(root, 'mine').querySelector('.sighting-comments__text')).not.toBeNull();
+  });
+
+  it('shows the removed message without a report when a post races into a removal', async () => {
+    const report = TestBed.inject(ErrorReportingService).report as ReturnType<typeof vi.fn>;
+
+    addComment.mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 400,
+            error: { errors: { SightingRemoved: ['Removed'] }, traceId: '00-removed-01' },
+          }),
+      ),
+    );
+
+    const root = await open();
+
+    await post(root, 'Still there?');
+
+    const alert = root.querySelector('form.sighting-comments__add app-alert');
+
+    expect(alert?.textContent?.trim()).toBe(
+      'This sighting was removed by an admin. Comments can no longer be added or changed.',
+    );
+    expect(alert?.textContent).not.toContain('Reference');
+    expect(report).not.toHaveBeenCalled();
+  });
 });

@@ -3,7 +3,7 @@ change_id: admin-remove-sightings
 title: Admin remove sightings
 status: implementing
 created: 2026-11-17
-updated: 2026-11-17
+updated: 2026-11-23
 archived_at: null
 ---
 
