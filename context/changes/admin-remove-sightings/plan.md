@@ -648,24 +648,24 @@ The `RemovedAt == null` predicate is added to the box and radius queries. Their 
 
 #### Automated
 
-- [x] 4.1 Labels regenerate and the app and spec typechecks pass
-- [x] 4.2 All frontend specs pass, including label coverage, the kitchen sink and the new component specs
+- [x] 4.1 Labels regenerate and the app and spec typechecks pass — 3882e51
+- [x] 4.2 All frontend specs pass, including label coverage, the kitchen sink and the new component specs — 3882e51
 
 #### Manual
 
-- [x] 4.3 Admin remove and restore flow works on detail page and map
-- [x] 4.4 Reporter sees the Removed badge and a read-only detail page
-- [x] 4.5 Thread participant sees a read-only thread with the notice
-- [x] 4.6 Removed states render correctly in light and dark theme
+- [x] 4.3 Admin remove and restore flow works on detail page and map — 3882e51
+- [x] 4.4 Reporter sees the Removed badge and a read-only detail page — 3882e51
+- [x] 4.5 Thread participant sees a read-only thread with the notice — 3882e51
+- [x] 4.6 Removed states render correctly in light and dark theme — 3882e51
 
 ### Phase 5: E2E scenario and docs
 
 #### Automated
 
-- [ ] 5.1 The new E2E spec passes against the local API and dev server
-- [ ] 5.2 The full E2E suite still passes
+- [x] 5.1 The new E2E spec passes against the local API and dev server
+- [x] 5.2 The full E2E suite still passes
 
 #### Manual
 
-- [ ] 5.3 Api and Frontend CLAUDE.md describe the role mechanism, visibility rule and admin test setup accurately
+- [x] 5.3 Api and Frontend CLAUDE.md describe the role mechanism, visibility rule and admin test setup accurately
 - [ ] 5.4 Production App Service admin setting configured and the admin sees roles ["Admin"] after login
