@@ -662,10 +662,10 @@ The `RemovedAt == null` predicate is added to the box and radius queries. Their 
 
 #### Automated
 
-- [x] 5.1 The new E2E spec passes against the local API and dev server
-- [x] 5.2 The full E2E suite still passes
+- [x] 5.1 The new E2E spec passes against the local API and dev server — e001958
+- [x] 5.2 The full E2E suite still passes — e001958
 
 #### Manual
 
-- [x] 5.3 Api and Frontend CLAUDE.md describe the role mechanism, visibility rule and admin test setup accurately
+- [x] 5.3 Api and Frontend CLAUDE.md describe the role mechanism, visibility rule and admin test setup accurately — e001958
 - [ ] 5.4 Production App Service admin setting configured and the admin sees roles ["Admin"] after login
