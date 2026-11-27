@@ -13,18 +13,38 @@ public class AdminRoleBootstrapper(
 {
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
-        await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
-        RoleManager<ApplicationRole> roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
-        UserManager<ApplicationUser> userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        await using (AsyncServiceScope roleScope = scopeFactory.CreateAsyncScope())
+        {
+            RoleManager<ApplicationRole> roleManager = roleScope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
 
-        await EnsureAdminRoleAsync(roleManager, cancellationToken);
+            await EnsureAdminRoleAsync(roleManager, cancellationToken);
+        }
 
         List<string> adminEmails = options.Value.AdminEmails;
 
         for (int index = 0; index < adminEmails.Count; index++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await GrantAdminAsync(userManager, adminEmails[index], index, cancellationToken);
+            await GrantAdminInOwnScopeAsync(adminEmails[index], index, cancellationToken);
+        }
+    }
+
+    private async Task GrantAdminInOwnScopeAsync(string email, int index, CancellationToken cancellationToken = default)
+    {
+        await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
+        UserManager<ApplicationUser> userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        try
+        {
+            await GrantAdminAsync(userManager, email, index, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogError(
+                exception,
+                "Granting the {RoleName} role to the moderation admin email at index {AdminEmailIndex} failed; the remaining emails are still processed",
+                RoleNames.Admin,
+                index);
         }
     }
 

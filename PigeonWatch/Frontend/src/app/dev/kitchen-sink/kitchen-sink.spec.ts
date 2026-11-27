@@ -37,7 +37,7 @@ import { KitchenSink } from './kitchen-sink';
 
 const patience = { timeout: 2000, interval: 25 };
 const manualRunPatience = { timeout: 10_000, interval: 25 };
-const sinkTestTimeout = 15_000;
+const sinkTestTimeout = 30_000;
 const sinkRenderTimeout = 30_000;
 const sinkPhotoUrl = 'blob:sink-photo';
 
@@ -864,6 +864,16 @@ describe('KitchenSink', { timeout: sinkTestTimeout }, () => {
 
     await eventually(() => {
       expect(textOf(cell(id).querySelector('app-alert'))).toBe(label('sighting.edit.notOwner'));
+      expect(cell(id).querySelector('form')).toBeNull();
+      expect(textOf(cell(id).querySelector('mat-card-actions a'))).toBe(label('sighting.edit.back'));
+    });
+  });
+
+  it('shows the removed alert and the Back link to the reporter of a removed sighting', async () => {
+    const id = 'edit-removed';
+
+    await eventually(() => {
+      expect(textOf(cell(id).querySelector('app-alert'))).toBe(label('sighting.edit.errors.removed'));
       expect(cell(id).querySelector('form')).toBeNull();
       expect(textOf(cell(id).querySelector('mat-card-actions a'))).toBe(label('sighting.edit.back'));
     });

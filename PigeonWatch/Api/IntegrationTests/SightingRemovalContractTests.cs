@@ -13,6 +13,8 @@ public sealed class SightingRemovalContractTests : IDisposable
     private const string bobDisplayName = "BobRemoval";
     private const string adminEmail = "admin.removal@example.com";
     private const string adminDisplayName = "AdminRemoval";
+    private const string secondAdminEmail = "second.admin.removal@example.com";
+    private const string secondAdminDisplayName = "SecondAdminRemoval";
     private const string password = "Passw0rd!removal1";
 
     private readonly ManualTimeProvider clock = new(DateTimeOffset.UtcNow);
@@ -22,7 +24,7 @@ public sealed class SightingRemovalContractTests : IDisposable
 
     public SightingRemovalContractTests()
     {
-        factory = new PigeonWatchApiFactory(clock, adminEmails: [adminEmail]);
+        factory = new PigeonWatchApiFactory(clock, adminEmails: [adminEmail, secondAdminEmail]);
     }
 
     [Fact]
@@ -67,11 +69,12 @@ public sealed class SightingRemovalContractTests : IDisposable
     public async Task Removing_twice_keeps_the_first_removal()
     {
         World world = await SeedAsync();
+        TestUser secondAdmin = Track(await factory.CreateAdminAsync(secondAdminEmail, password, secondAdminDisplayName, cancellationToken));
         DateTime firstRemovedAt = clock.GetUtcNow().UtcDateTime;
         using HttpResponseMessage first = await RemoveAsync(world.Admin, world.SightingId);
         clock.Advance(TimeSpan.FromMinutes(5));
 
-        using HttpResponseMessage second = await RemoveAsync(world.Admin, world.SightingId);
+        using HttpResponseMessage second = await RemoveAsync(secondAdmin, world.SightingId);
         using JsonDocument secondBody = await ReadJsonAsync(second);
         JsonElement readBack = await ReadSightingAsync(world.Alice, world.SightingId);
 

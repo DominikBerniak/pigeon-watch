@@ -203,12 +203,18 @@ public sealed class SightingRemovalVisibilityContractTests : IDisposable
             await AssertSightingRemovedAsync(participant, reply);
         }
 
+        using HttpResponseMessage bobThreadList = await world.Bob.Client.GetAsync(ThreadsUri(world.SightingId), cancellationToken);
+        using JsonDocument bobThreadPage = await ReadJsonAsync(bobThreadList);
+        using HttpResponseMessage carolThreadList = await world.Carol.Client.GetAsync(ThreadsUri(world.SightingId), cancellationToken);
         using HttpResponseMessage carolMessages = await world.Carol.Client.GetAsync(MessagesUri(world.SightingId, world.ThreadId), cancellationToken);
         using HttpResponseMessage carolReply = await world.Carol.Client.PostAsJsonAsync(MessagesUri(world.SightingId, world.ThreadId), new { text = "Let me in" }, cancellationToken);
         using HttpResponseMessage carolStart = await world.Carol.Client.PostAsJsonAsync(ThreadsUri(world.SightingId), new { text = "Hello" }, cancellationToken);
         using HttpResponseMessage bobStart = await world.Bob.Client.PostAsJsonAsync(ThreadsUri(world.SightingId), new { text = "Hello again" }, cancellationToken);
         using HttpResponseMessage adminStart = await world.Admin.Client.PostAsJsonAsync(ThreadsUri(world.SightingId), new { text = "Admin here" }, cancellationToken);
 
+        Assert.Equal(HttpStatusCode.OK, bobThreadList.StatusCode);
+        Assert.Equal(world.ThreadId, Assert.Single(bobThreadPage.RootElement.GetProperty("items").EnumerateArray()).GetProperty("id").GetGuid());
+        Assert.Equal(HttpStatusCode.NotFound, carolThreadList.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, carolMessages.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, carolReply.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, carolStart.StatusCode);

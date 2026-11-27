@@ -29,7 +29,7 @@ public class SightingThreadsControllerTests
     [Fact]
     public async Task List_returns_the_threads_for_the_caller_without_caching()
     {
-        service.ListForSightingAsync(sightingId, ownerId, 1, Arg.Any<CancellationToken>())
+        service.ListForSightingAsync(sightingId, ownerId, false, 1, Arg.Any<CancellationToken>())
             .Returns(SightingThreadPageResult.Success(new SightingThreadPage([Thread()], 1)));
         SightingThreadsController controller = CreateController(Authenticated(ownerId));
 
@@ -46,7 +46,7 @@ public class SightingThreadsControllerTests
     [Fact]
     public async Task List_returns_404_logged_at_information_for_an_unknown_sighting()
     {
-        service.ListForSightingAsync(sightingId, userId, 1, Arg.Any<CancellationToken>())
+        service.ListForSightingAsync(sightingId, userId, false, 1, Arg.Any<CancellationToken>())
             .Returns(SightingThreadPageResult.Failure([Error(SightingMessageErrorCodes.SightingNotFound)]));
         SightingThreadsController controller = CreateController(Authenticated(userId));
 
@@ -61,7 +61,7 @@ public class SightingThreadsControllerTests
     [Fact]
     public async Task List_returns_400_logged_at_warning_for_an_invalid_page()
     {
-        service.ListForSightingAsync(sightingId, userId, 0, Arg.Any<CancellationToken>())
+        service.ListForSightingAsync(sightingId, userId, false, 0, Arg.Any<CancellationToken>())
             .Returns(SightingThreadPageResult.Failure([Error(SightingMessageErrorCodes.InvalidPage)]));
         SightingThreadsController controller = CreateController(Authenticated(userId));
 
@@ -82,7 +82,7 @@ public class SightingThreadsControllerTests
         ActionResult<SightingThreadPageModel> result = await controller.List(sightingId, null, cancellationToken);
 
         Assert.IsType<UnauthorizedResult>(result.Result);
-        await service.DidNotReceive().ListForSightingAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+        await service.DidNotReceive().ListForSightingAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -257,7 +257,7 @@ public class SightingThreadsControllerTests
     [Fact]
     public async Task List_carries_has_unread_for_the_caller()
     {
-        service.ListForSightingAsync(sightingId, ownerId, 1, Arg.Any<CancellationToken>())
+        service.ListForSightingAsync(sightingId, ownerId, false, 1, Arg.Any<CancellationToken>())
             .Returns(SightingThreadPageResult.Success(new SightingThreadPage([Thread() with { HasUnread = true }, Thread()], 2)));
         SightingThreadsController controller = CreateController(Authenticated(ownerId));
 

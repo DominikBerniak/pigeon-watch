@@ -148,24 +148,14 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
         return latest is null ? null : DateTime.SpecifyKind(latest.Value, DateTimeKind.Utc);
     }
 
-    public async Task<SightingAccess?> GetAccessAsync(Guid sightingId, CancellationToken cancellationToken = default)
+    public async Task<SightingPhotoAccess?> GetPhotoAccessAsync(Guid sightingId, CancellationToken cancellationToken = default)
     {
-        SightingAccess? access = await db.Sightings
+        SightingPhotoAccess? photoAccess = await db.Sightings
             .Where(e => e.Id == sightingId)
-            .Select(e => new SightingAccess(e.ReporterId, e.RemovedAt))
+            .Select(e => new SightingPhotoAccess(new SightingAccess(e.ReporterId, e.RemovedAt), e.PhotoBlobName))
             .FirstOrDefaultAsync(cancellationToken);
 
-        return access;
-    }
-
-    public async Task<string?> GetPhotoBlobNameAsync(Guid sightingId, CancellationToken cancellationToken = default)
-    {
-        string? blobName = await db.Sightings
-            .Where(e => e.Id == sightingId)
-            .Select(e => e.PhotoBlobName)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return blobName;
+        return photoAccess;
     }
 
     public async Task<SightingUpdateOutcome?> UpdateAsync(

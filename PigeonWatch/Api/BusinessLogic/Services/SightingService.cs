@@ -185,10 +185,12 @@ public class SightingService(
 
     public async Task<Stream?> OpenPhotoAsync(Guid sightingId, Guid userId, bool isAdmin, CancellationToken cancellationToken = default)
     {
-        if (!await CanViewAsync(sightingId, userId, isAdmin, cancellationToken))
+        SightingPhotoAccess? photoAccess = await sightingRepository.GetPhotoAccessAsync(sightingId, cancellationToken);
+
+        if (photoAccess is null || !sightingVisibilityProvider.CanView(photoAccess.Access, userId, isAdmin))
             return null;
 
-        string? blobName = await sightingRepository.GetPhotoBlobNameAsync(sightingId, cancellationToken);
+        string? blobName = photoAccess.PhotoBlobName;
 
         if (blobName is null)
             return null;
@@ -203,10 +205,12 @@ public class SightingService(
 
     public async Task<Stream?> OpenPhotoThumbnailAsync(Guid sightingId, Guid userId, bool isAdmin, CancellationToken cancellationToken = default)
     {
-        if (!await CanViewAsync(sightingId, userId, isAdmin, cancellationToken))
+        SightingPhotoAccess? photoAccess = await sightingRepository.GetPhotoAccessAsync(sightingId, cancellationToken);
+
+        if (photoAccess is null || !sightingVisibilityProvider.CanView(photoAccess.Access, userId, isAdmin))
             return null;
 
-        string? blobName = await sightingRepository.GetPhotoBlobNameAsync(sightingId, cancellationToken);
+        string? blobName = photoAccess.PhotoBlobName;
 
         if (blobName is null)
             return null;
@@ -426,13 +430,6 @@ public class SightingService(
     private static SightingAccess ToAccess(Sighting sighting)
     {
         return new SightingAccess(sighting.ReporterId, sighting.RemovedAt);
-    }
-
-    private async Task<bool> CanViewAsync(Guid sightingId, Guid userId, bool isAdmin, CancellationToken cancellationToken = default)
-    {
-        SightingAccess? access = await sightingRepository.GetAccessAsync(sightingId, cancellationToken);
-
-        return access is not null && sightingVisibilityProvider.CanView(access, userId, isAdmin);
     }
 
     private static SightingError NotAdminError()

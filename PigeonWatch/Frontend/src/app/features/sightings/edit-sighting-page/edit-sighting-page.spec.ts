@@ -380,6 +380,20 @@ describe('EditSightingPage', () => {
     expect(report).not.toHaveBeenCalled();
   });
 
+  it('shows the removed alert with a Back link and no form to the reporter of a removed sighting', async () => {
+    get.mockReturnValue(of({ ...owned, removedAt: '2026-11-17T10:00:00Z', editPermissions: null }));
+    const page = await open();
+    const back = page.querySelector<HTMLAnchorElement>('mat-card-actions a');
+
+    expect(page.querySelector('app-alert')?.textContent?.trim()).toBe(
+      "This sighting was removed by an admin and can't be edited.",
+    );
+    expect(page.querySelector('form')).toBeNull();
+    expect(back?.textContent?.trim()).toBe('Back to sighting');
+    expect(back?.getAttribute('href')).toBe('/sightings/sighting-1');
+    expect(report).not.toHaveBeenCalled();
+  });
+
   it('shows the not-found alert with a Back link for a 404 without reporting', async () => {
     get.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
     const page = await open('missing');

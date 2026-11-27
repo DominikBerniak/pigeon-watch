@@ -58,7 +58,7 @@ export type DetailMode =
   | 'pending'
   | 'failureThenLoaded';
 export type PhotoMode = 'image' | 'pending' | 'failure';
-export type EditMode = 'editable' | 'locked' | 'notOwner';
+export type EditMode = 'editable' | 'locked' | 'notOwner' | 'removed';
 export type CommentsMode = 'empty' | 'items' | 'failure' | 'pending';
 export type AddCommentMode = 'success' | 'cooldown';
 export type StartThreadMode = 'success' | 'failure' | 'pending';
@@ -426,6 +426,8 @@ function editedSighting(mode: EditMode): Sighting {
       return sinkLockedSighting;
     case 'notOwner':
       return sinkSightings[0];
+    case 'removed':
+      return sinkOwnRemovedSighting;
     default:
       return sinkEditableSighting;
   }

@@ -390,26 +390,26 @@ public sealed class SightingRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task Get_access_returns_the_reporter_and_the_removal_state_or_null_for_an_unknown_id()
+    public async Task Get_photo_access_returns_the_reporter_the_removal_state_and_the_photo_blob_name_or_null_for_an_unknown_id()
     {
         Guid reporterId = await CreateUserAsync("reporter@example.com", "Pidgey");
         Guid adminId = await CreateUserAsync("admin@example.com", "Admin");
-        Sighting visible = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
         Sighting removed = (await CreateSightingAsync(NewSighting(reporterId, 52.0, 21.0, SightingStatus.Spotted)))!;
+        string blobName = $"{Guid.NewGuid():D}.jpg";
+        await SetPhotoBlobNameAsync(removed.Id, blobName);
         DateTime removedAt = timeProvider.UtcNow.UtcDateTime;
         await RemoveSightingAsync(removed.Id, adminId, removedAt);
 
         await using PigeonWatchDbContext db = CreateContext();
         ISightingRepository repository = CreateRepository(db);
-        SightingAccess? visibleAccess = await repository.GetAccessAsync(visible.Id, cancellationToken);
-        SightingAccess? removedAccess = await repository.GetAccessAsync(removed.Id, cancellationToken);
-        SightingAccess? unknownAccess = await repository.GetAccessAsync(Guid.NewGuid(), cancellationToken);
+        SightingPhotoAccess? removedPhotoAccess = await repository.GetPhotoAccessAsync(removed.Id, cancellationToken);
+        SightingPhotoAccess? unknownPhotoAccess = await repository.GetPhotoAccessAsync(Guid.NewGuid(), cancellationToken);
 
-        Assert.Equal(new SightingAccess(reporterId, null), visibleAccess);
-        Assert.NotNull(removedAccess);
-        Assert.Equal(reporterId, removedAccess.ReporterId);
-        Assert.Equal(removedAt, removedAccess.RemovedAt);
-        Assert.Null(unknownAccess);
+        Assert.NotNull(removedPhotoAccess);
+        Assert.Equal(reporterId, removedPhotoAccess.Access.ReporterId);
+        Assert.Equal(removedAt, removedPhotoAccess.Access.RemovedAt);
+        Assert.Equal(blobName, removedPhotoAccess.PhotoBlobName);
+        Assert.Null(unknownPhotoAccess);
     }
 
     [Fact]
@@ -863,7 +863,11 @@ public sealed class SightingRepositoryTests : IDisposable
     {
         await using PigeonWatchDbContext db = CreateContext();
 
-        return await CreateRepository(db).GetPhotoBlobNameAsync(sightingId, cancellationToken);
+        return await db.Sightings
+            .AsNoTracking()
+            .Where(e => e.Id == sightingId)
+            .Select(e => e.PhotoBlobName)
+            .SingleOrDefaultAsync(cancellationToken);
     }
 
     private async Task<bool> HasOtherUserEngagementAsync(Guid sightingId, Guid reporterId)

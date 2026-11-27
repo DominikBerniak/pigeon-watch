@@ -249,7 +249,12 @@ public class SightingsController(
             return NotFoundForSighting(id);
 
         if (!result.Succeeded || result.Sighting is null)
+        {
+            foreach (SightingError error in result.Errors.Where(error => loggedErrorCodes.Contains(error.Code)))
+                LogInvalidInput(error.Code);
+
             return GetValidationProblem<SightingModel>(result.Errors.Select(error => (error.Code, error.Description)));
+        }
 
         SightingEditPermissions? permissions = await sightingService.GetEditPermissionsAsync(result.Sighting, userId, cancellationToken);
 

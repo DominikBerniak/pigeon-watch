@@ -70,17 +70,22 @@ public class SightingThreadService(
         return SightingThreadResult.Success(thread with { LastMessageAt = now, HasUnread = false }, message);
     }
 
-    public async Task<SightingThreadPageResult> ListForSightingAsync(Guid sightingId, Guid userId, int page, CancellationToken cancellationToken = default)
+    public async Task<SightingThreadPageResult> ListForSightingAsync(Guid sightingId, Guid userId, bool isAdmin, int page, CancellationToken cancellationToken = default)
     {
         SightingError? invalidPage = ValidatePage(page);
 
         if (invalidPage is not null)
             return SightingThreadPageResult.Failure([invalidPage]);
 
-        if (await sightingThreadRepository.GetSightingOwnerAsync(sightingId, cancellationToken) is null)
+        SightingAccess? access = await sightingThreadRepository.GetSightingAccessAsync(sightingId, cancellationToken);
+
+        if (access is null)
             return SightingThreadPageResult.Failure([SightingNotFound()]);
 
         SightingThreadPage threads = await sightingThreadRepository.ListThreadsForSightingAsync(sightingId, userId, page, SightingMessageRules.PageSize, cancellationToken);
+
+        if (threads.TotalCount == 0 && !sightingVisibilityProvider.CanView(access, userId, isAdmin))
+            return SightingThreadPageResult.Failure([SightingNotFound()]);
 
         return SightingThreadPageResult.Success(threads);
     }

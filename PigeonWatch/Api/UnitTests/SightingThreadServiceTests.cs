@@ -189,7 +189,7 @@ public class SightingThreadServiceTests
         SightingThreadPage stored = new([Thread()], 21);
         repository.ListThreadsForSightingAsync(sightingId, ownerId, 2, SightingMessageRules.PageSize, Arg.Any<CancellationToken>()).Returns(stored);
 
-        SightingThreadPageResult result = await CreateService().ListForSightingAsync(sightingId, ownerId, 2, cancellationToken);
+        SightingThreadPageResult result = await CreateService().ListForSightingAsync(sightingId, ownerId, false, 2, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.Same(stored, result.Page);
@@ -200,16 +200,37 @@ public class SightingThreadServiceTests
     [InlineData(int.MaxValue)]
     public async Task List_for_sighting_rejects_an_invalid_page_before_the_sighting_lookup(int page)
     {
-        SightingThreadPageResult result = await CreateService().ListForSightingAsync(sightingId, ownerId, page, cancellationToken);
+        SightingThreadPageResult result = await CreateService().ListForSightingAsync(sightingId, ownerId, false, page, cancellationToken);
 
         Assert.Equal([SightingMessageErrorCodes.InvalidPage], Codes(result.Errors));
-        await repository.DidNotReceive().GetSightingOwnerAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await repository.DidNotReceive().GetSightingAccessAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task List_for_sighting_returns_sighting_not_found_to_an_outsider_without_a_thread_on_a_removed_sighting()
+    {
+        RemoveSighting();
+
+        SightingThreadPageResult result = await CreateService().ListForSightingAsync(sightingId, Guid.NewGuid(), false, 1, cancellationToken);
+
+        Assert.Equal([SightingMessageErrorCodes.SightingNotFound], Codes(result.Errors));
+    }
+
+    [Fact]
+    public async Task List_for_sighting_returns_the_empty_page_to_an_admin_on_a_removed_sighting()
+    {
+        RemoveSighting();
+
+        SightingThreadPageResult result = await CreateService().ListForSightingAsync(sightingId, Guid.NewGuid(), true, 1, cancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(0, result.Page!.TotalCount);
     }
 
     [Fact]
     public async Task List_for_sighting_returns_sighting_not_found_for_an_unknown_sighting()
     {
-        SightingThreadPageResult result = await CreateService().ListForSightingAsync(Guid.NewGuid(), ownerId, 1, cancellationToken);
+        SightingThreadPageResult result = await CreateService().ListForSightingAsync(Guid.NewGuid(), ownerId, false, 1, cancellationToken);
 
         Assert.Equal([SightingMessageErrorCodes.SightingNotFound], Codes(result.Errors));
         await repository.DidNotReceive().ListThreadsForSightingAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
@@ -410,9 +431,12 @@ public class SightingThreadServiceTests
     {
         RemoveSighting();
         StoreThreadFor(participantId);
+        repository
+            .ListThreadsForSightingAsync(sightingId, participantId, 1, SightingMessageRules.PageSize, Arg.Any<CancellationToken>())
+            .Returns(new SightingThreadPage([Thread()], 1));
         repository.MarkReadAsync(sightingId, threadId, participantId, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()).Returns(true);
 
-        SightingThreadPageResult threads = await CreateService().ListForSightingAsync(sightingId, participantId, 1, cancellationToken);
+        SightingThreadPageResult threads = await CreateService().ListForSightingAsync(sightingId, participantId, false, 1, cancellationToken);
         SightingMessagePageResult messages = await CreateService().ListMessagesAsync(sightingId, threadId, participantId, 1, cancellationToken);
         SightingThreadReadResult read = await CreateService().MarkReadAsync(sightingId, threadId, participantId, now.UtcDateTime, cancellationToken);
 

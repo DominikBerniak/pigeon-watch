@@ -1,9 +1,9 @@
 ---
 change_id: admin-remove-sightings
 title: Admin remove sightings
-status: implemented
+status: impl_reviewed
 created: 2026-11-17
-updated: 2026-11-24
+updated: 2026-11-27
 archived_at: null
 ---
 

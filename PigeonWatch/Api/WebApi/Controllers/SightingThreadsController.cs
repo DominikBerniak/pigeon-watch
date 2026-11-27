@@ -34,7 +34,7 @@ public class SightingThreadsController(
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
             return UnauthorizedForInvalidIdentity();
 
-        SightingThreadPageResult result = await sightingThreadService.ListForSightingAsync(sightingId, userId, page ?? 1, cancellationToken);
+        SightingThreadPageResult result = await sightingThreadService.ListForSightingAsync(sightingId, userId, User.IsInRole(RoleNames.Admin), page ?? 1, cancellationToken);
 
         if (!result.Succeeded)
             return GetFailure<SightingThreadPageModel>(sightingId, null, result.Errors);

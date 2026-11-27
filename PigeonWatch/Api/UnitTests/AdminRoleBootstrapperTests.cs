@@ -69,8 +69,8 @@ public sealed class AdminRoleBootstrapperTests : IDisposable
         await bootstrapper.RunAsync(cancellationToken);
 
         Assert.True(await IsAdminAsync(adminEmail));
-        Assert.Equal(1, await CountAsync("ROLE"));
-        Assert.Equal(1, await CountAsync("USER_ROLE"));
+        Assert.Equal(1, await CountAsync("SELECT COUNT(*) AS Value FROM ROLE"));
+        Assert.Equal(1, await CountAsync("SELECT COUNT(*) AS Value FROM USER_ROLE"));
         Assert.Empty(LogCalls(bootstrapperLogger));
     }
 
@@ -113,6 +113,32 @@ public sealed class AdminRoleBootstrapperTests : IDisposable
         Assert.DoesNotContain(
             warning.State.Values,
             value => value?.ToString()?.Contains("example.com", StringComparison.OrdinalIgnoreCase) == true);
+    }
+
+    [Fact]
+    public async Task A_failing_grant_is_logged_at_error_with_its_cause_and_the_next_email_is_still_granted()
+    {
+        await RegisterAsync(memberEmail, "Member");
+        await RegisterAsync(adminEmail, "Admin");
+
+        await using (AsyncServiceScope scope = provider.CreateAsyncScope())
+        {
+            PigeonWatchDbContext db = scope.ServiceProvider.GetRequiredService<PigeonWatchDbContext>();
+            await db.Database.ExecuteSqlRawAsync(
+                "CREATE TRIGGER REFUSE_MEMBER_GRANT BEFORE INSERT ON USER_ROLE WHEN NEW.USER_ID = (SELECT ID FROM USER_ACCOUNT WHERE EMAIL = 'member@example.com') BEGIN SELECT RAISE(ABORT, 'grant refused'); END",
+                cancellationToken);
+        }
+
+        Exception? failure = await Record.ExceptionAsync(() => CreateBootstrapper([memberEmail, adminEmail]).RunAsync(cancellationToken));
+
+        Assert.Null(failure);
+        Assert.False(await IsAdminAsync(memberEmail));
+        Assert.True(await IsAdminAsync(adminEmail));
+        (LogLevel Level, Exception? Exception, Dictionary<string, object?> State) error =
+            Assert.Single(LogCalls(bootstrapperLogger), call => call.Level >= LogLevel.Warning);
+        Assert.Equal(LogLevel.Error, error.Level);
+        Assert.NotNull(error.Exception);
+        Assert.Equal(0, error.State["AdminEmailIndex"]);
     }
 
     [Fact]
@@ -167,12 +193,12 @@ public sealed class AdminRoleBootstrapperTests : IDisposable
         return await userManager.IsInRoleAsync(user, RoleNames.Admin);
     }
 
-    private async Task<int> CountAsync(string tableName)
+    private async Task<int> CountAsync(string countQuery)
     {
         await using AsyncServiceScope scope = provider.CreateAsyncScope();
         PigeonWatchDbContext db = scope.ServiceProvider.GetRequiredService<PigeonWatchDbContext>();
         int count = await db.Database
-            .SqlQueryRaw<int>($"SELECT COUNT(*) AS Value FROM {tableName}")
+            .SqlQueryRaw<int>(countQuery)
             .SingleAsync(cancellationToken);
 
         return count;

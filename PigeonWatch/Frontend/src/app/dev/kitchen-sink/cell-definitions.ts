@@ -727,6 +727,13 @@ const editCells: readonly SightingEditCell[] = [
     edit: 'notOwner',
     steps: [],
   },
+  {
+    id: 'edit-removed',
+    label: 'Removed by an admin (removed alert and Back link, no form)',
+    group: 'sightingEdit',
+    edit: 'removed',
+    steps: [],
+  },
 ];
 
 const listRow = 'li[app-sighting-row]';
