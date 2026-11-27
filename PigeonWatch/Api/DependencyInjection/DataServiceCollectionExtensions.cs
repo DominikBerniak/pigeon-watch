@@ -56,6 +56,7 @@ public static class DataServiceCollectionExtensions
                 .ReplaceService<IHistoryRepository, UpperSnakeCaseMigrationsHistory>());
 
         services.AddScoped<IUserAccountMapper, UserAccountMapper>();
+        services.AddScoped<IRoleMapper, RoleMapper>();
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<ISightingMapper, SightingMapper>();
         services.AddScoped<ISightingRepository, SightingRepository>();

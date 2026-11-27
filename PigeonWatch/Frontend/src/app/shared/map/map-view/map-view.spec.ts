@@ -228,6 +228,27 @@ describe('MapView', () => {
     expect(space.defaultPrevented).toBe(false);
   });
 
+  it('adds the removed class only to a removed marker, keeping its criticality class and selection', async () => {
+    const root = await render(null, [{ ...marker, removed: true }, other]);
+
+    expect(icon(root, 'urgent').classList).toContain('pw-map-marker--removed');
+    expect(icon(root, 'urgent').classList).toContain('pw-map-marker');
+    expect(icon(root, 'urgent').classList).not.toContain('pw-map-marker--static');
+    expect(icon(root, 'monitor').classList).not.toContain('pw-map-marker--removed');
+
+    await select(marker.id);
+
+    expect(icon(root, 'urgent').classList).toContain('pw-map-marker--selected');
+    expect(icon(root, 'urgent').classList).toContain('pw-map-marker--removed');
+  });
+
+  it('keeps the removed class on a display-only marker', async () => {
+    const root = await render(null, [{ ...marker, removed: true }], false);
+
+    expect(icon(root, 'urgent').classList).toContain('pw-map-marker--static');
+    expect(icon(root, 'urgent').classList).toContain('pw-map-marker--removed');
+  });
+
   it('redraws the markers when they become display-only', async () => {
     const root = await render();
 

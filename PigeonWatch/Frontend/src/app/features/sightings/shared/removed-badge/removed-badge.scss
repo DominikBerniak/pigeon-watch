@@ -1,0 +1,13 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--pw-space-2);
+  border: var(--pw-border-width) dashed var(--pw-color-map-marker-removed-border);
+  border-radius: var(--pw-radius-full);
+  background-color: var(--pw-color-border-subtle);
+  color: var(--pw-color-text);
+  font-size: var(--pw-font-size-sm);
+  font-weight: var(--pw-font-weight-semibold);
+  line-height: var(--pw-line-height-normal);
+  white-space: nowrap;
+}

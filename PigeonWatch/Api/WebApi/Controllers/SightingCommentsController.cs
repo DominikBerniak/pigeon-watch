@@ -21,7 +21,8 @@ public class SightingCommentsController(
 
     private static readonly HashSet<string> loggedErrorCodes =
     [
-        SightingCommentErrorCodes.InvalidPage
+        SightingCommentErrorCodes.InvalidPage,
+        SightingCommentErrorCodes.SightingRemoved
     ];
 
     [HttpGet]
@@ -32,7 +33,7 @@ public class SightingCommentsController(
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
             return UnauthorizedForInvalidIdentity();
 
-        SightingCommentPageResult result = await sightingCommentService.ListAsync(sightingId, page ?? 1, cancellationToken);
+        SightingCommentPageResult result = await sightingCommentService.ListAsync(sightingId, userId, User.IsInRole(RoleNames.Admin), page ?? 1, cancellationToken);
 
         if (!result.Succeeded)
             return GetFailure<SightingCommentPageModel>(sightingId, null, result.Errors, null);
@@ -46,7 +47,7 @@ public class SightingCommentsController(
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
             return UnauthorizedForInvalidIdentity();
 
-        SightingCommentResult result = await sightingCommentService.CreateAsync(sightingId, userId, request.Text, cancellationToken);
+        SightingCommentResult result = await sightingCommentService.CreateAsync(sightingId, userId, User.IsInRole(RoleNames.Admin), request.Text, cancellationToken);
 
         if (!result.Succeeded || result.Comment is null)
             return GetFailure<SightingCommentModel>(sightingId, null, result.Errors, result.RetryAfterSeconds);
@@ -62,7 +63,7 @@ public class SightingCommentsController(
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
             return UnauthorizedForInvalidIdentity();
 
-        SightingCommentResult result = await sightingCommentService.UpdateAsync(sightingId, commentId, userId, request.Text, cancellationToken);
+        SightingCommentResult result = await sightingCommentService.UpdateAsync(sightingId, commentId, userId, User.IsInRole(RoleNames.Admin), request.Text, cancellationToken);
 
         if (!result.Succeeded || result.Comment is null)
             return GetFailure<SightingCommentModel>(sightingId, commentId, result.Errors, result.RetryAfterSeconds);
@@ -76,7 +77,7 @@ public class SightingCommentsController(
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
             return UnauthorizedForInvalidIdentity();
 
-        SightingCommentResult result = await sightingCommentService.DeleteAsync(sightingId, commentId, userId, cancellationToken);
+        SightingCommentResult result = await sightingCommentService.DeleteAsync(sightingId, commentId, userId, User.IsInRole(RoleNames.Admin), cancellationToken);
 
         if (!result.Succeeded || result.Comment is null)
             return GetFailure<SightingCommentModel>(sightingId, commentId, result.Errors, null);

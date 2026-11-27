@@ -158,6 +158,10 @@ export class MessageThread {
   protected readonly older = signal<OlderState>({ kind: 'idle' });
   protected readonly sending = signal(false);
   protected readonly sendFailure = signal<MessageFailure | null>(null);
+  private readonly removedOnSend = signal(false);
+  protected readonly sightingRemoved = computed(
+    () => this.thread()?.isSightingRemoved === true || this.removedOnSend(),
+  );
   protected readonly replyForm = form(this.replyModel, (path) => {
     maxLength(path.text, () => this.rules().textMaxLength);
   });
@@ -276,7 +280,7 @@ export class MessageThread {
   }
 
   protected send(): void {
-    if (this.sending() || isBlank(this.replyModel().text)) return;
+    if (this.sending() || this.sightingRemoved() || isBlank(this.replyModel().text)) return;
 
     this.submitState.markSubmitted();
     this.sendFailure.set(null);
@@ -305,8 +309,17 @@ export class MessageThread {
           this.replyForm().reset();
           this.submitState.reset();
         },
-        error: (error: unknown) =>
-          this.sendFailure.set(this.failureOf(error, 'sighting.messages.send')),
+        error: (error: unknown) => {
+          const failure = this.failureOf(error, 'sighting.messages.send');
+
+          if (failure.kind === 'removed') {
+            this.removedOnSend.set(true);
+
+            return;
+          }
+
+          this.sendFailure.set(failure);
+        },
       });
   }
 
@@ -337,6 +350,7 @@ export class MessageThread {
     ) {
       this.sendRequest?.unsubscribe();
       this.sendRequest = null;
+      this.removedOnSend.set(false);
       this.replyModel.set({ text: '' });
       this.replyForm().reset();
       this.submitState.reset();

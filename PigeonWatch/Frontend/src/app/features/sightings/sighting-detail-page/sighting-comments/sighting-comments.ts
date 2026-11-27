@@ -143,6 +143,7 @@ export class SightingComments {
   private olderRequest: Subscription | null = null;
 
   readonly sightingId = input.required<string>();
+  readonly readOnly = input(false);
 
   protected readonly rules = computed(
     () => this.configuration.clientConfig()?.commentRules ?? fallbackCommentRules,

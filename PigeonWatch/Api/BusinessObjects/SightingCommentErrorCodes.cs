@@ -10,4 +10,5 @@ public static class SightingCommentErrorCodes
     public const string NotCommentAuthor = "NotCommentAuthor";
     public const string AuthorNotFound = "AuthorNotFound";
     public const string InvalidPage = SightingErrorCodes.InvalidPage;
+    public const string SightingRemoved = SightingErrorCodes.SightingRemoved;
 }

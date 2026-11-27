@@ -5,6 +5,7 @@ namespace PigeonWatch.Data.Repositories;
 public interface ISightingThreadRepository
 {
     Task<Guid?> GetSightingOwnerAsync(Guid sightingId, CancellationToken cancellationToken = default);
+    Task<SightingAccess?> GetSightingAccessAsync(Guid sightingId, CancellationToken cancellationToken = default);
     Task<SightingThread?> FindThreadAsync(Guid sightingId, Guid participantId, CancellationToken cancellationToken = default);
     Task<SightingThread?> GetThreadForUserAsync(Guid sightingId, Guid threadId, Guid userId, CancellationToken cancellationToken = default);
     Task<bool> IsThreadVisibleToUserAsync(Guid sightingId, Guid threadId, Guid userId, CancellationToken cancellationToken = default);

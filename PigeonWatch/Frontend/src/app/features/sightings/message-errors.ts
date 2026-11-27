@@ -11,6 +11,7 @@ export type MessageFailure =
   | { readonly kind: 'notFound' }
   | { readonly kind: 'ownSighting'; readonly traceId?: string }
   | { readonly kind: 'textRequired' }
+  | { readonly kind: 'removed' }
   | { readonly kind: 'unexpected'; readonly traceId?: string };
 
 export type MessageContext =
@@ -25,6 +26,7 @@ export type MessageContext =
 
 const ownSightingCode = 'ownsightingcontact';
 const textRequiredCode = 'messagetextrequired';
+const sightingRemovedCode = 'sightingremoved';
 
 export function messageFailure(error: unknown): MessageFailure {
   if (!(error instanceof HttpErrorResponse)) return unexpected(error);
@@ -40,6 +42,8 @@ export function messageFailure(error: unknown): MessageFailure {
   }
 
   if (hasCode(error, textRequiredCode)) return { kind: 'textRequired' };
+
+  if (hasCode(error, sightingRemovedCode)) return { kind: 'removed' };
 
   return unexpected(error);
 }
@@ -66,6 +70,8 @@ export function messageErrorMessage(resources: ResourceService, failure: Message
       return resources.translate('sighting.messages.errors.ownSighting');
     case 'textRequired':
       return resources.translate('sighting.messages.validation.required');
+    case 'removed':
+      return resources.translate('sighting.messages.errors.removed');
     default:
       return resources.translate('sighting.messages.errors.send');
   }

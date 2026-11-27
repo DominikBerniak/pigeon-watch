@@ -41,7 +41,8 @@ public class SightingsController(
         SightingErrorCodes.InvalidPageSize,
         SightingErrorCodes.PhotoTooLarge,
         SightingErrorCodes.PhotoUnsupportedType,
-        SightingErrorCodes.PhotoUnreadable
+        SightingErrorCodes.PhotoUnreadable,
+        SightingErrorCodes.SightingRemoved
     ];
 
     [HttpPost]
@@ -85,7 +86,7 @@ public class SightingsController(
 
         SightingUpdate update = updateSightingRequestMapper.Map(id, userId, request);
         await using Stream? photoContent = update.Photo?.Content;
-        SightingUpdateResult result = await sightingService.UpdateAsync(update, cancellationToken);
+        SightingUpdateResult result = await sightingService.UpdateAsync(update, User.IsInRole(RoleNames.Admin), cancellationToken);
 
         if (result.Errors.Any(error => error.Code == SightingErrorCodes.SightingNotFound))
             return NotFoundForSighting(id);
@@ -104,6 +105,28 @@ public class SightingsController(
         return Ok(sightingViewModelCreator.Create(result.Sighting, userId, result.Permissions));
     }
 
+    [HttpDelete("{id:guid}")]
+    public async Task<ActionResult<SightingModel>> Remove(Guid id, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+            return UnauthorizedForInvalidIdentity();
+
+        SightingRemovalResult result = await sightingService.RemoveAsync(id, userId, User.IsInRole(RoleNames.Admin), cancellationToken);
+
+        return await GetRemovalResponseAsync(id, userId, result, cancellationToken);
+    }
+
+    [HttpPost("{id:guid}/restore")]
+    public async Task<ActionResult<SightingModel>> Restore(Guid id, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+            return UnauthorizedForInvalidIdentity();
+
+        SightingRemovalResult result = await sightingService.RestoreAsync(id, User.IsInRole(RoleNames.Admin), cancellationToken);
+
+        return await GetRemovalResponseAsync(id, userId, result, cancellationToken);
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<SightingModel>> Get(Guid id, CancellationToken cancellationToken)
     {
@@ -112,7 +135,7 @@ public class SightingsController(
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
             return UnauthorizedForInvalidIdentity();
 
-        Sighting? sighting = await sightingService.GetAsync(id, cancellationToken);
+        Sighting? sighting = await sightingService.GetAsync(id, userId, User.IsInRole(RoleNames.Admin), cancellationToken);
 
         if (sighting is null)
             return NotFoundForSighting(id);
@@ -128,7 +151,10 @@ public class SightingsController(
     {
         Response.Headers.CacheControl = noStoreCacheControl;
 
-        Stream? photo = await sightingService.OpenPhotoAsync(id, cancellationToken);
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+            return UnauthorizedForInvalidIdentity();
+
+        Stream? photo = await sightingService.OpenPhotoAsync(id, userId, User.IsInRole(RoleNames.Admin), cancellationToken);
 
         if (photo is null)
             return NotFoundForSighting(id);
@@ -142,7 +168,10 @@ public class SightingsController(
     {
         Response.Headers.CacheControl = noStoreCacheControl;
 
-        Stream? thumbnail = await sightingService.OpenPhotoThumbnailAsync(id, cancellationToken);
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+            return UnauthorizedForInvalidIdentity();
+
+        Stream? thumbnail = await sightingService.OpenPhotoThumbnailAsync(id, userId, User.IsInRole(RoleNames.Admin), cancellationToken);
 
         if (thumbnail is null)
             return NotFoundForSighting(id);
@@ -159,7 +188,7 @@ public class SightingsController(
             return UnauthorizedForInvalidIdentity();
 
         NearbySightingFilters filters = nearbySightingsRequestMapper.MapFilters(request);
-        SightingNearbyResult result = await sightingService.GetNearbyAsync(request.Latitude, request.Longitude, filters.Statuses, filters.Criticalities, cancellationToken);
+        SightingNearbyResult result = await sightingService.GetNearbyAsync(request.Latitude, request.Longitude, filters.Statuses, filters.Criticalities, User.IsInRole(RoleNames.Admin), cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -181,7 +210,7 @@ public class SightingsController(
             return UnauthorizedForInvalidIdentity();
 
         SightingListQuery query = sightingListRequestMapper.Map(request);
-        SightingListResult result = await sightingService.GetListPageAsync(query, cancellationToken);
+        SightingListResult result = await sightingService.GetListPageAsync(query, User.IsInRole(RoleNames.Admin), cancellationToken);
 
         if (!result.Succeeded)
         {
@@ -205,5 +234,30 @@ public class SightingsController(
         IReadOnlyList<Sighting> sightings = await sightingService.GetMineAsync(userId, cancellationToken);
 
         return Ok(sightingViewModelCreator.CreateList(sightings, userId));
+    }
+
+    private async Task<ActionResult<SightingModel>> GetRemovalResponseAsync(
+        Guid id,
+        Guid userId,
+        SightingRemovalResult result,
+        CancellationToken cancellationToken = default)
+    {
+        if (result.Errors.Any(error => error.Code == SightingErrorCodes.NotAdmin))
+            return ForbiddenForNonAdmin();
+
+        if (result.Errors.Any(error => error.Code == SightingErrorCodes.SightingNotFound))
+            return NotFoundForSighting(id);
+
+        if (!result.Succeeded || result.Sighting is null)
+        {
+            foreach (SightingError error in result.Errors.Where(error => loggedErrorCodes.Contains(error.Code)))
+                LogInvalidInput(error.Code);
+
+            return GetValidationProblem<SightingModel>(result.Errors.Select(error => (error.Code, error.Description)));
+        }
+
+        SightingEditPermissions? permissions = await sightingService.GetEditPermissionsAsync(result.Sighting, userId, cancellationToken);
+
+        return Ok(sightingViewModelCreator.Create(result.Sighting, userId, permissions));
     }
 }

@@ -22,7 +22,7 @@
       </app-error-retry>
     }
   }
-  @if (sighting()?.isMine) {
+  @if (sighting()?.isMine && !sighting()?.removedAt) {
     <a headerActions mat-stroked-button [routerLink]="['/sightings', sighting()?.id, 'edit']">{{
       'sighting.detail.edit' | translate
     }}</a>
@@ -43,9 +43,47 @@
       }
     </button>
   }
+  @if (canRemove()) {
+    <button
+      headerActions
+      mat-stroked-button
+      type="button"
+      class="sighting-detail__remove"
+      disabledInteractive
+      [disabled]="moderating()"
+      [attr.aria-busy]="moderating()"
+      (click)="confirmRemove()"
+    >
+      {{ 'sighting.detail.remove' | translate }}
+    </button>
+  }
+  @if (canRestore()) {
+    <button
+      headerActions
+      mat-stroked-button
+      type="button"
+      disabledInteractive
+      [disabled]="moderating()"
+      [attr.aria-busy]="moderating()"
+      (click)="restore()"
+    >
+      {{ 'sighting.detail.restore' | translate }}
+    </button>
+  }
   @if (sighting(); as sighting) {
     <div class="sighting-detail" [class.sighting-detail--map]="mapShown()">
       <div class="sighting-detail__details">
+        @if (moderationErrorText(); as text) {
+          <app-alert kind="error">
+            {{ text }}
+            <app-error-reference [traceId]="moderationErrorTraceId()" />
+          </app-alert>
+        }
+        @if (sighting.removedAt) {
+          <app-alert kind="info" class="sighting-detail__removed">{{
+            'sighting.removed.notice' | translate
+          }}</app-alert>
+        }
         @if (photo().kind === 'error') {
           <app-alert kind="info">{{ 'sighting.detail.photoError' | translate }}</app-alert>
         }
@@ -95,7 +133,7 @@
                     >
                       <app-icon name="mail" />
                     </a>
-                  } @else {
+                  } @else if (!sighting.removedAt) {
                     <button
                       mat-icon-button
                       type="button"
@@ -128,7 +166,7 @@
             {{ coordinatesText() }}
           </div>
         </dl>
-        <app-sighting-comments [sightingId]="sighting.id" />
+        <app-sighting-comments [sightingId]="sighting.id" [readOnly]="!!sighting.removedAt" />
       </div>
       <div class="sighting-detail__map">
         <div id="sighting-detail-map">

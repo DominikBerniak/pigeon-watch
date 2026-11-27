@@ -256,6 +256,101 @@ public sealed class PigeonWatchUserStoreTests : IDisposable
         Assert.Equal(2, reloaded.AccessFailedCount);
     }
 
+    [Fact]
+    public async Task Add_to_role_then_get_roles_returns_the_role_name()
+    {
+        ApplicationUser user = NewUser("user@example.com", "Pidgey");
+        await CreateAsync(user);
+        await CreateRoleAsync("Admin");
+
+        await using (PigeonWatchDbContext db = CreateContext())
+        {
+            PigeonWatchUserStore store = CreateStore(db);
+            ApplicationUser loaded = (await store.FindByIdAsync(user.Id.ToString(), cancellationToken))!;
+            await store.AddToRoleAsync(loaded, "ADMIN", cancellationToken);
+            await store.UpdateAsync(loaded, cancellationToken);
+        }
+
+        await using PigeonWatchDbContext readDb = CreateContext();
+        IList<string> roles = await CreateStore(readDb).GetRolesAsync(user, cancellationToken);
+
+        Assert.Equal(["Admin"], roles);
+    }
+
+    [Fact]
+    public async Task Is_in_role_is_true_only_for_a_saved_membership_of_that_role()
+    {
+        ApplicationUser member = NewUser("member@example.com", "Pidgey");
+        ApplicationUser other = NewUser("other@example.com", "Feathers");
+        await CreateAsync(member);
+        await CreateAsync(other);
+        await CreateRoleAsync("Admin");
+        await CreateRoleAsync("Moderator");
+
+        await using (PigeonWatchDbContext db = CreateContext())
+        {
+            PigeonWatchUserStore store = CreateStore(db);
+            ApplicationUser loaded = (await store.FindByIdAsync(member.Id.ToString(), cancellationToken))!;
+            await store.AddToRoleAsync(loaded, "ADMIN", cancellationToken);
+            await store.UpdateAsync(loaded, cancellationToken);
+        }
+
+        await using PigeonWatchDbContext readDb = CreateContext();
+        PigeonWatchUserStore readStore = CreateStore(readDb);
+
+        Assert.True(await readStore.IsInRoleAsync(member, "ADMIN", cancellationToken));
+        Assert.False(await readStore.IsInRoleAsync(member, "MODERATOR", cancellationToken));
+        Assert.False(await readStore.IsInRoleAsync(member, "UNKNOWN", cancellationToken));
+        Assert.False(await readStore.IsInRoleAsync(other, "ADMIN", cancellationToken));
+        Assert.Equal([member.Id], (await readStore.GetUsersInRoleAsync("ADMIN", cancellationToken)).Select(user => user.Id));
+    }
+
+    [Fact]
+    public async Task Add_to_an_unknown_role_throws_and_adds_no_row()
+    {
+        ApplicationUser user = NewUser("user@example.com", "Pidgey");
+        await CreateAsync(user);
+
+        await using PigeonWatchDbContext db = CreateContext();
+        PigeonWatchUserStore store = CreateStore(db);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => store.AddToRoleAsync(user, "UNKNOWN", cancellationToken));
+        Assert.Equal(0, await CountUserRolesAsync());
+    }
+
+    [Fact]
+    public async Task User_manager_add_to_role_persists_the_user_role_row_and_remove_from_role_deletes_it()
+    {
+        ApplicationUser user = NewUser("user@example.com", "Pidgey");
+        await CreateAsync(user);
+        await CreateRoleAsync("Admin");
+
+        IdentityResult added;
+        await using (PigeonWatchDbContext db = CreateContext())
+        {
+            UserManager<ApplicationUser> userManager = CreateUserManager(db);
+            ApplicationUser loaded = (await userManager.FindByIdAsync(user.Id.ToString()))!;
+            added = await userManager.AddToRoleAsync(loaded, "Admin");
+        }
+
+        int rowsAfterAdd = await CountUserRolesAsync();
+        IList<string> roles;
+        IdentityResult removed;
+        await using (PigeonWatchDbContext db = CreateContext())
+        {
+            UserManager<ApplicationUser> userManager = CreateUserManager(db);
+            ApplicationUser loaded = (await userManager.FindByIdAsync(user.Id.ToString()))!;
+            roles = await userManager.GetRolesAsync(loaded);
+            removed = await userManager.RemoveFromRoleAsync(loaded, "Admin");
+        }
+
+        Assert.True(added.Succeeded);
+        Assert.Equal(1, rowsAfterAdd);
+        Assert.Equal(["Admin"], roles);
+        Assert.True(removed.Succeeded);
+        Assert.Equal(0, await CountUserRolesAsync());
+    }
+
     public void Dispose()
     {
         connection.Dispose();
@@ -266,6 +361,25 @@ public sealed class PigeonWatchUserStoreTests : IDisposable
         await using PigeonWatchDbContext db = CreateContext();
 
         return await CreateStore(db).CreateAsync(user, cancellationToken);
+    }
+
+    private async Task CreateRoleAsync(string name)
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+        PigeonWatchRoleStore roleStore = new(db, new RoleMapper(), new IdentityErrorDescriber(), NullLogger<PigeonWatchRoleStore>.Instance);
+        IdentityResult result = await roleStore.CreateAsync(new ApplicationRole { Name = name, NormalizedName = normalizer.NormalizeName(name)! }, cancellationToken);
+
+        Assert.True(result.Succeeded);
+    }
+
+    private async Task<int> CountUserRolesAsync()
+    {
+        await using PigeonWatchDbContext db = CreateContext();
+        int count = await db.Database
+            .SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM USER_ROLE")
+            .SingleAsync(cancellationToken);
+
+        return count;
     }
 
     private ApplicationUser NewUser(string email, string displayName)

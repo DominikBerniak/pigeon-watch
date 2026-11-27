@@ -22,7 +22,8 @@ public class SightingThreadsController(
     private static readonly HashSet<string> loggedErrorCodes =
     [
         SightingMessageErrorCodes.OwnSightingContact,
-        SightingMessageErrorCodes.InvalidPage
+        SightingMessageErrorCodes.InvalidPage,
+        SightingMessageErrorCodes.SightingRemoved
     ];
 
     [HttpGet]
@@ -33,7 +34,7 @@ public class SightingThreadsController(
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
             return UnauthorizedForInvalidIdentity();
 
-        SightingThreadPageResult result = await sightingThreadService.ListForSightingAsync(sightingId, userId, page ?? 1, cancellationToken);
+        SightingThreadPageResult result = await sightingThreadService.ListForSightingAsync(sightingId, userId, User.IsInRole(RoleNames.Admin), page ?? 1, cancellationToken);
 
         if (!result.Succeeded)
             return GetFailure<SightingThreadPageModel>(sightingId, null, result.Errors);
@@ -47,7 +48,7 @@ public class SightingThreadsController(
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
             return UnauthorizedForInvalidIdentity();
 
-        SightingThreadResult result = await sightingThreadService.StartAsync(sightingId, userId, request.Text, cancellationToken);
+        SightingThreadResult result = await sightingThreadService.StartAsync(sightingId, userId, User.IsInRole(RoleNames.Admin), request.Text, cancellationToken);
 
         if (!result.Succeeded || result.Thread is null || result.Message is null)
             return GetFailure<SightingThreadStartModel>(sightingId, null, result.Errors);

@@ -38,6 +38,17 @@ export class SightingsApi {
     );
   }
 
+  remove(id: string): Observable<Sighting> {
+    return this.http.delete<Sighting>(`${environment.apiUrl}/sightings/${encodeURIComponent(id)}`);
+  }
+
+  restore(id: string): Observable<Sighting> {
+    return this.http.post<Sighting>(
+      `${environment.apiUrl}/sightings/${encodeURIComponent(id)}/restore`,
+      null,
+    );
+  }
+
   photo(id: string): Observable<Blob> {
     return this.http.get(`${environment.apiUrl}/sightings/${encodeURIComponent(id)}/photo`, {
       responseType: 'blob',

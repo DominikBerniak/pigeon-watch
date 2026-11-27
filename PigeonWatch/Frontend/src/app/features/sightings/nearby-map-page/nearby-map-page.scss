@@ -77,6 +77,10 @@
   overflow-wrap: anywhere;
 }
 
+.nearby-selected__removed {
+  align-self: flex-start;
+}
+
 .nearby-selected__content {
   display: flex;
   flex-direction: column;

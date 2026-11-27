@@ -22,6 +22,7 @@ const started: SightingThreadStart = {
     isOwner: false,
     lastMessageAt: '2026-11-07T12:00:00Z',
     hasUnread: false,
+    isSightingRemoved: false,
   },
   message: {
     id: 'message-1',

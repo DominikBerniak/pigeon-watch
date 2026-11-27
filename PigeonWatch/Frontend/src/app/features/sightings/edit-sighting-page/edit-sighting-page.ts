@@ -86,6 +86,7 @@ type EditState =
   | { readonly kind: 'notFound' }
   | { readonly kind: 'error'; readonly traceId?: string }
   | { readonly kind: 'notOwner'; readonly sighting: Sighting }
+  | { readonly kind: 'removed'; readonly sighting: Sighting }
   | { readonly kind: 'editing'; readonly sighting: Sighting };
 
 type ReloadFailure =
@@ -204,7 +205,7 @@ export class EditSightingPage {
   protected readonly subtitle = computed(() => {
     const state = this.state();
 
-    if (state.kind !== 'editing' && state.kind !== 'notOwner') return '';
+    if (state.kind !== 'editing' && state.kind !== 'notOwner' && state.kind !== 'removed') return '';
 
     return state.sighting.name ?? this.resources.translate('sighting.unnamed');
   });
@@ -358,6 +359,13 @@ export class EditSightingPage {
     }
 
     const sighting = result.sighting;
+
+    if (sighting.removedAt !== null) {
+      this.state.set({ kind: 'removed', sighting });
+      this.shownSightings.next(null);
+
+      return;
+    }
 
     if (sighting.editPermissions === null) {
       this.state.set({ kind: 'notOwner', sighting });

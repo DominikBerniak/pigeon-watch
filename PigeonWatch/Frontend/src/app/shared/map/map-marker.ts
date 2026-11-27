@@ -6,6 +6,7 @@ export interface MapMarker extends GeoPoint {
   readonly id: string;
   readonly kind: MapMarkerKind;
   readonly label?: string;
+  readonly removed?: boolean;
 }
 
 export const mapMarkerClassNames: Readonly<Record<MapMarkerKind, string>> = {
@@ -17,5 +18,7 @@ export const mapMarkerClassNames: Readonly<Record<MapMarkerKind, string>> = {
 export const mapMarkerSelectedClassName = 'pw-map-marker--selected';
 
 export const mapMarkerStaticClassName = 'pw-map-marker--static';
+
+export const mapMarkerRemovedClassName = 'pw-map-marker--removed';
 
 export const mapPinClassName = 'pw-map-marker pw-map-marker--pin';

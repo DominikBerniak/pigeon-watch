@@ -28,4 +28,8 @@ internal class SightingEntity : AuditableEntity
 
     [MaxLength(SightingRules.PhotoBlobNameMaxLength)]
     public string? PhotoBlobName { get; set; }
+
+    public DateTime? RemovedAt { get; set; }
+
+    public Guid? RemovedBy { get; set; }
 }

@@ -80,6 +80,15 @@ const profileCells: readonly ProfileCell[] = [
     steps: [],
   },
   {
+    id: 'read-only-my-sightings-removed',
+    label: 'Read-only, My sightings with a removed sighting (Removed badge in its row)',
+    group: 'profile',
+    save: 'success',
+    password: 'success',
+    mine: 'itemsWithRemoved',
+    steps: [],
+  },
+  {
     id: 'edit-pristine',
     label: 'Edit, pristine (Save disabled)',
     group: 'profile',
@@ -202,6 +211,7 @@ const dialogCells: readonly ProfileCell[] = [
 ];
 
 const marker = '.pw-map-marker--urgent';
+const removedMarker = '.pw-map-marker--removed';
 const status = '[role="status"]';
 const zoomIn = '.leaflet-control-zoom-in';
 const countryToSearchZoomSteps = 4;
@@ -385,12 +395,26 @@ const nearbyMapCells: readonly NearbyMapCell[] = [
     leaflet: 'failure',
     steps: [],
   },
+  {
+    id: 'map-removed',
+    label: 'Admin view with a removed sighting (muted dashed marker, Removed badge on its card)',
+    group: 'nearbyMap',
+    geolocation: 'ok',
+    nearby: 'itemsWithRemoved',
+    leaflet: 'tileless',
+    steps: [],
+    manual: {
+      action: 'Select the removed marker',
+      steps: [click(removedMarker), waitFor('mat-card app-removed-badge')],
+    },
+  },
 ];
 
 const detailMap = '#sighting-detail-map app-map-view';
 const commentForm = 'form.sighting-comments__add';
 const commentField = `${commentForm} textarea`;
 const contactButton = 'button.sighting-detail__contact';
+const removeButton = 'button.sighting-detail__remove';
 const messageField = 'textarea';
 const openMessageDialog = (...steps: CellStep[]): CellScenario => ({
   action: 'Open dialog',
@@ -638,6 +662,47 @@ const detailCells: readonly SightingDetailCell[] = [
       waitFor('app-alert'),
     ),
   },
+  {
+    id: 'detail-admin',
+    label: 'Admin, removable sighting (Remove in the header)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    admin: true,
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'detail-admin-remove-dialog',
+    label: 'Admin, remove confirmation dialog (Cancel, then Remove sighting)',
+    group: 'sightingDetail',
+    detail: 'loaded',
+    admin: true,
+    leaflet: 'tileless',
+    steps: [],
+    dialog: {
+      action: 'Open dialog',
+      trigger: click(removeButton),
+      steps: [waitFor('mat-dialog-actions')],
+    },
+  },
+  {
+    id: 'detail-admin-removed',
+    label: 'Admin, removed sighting (removed notice and Restore in the header)',
+    group: 'sightingDetail',
+    detail: 'loadedRemoved',
+    admin: true,
+    leaflet: 'tileless',
+    steps: [],
+  },
+  {
+    id: 'detail-removed-reporter',
+    label: 'Reporter, removed sighting (notice, no Edit, comments without the form or own actions)',
+    group: 'sightingDetail',
+    detail: 'loadedOwnRemoved',
+    comments: 'items',
+    leaflet: 'tileless',
+    steps: [press('sighting.comments.expand')],
+  },
 ];
 
 const editCells: readonly SightingEditCell[] = [
@@ -660,6 +725,13 @@ const editCells: readonly SightingEditCell[] = [
     label: 'Not the owner (cannot-edit alert and Back link)',
     group: 'sightingEdit',
     edit: 'notOwner',
+    steps: [],
+  },
+  {
+    id: 'edit-removed',
+    label: 'Removed by an admin (removed alert and Back link, no form)',
+    group: 'sightingEdit',
+    edit: 'removed',
     steps: [],
   },
 ];
@@ -824,6 +896,15 @@ const messagesCells: readonly MessagesCell[] = [
       trigger: click('button.message-thread__expand'),
       steps: [waitFor('li.message-thread__item')],
     },
+  },
+  {
+    id: 'messages-thread-removed',
+    label: 'Thread of a removed sighting (history readable, notice instead of the reply box)',
+    group: 'messages',
+    inbox: 'items',
+    selected: true,
+    removedSighting: true,
+    steps: [],
   },
 ];
 

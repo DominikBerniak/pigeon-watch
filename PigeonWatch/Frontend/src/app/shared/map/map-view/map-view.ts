@@ -27,6 +27,7 @@ import { attributionHtml, mapTiles } from '../map-config';
 import {
   MapMarker,
   mapMarkerClassNames,
+  mapMarkerRemovedClassName,
   mapMarkerSelectedClassName,
   mapMarkerStaticClassName,
   mapPinClassName,
@@ -221,9 +222,7 @@ export class MapView {
       const shown = leaflet
         .marker([marker.latitude, marker.longitude], {
           icon: leaflet.divIcon({
-            className: interactive
-              ? mapMarkerClassNames[marker.kind]
-              : `${mapMarkerClassNames[marker.kind]} ${mapMarkerStaticClassName}`,
+            className: markerClassName(marker, interactive),
             iconSize: undefined,
           }),
           title: marker.label ?? '',
@@ -316,6 +315,16 @@ export class MapView {
     control.addAttribution(attribution);
     this.shownAttribution = attribution;
   }
+}
+
+function markerClassName(marker: MapMarker, interactive: boolean): string {
+  const classNames = [mapMarkerClassNames[marker.kind]];
+
+  if (!interactive) classNames.push(mapMarkerStaticClassName);
+
+  if (marker.removed) classNames.push(mapMarkerRemovedClassName);
+
+  return classNames.join(' ');
 }
 
 function leafletOf(module: LeafletImport): LeafletModule {

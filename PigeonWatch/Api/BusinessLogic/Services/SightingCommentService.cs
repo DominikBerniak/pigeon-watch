@@ -6,9 +6,10 @@ namespace PigeonWatch.BusinessLogic.Services;
 public class SightingCommentService(
     ISightingCommentRepository sightingCommentRepository,
     ISubmissionCooldownProvider submissionCooldownProvider,
+    ISightingVisibilityProvider sightingVisibilityProvider,
     TimeProvider timeProvider) : ISightingCommentService
 {
-    public async Task<SightingCommentPageResult> ListAsync(Guid sightingId, int page, CancellationToken cancellationToken = default)
+    public async Task<SightingCommentPageResult> ListAsync(Guid sightingId, Guid userId, bool isAdmin, int page, CancellationToken cancellationToken = default)
     {
         if (page < 1)
             return SightingCommentPageResult.Failure([new SightingError(SightingCommentErrorCodes.InvalidPage, "Page must be 1 or greater.")]);
@@ -16,7 +17,7 @@ public class SightingCommentService(
         if (page > int.MaxValue / SightingCommentRules.PageSize)
             return SightingCommentPageResult.Failure([new SightingError(SightingCommentErrorCodes.InvalidPage, "Page is too large.")]);
 
-        if (!await sightingCommentRepository.SightingExistsAsync(sightingId, cancellationToken))
+        if (await GetVisibleAccessAsync(sightingId, userId, isAdmin, cancellationToken) is null)
             return SightingCommentPageResult.Failure([SightingNotFound()]);
 
         SightingCommentPage comments = await sightingCommentRepository.ListPageAsync(sightingId, page, SightingCommentRules.PageSize, cancellationToken);
@@ -24,7 +25,7 @@ public class SightingCommentService(
         return SightingCommentPageResult.Success(comments);
     }
 
-    public async Task<SightingCommentResult> CreateAsync(Guid sightingId, Guid authorId, string text, CancellationToken cancellationToken = default)
+    public async Task<SightingCommentResult> CreateAsync(Guid sightingId, Guid authorId, bool isAdmin, string text, CancellationToken cancellationToken = default)
     {
         string trimmed = text.Trim();
         SightingError? invalidText = ValidateText(trimmed);
@@ -32,8 +33,13 @@ public class SightingCommentService(
         if (invalidText is not null)
             return SightingCommentResult.Failure([invalidText]);
 
-        if (!await sightingCommentRepository.SightingExistsAsync(sightingId, cancellationToken))
+        SightingAccess? access = await GetVisibleAccessAsync(sightingId, authorId, isAdmin, cancellationToken);
+
+        if (access is null)
             return SightingCommentResult.Failure([SightingNotFound()]);
+
+        if (sightingVisibilityProvider.IsRemoved(access))
+            return SightingCommentResult.Failure([SightingRemoved()]);
 
         SightingCommentResult? cooldown = await CheckCooldownAsync(authorId, cancellationToken);
 
@@ -48,13 +54,18 @@ public class SightingCommentService(
         return SightingCommentResult.Success(created);
     }
 
-    public async Task<SightingCommentResult> UpdateAsync(Guid sightingId, Guid commentId, Guid userId, string text, CancellationToken cancellationToken = default)
+    public async Task<SightingCommentResult> UpdateAsync(Guid sightingId, Guid commentId, Guid userId, bool isAdmin, string text, CancellationToken cancellationToken = default)
     {
         string trimmed = text.Trim();
         SightingError? invalidText = ValidateText(trimmed);
 
         if (invalidText is not null)
             return SightingCommentResult.Failure([invalidText]);
+
+        SightingAccess? access = await GetVisibleAccessAsync(sightingId, userId, isAdmin, cancellationToken);
+
+        if (access is null)
+            return SightingCommentResult.Failure([SightingNotFound()]);
 
         SightingComment? existing = await sightingCommentRepository.GetAsync(sightingId, commentId, cancellationToken);
 
@@ -63,6 +74,9 @@ public class SightingCommentService(
 
         if (existing.AuthorId != userId)
             return SightingCommentResult.Failure([NotCommentAuthor()]);
+
+        if (sightingVisibilityProvider.IsRemoved(access))
+            return SightingCommentResult.Failure([SightingRemoved()]);
 
         if (existing.Text == trimmed)
             return SightingCommentResult.Success(existing);
@@ -80,8 +94,13 @@ public class SightingCommentService(
         return SightingCommentResult.Success(updated);
     }
 
-    public async Task<SightingCommentResult> DeleteAsync(Guid sightingId, Guid commentId, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<SightingCommentResult> DeleteAsync(Guid sightingId, Guid commentId, Guid userId, bool isAdmin, CancellationToken cancellationToken = default)
     {
+        SightingAccess? access = await GetVisibleAccessAsync(sightingId, userId, isAdmin, cancellationToken);
+
+        if (access is null)
+            return SightingCommentResult.Failure([SightingNotFound()]);
+
         SightingComment? existing = await sightingCommentRepository.GetAsync(sightingId, commentId, cancellationToken);
 
         if (existing is null || existing.DeletedAt is not null)
@@ -90,12 +109,25 @@ public class SightingCommentService(
         if (existing.AuthorId != userId)
             return SightingCommentResult.Failure([NotCommentAuthor()]);
 
+        if (sightingVisibilityProvider.IsRemoved(access))
+            return SightingCommentResult.Failure([SightingRemoved()]);
+
         SightingComment? deleted = await sightingCommentRepository.SoftDeleteAsync(sightingId, commentId, userId, timeProvider.GetUtcNow().UtcDateTime, cancellationToken);
 
         if (deleted is null)
             return SightingCommentResult.Failure([CommentNotFound()]);
 
         return SightingCommentResult.Success(deleted);
+    }
+
+    private async Task<SightingAccess?> GetVisibleAccessAsync(Guid sightingId, Guid userId, bool isAdmin, CancellationToken cancellationToken = default)
+    {
+        SightingAccess? access = await sightingCommentRepository.GetSightingAccessAsync(sightingId, cancellationToken);
+
+        if (access is null || !sightingVisibilityProvider.CanView(access, userId, isAdmin))
+            return null;
+
+        return access;
     }
 
     private async Task<SightingCommentResult?> CheckCooldownAsync(Guid authorId, CancellationToken cancellationToken = default)
@@ -125,6 +157,11 @@ public class SightingCommentService(
     private static SightingError SightingNotFound()
     {
         return new SightingError(SightingCommentErrorCodes.SightingNotFound, "The sighting does not exist.");
+    }
+
+    private static SightingError SightingRemoved()
+    {
+        return new SightingError(SightingCommentErrorCodes.SightingRemoved, "The sighting was removed by an admin and its comments cannot change.");
     }
 
     private static SightingError CommentNotFound()

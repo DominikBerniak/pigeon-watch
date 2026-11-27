@@ -20,6 +20,9 @@
     @case ('notOwner') {
       <app-alert kind="info">{{ 'sighting.edit.notOwner' | translate }}</app-alert>
     }
+    @case ('removed') {
+      <app-alert kind="info">{{ 'sighting.edit.errors.removed' | translate }}</app-alert>
+    }
   }
   @if (sighting(); as sighting) {
     <form class="edit-sighting" [formRoot]="editForm" (submit)="submit()">

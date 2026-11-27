@@ -24,6 +24,8 @@ import { WarmupState } from '../warmup/warmup-state';
 import { AuthApi, RegisterRequest } from './auth-api';
 import { AccessTokenResponse, TokenStore, refreshTokenStorageKey } from './token-store';
 
+export const adminRole = 'Admin';
+
 export class AutoLoginError extends Error {
   constructor(cause: unknown) {
     super('The account was created, but the automatic login failed.', { cause });
@@ -54,6 +56,7 @@ export class SessionService {
 
   readonly currentUser = computed(() => this.configuration.generalConfig()?.currentUser ?? null);
   readonly isAuthenticated = computed(() => this.currentUser() !== null);
+  readonly isAdmin = computed(() => this.currentUser()?.roles.includes(adminRole) ?? false);
 
   constructor() {
     const view = inject(DOCUMENT).defaultView;

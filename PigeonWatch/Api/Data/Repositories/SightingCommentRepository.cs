@@ -102,10 +102,13 @@ public class SightingCommentRepository(PigeonWatchDbContext db, ISightingComment
         return DateTime.SpecifyKind(latest, DateTimeKind.Utc);
     }
 
-    public async Task<bool> SightingExistsAsync(Guid sightingId, CancellationToken cancellationToken = default)
+    public async Task<SightingAccess?> GetSightingAccessAsync(Guid sightingId, CancellationToken cancellationToken = default)
     {
-        bool exists = await db.Sightings.AnyAsync(e => e.Id == sightingId, cancellationToken);
+        SightingAccess? access = await db.Sightings
+            .Where(e => e.Id == sightingId)
+            .Select(e => new SightingAccess(e.ReporterId, e.RemovedAt))
+            .FirstOrDefaultAsync(cancellationToken);
 
-        return exists;
+        return access;
     }
 }

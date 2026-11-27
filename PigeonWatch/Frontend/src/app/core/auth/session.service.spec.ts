@@ -191,6 +191,31 @@ describe('SessionService', () => {
     httpMock.verify();
   });
 
+  it('is an admin only while the current user has the Admin role', async () => {
+    const session = TestBed.inject(SessionService);
+    const configuration = TestBed.inject(ConfigurationService);
+    TestBed.inject(TokenStore).setTokens(tokenResponse);
+
+    expect(session.isAdmin()).toBe(false);
+
+    const member = firstValueFrom(configuration.loadGeneral());
+    httpMock.expectOne(generalUrl).flush({ currentUser: { ...currentUser, roles: ['Member'] } });
+    await member;
+
+    expect(session.isAdmin()).toBe(false);
+
+    const admin = firstValueFrom(configuration.loadGeneral());
+    httpMock.expectOne(generalUrl).flush({ currentUser: { ...currentUser, roles: ['Admin'] } });
+    await admin;
+
+    expect(session.isAdmin()).toBe(true);
+
+    configuration.clearGeneral();
+
+    expect(session.isAdmin()).toBe(false);
+    httpMock.verify();
+  });
+
   it('registers, then logs in', async () => {
     const session = TestBed.inject(SessionService);
     const request = { email: 'jan@example.com', password: 'Secret1!', displayName: 'Jan K' };

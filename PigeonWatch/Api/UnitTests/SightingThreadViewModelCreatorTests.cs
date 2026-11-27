@@ -45,6 +45,16 @@ public class SightingThreadViewModelCreatorTests
     }
 
     [Fact]
+    public void CreateThread_carries_whether_the_sighting_was_removed_to_both_sides()
+    {
+        SightingThread removed = Thread() with { IsSightingRemoved = true };
+
+        Assert.True(creator.CreateThread(removed, ownerId).IsSightingRemoved);
+        Assert.True(creator.CreateThread(removed, participantId).IsSightingRemoved);
+        Assert.False(creator.CreateThread(Thread(), participantId).IsSightingRemoved);
+    }
+
+    [Fact]
     public void CreateUnreadCount_carries_the_count()
     {
         Assert.Equal(5, creator.CreateUnreadCount(5).Count);

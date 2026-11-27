@@ -126,6 +126,12 @@
   background-color: var(--pw-color-criticality-urgent);
 }
 
+.pw-map-marker--removed {
+  border-style: dashed;
+  border-color: var(--pw-color-map-marker-removed-border);
+  background-color: var(--pw-color-map-marker-removed);
+}
+
 .leaflet-marker-icon.pw-map-marker--static {
   cursor: default;
 }

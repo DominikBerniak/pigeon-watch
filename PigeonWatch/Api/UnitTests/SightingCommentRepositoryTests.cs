@@ -361,7 +361,7 @@ public sealed class SightingCommentRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task Sighting_exists_is_true_only_for_a_stored_sighting()
+    public async Task Sighting_access_carries_the_reporter_and_no_removal_for_a_stored_sighting_and_is_null_for_an_unknown_one()
     {
         Guid authorId = await CreateUserAsync("author@example.com", "Pidgey");
         Guid sightingId = await CreateSightingAsync(authorId);
@@ -369,8 +369,25 @@ public sealed class SightingCommentRepositoryTests : IDisposable
         await using PigeonWatchDbContext db = CreateContext();
         ISightingCommentRepository repository = CreateRepository(db);
 
-        Assert.True(await repository.SightingExistsAsync(sightingId, cancellationToken));
-        Assert.False(await repository.SightingExistsAsync(Guid.NewGuid(), cancellationToken));
+        Assert.Equal(new SightingAccess(authorId, null), await repository.GetSightingAccessAsync(sightingId, cancellationToken));
+        Assert.Null(await repository.GetSightingAccessAsync(Guid.NewGuid(), cancellationToken));
+    }
+
+    [Fact]
+    public async Task Sighting_access_carries_the_removal_time_of_a_removed_sighting()
+    {
+        Guid authorId = await CreateUserAsync("author@example.com", "Pidgey");
+        Guid sightingId = await CreateSightingAsync(authorId);
+        DateTime removedAt = new(2026, 11, 17, 9, 30, 0, DateTimeKind.Utc);
+
+        await using (PigeonWatchDbContext writer = CreateContext())
+            await new SightingRepository(writer, new SightingMapper()).RemoveAsync(sightingId, authorId, removedAt, cancellationToken);
+
+        await using PigeonWatchDbContext db = CreateContext();
+        SightingAccess? access = await CreateRepository(db).GetSightingAccessAsync(sightingId, cancellationToken);
+
+        Assert.NotNull(access);
+        Assert.Equal(removedAt, access.RemovedAt);
     }
 
     public void Dispose()

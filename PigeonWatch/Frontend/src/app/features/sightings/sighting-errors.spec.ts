@@ -4,10 +4,15 @@ import { TestBed } from '@angular/core/testing';
 import { ResourceService } from '../../core/resources/resource.service';
 import {
   isReportableSightingFailure,
+  isReportableSightingModerationFailure,
   isReportableSightingUpdateFailure,
+  isSightingRemovedFailure,
   isStaleEditFailure,
   sightingErrorMessage,
   sightingFailure,
+  sightingModerationErrorMessage,
+  sightingModerationFailure,
+  sightingModerationFailureTraceId,
   sightingUpdateErrorMessage,
   sightingUpdateFailure,
   sightingUpdateFailureTraceId,
@@ -218,6 +223,30 @@ describe('sighting errors', () => {
       },
     );
 
+    it('maps a 400 carrying SightingRemoved to the silent removed failure without a reference', () => {
+      const error = new HttpErrorResponse({
+        status: 400,
+        error: { status: 400, traceId: '00-abc-def-01', errors: { SightingRemoved: ['x'] } },
+      });
+      const failure = sightingUpdateFailure(error);
+
+      expect(failure).toEqual({ kind: 'removed' });
+      expect(isReportableSightingUpdateFailure(error, failure)).toBe(false);
+      expect(isStaleEditFailure(failure)).toBe(false);
+      expect(sightingUpdateFailureTraceId(failure)).toBeNull();
+      expect(isSightingRemovedFailure(error)).toBe(true);
+    });
+
+    it('does not treat SightingRemoved on another status as a removed sighting', () => {
+      const error = new HttpErrorResponse({
+        status: 500,
+        error: { status: 500, errors: { SightingRemoved: ['x'] } },
+      });
+
+      expect(isSightingRemovedFailure(error)).toBe(false);
+      expect(sightingUpdateFailure(error).kind).toBe('generic');
+    });
+
     it('maps a 429 to the silent too many edits failure without a reference', () => {
       const error = new HttpErrorResponse({
         status: 429,
@@ -295,6 +324,14 @@ describe('sighting errors', () => {
       );
     });
 
+    it('renders the removed message', () => {
+      const labels = resources();
+
+      expect(sightingUpdateErrorMessage(labels, { kind: 'removed' })).toBe(
+        "This sighting was removed by an admin and can't be edited.",
+      );
+    });
+
     it('has a distinct label behind every edit error key', () => {
       const labels = resources();
       const keys = [
@@ -310,6 +347,80 @@ describe('sighting errors', () => {
 
       expect(texts.filter((text, index) => text === keys[index])).toEqual([]);
       expect(new Set(texts).size).toBe(keys.length);
+    });
+  });
+
+  describe('sightingModerationFailure', () => {
+    const traceId = '00-abc-def-01';
+
+    it('maps a 403 to a reported forbidden failure with its reference', () => {
+      const error = new HttpErrorResponse({ status: 403, error: { traceId } });
+      const failure = sightingModerationFailure(error);
+
+      expect(failure).toEqual({ kind: 'forbidden', traceId });
+      expect(isReportableSightingModerationFailure(error, failure)).toBe(true);
+      expect(sightingModerationFailureTraceId(failure)).toBe(traceId);
+    });
+
+    it('maps a 404 to a silent not found failure without a reference', () => {
+      const error = new HttpErrorResponse({ status: 404, error: { traceId } });
+      const failure = sightingModerationFailure(error);
+
+      expect(failure).toEqual({ kind: 'notFound' });
+      expect(isReportableSightingModerationFailure(error, failure)).toBe(false);
+      expect(sightingModerationFailureTraceId(failure)).toBeNull();
+    });
+
+    it('reports a 500 as unexpected with its reference', () => {
+      const error = new HttpErrorResponse({ status: 500, error: { traceId } });
+      const failure = sightingModerationFailure(error);
+
+      expect(failure).toEqual({ kind: 'unexpected', traceId });
+      expect(isReportableSightingModerationFailure(error, failure)).toBe(true);
+      expect(sightingModerationFailureTraceId(failure)).toBe(traceId);
+    });
+
+    it.each([400, 401, 429])('keeps a %i unexpected but silent and without a reference', (status) => {
+      const error = new HttpErrorResponse({ status, error: { traceId } });
+      const failure = sightingModerationFailure(error);
+
+      expect(failure).toEqual({ kind: 'unexpected' });
+      expect(isReportableSightingModerationFailure(error, failure)).toBe(false);
+      expect(sightingModerationFailureTraceId(failure)).toBeNull();
+    });
+
+    it('reports a non-HTTP error as unexpected', () => {
+      const error = new Error('boom');
+      const failure = sightingModerationFailure(error);
+
+      expect(failure).toEqual({ kind: 'unexpected' });
+      expect(isReportableSightingModerationFailure(error, failure)).toBe(true);
+    });
+
+    it('renders a message per action and failure', () => {
+      TestBed.configureTestingModule({
+        providers: [provideHttpClient(), provideHttpClientTesting()],
+      });
+      const labels = TestBed.inject(ResourceService);
+
+      expect(sightingModerationErrorMessage(labels, 'remove', { kind: 'notFound' })).toBe(
+        labels.translate('sighting.errors.notFound'),
+      );
+      expect(sightingModerationErrorMessage(labels, 'remove', { kind: 'forbidden' })).toBe(
+        'Only an admin can remove a sighting.',
+      );
+      expect(sightingModerationErrorMessage(labels, 'remove', { kind: 'unexpected' })).toBe(
+        labels.translate('sighting.remove.errors.generic'),
+      );
+      expect(sightingModerationErrorMessage(labels, 'restore', { kind: 'forbidden' })).toBe(
+        'Only an admin can restore a sighting.',
+      );
+      expect(sightingModerationErrorMessage(labels, 'restore', { kind: 'unexpected' })).toBe(
+        labels.translate('sighting.restore.errors.generic'),
+      );
+      expect(labels.translate('sighting.restore.errors.generic')).not.toBe(
+        labels.translate('sighting.remove.errors.generic'),
+      );
     });
   });
 });

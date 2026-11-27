@@ -438,6 +438,42 @@
   <data name="sighting.detail.edit" xml:space="preserve">
     <value>Edit</value>
   </data>
+  <data name="sighting.detail.remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="sighting.detail.restore" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="sighting.remove.confirmTitle" xml:space="preserve">
+    <value>Remove this sighting?</value>
+  </data>
+  <data name="sighting.remove.confirmMessage" xml:space="preserve">
+    <value>It leaves the map and the lists for everyone except its reporter and admins, and no one can comment on it or send new messages about it. You can restore it later.</value>
+  </data>
+  <data name="sighting.remove.cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="sighting.remove.confirmAction" xml:space="preserve">
+    <value>Remove sighting</value>
+  </data>
+  <data name="sighting.remove.errors.forbidden" xml:space="preserve">
+    <value>Only an admin can remove a sighting.</value>
+  </data>
+  <data name="sighting.remove.errors.generic" xml:space="preserve">
+    <value>We couldn't remove this sighting. Try again.</value>
+  </data>
+  <data name="sighting.restore.errors.forbidden" xml:space="preserve">
+    <value>Only an admin can restore a sighting.</value>
+  </data>
+  <data name="sighting.restore.errors.generic" xml:space="preserve">
+    <value>We couldn't restore this sighting. Try again.</value>
+  </data>
+  <data name="sighting.removed.notice" xml:space="preserve">
+    <value>This sighting was removed by an admin.</value>
+  </data>
+  <data name="sighting.removed.badge" xml:space="preserve">
+    <value>Removed</value>
+  </data>
   <data name="sighting.edit.title" xml:space="preserve">
     <value>Edit sighting</value>
   </data>
@@ -485,6 +521,9 @@
   </data>
   <data name="sighting.edit.errors.tooManyEdits" xml:space="preserve">
     <value>You've saved a lot of changes in a short time. Wait a minute and try again.</value>
+  </data>
+  <data name="sighting.edit.errors.removed" xml:space="preserve">
+    <value>This sighting was removed by an admin and can't be edited.</value>
   </data>
   <data name="sighting.comments.title" xml:space="preserve">
     <value>Comments</value>
@@ -573,6 +612,9 @@
   <data name="sighting.comments.errors.generic" xml:space="preserve">
     <value>We couldn't reach the comments right now. Try again.</value>
   </data>
+  <data name="sighting.comments.errors.removed" xml:space="preserve">
+    <value>This sighting was removed by an admin. Comments can no longer be added or changed.</value>
+  </data>
   <data name="sighting.comments.validation.required" xml:space="preserve">
     <value>Write a comment first.</value>
   </data>
@@ -633,6 +675,9 @@
   <data name="sighting.messages.thread.olderError" xml:space="preserve">
     <value>We couldn't load older messages.</value>
   </data>
+  <data name="sighting.messages.thread.removedNotice" xml:space="preserve">
+    <value>This sighting was removed by an admin. You can still read this conversation, but no new messages can be sent.</value>
+  </data>
   <data name="sighting.messages.errors.generic" xml:space="preserve">
     <value>We couldn't reach the messages right now. Try again.</value>
   </data>
@@ -644,6 +689,9 @@
   </data>
   <data name="sighting.messages.errors.ownSighting" xml:space="preserve">
     <value>You can't contact yourself about your own sighting.</value>
+  </data>
+  <data name="sighting.messages.errors.removed" xml:space="preserve">
+    <value>This sighting was removed by an admin, so no new messages can be sent about it.</value>
   </data>
   <data name="sighting.messages.validation.required" xml:space="preserve">
     <value>Write a message first.</value>
@@ -761,6 +809,9 @@
   </data>
   <data name="map.markerLabel" xml:space="preserve">
     <value>{0}, {1}</value>
+  </data>
+  <data name="map.markerLabelRemoved" xml:space="preserve">
+    <value>{0}, {1}, removed</value>
   </data>
   <data name="map.locating" xml:space="preserve">
     <value>Finding your location…</value>

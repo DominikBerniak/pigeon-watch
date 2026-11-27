@@ -9,4 +9,5 @@ public static class SightingMessageErrorCodes
     public const string MessageTextTooLong = "MessageTextTooLong";
     public const string SenderNotFound = "SenderNotFound";
     public const string InvalidPage = SightingErrorCodes.InvalidPage;
+    public const string SightingRemoved = SightingErrorCodes.SightingRemoved;
 }

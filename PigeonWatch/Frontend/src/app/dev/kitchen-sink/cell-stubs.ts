@@ -31,9 +31,15 @@ import {
 
 export type SaveMode = 'success' | 'duplicate' | 'failure' | 'pending';
 export type PasswordMode = 'success' | 'wrongCurrent' | 'pending';
-export type MineMode = 'empty' | 'items';
+export type MineMode = 'empty' | 'items' | 'itemsWithRemoved';
 export type NearbyMode =
-  'items' | 'empty' | 'failure' | 'pending' | 'itemsThenPending' | 'filtered';
+  | 'items'
+  | 'empty'
+  | 'failure'
+  | 'pending'
+  | 'itemsThenPending'
+  | 'filtered'
+  | 'itemsWithRemoved';
 export type NextLocationMode = 'ok' | 'timeout' | 'pending';
 export type GeolocationMode = 'ok' | 'denied' | 'timeoutThenNext' | NextLocationMode;
 export type LeafletMode = 'tileless' | 'failure';
@@ -45,12 +51,14 @@ export type DetailMode =
   | 'loadedLongName'
   | 'loadedWithPhoto'
   | 'loadedOwn'
+  | 'loadedRemoved'
+  | 'loadedOwnRemoved'
   | 'notFound'
   | 'failure'
   | 'pending'
   | 'failureThenLoaded';
 export type PhotoMode = 'image' | 'pending' | 'failure';
-export type EditMode = 'editable' | 'locked' | 'notOwner';
+export type EditMode = 'editable' | 'locked' | 'notOwner' | 'removed';
 export type CommentsMode = 'empty' | 'items' | 'failure' | 'pending';
 export type AddCommentMode = 'success' | 'cooldown';
 export type StartThreadMode = 'success' | 'failure' | 'pending';
@@ -82,6 +90,7 @@ export interface SightingDetailModes {
   readonly addComment?: AddCommentMode;
   readonly startThread?: StartThreadMode;
   readonly ownThread?: OwnThreadMode;
+  readonly admin?: boolean;
 }
 
 export interface SightingEditModes {
@@ -101,6 +110,7 @@ export interface MessagesModes {
   readonly inbox: InboxMode;
   readonly selected?: boolean;
   readonly thread?: ThreadMessagesMode;
+  readonly removedSighting?: boolean;
 }
 
 export interface HeaderModes {
@@ -153,6 +163,7 @@ function sinkSighting(
     reporterDisplayName: sinkUser.displayName,
     createdAt: new Date(sinkLoadedAt - ageMinutes * minuteMilliseconds).toISOString(),
     hasPhoto,
+    removedAt: null,
     isMine: false,
     editPermissions: null,
   };
@@ -315,6 +326,32 @@ export const sinkOwnSighting: Sighting = {
   },
 };
 
+const sinkRemovedAt = new Date(sinkLoadedAt - 30 * minuteMilliseconds).toISOString();
+
+export const sinkRemovedSighting: Sighting = {
+  ...sinkSightings[0],
+  id: 'sink-removed',
+  removedAt: sinkRemovedAt,
+};
+
+export const sinkOwnRemovedSighting: Sighting = {
+  ...sinkOwnSighting,
+  id: 'sink-own-removed',
+  removedAt: sinkRemovedAt,
+  editPermissions: null,
+};
+
+export const sinkRemovedListSighting: Sighting = {
+  ...sinkSighting(
+    'sink-removed-row',
+    'Grey',
+    SightingCriticality.needsHelpSoon,
+    { latitude: -0.002, longitude: 0.003 },
+    6 * 60,
+  ),
+  removedAt: sinkRemovedAt,
+};
+
 export const sinkEditableSighting: Sighting = {
   ...sinkOwnSighting,
   id: 'sink-edit',
@@ -340,6 +377,7 @@ export const sinkContactThread: SightingThread = {
   isOwner: false,
   lastMessageAt: new Date(sinkLoadedAt).toISOString(),
   hasUnread: false,
+  isSightingRemoved: false,
 };
 
 export const sinkInboxPageSize = 20;
@@ -355,6 +393,7 @@ export const sinkThreads: readonly SightingThread[] = Array.from(
     isOwner: index % 2 === 0,
     lastMessageAt: new Date(sinkLoadedAt - (index * 95 + 3) * minuteMilliseconds).toISOString(),
     hasUnread: index < 3,
+    isSightingRemoved: false,
   }),
 );
 
@@ -387,6 +426,8 @@ function editedSighting(mode: EditMode): Sighting {
       return sinkLockedSighting;
     case 'notOwner':
       return sinkSightings[0];
+    case 'removed':
+      return sinkOwnRemovedSighting;
     default:
       return sinkEditableSighting;
   }
@@ -452,6 +493,11 @@ export class CellStubs {
 
   readonly session = {
     currentUser: signal<CurrentUser | null>(sinkUser).asReadonly(),
+    isAdmin: computed(() => {
+      const modes = this.modes();
+
+      return modes.group === 'sightingDetail' && modes.admin === true;
+    }),
     changePassword: (): Observable<void> => this.passwordResult(),
   };
   readonly configuration = {
@@ -468,6 +514,8 @@ export class CellStubs {
       this.nearbyResult(filters),
     get: (): Observable<Sighting> => this.detailResult(),
     update: (): Observable<Sighting> => this.detailResult(),
+    remove: (): Observable<Sighting> => this.moderationResult(true),
+    restore: (): Observable<Sighting> => this.moderationResult(false),
     photo: (): Observable<Blob> => this.photoResult(),
     photoThumbnail: (): Observable<Blob> => this.thumbnailResult(),
     list: (request: SightingListRequest): Observable<SightingPage> => this.listResult(request),
@@ -587,9 +635,15 @@ export class CellStubs {
 
   private mineResult(): Observable<SightingList> {
     const modes = this.modes();
-    const withItems = modes.group === 'profile' && modes.mine === 'items';
 
-    return of({ items: withItems ? [...sinkSightings] : [] });
+    switch (modes.group === 'profile' ? modes.mine : 'empty') {
+      case 'items':
+        return of({ items: [...sinkSightings] });
+      case 'itemsWithRemoved':
+        return of({ items: [sinkRemovedListSighting, ...sinkSightings] });
+      default:
+        return of({ items: [] });
+    }
   }
 
   private nearbyResult(filters?: SightingFilters): Observable<SightingList> {
@@ -607,6 +661,8 @@ export class CellStubs {
         return NEVER;
       case 'filtered':
         return of({ items: sinkSightings.filter((sighting) => matches(sighting, filters)) });
+      case 'itemsWithRemoved':
+        return of({ items: [...sinkSightings, sinkRemovedListSighting] });
       default:
         return of({ items: [] });
     }
@@ -651,6 +707,10 @@ export class CellStubs {
         return of(sinkPhotoSighting);
       case 'loadedOwn':
         return of(sinkOwnSighting);
+      case 'loadedRemoved':
+        return of(sinkRemovedSighting);
+      case 'loadedOwnRemoved':
+        return of(sinkOwnRemovedSighting);
       case 'notFound':
         return throwError(() => new HttpErrorResponse({ status: 404 }));
       case 'failure':
@@ -664,6 +724,16 @@ export class CellStubs {
       default:
         return of(sinkSightings[0]);
     }
+  }
+
+  private moderationResult(removed: boolean): Observable<Sighting> {
+    const modes = this.modes();
+    const shown =
+      modes.group === 'sightingDetail' && modes.detail === 'loadedRemoved'
+        ? sinkRemovedSighting
+        : sinkSightings[0];
+
+    return of({ ...shown, removedAt: removed ? new Date().toISOString() : null });
   }
 
   private photoResult(): Observable<Blob> {
@@ -760,9 +830,16 @@ export class CellStubs {
     switch (modes.group === 'messages' ? modes.inbox : 'empty') {
       case 'items': {
         const start = (page - 1) * sinkInboxPageSize;
+        const removedSighting = modes.group === 'messages' && modes.removedSighting === true;
 
         return of({
-          items: sinkThreads.slice(start, start + sinkInboxPageSize),
+          items: sinkThreads
+            .slice(start, start + sinkInboxPageSize)
+            .map((thread) =>
+              removedSighting && thread.id === sinkThreads[0].id
+                ? { ...thread, isSightingRemoved: true }
+                : thread,
+            ),
           totalCount: sinkThreads.length,
         });
       }

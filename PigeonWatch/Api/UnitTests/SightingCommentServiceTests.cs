@@ -14,10 +14,11 @@ public class SightingCommentServiceTests
     private readonly CancellationToken cancellationToken = TestContext.Current.CancellationToken;
     private readonly Guid sightingId = Guid.NewGuid();
     private readonly Guid authorId = Guid.NewGuid();
+    private readonly Guid reporterId = Guid.NewGuid();
 
     public SightingCommentServiceTests()
     {
-        repository.SightingExistsAsync(sightingId, Arg.Any<CancellationToken>()).Returns(true);
+        repository.GetSightingAccessAsync(sightingId, Arg.Any<CancellationToken>()).Returns(new SightingAccess(reporterId, null));
         repository
             .GetLatestSubmissionDateByAuthorAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((DateTime?)null);
@@ -35,7 +36,7 @@ public class SightingCommentServiceTests
         SightingCommentPage stored = new([Comment(authorId, "Hello")], 21);
         repository.ListPageAsync(sightingId, 2, SightingCommentRules.PageSize, Arg.Any<CancellationToken>()).Returns(stored);
 
-        SightingCommentPageResult result = await CreateService().ListAsync(sightingId, 2, cancellationToken);
+        SightingCommentPageResult result = await CreateService().ListAsync(sightingId, authorId, false, 2, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.Same(stored, result.Page);
@@ -44,17 +45,17 @@ public class SightingCommentServiceTests
     [Fact]
     public async Task List_rejects_page_0_before_looking_up_the_sighting()
     {
-        SightingCommentPageResult result = await CreateService().ListAsync(sightingId, 0, cancellationToken);
+        SightingCommentPageResult result = await CreateService().ListAsync(sightingId, authorId, false, 0, cancellationToken);
 
         Assert.False(result.Succeeded);
         Assert.Equal([SightingCommentErrorCodes.InvalidPage], result.Errors.Select(error => error.Code));
-        await repository.DidNotReceive().SightingExistsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await repository.DidNotReceive().GetSightingAccessAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task List_rejects_a_page_that_would_overflow_the_offset()
     {
-        SightingCommentPageResult result = await CreateService().ListAsync(sightingId, int.MaxValue, cancellationToken);
+        SightingCommentPageResult result = await CreateService().ListAsync(sightingId, authorId, false, int.MaxValue, cancellationToken);
 
         Assert.Equal([SightingCommentErrorCodes.InvalidPage], result.Errors.Select(error => error.Code));
     }
@@ -62,7 +63,7 @@ public class SightingCommentServiceTests
     [Fact]
     public async Task List_returns_sighting_not_found_for_an_unknown_sighting()
     {
-        SightingCommentPageResult result = await CreateService().ListAsync(Guid.NewGuid(), 1, cancellationToken);
+        SightingCommentPageResult result = await CreateService().ListAsync(Guid.NewGuid(), authorId, false, 1, cancellationToken);
 
         Assert.Equal([SightingCommentErrorCodes.SightingNotFound], result.Errors.Select(error => error.Code));
         await repository.DidNotReceive().ListPageAsync(Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
@@ -71,7 +72,7 @@ public class SightingCommentServiceTests
     [Fact]
     public async Task Create_trims_the_text_and_inserts_the_comment()
     {
-        SightingCommentResult result = await CreateService().CreateAsync(sightingId, authorId, "  Seen near the fountain \n", cancellationToken);
+        SightingCommentResult result = await CreateService().CreateAsync(sightingId, authorId, false, "  Seen near the fountain \n", cancellationToken);
 
         Assert.True(result.Succeeded);
         await repository.Received(1).CreateAsync(new NewSightingComment(sightingId, authorId, "Seen near the fountain"), Arg.Any<CancellationToken>());
@@ -80,18 +81,18 @@ public class SightingCommentServiceTests
     [Fact]
     public async Task Create_rejects_whitespace_only_text_before_the_sighting_lookup()
     {
-        SightingCommentResult result = await CreateService().CreateAsync(Guid.NewGuid(), authorId, "  \t ", cancellationToken);
+        SightingCommentResult result = await CreateService().CreateAsync(Guid.NewGuid(), authorId, false, "  \t ", cancellationToken);
 
         Assert.Equal([SightingCommentErrorCodes.CommentTextRequired], result.Errors.Select(error => error.Code));
-        await repository.DidNotReceive().SightingExistsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await repository.DidNotReceive().GetSightingAccessAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
         await AssertNoWriteAsync();
     }
 
     [Fact]
     public async Task Create_rejects_text_over_the_limit_after_trimming()
     {
-        SightingCommentResult tooLong = await CreateService().CreateAsync(sightingId, authorId, new string('x', SightingCommentRules.TextMaxLength + 1), cancellationToken);
-        SightingCommentResult padded = await CreateService().CreateAsync(sightingId, authorId, $" {new string('x', SightingCommentRules.TextMaxLength)} ", cancellationToken);
+        SightingCommentResult tooLong = await CreateService().CreateAsync(sightingId, authorId, false, new string('x', SightingCommentRules.TextMaxLength + 1), cancellationToken);
+        SightingCommentResult padded = await CreateService().CreateAsync(sightingId, authorId, false, $" {new string('x', SightingCommentRules.TextMaxLength)} ", cancellationToken);
 
         Assert.Equal([SightingCommentErrorCodes.CommentTextTooLong], tooLong.Errors.Select(error => error.Code));
         Assert.True(padded.Succeeded);
@@ -102,7 +103,7 @@ public class SightingCommentServiceTests
     {
         LatestSubmission(now.UtcDateTime);
 
-        SightingCommentResult result = await CreateService().CreateAsync(Guid.NewGuid(), authorId, "Hello", cancellationToken);
+        SightingCommentResult result = await CreateService().CreateAsync(Guid.NewGuid(), authorId, false, "Hello", cancellationToken);
 
         Assert.Equal([SightingCommentErrorCodes.SightingNotFound], result.Errors.Select(error => error.Code));
         await repository.DidNotReceive().GetLatestSubmissionDateByAuthorAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
@@ -114,7 +115,7 @@ public class SightingCommentServiceTests
     {
         LatestSubmission(now.UtcDateTime.AddSeconds(-30));
 
-        SightingCommentResult result = await CreateService().CreateAsync(sightingId, authorId, "Hello", cancellationToken);
+        SightingCommentResult result = await CreateService().CreateAsync(sightingId, authorId, false, "Hello", cancellationToken);
 
         Assert.False(result.Succeeded);
         SightingError error = Assert.Single(result.Errors);
@@ -130,7 +131,7 @@ public class SightingCommentServiceTests
     {
         LatestSubmission(now.UtcDateTime.AddSeconds(-SightingRules.CooldownSeconds));
 
-        SightingCommentResult result = await CreateService().CreateAsync(sightingId, authorId, "Hello", cancellationToken);
+        SightingCommentResult result = await CreateService().CreateAsync(sightingId, authorId, false, "Hello", cancellationToken);
 
         Assert.True(result.Succeeded);
     }
@@ -140,7 +141,7 @@ public class SightingCommentServiceTests
     {
         repository.CreateAsync(Arg.Any<NewSightingComment>(), Arg.Any<CancellationToken>()).Returns((SightingComment?)null);
 
-        SightingCommentResult result = await CreateService().CreateAsync(sightingId, authorId, "Hello", cancellationToken);
+        SightingCommentResult result = await CreateService().CreateAsync(sightingId, authorId, false, "Hello", cancellationToken);
 
         Assert.Equal([SightingCommentErrorCodes.AuthorNotFound], result.Errors.Select(error => error.Code));
     }
@@ -153,7 +154,7 @@ public class SightingCommentServiceTests
             .UpdateTextAsync(sightingId, existing.Id, authorId, Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(existing with { Text = "Edited", EditedAt = now.UtcDateTime });
 
-        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, " Edited ", cancellationToken);
+        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, false, " Edited ", cancellationToken);
 
         Assert.True(result.Succeeded);
         await repository.Received(1).UpdateTextAsync(sightingId, existing.Id, authorId, "Edited", now.UtcDateTime, Arg.Any<CancellationToken>());
@@ -164,7 +165,7 @@ public class SightingCommentServiceTests
     {
         SightingComment existing = StoreComment(Guid.NewGuid());
 
-        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, " ", cancellationToken);
+        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, false, " ", cancellationToken);
 
         Assert.Equal([SightingCommentErrorCodes.CommentTextRequired], result.Errors.Select(error => error.Code));
         await repository.DidNotReceive().GetAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
@@ -174,7 +175,7 @@ public class SightingCommentServiceTests
     [Fact]
     public async Task Update_returns_comment_not_found_for_a_missing_comment()
     {
-        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, Guid.NewGuid(), authorId, "Edited", cancellationToken);
+        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, Guid.NewGuid(), authorId, false, "Edited", cancellationToken);
 
         Assert.Equal([SightingCommentErrorCodes.CommentNotFound], result.Errors.Select(error => error.Code));
         await AssertNoWriteAsync();
@@ -185,7 +186,7 @@ public class SightingCommentServiceTests
     {
         SightingComment existing = StoreComment(Guid.NewGuid(), deletedAt: now.UtcDateTime.AddMinutes(-5));
 
-        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, "Edited", cancellationToken);
+        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, false, "Edited", cancellationToken);
 
         Assert.Equal([SightingCommentErrorCodes.CommentNotFound], result.Errors.Select(error => error.Code));
         await AssertNoWriteAsync();
@@ -197,7 +198,7 @@ public class SightingCommentServiceTests
         SightingComment existing = StoreComment(Guid.NewGuid());
         LatestSubmission(now.UtcDateTime);
 
-        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, "Edited", cancellationToken);
+        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, false, "Edited", cancellationToken);
 
         Assert.Equal([SightingCommentErrorCodes.NotCommentAuthor], result.Errors.Select(error => error.Code));
         await repository.DidNotReceive().GetLatestSubmissionDateByAuthorAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
@@ -210,7 +211,7 @@ public class SightingCommentServiceTests
         SightingComment existing = StoreComment(authorId);
         LatestSubmission(now.UtcDateTime.AddSeconds(-10));
 
-        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, "Edited", cancellationToken);
+        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, false, "Edited", cancellationToken);
 
         Assert.Equal([SightingCommentErrorCodes.CooldownActive], result.Errors.Select(error => error.Code));
         Assert.Equal(50, result.RetryAfterSeconds);
@@ -223,7 +224,7 @@ public class SightingCommentServiceTests
         SightingComment existing = StoreComment(authorId);
         LatestSubmission(now.UtcDateTime.AddSeconds(-10));
 
-        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, "  Original ", cancellationToken);
+        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, false, "  Original ", cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.Equal(existing, result.Comment);
@@ -236,7 +237,7 @@ public class SightingCommentServiceTests
     {
         SightingComment existing = StoreComment(Guid.NewGuid());
 
-        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, "Original", cancellationToken);
+        SightingCommentResult result = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, false, "Original", cancellationToken);
 
         Assert.Equal([SightingCommentErrorCodes.NotCommentAuthor], result.Errors.Select(error => error.Code));
         await AssertNoWriteAsync();
@@ -251,7 +252,7 @@ public class SightingCommentServiceTests
             .SoftDeleteAsync(sightingId, existing.Id, authorId, Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(existing with { DeletedAt = now.UtcDateTime });
 
-        SightingCommentResult result = await CreateService().DeleteAsync(sightingId, existing.Id, authorId, cancellationToken);
+        SightingCommentResult result = await CreateService().DeleteAsync(sightingId, existing.Id, authorId, false, cancellationToken);
 
         Assert.True(result.Succeeded);
         Assert.Equal(now.UtcDateTime, result.Comment!.DeletedAt);
@@ -265,8 +266,8 @@ public class SightingCommentServiceTests
     {
         SightingComment deleted = StoreComment(authorId, deletedAt: now.UtcDateTime.AddMinutes(-1));
 
-        SightingCommentResult missing = await CreateService().DeleteAsync(sightingId, Guid.NewGuid(), authorId, cancellationToken);
-        SightingCommentResult again = await CreateService().DeleteAsync(sightingId, deleted.Id, authorId, cancellationToken);
+        SightingCommentResult missing = await CreateService().DeleteAsync(sightingId, Guid.NewGuid(), authorId, false, cancellationToken);
+        SightingCommentResult again = await CreateService().DeleteAsync(sightingId, deleted.Id, authorId, false, cancellationToken);
 
         Assert.Equal([SightingCommentErrorCodes.CommentNotFound], missing.Errors.Select(error => error.Code));
         Assert.Equal([SightingCommentErrorCodes.CommentNotFound], again.Errors.Select(error => error.Code));
@@ -278,15 +279,155 @@ public class SightingCommentServiceTests
     {
         SightingComment existing = StoreComment(Guid.NewGuid());
 
-        SightingCommentResult result = await CreateService().DeleteAsync(sightingId, existing.Id, authorId, cancellationToken);
+        SightingCommentResult result = await CreateService().DeleteAsync(sightingId, existing.Id, authorId, false, cancellationToken);
 
         Assert.Equal([SightingCommentErrorCodes.NotCommentAuthor], result.Errors.Select(error => error.Code));
         await AssertNoWriteAsync();
     }
 
+    [Fact]
+    public async Task List_of_a_removed_sighting_is_sighting_not_found_for_a_member()
+    {
+        RemoveSighting();
+
+        SightingCommentPageResult result = await CreateService().ListAsync(sightingId, Guid.NewGuid(), false, 1, cancellationToken);
+
+        Assert.Equal([SightingCommentErrorCodes.SightingNotFound], result.Errors.Select(error => error.Code));
+        await repository.DidNotReceive().ListPageAsync(Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task List_of_a_removed_sighting_is_readable_by_its_reporter_and_an_admin(bool asReporter, bool isAdmin)
+    {
+        RemoveSighting();
+        Guid viewerId = asReporter ? reporterId : Guid.NewGuid();
+
+        SightingCommentPageResult result = await CreateService().ListAsync(sightingId, viewerId, isAdmin, 1, cancellationToken);
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task Create_on_a_removed_sighting_is_sighting_not_found_for_a_member()
+    {
+        RemoveSighting();
+
+        SightingCommentResult result = await CreateService().CreateAsync(sightingId, authorId, false, "Hello", cancellationToken);
+
+        Assert.Equal([SightingCommentErrorCodes.SightingNotFound], result.Errors.Select(error => error.Code));
+        await AssertNoWriteAsync();
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task Create_on_a_removed_sighting_is_sighting_removed_for_its_reporter_and_an_admin_before_the_cooldown(bool asReporter, bool isAdmin)
+    {
+        RemoveSighting();
+        Guid commenterId = asReporter ? reporterId : Guid.NewGuid();
+        LatestSubmission(now.UtcDateTime);
+
+        SightingCommentResult result = await CreateService().CreateAsync(sightingId, commenterId, isAdmin, "Hello", cancellationToken);
+
+        Assert.Equal([SightingCommentErrorCodes.SightingRemoved], result.Errors.Select(error => error.Code));
+        await repository.DidNotReceive().GetLatestSubmissionDateByAuthorAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await AssertNoWriteAsync();
+    }
+
+    [Fact]
+    public async Task Create_validates_the_text_before_the_removal_check()
+    {
+        RemoveSighting();
+
+        SightingCommentResult result = await CreateService().CreateAsync(sightingId, reporterId, false, " ", cancellationToken);
+
+        Assert.Equal([SightingCommentErrorCodes.CommentTextRequired], result.Errors.Select(error => error.Code));
+        await repository.DidNotReceive().GetSightingAccessAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Update_and_delete_on_a_removed_sighting_are_sighting_not_found_for_a_member_before_the_comment_lookup()
+    {
+        RemoveSighting();
+        SightingComment existing = StoreComment(authorId);
+
+        SightingCommentResult update = await CreateService().UpdateAsync(sightingId, existing.Id, authorId, false, "Edited", cancellationToken);
+        SightingCommentResult delete = await CreateService().DeleteAsync(sightingId, existing.Id, authorId, false, cancellationToken);
+
+        Assert.Equal([SightingCommentErrorCodes.SightingNotFound], update.Errors.Select(error => error.Code));
+        Assert.Equal([SightingCommentErrorCodes.SightingNotFound], delete.Errors.Select(error => error.Code));
+        await repository.DidNotReceive().GetAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await AssertNoWriteAsync();
+    }
+
+    [Fact]
+    public async Task Update_and_delete_on_an_unknown_sighting_are_sighting_not_found()
+    {
+        SightingCommentResult update = await CreateService().UpdateAsync(Guid.NewGuid(), Guid.NewGuid(), authorId, false, "Edited", cancellationToken);
+        SightingCommentResult delete = await CreateService().DeleteAsync(Guid.NewGuid(), Guid.NewGuid(), authorId, false, cancellationToken);
+
+        Assert.Equal([SightingCommentErrorCodes.SightingNotFound], update.Errors.Select(error => error.Code));
+        Assert.Equal([SightingCommentErrorCodes.SightingNotFound], delete.Errors.Select(error => error.Code));
+        await AssertNoWriteAsync();
+    }
+
+    [Fact]
+    public async Task Update_and_delete_on_a_removed_sighting_check_the_comment_and_authorship_before_the_removal()
+    {
+        RemoveSighting();
+        SightingComment foreign = StoreComment(Guid.NewGuid());
+
+        SightingCommentResult missing = await CreateService().UpdateAsync(sightingId, Guid.NewGuid(), reporterId, false, "Edited", cancellationToken);
+        SightingCommentResult update = await CreateService().UpdateAsync(sightingId, foreign.Id, reporterId, false, "Edited", cancellationToken);
+        SightingCommentResult delete = await CreateService().DeleteAsync(sightingId, foreign.Id, reporterId, false, cancellationToken);
+
+        Assert.Equal([SightingCommentErrorCodes.CommentNotFound], missing.Errors.Select(error => error.Code));
+        Assert.Equal([SightingCommentErrorCodes.NotCommentAuthor], update.Errors.Select(error => error.Code));
+        Assert.Equal([SightingCommentErrorCodes.NotCommentAuthor], delete.Errors.Select(error => error.Code));
+        await AssertNoWriteAsync();
+    }
+
+    [Fact]
+    public async Task Update_of_an_own_comment_on_a_removed_sighting_is_sighting_removed_even_with_unchanged_text_and_before_the_cooldown()
+    {
+        RemoveSighting();
+        SightingComment existing = StoreComment(reporterId);
+        LatestSubmission(now.UtcDateTime);
+
+        SightingCommentResult changed = await CreateService().UpdateAsync(sightingId, existing.Id, reporterId, false, "Edited", cancellationToken);
+        SightingCommentResult unchanged = await CreateService().UpdateAsync(sightingId, existing.Id, reporterId, false, "Original", cancellationToken);
+
+        Assert.Equal([SightingCommentErrorCodes.SightingRemoved], changed.Errors.Select(error => error.Code));
+        Assert.Equal([SightingCommentErrorCodes.SightingRemoved], unchanged.Errors.Select(error => error.Code));
+        await repository.DidNotReceive().GetLatestSubmissionDateByAuthorAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await AssertNoWriteAsync();
+    }
+
+    [Fact]
+    public async Task Delete_of_an_own_comment_on_a_removed_sighting_is_sighting_removed()
+    {
+        RemoveSighting();
+        Guid adminId = Guid.NewGuid();
+        SightingComment existing = StoreComment(adminId);
+
+        SightingCommentResult result = await CreateService().DeleteAsync(sightingId, existing.Id, adminId, true, cancellationToken);
+
+        Assert.Equal([SightingCommentErrorCodes.SightingRemoved], result.Errors.Select(error => error.Code));
+        await AssertNoWriteAsync();
+    }
+
+    private void RemoveSighting()
+    {
+        repository
+            .GetSightingAccessAsync(sightingId, Arg.Any<CancellationToken>())
+            .Returns(new SightingAccess(reporterId, now.UtcDateTime.AddMinutes(-5)));
+    }
+
     private SightingCommentService CreateService()
     {
-        return new(repository, new SubmissionCooldownProvider(timeProvider), timeProvider);
+        return new(repository, new SubmissionCooldownProvider(timeProvider), new SightingVisibilityProvider(), timeProvider);
     }
 
     private void LatestSubmission(DateTime value)

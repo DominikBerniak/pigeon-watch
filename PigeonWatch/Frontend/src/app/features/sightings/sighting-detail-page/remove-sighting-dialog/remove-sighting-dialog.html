@@ -1,0 +1,12 @@
+<h2 mat-dialog-title>{{ 'sighting.remove.confirmTitle' | translate }}</h2>
+<mat-dialog-content>
+  <p>{{ 'sighting.remove.confirmMessage' | translate }}</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" [mat-dialog-close]="false">
+    {{ 'sighting.remove.cancel' | translate }}
+  </button>
+  <button mat-flat-button type="button" [mat-dialog-close]="true">
+    {{ 'sighting.remove.confirmAction' | translate }}
+  </button>
+</mat-dialog-actions>

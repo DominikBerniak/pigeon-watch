@@ -45,6 +45,7 @@ const named: Sighting = {
   reporterDisplayName: 'Jan K',
   createdAt: '2026-10-11T12:00:00Z',
   hasPhoto: false,
+  removedAt: null,
   isMine: false,
   editPermissions: null,
 };
@@ -210,6 +211,45 @@ describe('NearbyMapPage', () => {
         label: 'Unnamed bird, Monitor',
       },
     ]);
+  });
+
+  it('marks a removed sighting as a removed marker with the removed label', async () => {
+    const removed: Sighting = { ...named, removedAt: '2026-10-12T08:00:00Z' };
+
+    await render({ status: 'ok', ...warsaw }, of({ items: [removed, unnamed] }));
+
+    expect(map().markers()).toEqual([
+      {
+        id: 'sighting-1',
+        latitude: 52.23,
+        longitude: 21.01,
+        kind: 'urgent',
+        removed: true,
+        label: 'Limpy, Urgent, removed',
+      },
+      {
+        id: 'sighting-2',
+        latitude: 52.23,
+        longitude: 21.01,
+        kind: 'monitor',
+        label: 'Unnamed bird, Monitor',
+      },
+    ]);
+  });
+
+  it('shows the Removed badge on the card of a selected removed sighting only', async () => {
+    const removed: Sighting = { ...named, removedAt: '2026-10-12T08:00:00Z' };
+
+    await render({ status: 'ok', ...warsaw }, of({ items: [removed, unnamed] }));
+    map().markerSelect.emit('sighting-1');
+    await settle();
+
+    expect(text('mat-card app-removed-badge')).toBe('Removed');
+
+    map().markerSelect.emit('sighting-2');
+    await settle();
+
+    expect(root().querySelector('mat-card app-removed-badge')).toBeNull();
   });
 
   it('passes the selected sighting to the map and clears it on Close', async () => {

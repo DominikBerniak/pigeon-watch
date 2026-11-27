@@ -40,6 +40,7 @@ export interface Sighting {
   reporterDisplayName: string;
   createdAt: string;
   hasPhoto: boolean;
+  removedAt: string | null;
   isMine: boolean;
   editPermissions: SightingEditPermissions | null;
 }
@@ -76,6 +77,7 @@ export interface SightingThread {
   isOwner: boolean;
   lastMessageAt: string;
   hasUnread: boolean;
+  isSightingRemoved: boolean;
 }
 
 export interface SightingThreadPage {

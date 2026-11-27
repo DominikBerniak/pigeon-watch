@@ -22,4 +22,6 @@ public static class SightingErrorCodes
     public const string DescriptionRequired = "DescriptionRequired";
     public const string DescriptionLocked = "DescriptionLocked";
     public const string PhotoConflict = "PhotoConflict";
+    public const string NotAdmin = "NotAdmin";
+    public const string SightingRemoved = "SightingRemoved";
 }

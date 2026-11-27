@@ -12,6 +12,7 @@
 - port: 4200 (detected from the API CORS policy in Api/WebApi.Host/Program.cs and the Angular default; detected default 4200, override with E2E_PORT, but the API only allows the 4200 origin)
 - web server command: npm start -- --port $E2E_PORT (dev server, development configuration so the SPA calls the local API at http://localhost:5285; the production build points at Azure); reuseExistingServer outside CI
 - auth setup project: setup (tests/e2e/auth.setup.ts), credentials from E2E_USERNAME / E2E_PASSWORD in PigeonWatch/Frontend/.env
+- admin credentials: E2E_ADMIN_USERNAME / E2E_ADMIN_PASSWORD in PigeonWatch/Frontend/.env, read inside tests/e2e/admin-remove-sighting.spec.ts (fresh context, no storageState; a missing variable fails with a message). The account must be registered, its email listed in the API user-secrets as Moderation:AdminEmails:0 (`dotnet user-secrets set "Moderation:AdminEmails:0" "<email>" --project PigeonWatch/Api/WebApi.Host/PigeonWatch.WebApi.Host.csproj`), and the local API restarted once after the registration, because the role is granted only at API start; the spec fails early with a message when the login carries no Admin role
 - storageState: playwright/.auth/user.json (gitignored)
 - seed: tests/e2e/seed.spec.ts — protects risk #4: a reported sighting appears on the nearby map where it was reported
 - browser CLI: playwright-cli, command skill at .claude/skills/playwright-cli/SKILL.md

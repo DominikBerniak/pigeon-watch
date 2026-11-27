@@ -17,6 +17,7 @@ import { ErrorReportingService } from '../../../../core/error-reporting/error-re
 import { TranslatePipe } from '../../../../core/resources/translate.pipe';
 import { CriticalityBadge, Tooltip } from '../../../../shared/ui';
 import { PhotoEncoder } from '../photo-encoder';
+import { RemovedBadge } from '../removed-badge/removed-badge';
 import {
   Sighting,
   sightingCriticalityLabel,
@@ -37,7 +38,7 @@ const visibilityMargin = '200px';
 
 @Component({
   selector: 'li[app-sighting-row]',
-  imports: [DatePipe, RouterLink, TranslatePipe, CriticalityBadge, Tooltip],
+  imports: [DatePipe, RouterLink, TranslatePipe, CriticalityBadge, Tooltip, RemovedBadge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sighting-row.html',
   styleUrl: './sighting-row.scss',

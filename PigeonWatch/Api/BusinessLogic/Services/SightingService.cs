@@ -14,6 +14,8 @@ public class SightingService(
     IPhotoThumbnailProvider photoThumbnailProvider,
     ISightingPhotoStore sightingPhotoStore,
     ISubmissionCooldownProvider submissionCooldownProvider,
+    ISightingVisibilityProvider sightingVisibilityProvider,
+    TimeProvider timeProvider,
     ILogger<SightingService> logger) : ISightingService
 {
     private static readonly HashSet<int> listPageSizes =
@@ -71,7 +73,7 @@ public class SightingService(
         }
     }
 
-    public async Task<SightingUpdateResult> UpdateAsync(SightingUpdate update, CancellationToken cancellationToken = default)
+    public async Task<SightingUpdateResult> UpdateAsync(SightingUpdate update, bool isAdmin, CancellationToken cancellationToken = default)
     {
         SightingUpdate trimmed = update with
         {
@@ -87,11 +89,14 @@ public class SightingService(
 
         Sighting? current = await sightingRepository.GetByIdAsync(trimmed.SightingId, cancellationToken);
 
-        if (current is null)
+        if (current is null || !sightingVisibilityProvider.CanView(ToAccess(current), trimmed.UserId, isAdmin))
             return SightingUpdateResult.Failure([SightingNotFoundError()]);
 
         if (current.ReporterId != trimmed.UserId)
             return SightingUpdateResult.Failure([new SightingError(SightingErrorCodes.NotSightingOwner, "Only the reporter can edit this sighting.")]);
+
+        if (sightingVisibilityProvider.IsRemoved(ToAccess(current)))
+            return SightingUpdateResult.Failure([SightingRemovedError()]);
 
         if (trimmed.Status != current.Status && !sightingStatusTransitionProvider.IsTransitionAllowed(current.Status, trimmed.Status))
         {
@@ -152,9 +157,40 @@ public class SightingService(
         return await CompleteUpdateAsync(updated, trimmed.UserId, engaged, cancellationToken);
     }
 
-    public async Task<Stream?> OpenPhotoAsync(Guid sightingId, CancellationToken cancellationToken = default)
+    public async Task<SightingRemovalResult> RemoveAsync(Guid sightingId, Guid userId, bool isAdmin, CancellationToken cancellationToken = default)
     {
-        string? blobName = await sightingRepository.GetPhotoBlobNameAsync(sightingId, cancellationToken);
+        if (!isAdmin)
+            return SightingRemovalResult.Failure([NotAdminError()]);
+
+        Sighting? removed = await sightingRepository.RemoveAsync(sightingId, userId, timeProvider.GetUtcNow().UtcDateTime, cancellationToken);
+
+        if (removed is null)
+            return SightingRemovalResult.Failure([SightingNotFoundError()]);
+
+        return SightingRemovalResult.Success(removed);
+    }
+
+    public async Task<SightingRemovalResult> RestoreAsync(Guid sightingId, bool isAdmin, CancellationToken cancellationToken = default)
+    {
+        if (!isAdmin)
+            return SightingRemovalResult.Failure([NotAdminError()]);
+
+        Sighting? restored = await sightingRepository.RestoreAsync(sightingId, cancellationToken);
+
+        if (restored is null)
+            return SightingRemovalResult.Failure([SightingNotFoundError()]);
+
+        return SightingRemovalResult.Success(restored);
+    }
+
+    public async Task<Stream?> OpenPhotoAsync(Guid sightingId, Guid userId, bool isAdmin, CancellationToken cancellationToken = default)
+    {
+        SightingPhotoAccess? photoAccess = await sightingRepository.GetPhotoAccessAsync(sightingId, cancellationToken);
+
+        if (photoAccess is null || !sightingVisibilityProvider.CanView(photoAccess.Access, userId, isAdmin))
+            return null;
+
+        string? blobName = photoAccess.PhotoBlobName;
 
         if (blobName is null)
             return null;
@@ -167,9 +203,14 @@ public class SightingService(
         return photo;
     }
 
-    public async Task<Stream?> OpenPhotoThumbnailAsync(Guid sightingId, CancellationToken cancellationToken = default)
+    public async Task<Stream?> OpenPhotoThumbnailAsync(Guid sightingId, Guid userId, bool isAdmin, CancellationToken cancellationToken = default)
     {
-        string? blobName = await sightingRepository.GetPhotoBlobNameAsync(sightingId, cancellationToken);
+        SightingPhotoAccess? photoAccess = await sightingRepository.GetPhotoAccessAsync(sightingId, cancellationToken);
+
+        if (photoAccess is null || !sightingVisibilityProvider.CanView(photoAccess.Access, userId, isAdmin))
+            return null;
+
+        string? blobName = photoAccess.PhotoBlobName;
 
         if (blobName is null)
             return null;
@@ -195,14 +236,19 @@ public class SightingService(
         return new MemoryStream(thumbnail, writable: false);
     }
 
-    public async Task<Sighting?> GetAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Sighting?> GetAsync(Guid id, Guid userId, bool isAdmin, CancellationToken cancellationToken = default)
     {
-        return await sightingRepository.GetByIdAsync(id, cancellationToken);
+        Sighting? sighting = await sightingRepository.GetByIdAsync(id, cancellationToken);
+
+        if (sighting is null || !sightingVisibilityProvider.CanView(ToAccess(sighting), userId, isAdmin))
+            return null;
+
+        return sighting;
     }
 
     public async Task<SightingEditPermissions?> GetEditPermissionsAsync(Sighting sighting, Guid userId, CancellationToken cancellationToken = default)
     {
-        if (sighting.ReporterId != userId)
+        if (sighting.ReporterId != userId || sightingVisibilityProvider.IsRemoved(ToAccess(sighting)))
             return null;
 
         bool engaged = await sightingRepository.HasOtherUserEngagementAsync(sighting.Id, sighting.ReporterId, cancellationToken);
@@ -215,6 +261,7 @@ public class SightingService(
         double longitude,
         IReadOnlyCollection<SightingStatus> statuses,
         IReadOnlyCollection<SightingCriticality> criticalities,
+        bool isAdmin,
         CancellationToken cancellationToken = default)
     {
         List<SightingStatus> openStatuses = Enum.GetValues<SightingStatus>()
@@ -237,6 +284,7 @@ public class SightingService(
             requestedStatuses,
             requestedCriticalities,
             SightingRules.NearbyBoxMaxRows,
+            isAdmin,
             cancellationToken);
 
         List<Sighting> nearby = candidates
@@ -248,7 +296,7 @@ public class SightingService(
         return SightingNearbyResult.Success(nearby);
     }
 
-    public async Task<SightingListResult> GetListPageAsync(SightingListQuery query, CancellationToken cancellationToken = default)
+    public async Task<SightingListResult> GetListPageAsync(SightingListQuery query, bool isAdmin, CancellationToken cancellationToken = default)
     {
         List<SightingError> errors = ValidateListQuery(query);
 
@@ -268,6 +316,7 @@ public class SightingService(
             requestedCriticalities,
             skip,
             query.PageSize,
+            isAdmin,
             cancellationToken);
 
         return SightingListResult.Success(page);
@@ -371,6 +420,21 @@ public class SightingService(
     private static SightingError SightingNotFoundError()
     {
         return new SightingError(SightingErrorCodes.SightingNotFound, "The sighting does not exist.");
+    }
+
+    private static SightingError SightingRemovedError()
+    {
+        return new SightingError(SightingErrorCodes.SightingRemoved, "The sighting was removed by an admin and cannot be changed.");
+    }
+
+    private static SightingAccess ToAccess(Sighting sighting)
+    {
+        return new SightingAccess(sighting.ReporterId, sighting.RemovedAt);
+    }
+
+    private static SightingError NotAdminError()
+    {
+        return new SightingError(SightingErrorCodes.NotAdmin, "Only an admin can remove or restore a sighting.");
     }
 
     private static SightingError UnreadablePhotoError()

@@ -13,7 +13,9 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
+using PigeonWatch.BusinessObjects;
 using PigeonWatch.Data;
+using PigeonWatch.Data.Identity;
 using PigeonWatch.Data.Storage;
 using PigeonWatch.WebApi.Host;
 
@@ -22,7 +24,8 @@ namespace PigeonWatch.IntegrationTests;
 public sealed class PigeonWatchApiFactory(
     TimeProvider? timeProvider = null,
     CultureInfo? requestCulture = null,
-    int? sightingEditPermitLimit = PigeonWatchApiFactory.SharedSightingEditPermitLimit) : WebApplicationFactory<Program>
+    int? sightingEditPermitLimit = PigeonWatchApiFactory.SharedSightingEditPermitLimit,
+    IReadOnlyList<string>? adminEmails = null) : WebApplicationFactory<Program>
 {
     public const int SharedSightingEditPermitLimit = 1000;
 
@@ -79,26 +82,43 @@ public sealed class PigeonWatchApiFactory(
         HttpResponseMessage register = await accounts.RegisterAsync(email, password, displayName, cancellationToken);
         register.EnsureSuccessStatusCode();
 
-        HttpResponseMessage login = await accounts.LoginAsync(email, password, cancellationToken);
-        login.EnsureSuccessStatusCode();
+        TestUser user = await LogInAsync(email, password, displayName, cancellationToken);
 
-        string loginBody = await login.Content.ReadAsStringAsync(cancellationToken);
-        using JsonDocument tokens = JsonDocument.Parse(loginBody);
-        string accessToken = tokens.RootElement.GetProperty("accessToken").GetString()!;
-        string refreshToken = tokens.RootElement.GetProperty("refreshToken").GetString()!;
+        return user;
+    }
 
-        using HttpRequestMessage generalRequest = new(HttpMethod.Get, "/configuration/general");
-        HttpResponseMessage general = await SendFromFreshAddressAsync(generalRequest, accessToken, cancellationToken);
-        general.EnsureSuccessStatusCode();
+    public async Task<TestUser> CreateAdminAsync(string email, string password, string displayName, CancellationToken cancellationToken = default)
+    {
+        using (TestUser registered = await CreateUserAsync(email, password, displayName, cancellationToken))
+        {
+            await Services.GetRequiredService<AdminRoleBootstrapper>().RunAsync(cancellationToken);
+        }
 
-        string generalBody = await general.Content.ReadAsStringAsync(cancellationToken);
-        using JsonDocument currentUser = JsonDocument.Parse(generalBody);
-        Guid id = currentUser.RootElement.GetProperty("currentUser").GetProperty("id").GetGuid();
+        TestUser admin = await LogInAsync(email, password, displayName, cancellationToken);
+        IReadOnlyList<string> roles = await ReadRolesAsync(admin.AccessToken, cancellationToken);
 
-        HttpClient client = CreateApiClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        if (!roles.Contains(RoleNames.Admin))
+            throw new InvalidOperationException($"The token of {email} carries no {RoleNames.Admin} role; pass the email in the factory's adminEmails.");
 
-        return new TestUser(email, password, displayName, id, accessToken, refreshToken, client);
+        return admin;
+    }
+
+    public async Task<IReadOnlyList<string>> ReadRolesAsync(string accessToken, CancellationToken cancellationToken = default)
+    {
+        using HttpRequestMessage request = new(HttpMethod.Get, "/configuration/general");
+        using HttpResponseMessage response = await SendFromFreshAddressAsync(request, accessToken, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        string body = await response.Content.ReadAsStringAsync(cancellationToken);
+        using JsonDocument document = JsonDocument.Parse(body);
+        List<string> roles = document.RootElement
+            .GetProperty("currentUser")
+            .GetProperty("roles")
+            .EnumerateArray()
+            .Select(role => role.GetString()!)
+            .ToList();
+
+        return roles;
     }
 
     public int CountUserAccounts()
@@ -127,6 +147,16 @@ public sealed class PigeonWatchApiFactory(
         object? value = command.ExecuteScalar();
 
         return value is null or DBNull ? null : (string)value;
+    }
+
+    public Guid? ReadSightingRemovedBy(Guid sightingId)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = "SELECT REMOVED_BY FROM SIGHTING WHERE ID = $id";
+        command.Parameters.AddWithValue("$id", sightingId);
+        object? value = command.ExecuteScalar();
+
+        return value is null or DBNull ? null : Guid.Parse((string)value);
     }
 
     public int DeleteUserAccount(Guid id)
@@ -193,6 +223,9 @@ public sealed class PigeonWatchApiFactory(
             ["BlobStorage:LocalDirectory"] = null,
         }));
 
+        if (adminEmails is not null)
+            builder.ConfigureAppConfiguration(configuration => configuration.AddInMemoryCollection(AdminEmailSettings(adminEmails)));
+
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<DbContextOptions<PigeonWatchDbContext>>();
@@ -202,6 +235,13 @@ public sealed class PigeonWatchApiFactory(
                 options
                     .AddInterceptors(serviceProvider.GetServices<ISaveChangesInterceptor>())
                     .UseSqlite(connection));
+
+            List<ServiceDescriptor> bootstrapWorkers = services
+                .Where(descriptor => descriptor.ServiceType == typeof(IHostedService) && descriptor.ImplementationType == typeof(AdminRoleBootstrapWorker))
+                .ToList();
+
+            foreach (ServiceDescriptor bootstrapWorker in bootstrapWorkers)
+                services.Remove(bootstrapWorker);
 
             services.AddTransient<IStartupFilter, ClientAddressStartupFilter>();
             services.AddTransient<IStartupFilter, RequestBodySizeStartupFilter>();
@@ -245,6 +285,43 @@ public sealed class PigeonWatchApiFactory(
         openedConnection.Open();
 
         return openedConnection;
+    }
+
+    private static Dictionary<string, string?> AdminEmailSettings(IReadOnlyList<string> emails)
+    {
+        Dictionary<string, string?> settings = [];
+
+        for (int index = 0; index < emails.Count; index++)
+            settings[$"{ModerationOptions.SectionName}:{nameof(ModerationOptions.AdminEmails)}:{index}"] = emails[index];
+
+        return settings;
+    }
+
+    private async Task<TestUser> LogInAsync(string email, string password, string displayName, CancellationToken cancellationToken = default)
+    {
+        using HttpClient loginClient = CreateApiClient();
+        AccountApiClient accounts = new(loginClient);
+
+        HttpResponseMessage login = await accounts.LoginAsync(email, password, cancellationToken);
+        login.EnsureSuccessStatusCode();
+
+        string loginBody = await login.Content.ReadAsStringAsync(cancellationToken);
+        using JsonDocument tokens = JsonDocument.Parse(loginBody);
+        string accessToken = tokens.RootElement.GetProperty("accessToken").GetString()!;
+        string refreshToken = tokens.RootElement.GetProperty("refreshToken").GetString()!;
+
+        using HttpRequestMessage generalRequest = new(HttpMethod.Get, "/configuration/general");
+        HttpResponseMessage general = await SendFromFreshAddressAsync(generalRequest, accessToken, cancellationToken);
+        general.EnsureSuccessStatusCode();
+
+        string generalBody = await general.Content.ReadAsStringAsync(cancellationToken);
+        using JsonDocument currentUser = JsonDocument.Parse(generalBody);
+        Guid id = currentUser.RootElement.GetProperty("currentUser").GetProperty("id").GetGuid();
+
+        HttpClient client = CreateApiClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        return new TestUser(email, password, displayName, id, accessToken, refreshToken, client);
     }
 
     private string NextClientAddress()

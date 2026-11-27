@@ -20,6 +20,7 @@ public class SightingViewModelCreator : ISightingViewModelCreator
             ReporterDisplayName = sighting.ReporterDisplayName,
             CreatedAt = sighting.CreatedAt,
             HasPhoto = sighting.HasPhoto,
+            RemovedAt = sighting.RemovedAt,
             IsMine = sighting.ReporterId == currentUserId,
             EditPermissions = permissions is null
                 ? null

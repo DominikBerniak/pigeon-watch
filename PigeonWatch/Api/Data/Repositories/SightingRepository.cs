@@ -40,6 +40,7 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
         IReadOnlyCollection<SightingStatus> statuses,
         IReadOnlyCollection<SightingCriticality> criticalities,
         int take,
+        bool includeRemoved,
         CancellationToken cancellationToken = default)
     {
         List<SightingStatus> statusList = statuses.ToList();
@@ -51,6 +52,9 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
                 && e.Longitude >= minLongitude
                 && e.Longitude <= maxLongitude
                 && statusList.Contains(e.Status));
+
+        if (!includeRemoved)
+            query = query.Where(e => e.RemovedAt == null);
 
         if (criticalities.Count > 0)
         {
@@ -72,6 +76,7 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
         IReadOnlyCollection<SightingCriticality> criticalities,
         int skip,
         int take,
+        bool includeRemoved,
         CancellationToken cancellationToken = default)
     {
         const double radiansPerDegree = Math.PI / 180;
@@ -96,6 +101,9 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
                 + cosCentreLatitude * Math.Cos(e.Latitude * radiansPerDegree)
                     * Math.Sin((e.Longitude * radiansPerDegree - centreLongitude) / 2) * Math.Sin((e.Longitude * radiansPerDegree - centreLongitude) / 2)
                 <= halfChordThreshold);
+
+        if (!includeRemoved)
+            query = query.Where(e => e.RemovedAt == null);
 
         if (criticalities.Count > 0)
         {
@@ -140,14 +148,14 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
         return latest is null ? null : DateTime.SpecifyKind(latest.Value, DateTimeKind.Utc);
     }
 
-    public async Task<string?> GetPhotoBlobNameAsync(Guid sightingId, CancellationToken cancellationToken = default)
+    public async Task<SightingPhotoAccess?> GetPhotoAccessAsync(Guid sightingId, CancellationToken cancellationToken = default)
     {
-        string? blobName = await db.Sightings
+        SightingPhotoAccess? photoAccess = await db.Sightings
             .Where(e => e.Id == sightingId)
-            .Select(e => e.PhotoBlobName)
+            .Select(e => new SightingPhotoAccess(new SightingAccess(e.ReporterId, e.RemovedAt), e.PhotoBlobName))
             .FirstOrDefaultAsync(cancellationToken);
 
-        return blobName;
+        return photoAccess;
     }
 
     public async Task<SightingUpdateOutcome?> UpdateAsync(
@@ -181,6 +189,44 @@ public class SightingRepository(PigeonWatchDbContext db, ISightingMapper sightin
         string? replacedBlobName = photoChange == SightingPhotoChange.Keep ? null : previousBlobName;
 
         return new SightingUpdateOutcome(sightingMapper.ToSighting(entity), replacedBlobName);
+    }
+
+    public async Task<Sighting?> RemoveAsync(Guid sightingId, Guid removedBy, DateTime removedAt, CancellationToken cancellationToken = default)
+    {
+        SightingEntity? entity = await db.Sightings
+            .Include(e => e.Reporter)
+            .FirstOrDefaultAsync(e => e.Id == sightingId, cancellationToken);
+
+        if (entity is null)
+            return null;
+
+        if (entity.RemovedAt is null)
+        {
+            entity.RemovedAt = removedAt;
+            entity.RemovedBy = removedBy;
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        return sightingMapper.ToSighting(entity);
+    }
+
+    public async Task<Sighting?> RestoreAsync(Guid sightingId, CancellationToken cancellationToken = default)
+    {
+        SightingEntity? entity = await db.Sightings
+            .Include(e => e.Reporter)
+            .FirstOrDefaultAsync(e => e.Id == sightingId, cancellationToken);
+
+        if (entity is null)
+            return null;
+
+        if (entity.RemovedAt is not null || entity.RemovedBy is not null)
+        {
+            entity.RemovedAt = null;
+            entity.RemovedBy = null;
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        return sightingMapper.ToSighting(entity);
     }
 
     public async Task<bool> HasOtherUserEngagementAsync(Guid sightingId, Guid reporterId, CancellationToken cancellationToken = default)
